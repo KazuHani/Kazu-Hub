@@ -16,7 +16,7 @@
 
         /* Styling for the social media icons for a little pop */
         .social-icon {
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            transition: transform 0.5s ease-in-out, box-shadow 0.3s ease-in-out;
         }
         .social-icon:hover {
             transform: translateY(-5px) scale(1.1);
@@ -66,10 +66,10 @@
         }
 
         /* Styling for profile picture spin animation */
-        .profile-picture-spin {
+        .profile-picture { /* Renamed for clarity */
             transition: transform 0.5s ease-in-out; /* Smooth transition for the initial state (not spinning) */
         }
-        .profile-picture-spin:hover {
+        .profile-picture:hover {
             animation: continuousSpin 2s linear infinite; /* Apply continuous spin on hover */
         }
 
@@ -90,9 +90,10 @@
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
         <div class="mb-6">
-            <img src="com.png" alt="Profile Picture" class="profile-picture-spin w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto mb-4 border-4 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
+            <img src="com.png" alt="Profile Picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto mb-4 border-4 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
             </div>
 
+        <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
         <div class="mb-4">
              <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
                class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
@@ -144,6 +145,22 @@
     <script>
         // Set current year in footer
         document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Get the profile picture and audio elements
+        const profilePic = document.getElementById('profilePic');
+        const spinSound = document.getElementById('spinSound');
+
+        // Add event listener for mouse entering the profile picture area
+        profilePic.addEventListener('mouseenter', () => {
+            spinSound.currentTime = 0; // Rewind to the start
+            spinSound.play();        // Play the sound
+        });
+
+        // Add event listener for mouse leaving the profile picture area
+        profilePic.addEventListener('mouseleave', () => {
+            spinSound.pause();       // Pause the sound
+            spinSound.currentTime = 0; // Rewind to the start (optional, if you want it to restart next time)
+        });
     </script>
 </body>
 </html>
