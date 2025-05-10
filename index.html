@@ -38,6 +38,7 @@
             width: 100%;
             max-width: 500px; /* Max width for the content card */
             padding: 1rem; /* Padding for smaller screens */
+            animation: zoomInEffect 0.8s ease-out forwards; /* Added zoom-in animation */
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
@@ -53,26 +54,45 @@
             transform: translateY(-5px) scale(1.1);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
+        /* Styling for profile picture spin animation */
+        .profile-picture-spin {
+            transition: transform 0.5s ease-in-out; /* Smooth transition for the spin */
+        }
+        .profile-picture-spin:hover {
+            transform: rotate(360deg); /* Rotate 360 degrees on hover */
+        }
+
+        /* Keyframes for the zoom-in animation */
+        @keyframes zoomInEffect {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
         <div class="mb-6">
-            <img src="com.png" alt="Profile Picture" class="w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto mb-4 border-4 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
+            <img src="com.png" alt="Profile Picture" class="profile-picture-spin w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto mb-4 border-4 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
             </div>
 
         <div class="mb-4">
              <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
                class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
-                More information
+                More info about Kazu
             </a>
         </div>
 
         <div class="mb-8">
             <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
             <p class="text-slate-300 text-base md:text-lg">
-                Welcome to my personal hub! Find all my social media links below. Feel free to connect.
+                Welcome to my personal hub!
             </p>
             </div>
 
@@ -106,7 +126,7 @@
             </div>
 
         <footer class="mt-10 pt-6 border-t border-slate-700">
-            <p class="text-sm text-slate-400">© <span id="currentYear"></span> Rhys Davies. All Rights Reserved.</p>
+            <p class="text-sm text-slate-400">© <span id="currentYear"></span> Kazu Hani. All Rights Reserved.</p>
             </footer>
     </div>
 
