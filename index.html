@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="com.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Social Links</title>
@@ -88,9 +87,15 @@
         }
         /* Styling for the countdown timer */
         #birthdayCountdown {
-            font-size: 1rem; /* Slightly smaller text for the countdown */
+            font-size: 1rem;
             color: #cbd5e1; /* slate-300 */
-            margin-bottom: 1.5rem; /* Add some space below the countdown */
+            margin-bottom: 0.5rem; /* Reduced margin to bring age closer */
+        }
+        /* Styling for age display */
+        #ageDisplay {
+            font-size: 1rem;
+            color: #cbd5e1; /* slate-300 */
+            margin-bottom: 1.5rem; /* Add some space below the age */
         }
         /* Styling for bio text */
         .bio-text {
@@ -106,7 +111,6 @@
         </div>
 
         <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
-
         <div class="mb-4">
              <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
                class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
@@ -121,7 +125,12 @@
             </p>
         </div>
 
-        <div id="birthdayCountdown" class="mb-6 text-slate-300"> Birthday is in <span id="countdownTimer"></span>
+        <div id="birthdayCountdown" class="text-slate-300">
+            Birthday is in <span id="countdownTimer"></span>
+        </div>
+
+        <div id="ageDisplay" class="text-slate-300">
+            I am currently <span id="currentAge"></span> years old.
         </div>
 
         <div class="space-y-4">
@@ -165,18 +174,40 @@
         const profilePic = document.getElementById('profilePic');
         const spinSound = document.getElementById('spinSound');
 
+        // It's good practice to explicitly load the audio.
+        // Browsers might preload with "auto", but this can help ensure it's initiated.
+        spinSound.load();
+
         profilePic.addEventListener('mouseenter', () => {
-            // Check if the audio context is suspended (due to browser autoplay policies)
-            if (spinSound.paused && spinSound.readyState >= 2) { // readyState 2 means HAVE_CURRENT_DATA
-                spinSound.play().catch(error => console.log("Audio play failed:", error));
+            // Check if audio is ready (HAVE_ENOUGH_DATA means it can play through)
+            // Using HAVE_CURRENT_DATA (readyState >= 2) might also work for starting playback sooner.
+            if (spinSound.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+                spinSound.currentTime = 0; // Rewind to the start for each hover
+                const playPromise = spinSound.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        // Audio playback started successfully.
+                        // You can add a console.log here for debugging if needed:
+                        // console.log("Spin sound started.");
+                    }).catch(error => {
+                        // Audio play was prevented by the browser.
+                        // This is common if the user hasn't interacted with the page yet (e.g., by clicking anywhere).
+                        // The error object might be empty or a DOMException.
+                        console.warn("Audio play on hover was prevented by the browser. A user click on the page might be needed to enable audio playback.", error);
+                    });
+                }
+            } else {
+                console.warn("Audio is not ready to play. Current readyState: " + spinSound.readyState + ". Ensure the audio file path is correct and the file is accessible.");
+                // Optionally, you could try to load it again if it wasn't ready,
+                // but this might lead to repeated load attempts if the file is missing.
+                // spinSound.load();
             }
-            spinSound.currentTime = 0;
-            spinSound.play().catch(error => console.log("Audio play failed on mouseenter:", error)); // Added catch for robustness
         });
 
         profilePic.addEventListener('mouseleave', () => {
             spinSound.pause();
-            spinSound.currentTime = 0;
+            spinSound.currentTime = 0; // Reset audio to the beginning when mouse leaves
         });
 
         // Birthday Countdown Logic
@@ -189,17 +220,17 @@
             let currentYear = now.getFullYear();
             let birthdayThisYear = new Date(currentYear, birthdayMonth, birthdayDay);
 
-            // If birthday has passed this year, set it to next year
             if (now > birthdayThisYear) {
                 birthdayThisYear.setFullYear(currentYear + 1);
             }
 
             const diff = birthdayThisYear - now;
 
-            if (diff <= 0) { // It's birthday today or passed (should be handled by year increment)
-                countdownTimerElement.innerHTML = "Happy Birthday!"; // Check if this is Kazu's actual birthday
+            if (diff <= 0) {
                 if (now.getMonth() === birthdayMonth && now.getDate() === birthdayDay) {
-                    // Potentially add a special effect for the birthday itself
+                    countdownTimerElement.innerHTML = "Happy Birthday!";
+                } else {
+                    countdownTimerElement.innerHTML = "Birthday has passed!";
                 }
                 return;
             }
@@ -212,10 +243,23 @@
             countdownTimerElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
         }
 
-        // Update the countdown every second
         setInterval(updateCountdown, 1000);
-        // Initial call to display immediately
         updateCountdown();
+
+        // Age Calculation Logic
+        const ageElement = document.getElementById('currentAge');
+        const birthDate = new Date(2001, 10, 9); // Month is 0-indexed, so 10 is November
+
+        function calculateAge() {
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDifference = today.getMonth() - birthDate.getMonth();
+            if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            ageElement.textContent = age;
+        }
+        calculateAge();
 
     </script>
 </body>
