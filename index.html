@@ -38,7 +38,7 @@
             width: 100%;
             max-width: 500px; /* Max width for the content card */
             padding: 1rem; /* Padding for smaller screens */
-            animation: zoomInEffect 0.8s ease-out forwards; /* Added zoom-in animation */
+            animation: zoomInEffect 0.7s ease-out forwards; /* Added zoom-in animation */
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
@@ -54,12 +54,23 @@
             transform: translateY(-5px) scale(1.1);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
+
+        /* Keyframes for the continuous spin animation */
+        @keyframes continuousSpin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         /* Styling for profile picture spin animation */
         .profile-picture-spin {
-            transition: transform 0.5s ease-in-out; /* Smooth transition for the spin */
+            transition: transform 0.5s ease-in-out; /* Smooth transition for the initial state (not spinning) */
         }
         .profile-picture-spin:hover {
-            transform: rotate(360deg); /* Rotate 360 degrees on hover */
+            animation: continuousSpin 2s linear infinite; /* Apply continuous spin on hover */
         }
 
         /* Keyframes for the zoom-in animation */
