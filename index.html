@@ -20,7 +20,7 @@
             font-size: 0.9rem; /* Reduced font size for social icon text */
         }
         .social-icon:hover {
-            transform: translateY(-5px) scale(1.1);
+            transform: translateY(-5px) scale(1.04);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
         /* Ensure full height for vertical centering */
@@ -235,12 +235,17 @@
                 return;
             }
 
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            countdownTimerElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+const totalMonths = Math.floor(days / 30.44); // Average days in a month
+const remainingDaysAfterMonths = Math.floor(days % 30.44);
+const weeks = Math.floor(remainingDaysAfterMonths / 7);
+const remainingDays = remainingDaysAfterMonths % 7;
+
+countdownTimerElement.innerHTML = `${totalMonths} months ${weeks}w ${remainingDays}d ${hours}h ${minutes}m ${seconds}s`;
         }
 
         setInterval(updateCountdown, 1000);
