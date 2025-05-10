@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Social Links</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom font - Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Fallback for Inter font if Google Fonts is not available */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        /* Styling for the social media icons for a little pop */
+        .social-icon {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .social-icon:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        /* Ensure full height for vertical centering */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f4f8; /* Light gray background */
+        }
+        .container {
+            width: 100%;
+            max-width: 500px; /* Max width for the content card */
+            padding: 1rem; /* Padding for smaller screens */
+        }
+        @media (min-width: 640px) { /* sm breakpoint in Tailwind */
+            .container {
+                padding: 2rem; /* More padding for larger screens */
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
+        <div class="mb-6">
+            <img src="https://placehold.co/150x150/6366f1/e0e7ff?text=Your+Photo" alt="Profile Picture" class="w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto mb-4 border-4 border-indigo-500 shadow-lg object-cover">
+            </div>
+
+        <div class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Rhys Davies</h1>
+            <p class="text-slate-300 text-base md:text-lg">
+                Welcome to my personal hub! Find all my social media links below. Feel free to connect.
+            </p>
+            </div>
+
+        <div class="space-y-4">
+            <a href="https://twitter.com/yourusername" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M23.954 4.569c-.885.389-1.83.654-2.825.775 1.014-.611 1.794-1.574 2.163-2.723-.951.555-2.005.959-3.127 1.184-.896-.959-2.173-1.559-3.591-1.559-2.717 0-4.92 2.203-4.92 4.917 0 .39.045.765.127 1.124C7.691 8.094 4.066 6.13 1.64 3.161c-.427.722-.666 1.561-.666 2.475 0 1.71.87 3.213 2.188 4.096-.807-.026-1.566-.248-2.228-.616v.061c0 2.385 1.693 4.374 3.946 4.827-.413.111-.849.171-1.296.171-.314 0-.615-.03-.916-.086.631 1.953 2.445 3.377 4.604 3.417-1.68 1.319-3.809 2.105-6.102 2.105-.39 0-.779-.023-1.17-.067 2.189 1.394 4.768 2.209 7.557 2.209 9.054 0 13.999-7.496 13.999-13.986 0-.209 0-.42-.015-.63.961-.689 1.8-1.56 2.46-2.548l-.047-.02z"/>
+                </svg>
+                Twitter
+            </a>
+            <a href="https://instagram.com/yourusername" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12 2C8.13401 2 5 5.13401 5 9C5 10.647 5.66401 12.147 6.70701 13.293L6.707 13.293C6.707 13.293 6.707 13.293 6.70701 13.293C7.85301 14.336 9.35301 15 11 15H13C14.647 15 16.147 14.336 17.293 13.293L17.293 13.293C17.293 13.293 17.293 13.293 17.293 13.293C18.336 12.147 19 10.647 19 9C19 5.13401 15.866 2 12 2ZM12 4C14.7614 4 17 6.23858 17 9C17 9.90403 16.7271 10.7383 16.2541 11.4424L12 7.18829L7.74586 11.4424C7.27291 10.7383 7 9.90403 7 9C7 6.23858 9.23858 4 12 4ZM6.70701 13.293C6.707 13.293 6.707 13.293 6.70701 13.293C6.70701 13.293 6.707 13.293 6.70701 13.293L6.707 13.293C6.707 13.293 6.70701 13.293 6.70701 13.293ZM12 13C10.3431 13 9 11.6569 9 10C9 8.34315 10.3431 7 12 7C13.6569 7 15 8.34315 15 10C15 11.6569 13.6569 13 12 13ZM12 9C11.4477 9 11 9.44772 11 10C11 10.5523 11.4477 11 12 11C12.5523 11 13 10.5523 13 10C13 9.44772 12.5523 9 12 9ZM6 17C6 17.5523 6.44772 18 7 18H17C17.5523 18 18 17.5523 18 17V16C18 15.4477 17.5523 15 17 15H16.7321C16.0816 15.5979 15.2397 16.0348 14.3199 16.2729L14.1973 16.3076C13.4925 16.4986 12.7556 16.5833 12 16.5833C11.2444 16.5833 10.5075 16.4986 9.80268 16.3076L9.68013 16.2729C8.76029 16.0348 7.91844 15.5979 7.26795 15H7C6.44772 15 6 15.4477 6 16V17Z" clip-rule="evenodd"/>
+                    <path d="M12 11C12.5523 11 13 10.5523 13 10C13 9.44772 12.5523 9 12 9C11.4477 9 11 9.44772 11 10C11 10.5523 11.4477 11 12 11Z"/>
+                </svg>
+                Instagram
+            </a>
+            <a href="https://linkedin.com/in/yourusername" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/>
+                </svg>
+                LinkedIn
+            </a>
+            <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
+                </svg>
+                GitHub
+            </a>
+            <a href="https://facebook.com/yourusername" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd"/>
+                </svg>
+                Facebook
+            </a>
+
+            </svg>
+                TikTok
+            </a>
+            -->
+
+            </div>
+
+        <footer class="mt-10 pt-6 border-t border-slate-700">
+            <p class="text-sm text-slate-400">&copy; <span id="currentYear"></span> Rhys Davies. All Rights Reserved.</p>
+            </footer>
+    </div>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
