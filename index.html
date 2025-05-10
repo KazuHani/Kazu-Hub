@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" href="com.png" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Social Links</title>
@@ -45,6 +44,15 @@
                 padding: 2rem; /* More padding for larger screens */
             }
         }
+        /* Updated transition for info-button to include box-shadow */
+        .info-button {
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        /* Updated hover effect for info-button to match social-icon */
+        .info-button:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center justify-center min-h-screen p-4">
@@ -54,42 +62,42 @@
             <img src="com.png" alt="Profile Picture" class="w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto mb-4 border-4 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
             </div>
 
- <div class="mb-4">
+        <div class="mb-4">
              <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
                class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
-                More info about Kazu
+                More information
             </a>
         </div>
 
         <div class="mb-8">
             <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
             <p class="text-slate-300 text-base md:text-lg">
-                Welcome to my personal hub!
+                Welcome to my personal hub! Find all my social media links below. Feel free to connect.
             </p>
             </div>
 
         <div class="space-y-4">
-            <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
+            <a href="https://twitter.com/yourusername" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
                 <img src="twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
                 Twitter
             </a>
-            <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
+            <a href="https://tiktok.com/@yourusername" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
                 <img src="tiktok_logo.png" alt="TikTok Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/000000/ffffff?text=TT&font=roboto'; this.alt='TikTok Placeholder';">
                 TikTok
             </a>
-            <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" rel="noopener noreferrer"
+            <a href="https://youtube.com/yourchannel" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
                 <img src="youtube_logo.png" alt="YouTube Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF0000/ffffff?text=YT&font=roboto'; this.alt='YouTube Placeholder';">
                 YouTube
             </a>
-            <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener noreferrer"
+            <a href="https://steamcommunity.com/id/yoursteamid" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
                 <img src="steam_logo.png" alt="Steam Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1b2838/ffffff?text=S&font=roboto'; this.alt='Steam Placeholder';">
                 Steam
             </a>
-            <a href="https://www.reddit.com/user/Korat24/" target="_blank" rel="noopener noreferrer"
+            <a href="https://reddit.com/r/yoursubreddit" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
                 <img src="reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
                 Reddit
