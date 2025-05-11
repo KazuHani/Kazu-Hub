@@ -11,6 +11,9 @@
         /* Custom font - Inter */
         body {
             font-family: 'Inter', sans-serif;
+            /* height: 100%; Removed as min-h-screen from Tailwind is sufficient and potentially better */
+            margin: 0; /* Basic reset */
+            /* Redundant flex properties covered by Tailwind classes are removed for clarity */
         }
         /* Fallback for Inter font if Google Fonts is not available */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -24,18 +27,7 @@
             transform: translateY(-5px) scale(1.1);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
-        /* Ensure full height for vertical centering */
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #f0f4f8; /* Light gray background for the body if gradient doesn't cover all */
-        }
+
         .container {
             width: 100%;
             max-width: 500px; /* Max width for the content card */
@@ -143,7 +135,7 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center justify-center min-h-screen p-4">
+<body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
         <div class="mb-6"> <div class="profile-image-wrapper">
@@ -161,8 +153,7 @@
             </a>
         </div>
 
-        <div class="mb-6">
-            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
+        <div class="mb-6"> <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
             <p class="text-slate-300 bio-text text-base md:text-lg">
                 <span class="highlight-text">Welcome to my personal hub!</span>
             </p>
@@ -209,24 +200,17 @@
     </div>
 
     <script>
-        // Set current year in footer (though it's not displayed anymore, keeping the logic if needed later)
-        // If you want to completely remove the year calculation, you can delete the next line.
-        // document.getElementById('currentYear').textContent = new Date().getFullYear(); // This line would cause an error if 'currentYear' span is removed from footer
-
         // Profile picture elements and sound
         const profilePic = document.getElementById('profilePic');
         const spinSound = document.getElementById('spinSound');
-        const dragonText = document.getElementById('dragonText'); // Get the dragon text element
-        let dragonTimeout; // Variable to hold the timeout
+        const dragonText = document.getElementById('dragonText'); 
+        let dragonTimeout; 
 
-        // Load audio
-        if (spinSound) { // Check if spinSound element exists
+        if (spinSound) {
             spinSound.load();
         }
 
-
         profilePic.addEventListener('mouseenter', () => {
-            // Play sound
             if (spinSound && spinSound.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
                 spinSound.currentTime = 0;
                 const playPromise = spinSound.play();
@@ -239,21 +223,17 @@
                 console.warn("Audio is not ready to play. Current readyState: " + spinSound.readyState);
             }
 
-            // Set timeout to show dragon text
-            clearTimeout(dragonTimeout); // Clear any existing timeout
+            clearTimeout(dragonTimeout); 
             dragonTimeout = setTimeout(() => {
                 dragonText.classList.add('visible');
-            }, 3000); // 3000 milliseconds = 3 seconds
+            }, 3000); 
         });
 
         profilePic.addEventListener('mouseleave', () => {
-            // Pause sound
             if (spinSound) {
                 spinSound.pause();
                 spinSound.currentTime = 0;
             }
-
-            // Hide dragon text and clear timeout
             clearTimeout(dragonTimeout);
             dragonText.classList.remove('visible');
         });
@@ -277,7 +257,6 @@
                 targetBirthday.setFullYear(currentYear + 1);
             }
             
-            // Recalculate diff after potential year adjustment
             const diff = targetBirthday.getTime() - now.getTime();
 
             if (diff <= 0) { 
@@ -293,7 +272,6 @@
                 return;
             }
 
-
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -304,13 +282,12 @@
 
         if (countdownTimerElement) {
             setInterval(updateCountdown, 1000);
-            updateCountdown(); // Initial call
+            updateCountdown(); 
         }
-
 
         // Age Calculation Logic
         const ageElement = document.getElementById('currentAge');
-        const birthDate = new Date(2001, 10, 9); // Month is 0-indexed, so 10 is November
+        const birthDate = new Date(2001, 10, 9); 
 
         function calculateAge() {
             const today = new Date();
