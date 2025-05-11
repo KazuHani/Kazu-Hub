@@ -12,6 +12,7 @@
         body {
             font-family: 'Inter', sans-serif;
             margin: 0; /* Basic reset */
+            transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
         }
         /* Fallback for Inter font if Google Fonts is not available */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -22,7 +23,7 @@
             font-size: 0.9rem; /* Reduced font size for social icon text */
         }
         .social-icon:hover {
-            transform: translateY(-5px) scale(1.03);
+            transform: translateY(-5px) scale(1.03); /* Adjusted scale for consistency */
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
 
@@ -31,6 +32,9 @@
             max-width: 500px; /* Max width for the content card */
             padding: 1rem; /* Padding for smaller screens */
             animation: zoomInEffect 0.7s ease-out forwards; /* Added zoom-in animation */
+            /* Ensure container background is distinct if body background changes dramatically */
+            background-color: rgba(30, 41, 59, 0.9); /* Tailwind slate-800 with slight transparency */
+            /* The container already has bg-slate-800 via Tailwind, this ensures it's respected */
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
@@ -131,6 +135,23 @@
             padding-top: 6px; /* Adjusted vertical padding when visible */
             padding-bottom: 6px; /* Adjusted vertical padding when visible */
         }
+
+        /* Flame animation for the body background */
+        @keyframes flameAnimation {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 50%; }
+            50% { background-position: 0% 50%; }
+            75% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .flames-background {
+            /* Using !important to ensure it overrides Tailwind's gradient if necessary.
+               A more specific selector or different CSS ordering could also work. */
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab, #ff4500, #ff8c00, #ff0000) !important;
+            background-size: 600% 600% !important; /* Larger size for smoother, slower animation */
+            animation: flameAnimation 15s ease infinite !important;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -225,6 +246,7 @@
             clearTimeout(dragonTimeout); 
             dragonTimeout = setTimeout(() => {
                 dragonText.classList.add('visible');
+                document.body.classList.add('flames-background'); // Add flame background to body
             }, 3000); 
         });
 
@@ -235,6 +257,7 @@
             }
             clearTimeout(dragonTimeout);
             dragonText.classList.remove('visible');
+            document.body.classList.remove('flames-background'); // Remove flame background from body
         });
 
         // Birthday Countdown Logic
@@ -256,10 +279,7 @@
             let months = 0;
             let tempCounterDate = new Date(startDate);
 
-            // Count full months by advancing month by month
-            // This loop iterates, incrementing 'months' for each full month that fits between startDate and endDate.
-            // tempCounterDate is advanced by one month in each step if the next month still fits within the timeframe.
-            for (let i = 0; i < 120; i++) { // Max 10 years of months, more than enough
+            for (let i = 0; i < 120; i++) { 
                 let nextMonthTemp = new Date(tempCounterDate);
                 nextMonthTemp.setMonth(nextMonthTemp.getMonth() + 1);
                 if (nextMonthTemp <= endDate) {
@@ -270,10 +290,8 @@
                 }
             }
             
-            // Calculate remaining time after full months are accounted for
-            // This is the duration from the end of the last full month to the target date
             let remainingMsAfterMonths = endDate.getTime() - tempCounterDate.getTime();
-            if (remainingMsAfterMonths < 0) remainingMsAfterMonths = 0; // Safety check
+            if (remainingMsAfterMonths < 0) remainingMsAfterMonths = 0; 
 
             let totalDaysAfterMonths = Math.floor(remainingMsAfterMonths / (1000 * 60 * 60 * 24));
             
@@ -284,7 +302,7 @@
         }
 
         function updateCountdown() {
-            if (!countdownTimerElement) return; // Guard clause
+            if (!countdownTimerElement) return; 
 
             const now = new Date();
             let currentYear = now.getFullYear();
@@ -295,15 +313,14 @@
                  return;
             }
             
-            // If the target birthday for this year has passed (or is today but before current time), set to next year
             if (now.getTime() >= targetBirthdayDate.getTime()) {
                 targetBirthdayDate.setFullYear(currentYear + 1);
             }
             
             const timeParts = calculateTimeDifference(targetBirthdayDate, now);
 
-            if (timeParts.isPast) { // Should be handled by year adjustment, but as a fallback
-                countdownTimerElement.innerHTML = "It's past!"; // Or recalculate for next year again
+            if (timeParts.isPast) { 
+                countdownTimerElement.innerHTML = "It's past!"; 
                 return;
             }
 
@@ -312,11 +329,7 @@
             if (timeParts.weeks > 0) parts.push(`${timeParts.weeks} week${timeParts.weeks > 1 ? 's' : ''}`);
             if (timeParts.days > 0) parts.push(`${timeParts.days} day${timeParts.days !== 1 ? 's' : ''}`);
             
-            // Always show H, M, S if it's the only part, or if other parts exist.
-            // This ensures "0h 0m 0s" doesn't show if months/weeks/days are present and time is exactly 00:00:00.
-            // But if only time is left (e.g. < 1 day), it will show.
             if (parts.length > 0 || timeParts.hours > 0 || timeParts.minutes > 0 || timeParts.seconds >= 0 ) {
-                 // Only add the time string if there are actual time values or if it's the only thing to display
                 if (timeParts.hours > 0 || timeParts.minutes > 0 || timeParts.seconds >= 0 || parts.length === 0) {
                     parts.push(`${timeParts.hours}h ${timeParts.minutes}m ${timeParts.seconds}s`);
                 }
@@ -325,8 +338,6 @@
             if (parts.length > 0) {
                 countdownTimerElement.innerHTML = parts.join(', ');
             } else {
-                // This case might occur if diff is very small (e.g. < 1s) and all components round to 0
-                // or if the birthday is exactly now but the "Happy Birthday" check somehow missed.
                 countdownTimerElement.innerHTML = "It's almost here!"; 
             }
         }
@@ -338,7 +349,7 @@
 
         // Age Calculation Logic
         const ageElement = document.getElementById('currentAge');
-        const birthDate = new Date(2001, 10, 9); // Month is 0-indexed, so 10 is November
+        const birthDate = new Date(2001, 10, 9); 
 
         function calculateAge() {
             const today = new Date();
