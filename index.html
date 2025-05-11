@@ -11,9 +11,7 @@
         /* Custom font - Inter */
         body {
             font-family: 'Inter', sans-serif;
-            /* height: 100%; Removed as min-h-screen from Tailwind is sufficient and potentially better */
             margin: 0; /* Basic reset */
-            /* Redundant flex properties covered by Tailwind classes are removed for clarity */
         }
         /* Fallback for Inter font if Google Fonts is not available */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -138,7 +136,8 @@
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
-        <div class="mb-6"> <div class="profile-image-wrapper">
+        <div class="mb-6"> 
+            <div class="profile-image-wrapper">
                 <img src="com.png" alt="Profile Picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-2 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
                 <p id="dragonText">Do Not The Dragon</p>
             </div>
@@ -146,23 +145,21 @@
 
         <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
 
-        <!-- Empty line that was between audio and button div -->
-        <div class="mb-6"> <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
-            <p class="text-slate-300 bio-text text-base md:text-lg">
+        <div class="mb-6"> 
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
+            <p class="text-slate-300 bio-text text-base md:text-lg mb-4"> 
                 <span class="highlight-text">Welcome to my personal hub!</span>
             </p>
+            <div class="mb-4"> 
+                 <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
+                   class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
+                    More info about Kazu
+                </a>
+            </div>
         </div>
-        <!-- Empty line that was between button div and name/welcome div -->
 
-        <div class="mb-4">
-             <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
-               class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
-                More info about Kazu
-            </a>
-        </div>
-        <!-- Empty line that was after name/welcome div -->
         <div id="birthdayCountdown" class="text-slate-300">
-            Birthday is in <span id="countdownTimer"></span>
+            Birthday is in <span id="countdownTimer">Loading...</span>
         </div>
 
         <div id="ageDisplay" class="text-slate-300">
@@ -242,44 +239,96 @@
 
         // Birthday Countdown Logic
         const countdownTimerElement = document.getElementById('countdownTimer');
-        const birthdayMonth = 10; // November (0-indexed)
+        const birthdayMonth = 10; // November (0-indexed, so January is 0)
         const birthdayDay = 9;
 
+        function calculateTimeDifference(endDate, startDate) {
+            let diffMs = endDate.getTime() - startDate.getTime();
+
+            if (diffMs <= 0) {
+                return { months: 0, weeks: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
+            }
+
+            let seconds = Math.floor((diffMs / 1000) % 60);
+            let minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+            let hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+
+            let months = 0;
+            let tempCounterDate = new Date(startDate);
+
+            // Count full months by advancing month by month
+            // This loop iterates, incrementing 'months' for each full month that fits between startDate and endDate.
+            // tempCounterDate is advanced by one month in each step if the next month still fits within the timeframe.
+            for (let i = 0; i < 120; i++) { // Max 10 years of months, more than enough
+                let nextMonthTemp = new Date(tempCounterDate);
+                nextMonthTemp.setMonth(nextMonthTemp.getMonth() + 1);
+                if (nextMonthTemp <= endDate) {
+                    months++;
+                    tempCounterDate.setMonth(tempCounterDate.getMonth() + 1);
+                } else {
+                    break;
+                }
+            }
+            
+            // Calculate remaining time after full months are accounted for
+            // This is the duration from the end of the last full month to the target date
+            let remainingMsAfterMonths = endDate.getTime() - tempCounterDate.getTime();
+            if (remainingMsAfterMonths < 0) remainingMsAfterMonths = 0; // Safety check
+
+            let totalDaysAfterMonths = Math.floor(remainingMsAfterMonths / (1000 * 60 * 60 * 24));
+            
+            let weeks = Math.floor(totalDaysAfterMonths / 7);
+            let days = totalDaysAfterMonths % 7;
+
+            return { months, weeks, days, hours, minutes, seconds, isPast: false };
+        }
+
         function updateCountdown() {
+            if (!countdownTimerElement) return; // Guard clause
+
             const now = new Date();
             let currentYear = now.getFullYear();
-            let targetBirthday = new Date(currentYear, birthdayMonth, birthdayDay, 0, 0, 0, 0);
+            let targetBirthdayDate = new Date(currentYear, birthdayMonth, birthdayDay, 0, 0, 0, 0);
 
             if (now.getMonth() === birthdayMonth && now.getDate() === birthdayDay) {
                  countdownTimerElement.innerHTML = "Happy Birthday!";
                  return;
             }
             
-            if (now.getTime() > targetBirthday.getTime()) {
-                targetBirthday.setFullYear(currentYear + 1);
+            // If the target birthday for this year has passed (or is today but before current time), set to next year
+            if (now.getTime() >= targetBirthdayDate.getTime()) {
+                targetBirthdayDate.setFullYear(currentYear + 1);
             }
             
-            const diff = targetBirthday.getTime() - now.getTime();
+            const timeParts = calculateTimeDifference(targetBirthdayDate, now);
 
-            if (diff <= 0) { 
-                if (targetBirthday.getTime() <= now.getTime()) { 
-                    targetBirthday.setFullYear(targetBirthday.getFullYear() + 1);
-                }
-                const finalDiff = targetBirthday.getTime() - now.getTime();
-                const days = Math.floor(finalDiff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((finalDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((finalDiff % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((finalDiff % (1000 * 60)) / 1000);
-                countdownTimerElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            if (timeParts.isPast) { // Should be handled by year adjustment, but as a fallback
+                countdownTimerElement.innerHTML = "It's past!"; // Or recalculate for next year again
                 return;
             }
 
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            countdownTimerElement.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            let parts = [];
+            if (timeParts.months > 0) parts.push(`${timeParts.months} month${timeParts.months > 1 ? 's' : ''}`);
+            if (timeParts.weeks > 0) parts.push(`${timeParts.weeks} week${timeParts.weeks > 1 ? 's' : ''}`);
+            if (timeParts.days > 0) parts.push(`${timeParts.days} day${timeParts.days !== 1 ? 's' : ''}`);
+            
+            // Always show H, M, S if it's the only part, or if other parts exist.
+            // This ensures "0h 0m 0s" doesn't show if months/weeks/days are present and time is exactly 00:00:00.
+            // But if only time is left (e.g. < 1 day), it will show.
+            if (parts.length > 0 || timeParts.hours > 0 || timeParts.minutes > 0 || timeParts.seconds >= 0 ) {
+                 // Only add the time string if there are actual time values or if it's the only thing to display
+                if (timeParts.hours > 0 || timeParts.minutes > 0 || timeParts.seconds >= 0 || parts.length === 0) {
+                    parts.push(`${timeParts.hours}h ${timeParts.minutes}m ${timeParts.seconds}s`);
+                }
+            }
+            
+            if (parts.length > 0) {
+                countdownTimerElement.innerHTML = parts.join(', ');
+            } else {
+                // This case might occur if diff is very small (e.g. < 1s) and all components round to 0
+                // or if the birthday is exactly now but the "Happy Birthday" check somehow missed.
+                countdownTimerElement.innerHTML = "It's almost here!"; 
+            }
         }
 
         if (countdownTimerElement) {
@@ -289,7 +338,7 @@
 
         // Age Calculation Logic
         const ageElement = document.getElementById('currentAge');
-        const birthDate = new Date(2001, 10, 9); 
+        const birthDate = new Date(2001, 10, 9); // Month is 0-indexed, so 10 is November
 
         function calculateAge() {
             const today = new Date();
