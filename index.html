@@ -21,7 +21,19 @@
         .social-icon { /* Also used for GitHub, Story buttons */
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
             font-size: 0.9rem; 
+            position: relative; /* Needed for ::before pseudo-element stacking */
+            overflow: hidden; /* Ensures pseudo-element respects border-radius */
+            z-index: 1; /* Ensures content is above pseudo-elements if they are not z-indexed negatively */
         }
+        .social-icon span { /* Target the text span directly for z-index if needed */
+            position: relative;
+            z-index: 2;
+        }
+        .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
+            position: relative;
+            z-index: 2;
+        }
+
         .social-icon:hover {
             transform: translateY(-5px) scale(1.03); 
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
@@ -197,6 +209,39 @@
             transform: scale(1.03); /* Slight scale on hover */
         }
 
+        /* Styles for story buttons with image backgrounds */
+        .story-button-legend, .story-button-naga {
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            color: white; /* Ensure text is white */
+        }
+
+        .story-button-legend::before, .story-button-naga::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4); /* Dark overlay */
+            border-radius: inherit; /* Match parent's border-radius (from .social-icon -> .rounded-lg) */
+            z-index: 1; /* Place overlay behind text but above background image */
+            transition: background-color 0.3s ease;
+        }
+
+        .story-button-legend:hover::before, .story-button-naga:hover::before {
+            background-color: rgba(0, 0, 0, 0.6); /* Darker overlay on hover */
+        }
+
+        .story-button-legend {
+            background-image: url('blood.png');
+        }
+
+        .story-button-naga {
+            background-image: url('arctic.jpg');
+        }
+
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -242,27 +287,27 @@
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
-                Twitter
+                <span>Twitter</span>
             </a>
             <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="tiktok_logo.png" alt="TikTok Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/000000/ffffff?text=TT&font=roboto'; this.alt='TikTok Placeholder';">
-                TikTok
+                <span>TikTok</span>
             </a>
             <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="youtube_logo.png" alt="YouTube Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF0000/ffffff?text=YT&font=roboto'; this.alt='YouTube Placeholder';">
-                YouTube
+                <span>YouTube</span>
             </a>
             <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="steam_logo.png" alt="Steam Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1b2838/ffffff?text=S&font=roboto'; this.alt='Steam Placeholder';">
-                Steam
+                <span>Steam</span>
             </a>
             <a href="https://www.reddit.com/user/Korat24/" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
-                Reddit
+                <span>Reddit</span>
             </a>
         </div>
 
@@ -273,16 +318,16 @@
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
                 </svg>
-                View on GitHub
+                <span>View on GitHub</span>
             </a>
             <h3 class="text-lg font-semibold text-indigo-300 mt-6 mb-3">My Stories</h3>
             <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2">
-                The Legend That Bleeds
+               class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2">
+                <span>The Legend That Bleeds</span>
             </a>
             <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
-                The Naga And Human Kind
+               class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                <span>The Naga And Human Kind</span>
             </a>
         </div>
 
