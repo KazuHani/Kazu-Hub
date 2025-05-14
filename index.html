@@ -228,6 +228,11 @@
     </div>
 
     <script>
+        // Explicitly set scroll restoration to manual before anything else
+        if (history.scrollRestoration) {
+            history.scrollRestoration = 'manual';
+        }
+
         // This function will run once the entire page is loaded
         window.onload = function() {
             // Ensure page starts scrolled to the top
@@ -340,11 +345,9 @@
                 const timeParts = calculateTimeDifference(targetBirthdayDate, now);
 
                 if (timeParts.isPast) { 
-                    // This should ideally be caught by the year increment logic
-                    // If it still happens, force recalculation for next year.
                     targetBirthdayDate.setFullYear(targetBirthdayDate.getFullYear() +1);
                     const newTimeParts = calculateTimeDifference(targetBirthdayDate, now);
-                    if(newTimeParts.isPast) { // Should not happen if logic is correct
+                    if(newTimeParts.isPast) { 
                          countdownTimerElement.innerHTML = "See you next year!";
                          return;
                     }
@@ -362,7 +365,6 @@
                 if (timeParts.weeks > 0) parts.push(`${timeParts.weeks} week${timeParts.weeks > 1 ? 's' : ''}`);
                 if (timeParts.days > 0) parts.push(`${timeParts.days} day${timeParts.days !== 1 ? 's' : ''}`);
                 
-                // Always show H, M, S
                 parts.push(`${timeParts.hours}h ${timeParts.minutes}m ${timeParts.seconds}s`);
                 
                 countdownTimerElement.innerHTML = parts.join(', ');
@@ -375,7 +377,7 @@
 
             // Age Calculation Logic
             const ageElement = document.getElementById('currentAge');
-            const birthDate = new Date(2001, 10, 9); // Month is 0-indexed, so 10 is November
+            const birthDate = new Date(2001, 10, 9); 
 
             function calculateAge() {
                 const today = new Date();
