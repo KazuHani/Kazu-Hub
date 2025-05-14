@@ -183,7 +183,8 @@
             I am currently <span id="currentAge"></span> years old.
         </div>
 
-        <div class="space-y-4 mb-8"> <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
+        <div class="space-y-4 mb-8"> 
+            <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
                 Twitter
@@ -210,7 +211,8 @@
             </a>
         </div>
 
-        <div class="mt-8 pt-6 border-t border-slate-700"> <h2 class="text-xl font-semibold text-indigo-400 mb-4">Code used for this website</h2>
+        <div class="mt-8 pt-6 border-t border-slate-700"> 
+            <h2 class="text-xl font-semibold text-indigo-400 mb-4">Code used for this website</h2>
             <a href="https://github.com/KazuHani/Website" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -226,151 +228,170 @@
     </div>
 
     <script>
-        // Profile picture elements and sound
-        const profilePic = document.getElementById('profilePic');
-        const spinSound = document.getElementById('spinSound');
-        const dragonText = document.getElementById('dragonText'); 
-        let dragonTimeout; 
+        // This function will run once the entire page is loaded
+        window.onload = function() {
+            // Ensure page starts scrolled to the top
+            window.scrollTo(0, 0);
 
-        if (spinSound) {
-            spinSound.load();
-        }
+            // Profile picture elements and sound
+            const profilePic = document.getElementById('profilePic');
+            const spinSound = document.getElementById('spinSound');
+            const dragonText = document.getElementById('dragonText'); 
+            let dragonTimeout; 
 
-        profilePic.addEventListener('mouseenter', () => {
-            if (spinSound && spinSound.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
-                spinSound.currentTime = 0;
-                const playPromise = spinSound.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.warn("Audio play on hover was prevented by the browser.", error);
-                    });
-                }
-            } else if (spinSound) {
-                console.warn("Audio is not ready to play. Current readyState: " + spinSound.readyState);
-            }
-
-            clearTimeout(dragonTimeout); 
-            dragonTimeout = setTimeout(() => {
-                dragonText.classList.add('visible');
-                document.body.classList.add('flames-background'); // Add flame background to body
-            }, 3000); 
-        });
-
-        profilePic.addEventListener('mouseleave', () => {
             if (spinSound) {
-                spinSound.pause();
-                spinSound.currentTime = 0;
-            }
-            clearTimeout(dragonTimeout);
-            dragonText.classList.remove('visible');
-            document.body.classList.remove('flames-background'); // Remove flame background from body
-        });
-
-        // Birthday Countdown Logic
-        const countdownTimerElement = document.getElementById('countdownTimer');
-        const birthdayMonth = 10; // November (0-indexed, so January is 0)
-        const birthdayDay = 9;
-
-        function calculateTimeDifference(endDate, startDate) {
-            let diffMs = endDate.getTime() - startDate.getTime();
-
-            if (diffMs <= 0) {
-                return { months: 0, weeks: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
+                spinSound.load(); // Preload the audio
             }
 
-            let seconds = Math.floor((diffMs / 1000) % 60);
-            let minutes = Math.floor((diffMs / (1000 * 60)) % 60);
-            let hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
+            if (profilePic) { // Check if profilePic element exists
+                profilePic.addEventListener('mouseenter', () => {
+                    // Play sound
+                    if (spinSound && spinSound.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+                        spinSound.currentTime = 0;
+                        const playPromise = spinSound.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(error => {
+                                console.warn("Audio play on hover was prevented by the browser.", error);
+                            });
+                        }
+                    } else if (spinSound) {
+                        console.warn("Audio is not ready to play. Current readyState: " + spinSound.readyState);
+                    }
 
-            let months = 0;
-            let tempCounterDate = new Date(startDate);
+                    // Set timeout to show dragon text and change background
+                    clearTimeout(dragonTimeout); 
+                    dragonTimeout = setTimeout(() => {
+                        if (dragonText) dragonText.classList.add('visible');
+                        document.body.classList.add('flames-background'); 
+                    }, 3000); 
+                });
 
-            for (let i = 0; i < 120; i++) { 
-                let nextMonthTemp = new Date(tempCounterDate);
-                nextMonthTemp.setMonth(nextMonthTemp.getMonth() + 1);
-                if (nextMonthTemp <= endDate) {
-                    months++;
-                    tempCounterDate.setMonth(tempCounterDate.getMonth() + 1);
-                } else {
-                    break;
+                profilePic.addEventListener('mouseleave', () => {
+                    // Pause sound
+                    if (spinSound) {
+                        spinSound.pause();
+                        spinSound.currentTime = 0;
+                    }
+                    // Hide dragon text, remove flame background, and clear timeout
+                    clearTimeout(dragonTimeout);
+                    if (dragonText) dragonText.classList.remove('visible');
+                    document.body.classList.remove('flames-background'); 
+                });
+            }
+
+
+            // Birthday Countdown Logic
+            const countdownTimerElement = document.getElementById('countdownTimer');
+            const birthdayMonth = 10; // November (0-indexed)
+            const birthdayDay = 9;
+
+            function calculateTimeDifference(endDate, startDate) {
+                let diffMs = endDate.getTime() - startDate.getTime();
+
+                if (diffMs <= 0) {
+                    return { months: 0, weeks: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
                 }
-            }
-            
-            let remainingMsAfterMonths = endDate.getTime() - tempCounterDate.getTime();
-            if (remainingMsAfterMonths < 0) remainingMsAfterMonths = 0; 
 
-            let totalDaysAfterMonths = Math.floor(remainingMsAfterMonths / (1000 * 60 * 60 * 24));
-            
-            let weeks = Math.floor(totalDaysAfterMonths / 7);
-            let days = totalDaysAfterMonths % 7;
+                let seconds = Math.floor((diffMs / 1000) % 60);
+                let minutes = Math.floor((diffMs / (1000 * 60)) % 60);
+                let hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
 
-            return { months, weeks, days, hours, minutes, seconds, isPast: false };
-        }
+                let months = 0;
+                let tempCounterDate = new Date(startDate);
 
-        function updateCountdown() {
-            if (!countdownTimerElement) return; 
-
-            const now = new Date();
-            let currentYear = now.getFullYear();
-            let targetBirthdayDate = new Date(currentYear, birthdayMonth, birthdayDay, 0, 0, 0, 0);
-
-            if (now.getMonth() === birthdayMonth && now.getDate() === birthdayDay) {
-                 countdownTimerElement.innerHTML = "Happy Birthday!";
-                 return;
-            }
-            
-            if (now.getTime() >= targetBirthdayDate.getTime()) {
-                targetBirthdayDate.setFullYear(currentYear + 1);
-            }
-            
-            const timeParts = calculateTimeDifference(targetBirthdayDate, now);
-
-            if (timeParts.isPast) { 
-                countdownTimerElement.innerHTML = "It's past!"; 
-                return;
-            }
-
-            let parts = [];
-            if (timeParts.months > 0) parts.push(`${timeParts.months} month${timeParts.months > 1 ? 's' : ''}`);
-            if (timeParts.weeks > 0) parts.push(`${timeParts.weeks} week${timeParts.weeks > 1 ? 's' : ''}`);
-            if (timeParts.days > 0) parts.push(`${timeParts.days} day${timeParts.days !== 1 ? 's' : ''}`);
-            
-            if (parts.length > 0 || timeParts.hours > 0 || timeParts.minutes > 0 || timeParts.seconds >= 0 ) {
-                if (timeParts.hours > 0 || timeParts.minutes > 0 || timeParts.seconds >= 0 || parts.length === 0) {
-                    parts.push(`${timeParts.hours}h ${timeParts.minutes}m ${timeParts.seconds}s`);
+                for (let i = 0; i < 120; i++) { // Max 10 years of months
+                    let nextMonthTemp = new Date(tempCounterDate);
+                    nextMonthTemp.setMonth(nextMonthTemp.getMonth() + 1);
+                    if (nextMonthTemp <= endDate) {
+                        months++;
+                        tempCounterDate.setMonth(tempCounterDate.getMonth() + 1);
+                    } else {
+                        break;
+                    }
                 }
+                
+                let remainingMsAfterMonths = endDate.getTime() - tempCounterDate.getTime();
+                if (remainingMsAfterMonths < 0) remainingMsAfterMonths = 0; 
+
+                let totalDaysAfterMonths = Math.floor(remainingMsAfterMonths / (1000 * 60 * 60 * 24));
+                
+                let weeks = Math.floor(totalDaysAfterMonths / 7);
+                let days = totalDaysAfterMonths % 7;
+
+                return { months, weeks, days, hours, minutes, seconds, isPast: false };
             }
-            
-            if (parts.length > 0) {
+
+            function updateCountdown() {
+                if (!countdownTimerElement) return; 
+
+                const now = new Date();
+                let currentYear = now.getFullYear();
+                let targetBirthdayDate = new Date(currentYear, birthdayMonth, birthdayDay, 0, 0, 0, 0);
+
+                if (now.getMonth() === birthdayMonth && now.getDate() === birthdayDay) {
+                     countdownTimerElement.innerHTML = "Happy Birthday!";
+                     return;
+                }
+                
+                if (now.getTime() >= targetBirthdayDate.getTime()) {
+                    targetBirthdayDate.setFullYear(currentYear + 1);
+                }
+                
+                const timeParts = calculateTimeDifference(targetBirthdayDate, now);
+
+                if (timeParts.isPast) { 
+                    // This should ideally be caught by the year increment logic
+                    // If it still happens, force recalculation for next year.
+                    targetBirthdayDate.setFullYear(targetBirthdayDate.getFullYear() +1);
+                    const newTimeParts = calculateTimeDifference(targetBirthdayDate, now);
+                    if(newTimeParts.isPast) { // Should not happen if logic is correct
+                         countdownTimerElement.innerHTML = "See you next year!";
+                         return;
+                    }
+                     let partsRecalc = [];
+                    if (newTimeParts.months > 0) partsRecalc.push(`${newTimeParts.months} month${newTimeParts.months > 1 ? 's' : ''}`);
+                    if (newTimeParts.weeks > 0) partsRecalc.push(`${newTimeParts.weeks} week${newTimeParts.weeks > 1 ? 's' : ''}`);
+                    if (newTimeParts.days > 0) partsRecalc.push(`${newTimeParts.days} day${newTimeParts.days !== 1 ? 's' : ''}`);
+                    partsRecalc.push(`${newTimeParts.hours}h ${newTimeParts.minutes}m ${newTimeParts.seconds}s`);
+                    countdownTimerElement.innerHTML = partsRecalc.join(', ');
+                    return;
+                }
+
+                let parts = [];
+                if (timeParts.months > 0) parts.push(`${timeParts.months} month${timeParts.months > 1 ? 's' : ''}`);
+                if (timeParts.weeks > 0) parts.push(`${timeParts.weeks} week${timeParts.weeks > 1 ? 's' : ''}`);
+                if (timeParts.days > 0) parts.push(`${timeParts.days} day${timeParts.days !== 1 ? 's' : ''}`);
+                
+                // Always show H, M, S
+                parts.push(`${timeParts.hours}h ${timeParts.minutes}m ${timeParts.seconds}s`);
+                
                 countdownTimerElement.innerHTML = parts.join(', ');
-            } else {
-                countdownTimerElement.innerHTML = "It's almost here!"; 
             }
-        }
 
-        if (countdownTimerElement) {
-            setInterval(updateCountdown, 1000);
-            updateCountdown(); 
-        }
+            if (countdownTimerElement) {
+                setInterval(updateCountdown, 1000);
+                updateCountdown(); 
+            }
 
-        // Age Calculation Logic
-        const ageElement = document.getElementById('currentAge');
-        const birthDate = new Date(2001, 10, 9); 
+            // Age Calculation Logic
+            const ageElement = document.getElementById('currentAge');
+            const birthDate = new Date(2001, 10, 9); // Month is 0-indexed, so 10 is November
 
-        function calculateAge() {
-            const today = new Date();
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDifference = today.getMonth() - birthDate.getMonth();
-            if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-                age--;
+            function calculateAge() {
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDifference = today.getMonth() - birthDate.getMonth();
+                if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                if (ageElement) {
+                    ageElement.textContent = age;
+                }
             }
             if (ageElement) {
-                ageElement.textContent = age;
+                calculateAge();
             }
-        }
-        if (ageElement) {
-            calculateAge();
-        }
+        }; // End of window.onload
         
     </script>
 </body>
