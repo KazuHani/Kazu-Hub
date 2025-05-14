@@ -12,7 +12,7 @@
         body {
             font-family: 'Inter', sans-serif;
             margin: 0; /* Basic reset */
-            transition: background 0.7s ease-in-out; /* Smooth transition for background changes */
+            transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
         }
         /* Fallback for Inter font if Google Fonts is not available */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -31,10 +31,8 @@
             width: 100%;
             max-width: 500px; /* Max width for the content card */
             padding: 1rem; /* Padding for smaller screens */
-            animation: zoomInEffect 0.9s ease-out forwards; /* Added zoom-in animation */
-            /* Ensure container background is distinct if body background changes dramatically */
+            animation: zoomInEffect 0.7s ease-out forwards; /* Added zoom-in animation */
             background-color: rgba(30, 41, 59, 0.9); /* Tailwind slate-800 with slight transparency */
-            /* The container already has bg-slate-800 via Tailwind, this ensures it's respected */
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
@@ -63,10 +61,10 @@
 
         /* Styling for profile picture spin animation */
         .profile-picture {
-            transition: transform 0.5s ease-in-out; /* Smooth transition for the initial state (not spinning) */
+            transition: transform 0.5s ease-in-out;
         }
         .profile-picture:hover {
-            animation: continuousSpin 2s linear infinite; /* Apply continuous spin on hover */
+            animation: continuousSpin 2s linear infinite;
         }
 
         /* Keyframes for the zoom-in animation */
@@ -84,56 +82,56 @@
         #birthdayCountdown {
             font-size: 1rem;
             color: #cbd5e1; /* slate-300 */
-            margin-bottom: 0.5rem; /* Reduced margin to bring age closer */
+            margin-bottom: 0.5rem;
         }
         /* Styling for age display */
         #ageDisplay {
             font-size: 1rem;
             color: #cbd5e1; /* slate-300 */
-            margin-bottom: 1.5rem; /* Add some space below the age */
+            margin-bottom: 1.5rem;
         }
         /* Styling for bio text */
         .bio-text {
-            font-size: 0.95rem; /* Reduced font size for bio */
+            font-size: 0.95rem;
         }
         /* Styling for highlighted text in bio */
         .highlight-text {
-            color: #818cf8; /* Tailwind's indigo-400, can be adjusted */
+            color: #818cf8; /* Tailwind's indigo-400 */
             font-weight: 600; /* semi-bold */
         }
 
         /* Container for profile picture and dragon text */
         .profile-image-wrapper {
-            display: inline-block; /* Keeps the block tight around its content */
-            text-align: center; /* Centers the image and the text block below it */
+            display: inline-block;
+            text-align: center;
         }
 
         /* Styling for the "Do Not The Dragon" text */
         #dragonText {
-            max-height: 0; /* Initially collapsed */
-            opacity: 0; /* Initially invisible */
-            overflow: hidden; /* Crucial for the max-height transition */
-            color: #f87171; /* A reddish color */
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            color: #f87171;
             font-weight: bold;
-            font-size: 1.5rem; /* Increased font size */
-            white-space: nowrap; /* Prevent text from wrapping */
-            background-color: rgba(30, 41, 59, 0.85); /* Dark slate background with opacity */
-            border-radius: 0.375rem; /* Tailwind's rounded-md */
-            padding-left: 12px; /* Adjusted horizontal padding */
-            padding-right: 12px; /* Adjusted horizontal padding */
-            padding-top: 0; /* Vertical padding controlled by transition */
-            padding-bottom: 0; /* Vertical padding controlled by transition */
-            margin-top: 0; /* Margin controlled by transition */
-            box-sizing: border-box; /* Ensures padding doesn't add to max-height unexpectedly */
+            font-size: 1.5rem;
+            white-space: nowrap;
+            background-color: rgba(30, 41, 59, 0.85);
+            border-radius: 0.375rem;
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0;
+            box-sizing: border-box;
             transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
         }
 
         #dragonText.visible {
-            max-height: 70px; /* Increased max-height to accommodate larger text and padding */
+            max-height: 70px;
             opacity: 1;
-            margin-top: 10px; /* Adjusted space between image and text box */
-            padding-top: 6px; /* Adjusted vertical padding when visible */
-            padding-bottom: 6px; /* Adjusted vertical padding when visible */
+            margin-top: 10px;
+            padding-top: 6px;
+            padding-bottom: 6px;
         }
 
         /* Flame animation for the body background */
@@ -146,10 +144,8 @@
         }
 
         .flames-background {
-            /* Using !important to ensure it overrides Tailwind's gradient if necessary.
-               A more specific selector or different CSS ordering could also work. */
             background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab, #ff4500, #ff8c00, #ff0000) !important;
-            background-size: 600% 600% !important; /* Larger size for smoother, slower animation */
+            background-size: 600% 600% !important;
             animation: flameAnimation 15s ease infinite !important;
         }
     </style>
@@ -187,8 +183,7 @@
             I am currently <span id="currentAge"></span> years old.
         </div>
 
-        <div class="space-y-4">
-            <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
+        <div class="space-y-4 mb-8"> <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
                 Twitter
@@ -214,6 +209,17 @@
                 Reddit
             </a>
         </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-700"> <h2 class="text-xl font-semibold text-indigo-400 mb-4">Code used for this website</h2>
+            <a href="https://github.com/KazuHani/Website" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
+                </svg>
+                View on GitHub
+            </a>
+        </div>
+
 
         <footer class="mt-10 pt-6 border-t border-slate-600">
             </footer>
