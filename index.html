@@ -18,25 +18,25 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         /* Styling for the social media icons for a little pop */
-        .social-icon {
+        .social-icon { /* Also used for GitHub, Story buttons */
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-            font-size: 0.9rem; /* Reduced font size for social icon text */
+            font-size: 0.9rem; 
         }
         .social-icon:hover {
-            transform: translateY(-5px) scale(1.03); /* Adjusted scale for consistency */
+            transform: translateY(-5px) scale(1.03); 
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
 
         .container {
             width: 100%;
-            max-width: 500px; /* Max width for the content card */
-            padding: 1rem; /* Padding for smaller screens */
-            animation: zoomInEffect 0.7s ease-out forwards; /* Added zoom-in animation */
+            max-width: 500px; 
+            padding: 1rem; 
+            animation: zoomInEffect 0.7s ease-out forwards; 
             background-color: rgba(30, 41, 59, 0.9); /* Tailwind slate-800 with slight transparency */
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
-                padding: 2rem; /* More padding for larger screens */
+                padding: 2rem; 
             }
         }
         /* Updated transition for info-button to include box-shadow */
@@ -148,6 +148,55 @@
             background-size: 600% 600% !important;
             animation: flameAnimation 15s ease infinite !important;
         }
+
+        /* Styles for the name dropdown */
+        #nameContainer {
+            display: inline-block; 
+            position: relative; 
+        }
+
+        #kazuName { 
+             cursor: pointer; 
+        }
+
+        .name-dropdown-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out, margin-top 0.3s ease-out;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0;
+        }
+
+        .name-dropdown-content.visible {
+            opacity: 1;
+            max-height: 150px; 
+            padding-top: 0.5rem; 
+            padding-bottom: 0.5rem; 
+            margin-top: 0.25rem; 
+        }
+
+        .dropdown-button {
+            display: block;
+            width: 90%; 
+            margin: 0.35rem auto; 
+            padding: 0.65rem 1rem;
+            background-color: #4f46e5; /* Tailwind's indigo-600 */
+            color: white;
+            text-align: center;
+            border-radius: 0.5rem; /* Tailwind's rounded-lg */
+            font-weight: 500; /* medium */
+            text-decoration: none;
+            font-size: 0.85rem; /* Slightly smaller text */
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .dropdown-button:hover {
+            background-color: #4338ca; /* Tailwind's indigo-700 */
+            transform: scale(1.03); /* Slight scale on hover */
+        }
+
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -162,9 +211,15 @@
 
         <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
 
-        <div class="mb-6"> 
-            <h1 class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
-            <p class="text-slate-300 bio-text text-base md:text-lg mb-4"> 
+        <div class="mb-6 text-center">
+            <div id="nameContainer" class="inline-block">
+                <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-1 text-indigo-400">Kazu Hani</h1>
+                <div id="nameDropdown" class="name-dropdown-content">
+                    <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer" class="dropdown-button">The Legend That Bleeds</a>
+                    <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer" class="dropdown-button">The Story Of Kazu</a>
+                </div>
+            </div>
+            <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-4"> 
                 <span class="highlight-text">Welcome to my personal hub!</span>
             </p>
             <div class="mb-4"> 
@@ -220,6 +275,15 @@
                 </svg>
                 View on GitHub
             </a>
+            <h3 class="text-lg font-semibold text-indigo-300 mt-6 mb-3">My Stories</h3>
+            <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2">
+                The Legend That Bleeds
+            </a>
+            <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
+               class="social-icon flex items-center justify-center w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                The Naga And Human Kind
+            </a>
         </div>
 
 
@@ -233,24 +297,20 @@
             history.scrollRestoration = 'manual';
         }
 
-        // This function will run once the entire page is loaded
         window.onload = function() {
-            // Ensure page starts scrolled to the top
             window.scrollTo(0, 0);
 
-            // Profile picture elements and sound
             const profilePic = document.getElementById('profilePic');
             const spinSound = document.getElementById('spinSound');
             const dragonText = document.getElementById('dragonText'); 
             let dragonTimeout; 
 
             if (spinSound) {
-                spinSound.load(); // Preload the audio
+                spinSound.load(); 
             }
 
-            if (profilePic) { // Check if profilePic element exists
+            if (profilePic) { 
                 profilePic.addEventListener('mouseenter', () => {
-                    // Play sound
                     if (spinSound && spinSound.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
                         spinSound.currentTime = 0;
                         const playPromise = spinSound.play();
@@ -263,7 +323,6 @@
                         console.warn("Audio is not ready to play. Current readyState: " + spinSound.readyState);
                     }
 
-                    // Set timeout to show dragon text and change background
                     clearTimeout(dragonTimeout); 
                     dragonTimeout = setTimeout(() => {
                         if (dragonText) dragonText.classList.add('visible');
@@ -272,15 +331,31 @@
                 });
 
                 profilePic.addEventListener('mouseleave', () => {
-                    // Pause sound
                     if (spinSound) {
                         spinSound.pause();
                         spinSound.currentTime = 0;
                     }
-                    // Hide dragon text, remove flame background, and clear timeout
                     clearTimeout(dragonTimeout);
                     if (dragonText) dragonText.classList.remove('visible');
                     document.body.classList.remove('flames-background'); 
+                });
+            }
+
+            // Name Dropdown Logic
+            const nameContainer = document.getElementById('nameContainer');
+            const nameDropdown = document.getElementById('nameDropdown');
+            let nameDropdownTimeout;
+
+            if (nameContainer && nameDropdown) {
+                nameContainer.addEventListener('mouseenter', () => {
+                    clearTimeout(nameDropdownTimeout);
+                    nameDropdown.classList.add('visible');
+                });
+
+                nameContainer.addEventListener('mouseleave', () => {
+                    nameDropdownTimeout = setTimeout(() => {
+                        nameDropdown.classList.remove('visible');
+                    }, 100); // Small delay to allow mouse to move to dropdown
                 });
             }
 
@@ -304,7 +379,7 @@
                 let months = 0;
                 let tempCounterDate = new Date(startDate);
 
-                for (let i = 0; i < 120; i++) { // Max 10 years of months
+                for (let i = 0; i < 120; i++) { 
                     let nextMonthTemp = new Date(tempCounterDate);
                     nextMonthTemp.setMonth(nextMonthTemp.getMonth() + 1);
                     if (nextMonthTemp <= endDate) {
