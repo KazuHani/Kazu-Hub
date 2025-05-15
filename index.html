@@ -161,54 +161,6 @@
             animation: flameAnimation 15s ease infinite !important;
         }
 
-        /* Styles for the name dropdown */
-        #nameContainer {
-            display: inline-block; 
-            position: relative; 
-        }
-
-        #kazuName { 
-             cursor: pointer; 
-        }
-
-        .name-dropdown-content {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out, margin-top 0.3s ease-out;
-            padding-top: 0;
-            padding-bottom: 0;
-            margin-top: 0;
-        }
-
-        .name-dropdown-content.visible {
-            opacity: 1;
-            max-height: 150px; 
-            padding-top: 0.5rem; 
-            padding-bottom: 0.5rem; 
-            margin-top: 0.25rem; 
-        }
-
-        .dropdown-button {
-            display: block;
-            width: 90%; 
-            margin: 0.35rem auto; 
-            padding: 0.65rem 1rem;
-            background-color: #4f46e5; /* Tailwind's indigo-600 */
-            color: white;
-            text-align: center;
-            border-radius: 0.5rem; /* Tailwind's rounded-lg */
-            font-weight: 500; /* medium */
-            text-decoration: none;
-            font-size: 0.85rem; /* Slightly smaller text */
-            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
-        }
-
-        .dropdown-button:hover {
-            background-color: #4338ca; /* Tailwind's indigo-700 */
-            transform: scale(1.03); /* Slight scale on hover */
-        }
-
         /* Styles for story buttons with image backgrounds */
         .story-button-legend, .story-button-naga {
             background-size: cover;
@@ -257,14 +209,7 @@
         <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
 
         <div class="mb-6 text-center">
-            <div id="nameContainer" class="inline-block">
-                <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-1 text-indigo-400">Kazu Hani</h1>
-                <div id="nameDropdown" class="name-dropdown-content">
-                    <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer" class="dropdown-button">The Legend That Bleeds</a>
-                    <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer" class="dropdown-button">The Story Of Kazu</a>
-                </div>
-            </div>
-            <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-4"> 
+            <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1> <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-4"> 
                 <span class="highlight-text">Welcome to my personal hub!</span>
             </p>
             <div class="mb-4"> 
@@ -386,23 +331,23 @@
                 });
             }
 
-            // Name Dropdown Logic
-            const nameContainer = document.getElementById('nameContainer');
-            const nameDropdown = document.getElementById('nameDropdown');
-            let nameDropdownTimeout;
+            // Name Dropdown Logic REMOVED
+            // const nameContainer = document.getElementById('nameContainer');
+            // const nameDropdown = document.getElementById('nameDropdown');
+            // let nameDropdownTimeout;
 
-            if (nameContainer && nameDropdown) {
-                nameContainer.addEventListener('mouseenter', () => {
-                    clearTimeout(nameDropdownTimeout);
-                    nameDropdown.classList.add('visible');
-                });
+            // if (nameContainer && nameDropdown) {
+            //     nameContainer.addEventListener('mouseenter', () => {
+            //         clearTimeout(nameDropdownTimeout);
+            //         nameDropdown.classList.add('visible');
+            //     });
 
-                nameContainer.addEventListener('mouseleave', () => {
-                    nameDropdownTimeout = setTimeout(() => {
-                        nameDropdown.classList.remove('visible');
-                    }, 100); // Small delay to allow mouse to move to dropdown
-                });
-            }
+            //     nameContainer.addEventListener('mouseleave', () => {
+            //         nameDropdownTimeout = setTimeout(() => {
+            //             nameDropdown.classList.remove('visible');
+            //         }, 100); 
+            //     });
+            // }
 
 
             // Birthday Countdown Logic
