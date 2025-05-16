@@ -194,6 +194,57 @@
             background-image: url('arctic.jpg');
         }
 
+        /* Styles for backstory dropdown */
+        .backstory-trigger {
+            background-color: transparent; /* Make it look less like a traditional button */
+            border: none;
+            color: #a5b4fc; /* Lighter indigo for link-like appearance */
+            padding: 0.5rem 0; /* Adjust padding as needed */
+            width: 100%;
+            text-align: left; /* Align text to the left */
+            cursor: pointer;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* semibold */
+            display: flex;
+            justify-content: space-between; /* Pushes arrow to the right */
+            align-items: center;
+            transition: color 0.3s ease;
+        }
+        .backstory-trigger:hover {
+            color: #c7d2fe; /* Lighter indigo on hover */
+        }
+        .backstory-trigger .arrow {
+            transition: transform 0.3s ease-out;
+            font-size: 0.8em; /* Make arrow slightly smaller */
+        }
+        .backstory-trigger.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        #backstoryContent {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding-top 0.5s ease-in-out, padding-bottom 0.5s ease-in-out;
+            padding-top: 0;
+            padding-bottom: 0;
+            color: #e2e8f0; /* slate-200 for good readability */
+            text-align: left; /* Align text to the left */
+            font-size: 0.9rem;
+            line-height: 1.6;
+            background-color: rgba(51, 65, 85, 0.3); /* Subtle background: slate-700 with opacity */
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        #backstoryContent.visible {
+            max-height: 1000px; /* Large enough for the content */
+            opacity: 1;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            margin-top: 0.5rem; /* Space between trigger and content */
+        }
+
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -209,7 +260,8 @@
         <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
 
         <div class="mb-6 text-center">
-            <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1> <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-4"> 
+            <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
+            <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-4"> 
                 <span class="highlight-text">Welcome to my personal hub!</span>
             </p>
             <div class="mb-4"> 
@@ -265,15 +317,29 @@
                 </svg>
                 <span>View on GitHub</span>
             </a>
-            <h3 class="text-lg font-semibold text-indigo-300 mt-6 mb-3">My Stories</h3>
-            <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
-               class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2">
-                <span>The Legend That Bleeds</span>
-            </a>
-            <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
-               class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md">
-                <span>The Naga And Human Kind</span>
-            </a>
+            
+            <h3 class="text-xl font-semibold text-indigo-400 mt-6 mb-3">My Stories</h3>
+            <button id="backstoryTrigger" class="backstory-trigger w-full">
+                <span>Kazu's backstory</span>
+                <span class="arrow">&#9660;</span> </button>
+            <div id="backstoryContent">
+                <p>Kazu was born in a small cave nestled within the vast, icy expanse of the Arctic. His parents, both magnificent ice dragons, cherished their newborn with a love as boundless as the frozen landscape they called home. Tragically, their time as parents was cut short. When Kazu was merely a babe, his parents were slain, leaving him orphaned in the unforgiving Arctic wilderness.</p>
+                <p class="mt-2">Fate, however, had other plans for the young ice dragon. A nearby village of humans discovered the abandoned Kazu and, touched by his helplessness, took him in as one of their own. Despite the inherent differences between humans and dragons, the villagers welcomed Kazu with open arms, providing him with the warmth, care, and love he so desperately needed growing up amidst the hustle and bustle of the human village, Kazu was a curious and bright child, always eager to explore the nooks and crannies of his new home. Unlike his Arctic-dwelling ancestors, Kazu discovered a love for the indoors, finding comfort and endless fascination within the four walls of the village houses. He loved nothing more than to spend his days reading scrolls, playing games, and engaging in all sorts of imaginative play with his human friends.</p>
+                <p class="mt-2">Kazu's personality blossomed in the village. He was known for his infectious laughter, his playful antics, and his knack for finding joy in the simplest of things. He was always up for a good time, whether it was joining in a snowball fight, building snow forts, or participating in the village's many festivals and celebrations.</p>
+                <p class="mt-2">As Kazu matured, his innate magical abilities began to manifest. He discovered he could control and manipulate ice and snow, a testament to his ice dragon lineage. This revelation sparked a deep passion within him to understand and master his powers. He practiced his magic in secret, often incorporating it into his playful antics, much to the amusement of his friends.</p>
+                <p class="mt-2">Despite his dragon heritage, Kazu felt most at home in the human village. He loved his adoptive family and the friends he had made, and he couldn't imagine living anywhere else. The village had become his world, a place where he could be himself, a silly, fun-loving ice dragon with a heart of gold.</p>
+                <p class="mt-2">Now, Kazu spends his days exploring the village, practicing his magic, and bringing laughter and joy to those around him. He loves soaring through the skies with the other ice dragons, engaging in playful races and mock battles. But at the end of a long day, he always returns to the warmth and comfort of his human home, where a steaming mug of hot cocoa and a cozy blanket await him.</p>
+            </div>
+
+            <div class="mt-4 space-y-2"> <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
+                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                    <span>The Legend That Bleeds</span>
+                </a>
+                <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
+                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                    <span>The Naga And Human Kind</span>
+                </a>
+            </div>
         </div>
 
 
@@ -331,23 +397,16 @@
                 });
             }
 
-            // Name Dropdown Logic REMOVED
-            // const nameContainer = document.getElementById('nameContainer');
-            // const nameDropdown = document.getElementById('nameDropdown');
-            // let nameDropdownTimeout;
+            // Backstory Dropdown Logic
+            const backstoryTrigger = document.getElementById('backstoryTrigger');
+            const backstoryContent = document.getElementById('backstoryContent');
 
-            // if (nameContainer && nameDropdown) {
-            //     nameContainer.addEventListener('mouseenter', () => {
-            //         clearTimeout(nameDropdownTimeout);
-            //         nameDropdown.classList.add('visible');
-            //     });
-
-            //     nameContainer.addEventListener('mouseleave', () => {
-            //         nameDropdownTimeout = setTimeout(() => {
-            //             nameDropdown.classList.remove('visible');
-            //         }, 100); 
-            //     });
-            // }
+            if (backstoryTrigger && backstoryContent) {
+                backstoryTrigger.addEventListener('click', () => {
+                    backstoryContent.classList.toggle('visible');
+                    backstoryTrigger.classList.toggle('open'); // For arrow rotation
+                });
+            }
 
 
             // Birthday Countdown Logic
