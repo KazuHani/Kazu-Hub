@@ -196,17 +196,14 @@
 
         /* Styles for backstory dropdown */
         .backstory-trigger {
-            background-color: transparent; /* Make it look less like a traditional button */
+            background-color: transparent;
             border: none;
             color: #a5b4fc; /* Lighter indigo for link-like appearance */
-            padding: 0.5rem 0; /* Adjust padding as needed */
-            width: 100%;
-            text-align: left; /* Align text to the left */
+            padding: 0.5rem 1rem; /* Added horizontal padding */
             cursor: pointer;
             font-size: 1.125rem; /* text-lg */
             font-weight: 600; /* semibold */
-            display: flex;
-            justify-content: space-between; /* Pushes arrow to the right */
+            display: inline-flex; /* Allows button to shrink-wrap and be centered */
             align-items: center;
             transition: color 0.3s ease;
         }
@@ -216,6 +213,7 @@
         .backstory-trigger .arrow {
             transition: transform 0.3s ease-out;
             font-size: 0.8em; /* Make arrow slightly smaller */
+            margin-left: 0.5em; /* Space between text and arrow */
         }
         .backstory-trigger.open .arrow {
             transform: rotate(180deg);
@@ -225,15 +223,18 @@
             max-height: 0;
             opacity: 0;
             overflow: hidden;
-            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding-top 0.5s ease-in-out, padding-bottom 0.5s ease-in-out;
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding-top 0.5s ease-in-out, padding-bottom 0.5s ease-in-out, margin-top 0.5s ease-in-out;
             padding-top: 0;
             padding-bottom: 0;
+            margin-top: 0; /* Ensure no margin when hidden */
             color: #e2e8f0; /* slate-200 for good readability */
             text-align: left; /* Align text to the left */
             font-size: 0.9rem;
             line-height: 1.6;
             background-color: rgba(51, 65, 85, 0.3); /* Subtle background: slate-700 with opacity */
             border-radius: 0.375rem; /* rounded-md */
+            /* The div itself will be centered if its parent has text-align: center and it's inline-block,
+               or if it's block with auto margins. Here, it's a block, taking available width. */
         }
         #backstoryContent.visible {
             max-height: 1000px; /* Large enough for the content */
@@ -319,9 +320,10 @@
             </a>
             
             <h3 class="text-xl font-semibold text-indigo-400 mt-6 mb-3">My Stories</h3>
-            <button id="backstoryTrigger" class="backstory-trigger w-full">
+            <button id="backstoryTrigger" class="backstory-trigger">
                 <span>Kazu's backstory</span>
-                <span class="arrow">&#9660;</span> </button>
+                <span class="arrow">▼</span> 
+            </button>
             <div id="backstoryContent">
                 <p>Kazu was born in a small cave nestled within the vast, icy expanse of the Arctic. His parents, both magnificent ice dragons, cherished their newborn with a love as boundless as the frozen landscape they called home. Tragically, their time as parents was cut short. When Kazu was merely a babe, his parents were slain, leaving him orphaned in the unforgiving Arctic wilderness.</p>
                 <p class="mt-2">Fate, however, had other plans for the young ice dragon. A nearby village of humans discovered the abandoned Kazu and, touched by his helplessness, took him in as one of their own. Despite the inherent differences between humans and dragons, the villagers welcomed Kazu with open arms, providing him with the warmth, care, and love he so desperately needed growing up amidst the hustle and bustle of the human village, Kazu was a curious and bright child, always eager to explore the nooks and crannies of his new home. Unlike his Arctic-dwelling ancestors, Kazu discovered a love for the indoors, finding comfort and endless fascination within the four walls of the village houses. He loved nothing more than to spend his days reading scrolls, playing games, and engaging in all sorts of imaginative play with his human friends.</p>
@@ -331,7 +333,8 @@
                 <p class="mt-2">Now, Kazu spends his days exploring the village, practicing his magic, and bringing laughter and joy to those around him. He loves soaring through the skies with the other ice dragons, engaging in playful races and mock battles. But at the end of a long day, he always returns to the warmth and comfort of his human home, where a steaming mug of hot cocoa and a cozy blanket await him.</p>
             </div>
 
-            <div class="mt-4 space-y-2"> <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
+            <div class="mt-4 space-y-2"> 
+                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
                    class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                     <span>The Legend That Bleeds</span>
                 </a>
