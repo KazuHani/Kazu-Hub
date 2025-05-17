@@ -229,15 +229,13 @@
             margin-top: 0; /* Ensure no margin when hidden */
             color: #e2e8f0; /* slate-200 for good readability */
             text-align: left; /* Align text to the left */
-            font-size: 0.9rem;
+            font-size: 1rem; /* Increased font size from 0.9rem */
             line-height: 1.6;
             background-color: rgba(51, 65, 85, 0.3); /* Subtle background: slate-700 with opacity */
             border-radius: 0.375rem; /* rounded-md */
-            /* The div itself will be centered if its parent has text-align: center and it's inline-block,
-               or if it's block with auto margins. Here, it's a block, taking available width. */
         }
         #backstoryContent.visible {
-            max-height: 1000px; /* Large enough for the content */
+            max-height: 1200px; /* Adjusted max-height for potentially taller content */
             opacity: 1;
             padding-top: 1rem;
             padding-bottom: 1rem;
