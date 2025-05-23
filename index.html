@@ -14,6 +14,9 @@
             margin: 0; /* Basic reset */
             transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
         }
+        body.modal-open {
+            overflow: hidden; /* Prevent background scroll when modal is open */
+        }
         /* Fallback for Inter font if Google Fonts is not available */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
@@ -21,15 +24,15 @@
         .social-icon { /* Also used for GitHub, Story buttons */
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
             font-size: 0.9rem; 
-            position: relative; /* Needed for ::before pseudo-element stacking */
-            overflow: hidden; /* Ensures pseudo-element respects border-radius */
-            z-index: 1; /* Ensures content is above pseudo-elements if they are not z-indexed negatively */
+            position: relative; 
+            overflow: hidden; 
+            z-index: 1; 
         }
-        .social-icon span { /* Target the text span directly for z-index if needed */
+        .social-icon span { 
             position: relative;
             z-index: 2;
         }
-        .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
+        .social-icon img, .social-icon svg { 
             position: relative;
             z-index: 2;
         }
@@ -44,34 +47,25 @@
             max-width: 500px; 
             padding: 1rem; 
             animation: zoomInEffect 0.7s ease-out forwards; 
-            background-color: rgba(30, 41, 59, 0.9); /* Tailwind slate-800 with slight transparency */
+            background-color: rgba(30, 41, 59, 0.9); 
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
                 padding: 2rem; 
             }
         }
-        /* Updated transition for info-button to include box-shadow */
         .info-button {
             transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
         }
-        /* Updated hover effect for info-button to match social-icon */
         .info-button:hover {
             transform: translateY(-5px) scale(1.1);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
 
-        /* Keyframes for the continuous spin animation */
         @keyframes continuousSpin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
-
-        /* Styling for profile picture spin animation */
         .profile-picture {
             transition: transform 0.5s ease-in-out;
         }
@@ -79,169 +73,134 @@
             animation: continuousSpin 2s linear infinite;
         }
 
-        /* Keyframes for the zoom-in animation */
         @keyframes zoomInEffect {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
-        /* Styling for the countdown timer */
         #birthdayCountdown {
             font-size: 1rem;
-            color: #cbd5e1; /* slate-300 */
+            color: #cbd5e1;
             margin-bottom: 0.5rem;
         }
-        /* Styling for age display */
         #ageDisplay {
             font-size: 1rem;
-            color: #cbd5e1; /* slate-300 */
+            color: #cbd5e1;
             margin-bottom: 1.5rem;
         }
-        /* Styling for bio text */
-        .bio-text {
-            font-size: 0.95rem;
-        }
-        /* Styling for highlighted text in bio */
-        .highlight-text {
-            color: #818cf8; /* Tailwind's indigo-400 */
-            font-weight: 600; /* semi-bold */
-        }
-
-        /* Container for profile picture and dragon text */
-        .profile-image-wrapper {
-            display: inline-block;
-            text-align: center;
-        }
-
-        /* Styling for the "Do Not The Dragon" text */
+        .bio-text { font-size: 0.95rem; }
+        .highlight-text { color: #818cf8; font-weight: 600; }
+        .profile-image-wrapper { display: inline-block; text-align: center; }
         #dragonText {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            color: #f87171;
-            font-weight: bold;
-            font-size: 1.5rem;
-            white-space: nowrap;
-            background-color: rgba(30, 41, 59, 0.85);
-            border-radius: 0.375rem;
-            padding-left: 12px;
-            padding-right: 12px;
-            padding-top: 0;
-            padding-bottom: 0;
-            margin-top: 0;
-            box-sizing: border-box;
+            max-height: 0; opacity: 0; overflow: hidden; color: #f87171;
+            font-weight: bold; font-size: 1.5rem; white-space: nowrap;
+            background-color: rgba(30, 41, 59, 0.85); border-radius: 0.375rem;
+            padding: 0 12px; margin-top: 0; box-sizing: border-box;
             transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
         }
-
         #dragonText.visible {
-            max-height: 70px;
-            opacity: 1;
-            margin-top: 10px;
-            padding-top: 6px;
-            padding-bottom: 6px;
+            max-height: 70px; opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
         }
-
-        /* Flame animation for the body background */
         @keyframes flameAnimation {
-            0% { background-position: 0% 50%; }
-            25% { background-position: 100% 50%; }
+            0%, 100% { background-position: 0% 50%; }
+            25%, 75% { background-position: 100% 50%; }
             50% { background-position: 0% 50%; }
-            75% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
         }
-
         .flames-background {
             background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab, #ff4500, #ff8c00, #ff0000) !important;
             background-size: 600% 600% !important;
             animation: flameAnimation 15s ease infinite !important;
         }
-
-        /* Styles for story buttons with image backgrounds */
         .story-button-legend, .story-button-naga {
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            color: white; /* Ensure text is white */
+            background-size: cover; background-position: center center; background-repeat: no-repeat; color: white;
         }
-
         .story-button-legend::before, .story-button-naga::before {
-            content: '';
-            position: absolute;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4); border-radius: inherit; 
+            z-index: 1; transition: background-color 0.3s ease;
+        }
+        .story-button-legend:hover::before, .story-button-naga:hover::before {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        .story-button-legend { background-image: url('blood.png'); }
+        .story-button-naga { background-image: url('arctic.jpg'); }
+
+        /* Backstory Modal Styles */
+        #backstoryModal {
+            display: none; /* Hidden by default, JS will change to flex */
+            position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.4); /* Dark overlay */
-            border-radius: inherit; /* Match parent's border-radius (from .social-icon -> .rounded-lg) */
-            z-index: 1; /* Place overlay behind text but above background image */
-            transition: background-color 0.3s ease;
-        }
-
-        .story-button-legend:hover::before, .story-button-naga:hover::before {
-            background-color: rgba(0, 0, 0, 0.6); /* Darker overlay on hover */
-        }
-
-        .story-button-legend {
-            background-image: url('blood.png');
-        }
-
-        .story-button-naga {
-            background-image: url('arctic.jpg');
-        }
-
-        /* Styles for backstory dropdown */
-        .backstory-trigger {
-            background-color: transparent;
-            border: none;
-            color: #a5b4fc; /* Lighter indigo for link-like appearance */
-            padding: 0.5rem 1rem; /* Added horizontal padding */
-            cursor: pointer;
-            font-size: 1.125rem; /* text-lg */
-            font-weight: 600; /* semibold */
-            display: inline-flex; /* Allows button to shrink-wrap and be centered */
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Darker overlay */
+            z-index: 1000;
             align-items: center;
-            transition: color 0.3s ease;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none; /* Allow clicks through when hidden */
         }
-        .backstory-trigger:hover {
-            color: #c7d2fe; /* Lighter indigo on hover */
+        #backstoryModal.visible {
+            display: flex; /* Use flex for centering */
+            opacity: 1;
+            pointer-events: auto; /* Block clicks when visible */
         }
-        .backstory-trigger .arrow {
-            transition: transform 0.3s ease-out;
-            font-size: 0.8em; /* Make arrow slightly smaller */
-            margin-left: 0.5em; /* Space between text and arrow */
+        #backstoryModalContent {
+            background-color: #1f2937; /* Tailwind slate-800 */
+            padding: 2rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            width: 90%;
+            max-width: 700px; /* Wider for better readability */
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            text-align: left;
+            color: #e2e8f0; /* slate-200 */
+            font-size: 1.05rem; /* Slightly larger for modal readability */
+            line-height: 1.7;
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
         }
-        .backstory-trigger.open .arrow {
-            transform: rotate(180deg);
+        #backstoryModal.visible #backstoryModalContent {
+            transform: scale(1);
+        }
+        .close-modal-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 2rem; /* Larger close button */
+            color: #9ca3af; /* gray-400 */
+            cursor: pointer;
+            background: none;
+            border: none;
+            line-height: 1;
+            padding: 0.25rem;
+        }
+        .close-modal-button:hover {
+            color: #e5e7eb; /* gray-200 */
+        }
+        #backstoryModalContent p {
+            margin-bottom: 1rem; /* Space between paragraphs in modal */
+        }
+        #backstoryModalContent p:last-child {
+            margin-bottom: 0;
         }
 
-        #backstoryContent {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, padding-top 0.5s ease-in-out, padding-bottom 0.5s ease-in-out, margin-top 0.5s ease-in-out;
-            padding-top: 0;
-            padding-bottom: 0;
-            margin-top: 0; /* Ensure no margin when hidden */
-            color: #e2e8f0; /* slate-200 for good readability */
-            text-align: left; /* Align text to the left */
-            font-size: 1rem; /* Increased font size from 0.9rem */
-            line-height: 1.6;
-            background-color: rgba(51, 65, 85, 0.3); /* Subtle background: slate-700 with opacity */
+        /* Simplified Backstory Trigger Button */
+        .backstory-trigger-btn {
+            background-color: #4a5568; /* slate-600 */
+            color: white;
+            padding: 0.5rem 1rem;
             border-radius: 0.375rem; /* rounded-md */
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            border: none;
+            font-size: 1rem;
+            margin-bottom: 0.5rem; /* Space below trigger */
         }
-        #backstoryContent.visible {
-            max-height: 1200px; /* Adjusted max-height for potentially taller content */
-            opacity: 1;
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-            padding-left: 1rem;
-            padding-right: 1rem;
-            margin-top: 0.5rem; /* Space between trigger and content */
+        .backstory-trigger-btn:hover {
+            background-color: #2d3748; /* slate-700 */
         }
 
     </style>
@@ -318,18 +277,9 @@
             </a>
             
             <h3 class="text-xl font-semibold text-indigo-400 mt-6 mb-3">My Stories</h3>
-            <button id="backstoryTrigger" class="backstory-trigger">
-                <span>Kazu's backstory</span>
-                <span class="arrow">▼</span> 
+            <button id="backstoryTrigger" class="backstory-trigger-btn">
+                Kazu's backstory
             </button>
-            <div id="backstoryContent">
-                <p>Kazu was born in a small cave nestled within the vast, icy expanse of the Arctic. His parents, both magnificent ice dragons, cherished their newborn with a love as boundless as the frozen landscape they called home. Tragically, their time as parents was cut short. When Kazu was merely a babe, his parents were slain, leaving him orphaned in the unforgiving Arctic wilderness.</p>
-                <p class="mt-2">Fate, however, had other plans for the young ice dragon. A nearby village of humans discovered the abandoned Kazu and, touched by his helplessness, took him in as one of their own. Despite the inherent differences between humans and dragons, the villagers welcomed Kazu with open arms, providing him with the warmth, care, and love he so desperately needed growing up amidst the hustle and bustle of the human village, Kazu was a curious and bright child, always eager to explore the nooks and crannies of his new home. Unlike his Arctic-dwelling ancestors, Kazu discovered a love for the indoors, finding comfort and endless fascination within the four walls of the village houses. He loved nothing more than to spend his days reading scrolls, playing games, and engaging in all sorts of imaginative play with his human friends.</p>
-                <p class="mt-2">Kazu's personality blossomed in the village. He was known for his infectious laughter, his playful antics, and his knack for finding joy in the simplest of things. He was always up for a good time, whether it was joining in a snowball fight, building snow forts, or participating in the village's many festivals and celebrations.</p>
-                <p class="mt-2">As Kazu matured, his innate magical abilities began to manifest. He discovered he could control and manipulate ice and snow, a testament to his ice dragon lineage. This revelation sparked a deep passion within him to understand and master his powers. He practiced his magic in secret, often incorporating it into his playful antics, much to the amusement of his friends.</p>
-                <p class="mt-2">Despite his dragon heritage, Kazu felt most at home in the human village. He loved his adoptive family and the friends he had made, and he couldn't imagine living anywhere else. The village had become his world, a place where he could be himself, a silly, fun-loving ice dragon with a heart of gold.</p>
-                <p class="mt-2">Now, Kazu spends his days exploring the village, practicing his magic, and bringing laughter and joy to those around him. He loves soaring through the skies with the other ice dragons, engaging in playful races and mock battles. But at the end of a long day, he always returns to the warmth and comfort of his human home, where a steaming mug of hot cocoa and a cozy blanket await him.</p>
-            </div>
 
             <div class="mt-4 space-y-2"> 
                 <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
@@ -343,10 +293,23 @@
             </div>
         </div>
 
-
         <footer class="mt-10 pt-6 border-t border-slate-600">
-            </footer>
+        </footer>
     </div>
+
+    <div id="backstoryModal">
+        <div id="backstoryModalContent">
+            <button id="closeModalButton" class="close-modal-button">&times;</button>
+            <h2>Kazu's Backstory</h2>
+            <p>Kazu was born in a small cave nestled within the vast, icy expanse of the Arctic. His parents, both magnificent ice dragons, cherished their newborn with a love as boundless as the frozen landscape they called home. Tragically, their time as parents was cut short. When Kazu was merely a babe, his parents were slain, leaving him orphaned in the unforgiving Arctic wilderness.</p>
+            <p>Fate, however, had other plans for the young ice dragon. A nearby village of humans discovered the abandoned Kazu and, touched by his helplessness, took him in as one of their own. Despite the inherent differences between humans and dragons, the villagers welcomed Kazu with open arms, providing him with the warmth, care, and love he so desperately needed growing up amidst the hustle and bustle of the human village, Kazu was a curious and bright child, always eager to explore the nooks and crannies of his new home. Unlike his Arctic-dwelling ancestors, Kazu discovered a love for the indoors, finding comfort and endless fascination within the four walls of the village houses. He loved nothing more than to spend his days reading scrolls, playing games, and engaging in all sorts of imaginative play with his human friends.</p>
+            <p>Kazu's personality blossomed in the village. He was known for his infectious laughter, his playful antics, and his knack for finding joy in the simplest of things. He was always up for a good time, whether it was joining in a snowball fight, building snow forts, or participating in the village's many festivals and celebrations.</p>
+            <p>As Kazu matured, his innate magical abilities began to manifest. He discovered he could control and manipulate ice and snow, a testament to his ice dragon lineage. This revelation sparked a deep passion within him to understand and master his powers. He practiced his magic in secret, often incorporating it into his playful antics, much to the amusement of his friends.</p>
+            <p>Despite his dragon heritage, Kazu felt most at home in the human village. He loved his adoptive family and the friends he had made, and he couldn't imagine living anywhere else. The village had become his world, a place where he could be himself, a silly, fun-loving ice dragon with a heart of gold.</p>
+            <p>Now, Kazu spends his days exploring the village, practicing his magic, and bringing laughter and joy to those around him. He loves soaring through the skies with the other ice dragons, engaging in playful races and mock battles. But at the end of a long day, he always returns to the warmth and comfort of his human home, where a steaming mug of hot cocoa and a cozy blanket await him.</p>
+        </div>
+    </div>
+
 
     <script>
         // Explicitly set scroll restoration to manual before anything else
@@ -398,14 +361,35 @@
                 });
             }
 
-            // Backstory Dropdown Logic
+            // Backstory Modal Logic
             const backstoryTrigger = document.getElementById('backstoryTrigger');
-            const backstoryContent = document.getElementById('backstoryContent');
+            const backstoryModal = document.getElementById('backstoryModal');
+            const closeModalButton = document.getElementById('closeModalButton');
 
-            if (backstoryTrigger && backstoryContent) {
+            if (backstoryTrigger && backstoryModal && closeModalButton) {
                 backstoryTrigger.addEventListener('click', () => {
-                    backstoryContent.classList.toggle('visible');
-                    backstoryTrigger.classList.toggle('open'); // For arrow rotation
+                    backstoryModal.style.display = 'flex'; // Show the modal container
+                    setTimeout(() => { // Timeout to allow display:flex to apply before transition
+                        backstoryModal.classList.add('visible');
+                    }, 10);
+                    document.body.classList.add('modal-open');
+                });
+
+                function closeTheModal() {
+                    backstoryModal.classList.remove('visible');
+                    setTimeout(() => { // Wait for opacity transition to finish
+                        backstoryModal.style.display = 'none';
+                    }, 300); // Should match opacity transition duration
+                    document.body.classList.remove('modal-open');
+                }
+
+                closeModalButton.addEventListener('click', closeTheModal);
+
+                backstoryModal.addEventListener('click', (event) => {
+                    // If the click is on the overlay itself (not the content)
+                    if (event.target === backstoryModal) {
+                        closeTheModal();
+                    }
                 });
             }
 
