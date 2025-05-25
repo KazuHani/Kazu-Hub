@@ -192,24 +192,62 @@
         }
         #backstoryModalContent {
             background-color: #1f2937; 
-            padding: 2rem; border-radius: 0.5rem; 
-            width: 90%; max-width: 700px; 
-            max-height: 85vh; overflow-y: auto;
+            /* Adjusted for full-screen display */
+            padding: clamp(1.5rem, 4vw, 3rem); /* Responsive padding for screen edges */
+            border-radius: 0; /* No border radius for full screen */
+            width: 100%;      /* Take full width */
+            height: 100%;     /* Take full height */
+            max-width: 100%;  /* Override any previous max-width */
+            max-height: 100vh;/* Ensure it doesn't exceed viewport height */
+            overflow-y: auto; /* Allow scrolling for content longer than screen */
             position: relative; text-align: left;
             color: #e2e8f0; 
             font-size: 1.05rem; 
             line-height: 1.7;
             transform: scale(0.95);
             transition: transform 0.3s ease-in-out;
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
         }
         #backstoryModal.visible #backstoryModalContent { transform: scale(1); }
         .close-modal-button {
             position: absolute; top: 10px; right: 15px;
-            font-size: 2rem; color: #9ca3af; 
+            top: auto; /* Remove top positioning */
+            right: auto; /* Remove right positioning */
+            bottom: 20px; /* Distance from the bottom */
+            left: 50%;    /* Center horizontally */
+            transform: translateX(-50%); /* Base transform for centering */
+            
+            /* --- New Circular Button Styles --- */
+            width: 60px; /* Define width for the circle */
+            height: 60px; /* Define height for the circle */
+            border-radius: 50%; /* Make it circular */
+            background-color: #334155; /* slate-700 for dark theme */
+            color: #cbd5e1; /* slate-300 for 'X' in dark theme */
+            font-size: 2.8rem; /* Adjusted 'X' size to fit circle */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
             cursor: pointer; background: none; border: none;
-            line-height: 1; padding: 0.25rem;
+            line-height: 1; /* Important for flex centering */
+            padding: 0; /* Remove previous padding, flex handles centering */
+            z-index: 10; /* Ensure it's above modal content */
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
         }
-        .close-modal-button:hover { color: #e5e7eb; }
+        .close-modal-button:hover {
+            background-color: #475569; /* slate-600 for dark theme hover */
+            color: #e2e8f0; /* slate-200 for 'X' on hover */
+            transform: translateX(-50%) translateY(-5px) scale(1.03); /* Combine centering with hover effects */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25); /* Slightly more pronounced shadow for dark theme */
+        }
+        /* Make it even larger on mobile */
+        @media (max-width: 767px) {
+            .close-modal-button {
+                width: 70px; height: 70px; /* Larger circle on mobile */
+                font-size: 3.2rem; /* Adjusted 'X' size for larger mobile button */
+                bottom: 15px; /* Adjust bottom spacing for mobile if needed */
+            }
+        }
         #backstoryModalContent p { margin-bottom: 1rem; }
         #backstoryModalContent p:last-child { margin-bottom: 0; }
 
@@ -395,8 +433,15 @@
             color: #1f2937;
         }
         body.body-light-theme #backstoryModalContent h2 { color: #4f46e5; }
-        body.body-light-theme .close-modal-button { color: #6b7280; }
-        body.body-light-theme .close-modal-button:hover { color: #111827; }
+        body.body-light-theme .close-modal-button {
+            background-color: #d1d5db; /* gray-300 for light theme */
+            color: #374151; /* gray-700 for 'X' in light theme */
+        }
+        body.body-light-theme .close-modal-button:hover {
+            background-color: #9ca3af; /* gray-400 for light theme hover */
+            color: #1f2937; /* gray-800 for 'X' on hover */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Standard shadow for light theme */
+        }
 
         body.body-light-theme .party-text-left,
         body.body-light-theme .party-text-right {
