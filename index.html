@@ -380,12 +380,12 @@
 
         <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
 
-        <div class="mb-6 text-center">
-            <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
-            <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-1" id="bioTextParagraph"> 
+        <div class="mb-6 text-center "> <!-- Added fade-in-on-scroll to the parent div -->
+            <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400 fade-in-on-scroll">Kazu Hani</h1>
+            <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-1 fade-in-on-scroll" id="bioTextParagraph">
                 <span class="highlight-text">Welcome to my personal hub!</span>
             </p>
-            <div class="mt-4 mb-4"> 
+            <div class="mt-4 mb-4 fade-in-on-scroll">
                  <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
                    class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
                     More info about Kazu
@@ -393,18 +393,18 @@
             </div>
         </div>
 
-        <div id="birthdayCountdown" class="text-slate-300">
+        <div id="birthdayCountdown" class="text-slate-300 fade-in-on-scroll">
             Birthday is in <span id="countdownTimer">Loading...</span>
         </div>
 
-        <div id="ageDisplay" class="text-slate-300">
+        <div id="ageDisplay" class="text-slate-300 fade-in-on-scroll">
             I am currently <span id="currentAge"></span> years old.
         </div>
 
-        <div id="currentTimeContainer" class="text-slate-300 text-base mb-1"> <!-- Adjusted margin for the new element below -->
+        <div id="currentTimeContainer" class="text-slate-300 text-base mb-1 fade-in-on-scroll"> <!-- Adjusted margin for the new element below -->
             My current time is <span id="currentTime">Loading...</span>
         </div>
-        <div id="availabilityStatusContainer" class="text-slate-400 text-sm mb-6">
+        <div id="availabilityStatusContainer" class="text-slate-400 text-sm mb-6 fade-in-on-scroll">
             <span id="availabilityMessage">Checking availability...</span>
         </div>
 
