@@ -211,7 +211,9 @@
         #backstoryModal.visible #backstoryModalContent { transform: scale(1); }
         .close-modal-button {
             position: absolute; top: 10px; right: 15px;
-            top: auto; /* Remove top positioning */
+            /* --- Repositioned to bottom center --- */
+            position: fixed; /* Changed from absolute to ensure viewport-relative positioning */
+            top: auto; 
             right: auto; /* Remove right positioning */
             bottom: 20px; /* Distance from the bottom */
             left: 50%;    /* Center horizontally */
@@ -231,7 +233,7 @@
             cursor: pointer; background: none; border: none;
             line-height: 1; /* Important for flex centering */
             padding: 0; /* Remove previous padding, flex handles centering */
-            z-index: 10; /* Ensure it's above modal content */
+            z-index: 1001; /* Above modal backdrop (z-index: 1000) */
             transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
         }
         .close-modal-button:hover {
