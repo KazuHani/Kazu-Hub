@@ -361,6 +361,55 @@
             /* top, left, transform removed */
             color: #facc15; /* Tailwind yellow-400, a bright sun color */
         }
+
+        /* Light Theme Styles */
+        body.body-light-theme {
+            /* background-color: white !important; /* Set by JS adding bg-white */
+            /* background-image: none !important; /* Set by JS removing gradient classes */
+            color: #111827; /* Tailwind gray-900 for general text */
+        }
+
+        body.body-light-theme .container {
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05); /* Softer shadow */
+        }
+
+        body.body-light-theme .text-indigo-400 { color: #4f46e5 !important; /* Tailwind indigo-600 */ }
+        body.body-light-theme #kazuName.text-indigo-400 { color: #4f46e5 !important; } /* More specific for h1 */
+        body.body-light-theme h2.text-indigo-400 { color: #4f46e5 !important; } /* More specific for h2 */
+        body.body-light-theme h3.text-indigo-400 { color: #4f46e5 !important; } /* More specific for h3 */
+
+        body.body-light-theme .text-slate-300 { color: #374151 !important; /* Tailwind gray-700 */ }
+        body.body-light-theme .text-slate-400 { color: #4b5563 !important; /* Tailwind gray-600 */ }
+        body.body-light-theme #dragonText { color: #dc2626 !important; background-color: rgba(229, 231, 235, 0.85) !important; }
+        body.body-light-theme .highlight-text { color: #6366f1 !important; /* Tailwind indigo-500 */ }
+
+        body.body-light-theme .discord-dropdown-text {
+            color: #374151; /* Tailwind gray-700 */
+            background-color: rgba(229, 231, 235, 0.9); /* Tailwind gray-200 with opacity */
+        }
+
+        body.body-light-theme #backstoryModalContent {
+            background-color: #ffffff;
+            color: #1f2937;
+        }
+        body.body-light-theme #backstoryModalContent h2 { color: #4f46e5; }
+        body.body-light-theme .close-modal-button { color: #6b7280; }
+        body.body-light-theme .close-modal-button:hover { color: #111827; }
+
+        body.body-light-theme .party-text-left,
+        body.body-light-theme .party-text-right {
+            color: #ef4444; /* Tailwind red-500 */
+            text-shadow: 1px 1px 2px rgba(150,150,150,0.5);
+        }
+        body.body-light-theme .playlist-arrow { color: #4f46e5; }
+
+        body.body-light-theme #moonIcon { color: #6b7280 !important; }
+        body.body-light-theme #sunIcon { color: #f59e0b !important; }
+
+        body.body-light-theme footer .text-slate-400 { color: #6b7280 !important; }
+        body.body-light-theme .border-slate-600 { border-color: #d1d5db !important; /* gray-300 */ }
+        body.body-light-theme .border-slate-700 { border-color: #e5e7eb !important; /* gray-200 */ }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -368,6 +417,14 @@
     <!-- Sun/Moon Time Indicators (Moved here for DOM order) -->
     <i id="moonIcon" class="fas fa-moon time-indicator-icon fade-in-on-scroll"></i>
     <i id="sunIcon" class="fas fa-sun time-indicator-icon fade-in-on-scroll"></i>
+
+    <!-- Moved Time and Availability Status Here -->
+    <div id="currentTimeContainer" class="text-slate-300 text-base mb-1 fade-in-on-scroll">
+        My current time is <span id="currentTime">Loading...</span>
+    </div>
+    <div id="availabilityStatusContainer" class="text-slate-400 text-sm mb-6 fade-in-on-scroll">
+        <span id="availabilityMessage">Checking availability...</span>
+    </div>
 
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
@@ -400,14 +457,6 @@
         <div id="ageDisplay" class="text-slate-300 fade-in-on-scroll">
             I am currently <span id="currentAge"></span> years old.
         </div>
-
-        <div id="currentTimeContainer" class="text-slate-300 text-base mb-1 fade-in-on-scroll"> <!-- Adjusted margin for the new element below -->
-            My current time is <span id="currentTime">Loading...</span>
-        </div>
-        <div id="availabilityStatusContainer" class="text-slate-400 text-sm mb-6 fade-in-on-scroll">
-            <span id="availabilityMessage">Checking availability...</span>
-        </div>
-
 
         <div class="space-y-4 mb-8 fade-in-on-scroll"> 
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
@@ -870,6 +919,7 @@
                 const isNight = (currentUKHour >= sunsetHour || currentUKHour < sunriseHour);
                 const iconToShow = isNight ? moonIcon : sunIcon;
                 const iconToHide = isNight ? sunIcon : moonIcon;
+                const bodyElement = document.body;
 
                 // --- Show Routine for the icon that should be visible ---
                 // If it's not already 'block', make it so.
@@ -891,9 +941,19 @@
 
                 if (isNight) {
                     // It's "asleep" time (e.g., 9 PM or later, or before 7 AM)
+                    // Apply Dark Theme (current default)
+                    bodyElement.classList.remove('body-light-theme');
+                    bodyElement.classList.remove('bg-white'); // Remove white background if it was there
+                    bodyElement.classList.add('from-slate-900', 'to-slate-700', 'text-white');
+
                     availabilityMessageElement.textContent = "Do not contact me I am asleep";
                 } else {
                     // It's "awake" time (e.g., 7 AM up to, but not including, 9 PM)
+                    // Apply Light Theme
+                    bodyElement.classList.add('body-light-theme');
+                    bodyElement.classList.add('bg-white'); // Add white background
+                    bodyElement.classList.remove('from-slate-900', 'to-slate-700', 'text-white');
+
                     availabilityMessageElement.textContent = "Feel free to message me, I am awake";
                 }
             }
