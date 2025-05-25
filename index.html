@@ -5,22 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Social Links</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Custom font - Inter */
+        /* Custom fonts - Roboto (primary), Inter (fallback) */
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Roboto', 'Inter', sans-serif;
             margin: 0; /* Basic reset */
-            transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
+            transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out; /* Smooth transition for background changes */
             position: relative; /* Ensure body is a stacking context for its children */
         }
         body.modal-open {
             overflow: hidden; /* Prevent background scroll when modal is open */
         }
-        /* Fallback for Inter font if Google Fonts is not available */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
+        /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> */
         /* Styling for the social media icons for a little pop */
         .social-icon { /* Also used for GitHub, Story buttons */
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
@@ -246,6 +245,38 @@
             transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
             transform: translateZ(0); /* Attempt to promote to its own rendering layer */
         }
+
+
+        /* Back to Top Button */
+        #backToTopBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+            color: white;
+            border: none;
+            width: 48px; /* Fixed size for a circular button */
+            height: 48px;
+            border-radius: 50%; /* Make it circular */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 998; /* Above fixed social bar (990), below modal (1000) */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease, transform 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem; /* Adjust icon size */
+        }
+        #backToTopBtn:hover {
+            background-color: #4338ca; /* Tailwind indigo-700 */
+            transform: scale(1.1);
+        }
+        #backToTopBtn.show {
+            opacity: 1;
+            visibility: visible;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -347,7 +378,22 @@
                     <span>The Naga And Human Kind</span>
                 </a>
             </div>
-        </div>
+        </div> <!-- End of My Stories Section -->
+
+        <div class="mt-8 pt-6 border-t border-slate-700">
+            <h2 class="text-xl font-semibold text-indigo-400 mb-4">Where I am</h2>
+            <div class="rounded-lg shadow-md overflow-hidden"> <!-- Wrapper for iframe styling -->
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5021369.004948138!2d-4.208000000000001!3d54.268000000000005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x25a3b1142c791a9%3A0xc4f8a0433288257a!2sUnited%20Kingdom!5e0!3m2!1sen!2sus!4v1716467858509!5m2!1sen!2sus"
+                    class="w-full h-80 md:h-96" <!-- Responsive height, full width -->
+                    style="border:0;"
+                    allowfullscreen=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    title="Location Map - United Kingdom">
+                </iframe>
+            </div>
+        </div> <!-- End of Where I am Section -->
 
         <footer class="mt-10 pt-6 border-t border-slate-600">
             <p class="text-center text-sm text-slate-400">
@@ -376,10 +422,120 @@
     <img id="bouncingLogoSad"   class="bouncing-image" alt="Bouncing Kazu Sad">
 
 
-    <script>
+    <button id="backToTopBtn" title="Go to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    <script defer>
         // Bouncing Logo Animation Variables
         let bouncerAnimationFrameId = null;
         let bouncers = []; // Array to hold all bouncing image objects
+
+        // --- START: Unified Smooth Scrolling Logic ---
+        let currentScrollY = 0;
+        let targetScrollY = 0;
+        let generalScrollAnimationId = null;
+        const generalSmoothingFactor = 0.05; // Adjust for more/less "lag" (0.05 to 0.15) - Lowered for a "heavier" feel
+        let isProgrammaticScrollActive = false; // True if smoothScrollToProgrammatic is active
+
+        // Easing function (easeInOutQuad) - used by programmatic scroll
+        function easeInOutQuad(t, b, c, d) {
+            t /= d / 2;
+            if (t < 1) return c / 2 * t * t + b;
+            t--;
+            return -c / 2 * (t * (t - 2) - 1) + b;
+        }
+
+        // Main animation loop for general "lazy" page scrolling (wheel scroll)
+        function animateGeneralPageScroll() {
+            if (isProgrammaticScrollActive) {
+                generalScrollAnimationId = null; // Stop if a programmatic scroll takes over
+                return;
+            }
+
+            const diff = targetScrollY - currentScrollY;
+
+            if (Math.abs(diff) < 0.5) { // If difference is negligible, snap and stop
+                currentScrollY = targetScrollY;
+                window.scrollTo(0, Math.round(currentScrollY));
+                if (generalScrollAnimationId) cancelAnimationFrame(generalScrollAnimationId);
+                generalScrollAnimationId = null;
+                return;
+            }
+
+            currentScrollY += diff * generalSmoothingFactor;
+            window.scrollTo(0, Math.round(currentScrollY));
+            generalScrollAnimationId = requestAnimationFrame(animateGeneralPageScroll);
+        }
+
+        // Handles user mouse wheel input for general scrolling
+        function handleUserWheelScroll(event) {
+            if (isProgrammaticScrollActive) return;
+
+            event.preventDefault();
+            targetScrollY += event.deltaY;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            targetScrollY = Math.max(0, Math.min(targetScrollY, maxScroll));
+
+            if (!generalScrollAnimationId) {
+                currentScrollY = window.pageYOffset; // Sync before starting new animation
+                generalScrollAnimationId = requestAnimationFrame(animateGeneralPageScroll);
+            }
+        }
+
+        // Function for programmatic smooth scrolls (e.g., BackToTop, anchor links)
+        function smoothScrollToProgrammatic(destinationPosition, duration = 800) {
+            isProgrammaticScrollActive = true;
+            if (generalScrollAnimationId) {
+                cancelAnimationFrame(generalScrollAnimationId);
+                generalScrollAnimationId = null;
+            }
+
+            const startPosition = window.pageYOffset;
+            let startTime = null;
+
+            function programmaticAnimation(currentTime) {
+                if (startTime === null) startTime = currentTime;
+                const timeElapsed = currentTime - startTime;
+                const newPosition = easeInOutQuad(timeElapsed, startPosition, destinationPosition - startPosition, duration);
+
+                window.scrollTo(0, newPosition);
+
+                if (timeElapsed < duration) {
+                    requestAnimationFrame(programmaticAnimation);
+                } else {
+                    window.scrollTo(0, destinationPosition); // Final snap
+                    currentScrollY = destinationPosition;    // Sync global state for general scroll
+                    targetScrollY = destinationPosition;     // Sync global state for general scroll
+                    isProgrammaticScrollActive = false;
+                }
+            }
+            requestAnimationFrame(programmaticAnimation);
+        }
+
+        // Sets up listeners for general smooth scrolling and synchronization
+        function setupGeneralSmoothScroll() {
+            currentScrollY = window.pageYOffset;
+            targetScrollY = window.pageYOffset;
+            window.addEventListener('wheel', handleUserWheelScroll, { passive: false });
+
+            // Fallback to keep internal state synced if user drags scrollbar
+            let scrollSyncTimeout;
+            window.addEventListener('scroll', () => {
+                if (isProgrammaticScrollActive || generalScrollAnimationId) {
+                    // If our animations are running, they control the scroll.
+                    return;
+                }
+                // Scroll happened via other means (scrollbar, keyboard) and no animation is active.
+                clearTimeout(scrollSyncTimeout);
+                scrollSyncTimeout = setTimeout(() => {
+                    targetScrollY = window.pageYOffset;
+                    currentScrollY = window.pageYOffset;
+                }, 100); // Debounce
+            }, { passive: true });
+        }
+        // --- END: Unified Smooth Scrolling Logic ---
+
+        // let bouncers = []; // This was a duplicate declaration, bouncers is already defined at the top of the script.
 
 
         // Explicitly set scroll restoration to manual before anything else
@@ -387,10 +543,7 @@
             history.scrollRestoration = 'manual';
         }
 
-        window.onload = function() {
-            window.scrollTo(0, 0);
-
-            const profilePic = document.getElementById('profilePic');
+        function setupProfilePicInteraction() {
             const spinSound = document.getElementById('spinSound');
             const dragonText = document.getElementById('dragonText'); 
             let dragonTimeout; 
@@ -399,7 +552,8 @@
                 spinSound.load(); 
             }
 
-            if (profilePic) { 
+            const profilePic = document.getElementById('profilePic');
+            if (profilePic) {
                 profilePic.addEventListener('mouseenter', () => {
                     if (spinSound && spinSound.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
                         spinSound.currentTime = 0;
@@ -430,7 +584,9 @@
                     document.body.classList.remove('flames-background'); 
                 });
             }
+        }
 
+        function setupModal() {
             // Backstory Modal Logic
             const backstoryTrigger = document.getElementById('backstoryTrigger');
             const backstoryModal = document.getElementById('backstoryModal');
@@ -461,8 +617,9 @@
                     }
                 });
             }
+        }
 
-
+        function setupBirthdayCountdown() {
             // Birthday Countdown Logic
             const countdownTimerElement = document.getElementById('countdownTimer');
             const birthdayMonth = 10; // November (0-indexed)
@@ -512,31 +669,17 @@
                 let targetBirthdayDate = new Date(currentYear, birthdayMonth, birthdayDay, 0, 0, 0, 0);
 
                 if (now.getMonth() === birthdayMonth && now.getDate() === birthdayDay) {
-                     countdownTimerElement.innerHTML = "Happy Birthday!";
-                     return;
+                    countdownTimerElement.innerHTML = "Happy Birthday!";
+                    return;
                 }
                 
                 if (now.getTime() >= targetBirthdayDate.getTime()) {
                     targetBirthdayDate.setFullYear(currentYear + 1);
                 }
-                
+
                 const timeParts = calculateTimeDifference(targetBirthdayDate, now);
 
-                if (timeParts.isPast) { 
-                    targetBirthdayDate.setFullYear(targetBirthdayDate.getFullYear() +1);
-                    const newTimeParts = calculateTimeDifference(targetBirthdayDate, now);
-                    if(newTimeParts.isPast) { 
-                         countdownTimerElement.innerHTML = "See you next year!";
-                         return;
-                    }
-                     let partsRecalc = [];
-                    if (newTimeParts.months > 0) partsRecalc.push(`${newTimeParts.months} month${newTimeParts.months > 1 ? 's' : ''}`);
-                    if (newTimeParts.weeks > 0) partsRecalc.push(`${newTimeParts.weeks} week${newTimeParts.weeks > 1 ? 's' : ''}`);
-                    if (newTimeParts.days > 0) partsRecalc.push(`${newTimeParts.days} day${newTimeParts.days !== 1 ? 's' : ''}`);
-                    partsRecalc.push(`${newTimeParts.hours}h ${newTimeParts.minutes}m ${newTimeParts.seconds}s`);
-                    countdownTimerElement.innerHTML = partsRecalc.join(', ');
-                    return;
-                }
+                // If targetBirthdayDate is correctly set to the future, timeParts.isPast should be false.
 
                 let parts = [];
                 if (timeParts.months > 0) parts.push(`${timeParts.months} month${timeParts.months > 1 ? 's' : ''}`);
@@ -552,7 +695,9 @@
                 setInterval(updateCountdown, 1000);
                 updateCountdown(); 
             }
+        }
 
+        function setupAgeCalculation() {
             // Age Calculation Logic
             const ageElement = document.getElementById('currentAge');
             const birthDate = new Date(2001, 10, 9); 
@@ -571,14 +716,68 @@
             if (ageElement) {
                 calculateAge();
             }
+        }
 
-            // Initialize Bouncing Logo Animation
+        function setupBackToTopButton() {
+            // Back to Top Button Logic
+            const backToTopButton = document.getElementById('backToTopBtn');
+            const scrollThreshold = 200; // Show button after scrolling 200px
+
+            if (backToTopButton) {
+                window.addEventListener('scroll', () => {
+                    // Check scroll position (cross-browser)
+                    const scrolled = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                    if (scrolled > scrollThreshold) {
+                        backToTopButton.classList.add('show');
+                    } else {
+                        backToTopButton.classList.remove('show');
+                    }
+                });
+
+                backToTopButton.addEventListener('click', () => {
+                    // window.scrollTo({
+                    //     top: 0,
+                    //     behavior: 'smooth' // Replaced by custom smooth scroll
+                    // });
+                    // Now calls the global, coordinated smooth scroll function
+                    smoothScrollToProgrammatic(0, 800); // Scroll to top (0) in 800ms
+                });
+            }
+        }
+
+        window.onload = function() {
+            window.scrollTo(0, 0);
+
+            setupGeneralSmoothScroll(); // Initialize the unified smooth scroll system
+
+            // Example for handling anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault(); // Prevent default jump
+        const targetId = this.getAttribute('href');
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+            // You might want to adjust targetPosition if you have a fixed header
+            // Now calls the global, coordinated smooth scroll function
+            smoothScrollToProgrammatic(targetPosition, 1000); 
+        }
+    });
+});
+
+
+            setupProfilePicInteraction();
+            setupModal();
+            setupBirthdayCountdown();
+            setupAgeCalculation();
+            
+            // Initialize Bouncing Logo Animation with a delay
             setTimeout(() => {
                 initBouncingLogoAnimation();
-            }, 1500); // Delay initialization by 1.5 seconds (adjust as needed)
+            }, 1500); 
             window.addEventListener('resize', handleBouncingLogoResize);
-
-        }; // End of window.onload
+            setupBackToTopButton();
+        }; 
 
         // --- Bouncing Logo Animation Functions ---
         function measureBouncerDimensions(bouncer) {
