@@ -665,6 +665,13 @@
         const generalSmoothingFactor = 0.05; // Adjust for more/less "lag" (0.05 to 0.15) - Lowered for a "heavier" feel
         let isProgrammaticScrollActive = false; // True if smoothScrollToProgrammatic is active
 
+        // --- START: Scroll Bounce Parameters ---
+        let isBouncing = false;
+        const BOUNCE_AMOUNT = 40; // Pixels to "jiggle"
+        const BOUNCE_OVERSHOOT_DURATION = 120; // Duration of the scroll away from the edge
+        const BOUNCE_RETURN_DURATION = 280;    // Duration of the scroll back to the edge (slightly slower for a smoother feel)
+        // --- END: Scroll Bounce Parameters ---
+
         // Easing function (easeInOutQuad) - used by programmatic scroll
         function easeInOutQuad(t, b, c, d) {
             t /= d / 2;
@@ -697,12 +704,56 @@
 
         // Handles user mouse wheel input for general scrolling
         function handleUserWheelScroll(event) {
-            if (isProgrammaticScrollActive) return;
+            event.preventDefault(); // We are handling scroll, so prevent default browser behavior
 
-            event.preventDefault();
-            targetScrollY += event.deltaY;
+            // If a non-bounce programmatic scroll is active (e.g., "Back to Top"), let it finish.
+            if (isProgrammaticScrollActive && !isBouncing) {
+                return;
+            }
+
+            // If a bounce animation is already in progress, ignore further wheel inputs.
+            if (isBouncing) {
+                return;
+            }
+
             const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-            targetScrollY = Math.max(0, Math.min(targetScrollY, maxScroll));
+
+            // --- START: Edge Bounce Logic ---
+            // Only attempt bounce if the page is actually scrollable
+            if (maxScroll > 0) {
+                if (event.deltaY < 0 && window.pageYOffset <= 0) { // Scrolling up at/past top
+                    isBouncing = true;
+                    const bounceDownTarget = Math.min(BOUNCE_AMOUNT, maxScroll); // Don't bounce further than page height
+                    smoothScrollToProgrammatic(bounceDownTarget, BOUNCE_OVERSHOOT_DURATION, () => {
+                        smoothScrollToProgrammatic(0, BOUNCE_RETURN_DURATION, () => {
+                            isBouncing = false;
+                            targetScrollY = 0; // Ensure scroll state is synced
+                            currentScrollY = 0;
+                        });
+                    });
+                    return; // Bounce initiated, stop further processing for this event
+                }
+
+                if (event.deltaY > 0 && window.pageYOffset >= maxScroll) { // Scrolling down at/past bottom
+                    isBouncing = true;
+                    const bounceUpTarget = Math.max(0, maxScroll - BOUNCE_AMOUNT); // Don't bounce to a negative scroll
+                    smoothScrollToProgrammatic(bounceUpTarget, BOUNCE_OVERSHOOT_DURATION, () => {
+                        smoothScrollToProgrammatic(maxScroll, BOUNCE_RETURN_DURATION, () => {
+                            isBouncing = false;
+                            targetScrollY = maxScroll; // Ensure scroll state is synced
+                            currentScrollY = maxScroll;
+                        });
+                    });
+                    return; // Bounce initiated, stop further processing for this event
+                }
+            }
+            // --- END: Edge Bounce Logic ---
+
+            // Normal scroll handling (if not bouncing and not overridden by other programmatic scroll)
+            // event.preventDefault(); // Already called at the beginning
+
+            targetScrollY += event.deltaY;
+            targetScrollY = Math.max(0, Math.min(targetScrollY, maxScroll)); // Clamp to bounds
 
             if (!generalScrollAnimationId) {
                 currentScrollY = window.pageYOffset; // Sync before starting new animation
@@ -711,7 +762,7 @@
         }
 
         // Function for programmatic smooth scrolls (e.g., BackToTop, anchor links)
-        function smoothScrollToProgrammatic(destinationPosition, duration = 800) {
+        function smoothScrollToProgrammatic(destinationPosition, duration = 800, callback = null) {
             isProgrammaticScrollActive = true;
             if (generalScrollAnimationId) {
                 cancelAnimationFrame(generalScrollAnimationId);
@@ -735,6 +786,9 @@
                     currentScrollY = destinationPosition;    // Sync global state for general scroll
                     targetScrollY = destinationPosition;     // Sync global state for general scroll
                     isProgrammaticScrollActive = false;
+                    if (callback) {
+                        callback(); // Execute the callback if provided
+                    }
                 }
             }
             requestAnimationFrame(programmaticAnimation);
