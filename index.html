@@ -20,12 +20,12 @@
             overflow: hidden; /* Prevent background scroll when modal is open */
         }
         /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> */
-        /* Styling for the social media icons for a little pop */
-        .social-icon { /* Also used for GitHub, Story buttons */
+        /* Styling for social icons and similar buttons. Increased specificity for transition. */
+        a.social-icon, button.social-icon { 
             transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
             font-size: 0.9rem; 
             position: relative; 
-            overflow: hidden; 
+            /* overflow: hidden; /* Removed to allow hover effects like scale and shadow to be fully visible */
             z-index: 1; 
         }
         .social-icon span { /* Target the text span directly for z-index if needed */
@@ -37,7 +37,7 @@
             z-index: 2;
         }
 
-        .social-icon:hover {
+        a.social-icon:hover, button.social-icon:hover { /* Matched specificity for hover */
             transform: translateY(-5px) scale(1.03); 
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
@@ -127,7 +127,8 @@
         .story-button-legend { background-image: url('blood.png'); }
         .story-button-naga { background-image: url('arctic.jpg'); }
 
-        .backstory-trigger-btn {
+        /* Increased specificity for transition for the backstory trigger button */
+        button.backstory-trigger-btn {
             background-color: #4a5568; 
             /* Tailwind classes now handle: color, padding, border-radius, font-weight, margin-bottom */
             cursor: pointer;
@@ -135,18 +136,18 @@
             border: none; 
             font-size: 1rem; /* Retaining specific font size for this button */
         }
-        .backstory-trigger-btn:hover { 
-            background-color: #2d3748; 
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-        }
-
         /* Discord Button Specific Styles */
         #discordButton {
             background-color: #5865F2; /* Discord blurple */
         }
         #discordButton:hover {
             background-color: #4752C4; /* Darker blurple */
+        }
+        /* Hover effect for backstory-trigger-btn, matched specificity */
+        button.backstory-trigger-btn:hover { 
+            background-color: #2d3748; 
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
 
         .discord-dropdown-text {
