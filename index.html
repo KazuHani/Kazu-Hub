@@ -287,6 +287,19 @@
             opacity: 1;
             visibility: visible;
         }
+
+        /* Fade-in on Scroll Effect */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(30px); /* Start slightly lower */
+            transition: opacity 0.8s cubic-bezier(0.645, 0.045, 0.355, 1), transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+            will-change: opacity, transform; /* Hint to browser for optimization */
+        }
+
+        .fade-in-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -322,7 +335,7 @@
             I am currently <span id="currentAge"></span> years old.
         </div>
 
-        <div class="space-y-4 mb-8"> 
+        <div class="space-y-4 mb-8 fade-in-on-scroll"> 
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
@@ -351,10 +364,10 @@
         </div>
 
         <div class="mt-8 pt-6 border-t border-slate-600">
-            <h2 class="text-xl font-semibold text-indigo-400 mb-4 text-center">My music playlist</h2>
+            <h2 class="text-xl font-semibold text-indigo-400 mb-4 text-center fade-in-on-scroll">My music playlist</h2>
             <div class="playlist-container flex justify-center items-center mt-10 mb-6">
-                <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj" 
-                   target="_blank" rel="noopener noreferrer" class="relative group inline-block">
+                <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj"
+                   target="_blank" rel="noopener noreferrer" class="relative group inline-block fade-in-on-scroll">
                     <i class="fas fa-arrow-down playlist-arrow"></i>
                     <img src="Sisu.jpg" alt="Sisu the Dragon"
                          class="sisu-image w-56 h-56 rounded-full object-cover shadow-lg">
@@ -365,36 +378,36 @@
         </div>
 
         <div class="mt-8 pt-6 border-t border-slate-700"> 
-            <h2 class="text-xl font-semibold text-indigo-400 mb-4">Code used for this website</h2>
+            <h2 class="text-xl font-semibold text-indigo-400 mb-4 fade-in-on-scroll">Code used for this website</h2>
             <a href="https://github.com/KazuHani/Website" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
                 </svg>
                 <span>View on GitHub</span>
             </a>
             
-            <h3 class="text-xl font-semibold text-indigo-400 mt-6 mb-3">My Stories</h3>
+            <h3 class="text-xl font-semibold text-indigo-400 mt-6 mb-3 fade-in-on-scroll">My Stories</h3>
             <button id="backstoryTrigger"
-                    class="backstory-trigger-btn w-full flex items-center justify-center text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2">
+                    class="backstory-trigger-btn w-full flex items-center justify-center text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2 fade-in-on-scroll">
                 Kazu's backstory
             </button>
 
             <div class="mt-4 space-y-2"> 
                 <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
                     <span>The Legend That Bleeds</span>
                 </a>
                 <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
                     <span>The Naga And Human Kind</span>
                 </a>
             </div>
         </div> <!-- End of My Stories Section -->
 
         <div class="mt-8 pt-6 border-t border-slate-700">
-            <h2 class="text-xl font-semibold text-indigo-400 mb-4">Where I am</h2>
-            <div class="rounded-lg shadow-md overflow-hidden"> <!-- Wrapper for iframe styling -->
+            <h2 class="text-xl font-semibold text-indigo-400 mb-4 fade-in-on-scroll">Where I am</h2>
+            <div class="rounded-lg shadow-md overflow-hidden fade-in-on-scroll"> <!-- Wrapper for iframe styling -->
                 <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5021369.004948138!2d-4.208000000000001!3d54.268000000000005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x25a3b1142c791a9%3A0xc4f8a0433288257a!2sUnited%20Kingdom!5e0!3m2!1sen!2sus!4v1716467858509!5m2!1sen!2sus"
                     class="w-full h-80 md:h-96" <!-- Responsive height, full width -->
@@ -407,7 +420,7 @@
             </div>
         </div> <!-- End of Where I am Section -->
 
-        <footer class="mt-10 pt-6 border-t border-slate-600">
+        <footer class="mt-10 pt-6 border-t border-slate-600 fade-in-on-scroll">
             <p class="text-center text-sm text-slate-400">
                 Written & Coded by Google Gemini
             </p>
@@ -757,6 +770,35 @@
             }
         }
 
+        function setupFadeInOnScroll() {
+            const elementsToFade = document.querySelectorAll('.fade-in-on-scroll');
+
+            if (!elementsToFade.length) {
+                return;
+            }
+
+            const observerOptions = {
+                root: null, // relative to document viewport
+                rootMargin: '0px 0px -50px 0px', // Trigger when element is 50px from bottom of viewport
+                threshold: 0.01 // Trigger as soon as a tiny part is visible
+            };
+
+            const observerCallback = (entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        // No longer unobserving, so it can fade out again
+                    } else {
+                        entry.target.classList.remove('is-visible');
+                    }
+                });
+            };
+
+            const intersectionObserver = new IntersectionObserver(observerCallback, observerOptions);
+            elementsToFade.forEach(el => {
+                intersectionObserver.observe(el);
+            });
+        }
         window.onload = function() {
             window.scrollTo(0, 0);
 
@@ -782,6 +824,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             setupModal();
             setupBirthdayCountdown();
             setupAgeCalculation();
+            setupFadeInOnScroll(); // Initialize the fade-in on scroll effect
             
             // Initialize Bouncing Logo Animation with a delay
             setTimeout(() => {
