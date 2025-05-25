@@ -228,6 +228,16 @@
             transform: translateY(-50%) translateX(0); /* Slide into final position */
         }
 
+        .playlist-arrow {
+            position: absolute;
+            top: -30px; /* Position above the image */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            font-size: 1.8rem; /* Size of the arrow */
+            color: #818cf8; /* Tailwind indigo-400, matching other highlights */
+            z-index: 5; /* Below party text (z-index: 10), above default image flow */
+        }
+
         /* Responsive adjustments for party text on smaller screens */
         @media (max-width: 767px) { /* Adjust breakpoint as needed, 767px is typical for mobile */
             .party-text {
@@ -341,9 +351,11 @@
         </div>
 
         <div class="mt-8 pt-6 border-t border-slate-600">
-            <div class="playlist-container flex justify-center items-center my-6">
+            <h2 class="text-xl font-semibold text-indigo-400 mb-4 text-center">My music playlist</h2>
+            <div class="playlist-container flex justify-center items-center mt-10 mb-6">
                 <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj" 
                    target="_blank" rel="noopener noreferrer" class="relative group inline-block">
+                    <i class="fas fa-arrow-down playlist-arrow"></i>
                     <img src="Sisu.jpg" alt="Sisu the Dragon"
                          class="sisu-image w-56 h-56 rounded-full object-cover shadow-lg">
                     <span class="party-text party-text-left">Party</span>
