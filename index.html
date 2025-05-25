@@ -408,6 +408,19 @@
         body.body-light-theme #moonIcon { color: #6b7280 !important; }
         body.body-light-theme #sunIcon { color: #f59e0b !important; }
 
+        /* Enhanced readability for time and availability in light theme */
+        body.body-light-theme #currentTimeContainer,
+        body.body-light-theme #availabilityStatusContainer {
+            color: #1f2937 !important; /* Tailwind gray-800, for better contrast */
+        }
+
+        /* Light theme adjustment for the flames background */
+        body.body-light-theme.flames-background {
+            background: linear-gradient(-45deg, #FFFACD, #FFEFD5, #FFDAB9, #FFA07A, #FFB6C1, #FFE4E1, #FFFACD) !important;
+            /* background-size and animation are inherited from the .flames-background rule due to !important */
+        }
+
+
         body.body-light-theme footer .text-slate-400 { color: #6b7280 !important; }
         body.body-light-theme .border-slate-600 { border-color: #d1d5db !important; /* gray-300 */ }
         body.body-light-theme .border-slate-700 { border-color: #e5e7eb !important; /* gray-200 */ }
@@ -421,10 +434,10 @@
 
     <!-- Moved Time and Availability Status Here -->
     <div id="currentTimeContainer" class="text-slate-300 text-base mb-1 fade-in-on-scroll">
-        My current time is <span id="currentTime">Loading...</span>
+        <span class="font-bold text-lg">My current time is </span><span id="currentTime" class="text-lg">Loading...</span>
     </div>
     <div id="availabilityStatusContainer" class="text-slate-400 text-sm mb-6 fade-in-on-scroll">
-        <span id="availabilityMessage">Checking availability...</span>
+        <span id="availabilityMessage" class="font-bold text-base">Checking availability...</span>
     </div>
 
 
