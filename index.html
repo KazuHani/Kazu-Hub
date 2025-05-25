@@ -167,6 +167,13 @@
             margin-top: 0.25rem; /* Tailwind's mt-1, to give a little space from the button */
         }
 
+        /* Responsive adjustments for Discord dropdown text on smaller screens */
+        @media (max-width: 767px) { /* Consistent with other mobile adjustments */
+            .discord-dropdown-text {
+                font-size: 1.125rem; /* Tailwind's text-lg, adjust as needed */
+            }
+        }
+
         /* Backstory Modal Styles */
         #backstoryModal {
             display: none; 
