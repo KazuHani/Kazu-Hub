@@ -13,6 +13,7 @@
             font-family: 'Inter', sans-serif;
             margin: 0; /* Basic reset */
             transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
+            position: relative; /* Ensure body is a stacking context for its children */
         }
         body.modal-open {
             overflow: hidden; /* Prevent background scroll when modal is open */
@@ -48,6 +49,8 @@
             padding: 1rem; 
             animation: zoomInEffect 0.7s ease-out forwards; 
             background-color: rgba(30, 41, 59, 0.9); 
+            position: relative; /* Establish stacking context */
+            z-index: 2;         /* Ensure container is above bouncing images */
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
@@ -235,12 +238,13 @@
 
         .bouncing-image { /* Changed from #bouncingLogo to a class */
             position: absolute;
-            width: 100px; /* Adjust size as needed */
+            width: 250px; /* Adjust size as needed - Made them larger */
             height: auto;  /* Maintain aspect ratio */
-            z-index: 9999; /* Ensure it's on top of other content */
+            z-index: 1; /* Lower z-index to be in the background */
             opacity: 0; /* Start fully transparent for fade-in */
             visibility: hidden; /* Initially hide to prevent alt text flash */
             transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
+            transform: translateZ(0); /* Attempt to promote to its own rendering layer */
         }
     </style>
 </head>
