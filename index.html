@@ -243,9 +243,10 @@
         /* Make it even larger on mobile */
         @media (max-width: 767px) {
             .close-modal-button {
-                width: 70px; height: 70px; /* Larger circle on mobile */
-                font-size: 3.2rem; /* Adjusted 'X' size for larger mobile button */
-                bottom: 15px; /* Adjust bottom spacing for mobile if needed */
+                width: 75px; /* Increased width for mobile */
+                height: 75px; /* Increased height for mobile */
+                font-size: 3.5rem; /* Increased 'X' size for larger mobile button */
+                bottom: 20px; /* More space from the bottom edge on mobile */
             }
         }
         #backstoryModalContent p { margin-bottom: 1rem; }
@@ -624,8 +625,8 @@
     </div>
 
     <div id="backstoryModal">
+        <button id="closeModalButton" class="close-modal-button">×</button> <!-- Moved Here -->
         <div id="backstoryModalContent">
-            <button id="closeModalButton" class="close-modal-button">×</button>
             <h2>Kazu's Backstory</h2>
             <p>Kazu was born in a small cave nestled within the vast, icy expanse of the Arctic. His parents, both magnificent ice dragons, cherished their newborn with a love as boundless as the frozen landscape they called home. Tragically, their time as parents was cut short. When Kazu was merely a babe, his parents were slain, leaving him orphaned in the unforgiving Arctic wilderness.</p>
             <p>Fate, however, had other plans for the young ice dragon. A nearby village of humans discovered the abandoned Kazu and, touched by his helplessness, took him in as one of their own. Despite the inherent differences between humans and dragons, the villagers welcomed Kazu with open arms, providing him with the warmth, care, and love he so desperately needed growing up amidst the hustle and bustle of the human village, Kazu was a curious and bright child, always eager to explore the nooks and crannies of his new home. Unlike his Arctic-dwelling ancestors, Kazu discovered a love for the indoors, finding comfort and endless fascination within the four walls of the village houses. He loved nothing more than to spend his days reading scrolls, playing games, and engaging in all sorts of imaginative play with his human friends.</p>
