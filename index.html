@@ -72,9 +72,9 @@
         .profile-picture {
             transition: transform 0.5s ease-in-out;
         }
-        .profile-picture:hover {
+        /* .profile-picture:hover {
             animation: continuousSpin 2s linear infinite;
-        }
+        } */
 
         @keyframes zoomInEffect {
             from { opacity: 0; transform: scale(0.9); }
@@ -497,8 +497,6 @@
             </div>
         </div>
 
-        <audio id="spinSound" src="you_spin_me_round.mp3" preload="auto"></audio>
-
         <div class="mb-6 text-center "> <!-- Added fade-in-on-scroll to the parent div -->
             <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2 text-indigo-400 fade-in-on-scroll">Kazu Hani</h1>
             <p class="text-slate-300 bio-text text-base md:text-lg mt-2 mb-1 fade-in-on-scroll" id="bioTextParagraph">
@@ -768,44 +766,18 @@
         }
 
         function setupProfilePicInteraction() {
-            const spinSound = document.getElementById('spinSound');
+            // const spinSound = document.getElementById('spinSound'); // Sound removed
             const dragonText = document.getElementById('dragonText'); 
             let dragonTimeout; 
-
-            if (spinSound) {
-                spinSound.load(); 
-            }
 
             const profilePic = document.getElementById('profilePic');
             if (profilePic) {
                 profilePic.addEventListener('mouseenter', () => {
-                    if (spinSound && spinSound.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
-                        spinSound.currentTime = 0;
-                        const playPromise = spinSound.play();
-                        if (playPromise !== undefined) {
-                            playPromise.catch(error => {
-                                console.warn("Audio play on hover was prevented by the browser.", error);
-                            });
-                        }
-                    } else if (spinSound) {
-                        console.warn("Audio is not ready to play. Current readyState: " + spinSound.readyState);
-                    }
-
-                    clearTimeout(dragonTimeout); 
-                    dragonTimeout = setTimeout(() => {
-                        if (dragonText) dragonText.classList.add('visible');
-                        document.body.classList.add('flames-background'); 
-                    }, 3000); 
+                    // Sound and spin logic removed. Dragon text/flames logic also removed from here.
                 });
 
                 profilePic.addEventListener('mouseleave', () => {
-                    if (spinSound) {
-                        spinSound.pause();
-                        spinSound.currentTime = 0;
-                    }
-                    clearTimeout(dragonTimeout);
-                    if (dragonText) dragonText.classList.remove('visible');
-                    document.body.classList.remove('flames-background'); 
+                    // Sound and spin logic removed. Dragon text/flames logic also removed from here.
                 });
             }
         }
