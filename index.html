@@ -335,6 +335,14 @@
             I am currently <span id="currentAge"></span> years old.
         </div>
 
+        <div id="currentTimeContainer" class="text-slate-300 text-base mb-1"> <!-- Adjusted margin for the new element below -->
+            My current time is <span id="currentTime">Loading...</span>
+        </div>
+        <div id="availabilityStatusContainer" class="text-slate-400 text-sm mb-6">
+            <span id="availabilityMessage">Checking availability...</span>
+        </div>
+
+
         <div class="space-y-4 mb-8 fade-in-on-scroll"> 
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
@@ -743,6 +751,51 @@
             }
         }
 
+        function setupCurrentTimeClock() {
+            const currentTimeElement = document.getElementById('currentTime');
+            const availabilityMessageElement = document.getElementById('availabilityMessage');
+
+            // Check if both elements are found
+            if (!currentTimeElement || !availabilityMessageElement) {
+                console.error("Required time or availability elements not found!");
+                if (currentTimeElement) currentTimeElement.textContent = "Time display error.";
+                if (availabilityMessageElement) availabilityMessageElement.textContent = "Status display error.";
+                return;
+            }
+
+            function updateDisplays() { // Renamed to reflect it updates more than just the clock
+                const now = new Date();
+
+                // 1. Update Current Time
+                const timeDisplayOptions = {
+                    timeZone: 'Europe/London', // Correct timezone for the UK
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                };
+                currentTimeElement.textContent = now.toLocaleString('en-GB', timeDisplayOptions);
+
+                // 2. Update Availability Message
+                const hourCheckOptions = { timeZone: 'Europe/London', hour: 'numeric', hour12: false };
+                const currentUKHour = parseInt(now.toLocaleTimeString('en-GB', hourCheckOptions), 10);
+
+                // Define your "awake" period (24-hour format for Europe/London timezone)
+                const sunriseHour = 7;  // Example: 7 AM (UK time)
+                const sunsetHour = 21; // Example: 9 PM (UK time, 21:00)
+
+                if (currentUKHour >= sunsetHour || currentUKHour < sunriseHour) {
+                    // It's "asleep" time (e.g., 9 PM or later, or before 7 AM)
+                    availabilityMessageElement.textContent = "Do not contact me I am asleep";
+                } else {
+                    // It's "awake" time (e.g., 7 AM up to, but not including, 9 PM)
+                    availabilityMessageElement.textContent = "Feel free to message me, I am awake";
+                }
+            }
+            setInterval(updateDisplays, 1000); // Update every second
+            updateDisplays(); // Initial call to display time and status immediately
+        }
+
         function setupBackToTopButton() {
             // Back to Top Button Logic
             const backToTopButton = document.getElementById('backToTopBtn');
@@ -824,6 +877,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             setupModal();
             setupBirthdayCountdown();
             setupAgeCalculation();
+            setupCurrentTimeClock(); // Initialize the current time clock
             setupFadeInOnScroll(); // Initialize the fade-in on scroll effect
             
             // Initialize Bouncing Logo Animation with a delay
