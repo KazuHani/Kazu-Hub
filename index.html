@@ -238,7 +238,9 @@
             width: 100px; /* Adjust size as needed */
             height: auto;  /* Maintain aspect ratio */
             z-index: 9999; /* Ensure it's on top of other content */
-            opacity: 0.7; /* Added for transparency */
+            opacity: 0; /* Start fully transparent for fade-in */
+            visibility: hidden; /* Initially hide to prevent alt text flash */
+            transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
         }
     </style>
 </head>
@@ -363,11 +365,11 @@
         </div>
     </div>
 
-    <img id="bouncingLogoHappy" class="bouncing-image" src="KazuHappy.png" alt="Bouncing Kazu Happy">
-    <img id="bouncingLogoLove"  class="bouncing-image" src="KazuLove.png"  alt="Bouncing Kazu Love">
-    <img id="bouncingLogoSmug"  class="bouncing-image" src="KazuSmug.png"  alt="Bouncing Kazu Smug">
-    <img id="bouncingLogoThink" class="bouncing-image" src="KazuThink.png" alt="Bouncing Kazu Think">
-    <img id="bouncingLogoSad"   class="bouncing-image" src="KazuSad.png"   alt="Bouncing Kazu Sad">
+    <img id="bouncingLogoHappy" class="bouncing-image" alt="Bouncing Kazu Happy">
+    <img id="bouncingLogoLove"  class="bouncing-image" alt="Bouncing Kazu Love">
+    <img id="bouncingLogoSmug"  class="bouncing-image" alt="Bouncing Kazu Smug">
+    <img id="bouncingLogoThink" class="bouncing-image" alt="Bouncing Kazu Think">
+    <img id="bouncingLogoSad"   class="bouncing-image" alt="Bouncing Kazu Sad">
 
 
     <script>
@@ -567,7 +569,9 @@
             }
 
             // Initialize Bouncing Logo Animation
-            initBouncingLogoAnimation();
+            setTimeout(() => {
+                initBouncingLogoAnimation();
+            }, 1500); // Delay initialization by 1.5 seconds (adjust as needed)
             window.addEventListener('resize', handleBouncingLogoResize);
 
         }; // End of window.onload
@@ -588,14 +592,23 @@
                 { id: 'bouncingLogoSad',   src: 'KazuSad.png',   alt: 'Bouncing Kazu Sad'   }
             ];
 
-            bouncers = imageConfigs.map(config => ({
-                ...config,
-                element: document.getElementById(config.id),
-                x: 0, y: 0,
-                dx: (Math.random() * 0.5 + 0.5) * (Math.random() < 0.5 ? 1 : -1), // Slower: Random speed & direction (0.5 to 1.0)
-                dy: (Math.random() * 0.5 + 0.5) * (Math.random() < 0.5 ? 1 : -1), // Slower: Random speed & direction (0.5 to 1.0)
-                width: 0, height: 0
-            }));
+            bouncers = imageConfigs.map(config => {
+                const element = document.getElementById(config.id);
+                if (!element) {
+                    console.error(`Bouncing logo element with ID '${config.id}' not found during map!`);
+                    return null; 
+                }
+                return {
+                    id: config.id,
+                    srcPath: config.src, // Store the intended src path from config
+                    altText: config.alt, // Store alt text from config
+                    element: element,
+                    x: 0, y: 0,
+                    dx: (Math.random() * 0.5 + 0.5) * (Math.random() < 0.5 ? 1 : -1), 
+                    dy: (Math.random() * 0.5 + 0.5) * (Math.random() < 0.5 ? 1 : -1), 
+                    width: 0, height: 0
+                };
+            }).filter(b => b !== null); // Filter out any nulls if elements weren't found
 
             bouncers.forEach(bouncer => {
                 if (!bouncer.element) {
@@ -603,11 +616,17 @@
                     return; // Skip this bouncer if element not found
                 }
 
+                // Ensure alt text is set from our config, even if HTML was minimal
+                bouncer.element.alt = bouncer.altText;
+
                 bouncer.element.onerror = function() {
                     this.onerror = null; 
                     this.src = 'https://placehold.co/100x80/7c3aed/ffffff?text=Oops'; 
                     this.alt = 'Bouncing Placeholder';
-                    // The 'load' event for the placeholder will trigger the rest if it loads.
+                    // Manually trigger onload for the placeholder if it loads synchronously (e.g. cached)
+                    if (this.complete && this.naturalWidth !== 0) {
+                        bouncer.element.onload(); // Call the original onload handler
+                    }
                 };
 
                 bouncer.element.onload = () => {
@@ -624,14 +643,24 @@
 
                     bouncer.element.style.left = bouncer.x + 'px';
                     bouncer.element.style.top = bouncer.y + 'px';
+                    bouncer.element.style.visibility = 'visible'; // Make it visible (still opacity 0 due to CSS)
 
-                    if (bouncerAnimationFrameId === null) {
+                    requestAnimationFrame(() => { // Ensure visibility is processed before opacity transition
+                        bouncer.element.style.opacity = '0.7'; // Set target opacity to trigger fade-in
+                    });
+
+                    // Start animation loop only once after the first image successfully loads and is processed
+                    if (bouncerAnimationFrameId === null && bouncers.some(b => b.width > 0)) {
                         animateBouncingLogo();
                     }
                 };
 
+                // Set the src attribute to start loading the image
+                bouncer.element.src = bouncer.srcPath;
+
+                // If the image is already in cache and loads synchronously, manually trigger onload
                 if (bouncer.element.complete && bouncer.element.naturalWidth !== 0) {
-                    bouncer.element.onload();
+                    bouncer.element.onload(); // Call the onload handler we just defined
                 }
             });
         }
