@@ -124,6 +124,20 @@
         .story-button-legend { background-image: url('blood.png'); }
         .story-button-naga { background-image: url('arctic.jpg'); }
 
+        .backstory-trigger-btn {
+            background-color: #4a5568; 
+            /* Tailwind classes now handle: color, padding, border-radius, font-weight, margin-bottom */
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            border: none; 
+            font-size: 1rem; /* Retaining specific font size for this button */
+        }
+        .backstory-trigger-btn:hover { 
+            background-color: #2d3748; 
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
         /* Backstory Modal Styles */
         #backstoryModal {
             display: none; 
@@ -161,34 +175,53 @@
         #backstoryModalContent p { margin-bottom: 1rem; }
         #backstoryModalContent p:last-child { margin-bottom: 0; }
 
-        .backstory-trigger-btn {
-            background-color: #4a5568; 
-            color: white; padding: 0.5rem 1rem;
-            border-radius: 0.375rem; cursor: pointer;
-            font-weight: 600; transition: background-color 0.2s ease;
-            border: none; font-size: 1rem;
-            margin-bottom: 0.5rem; 
+        /* Sisu Image and Party Time Text Styles */
+        .sisu-image {
+            transform: rotate(0deg); /* Initial upright state */
+            /* Transition for returning to upright and for box-shadow changes */
+            transition: transform 0.7s ease-out, box-shadow 0.3s ease-in-out; 
+            will-change: transform; /* Hint for browser optimization */
+            /* Tailwind classes used: w-56 h-56 rounded-full object-cover shadow-lg */
         }
-        .backstory-trigger-btn:hover { background-color: #2d3748; }
 
-        /* YouTube Playlist Embed Styling */
-        .playlist-container {
-            position: relative;
-            overflow: hidden;
-            width: 100%;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-            border-radius: 0.5rem; /* rounded-lg */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+        .group:hover .sisu-image {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25); /* Enhanced shadow */
+            animation: continuousSpin 2s linear infinite;
+            /* Override base transition for transform during animation to prevent conflict.
+               Disable transitions on hover to let animation fully control and base transitions handle exit. */
+            transition: none;
         }
-        .playlist-container iframe {
+
+        .party-text {
             position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            border: none; /* Remove iframe border */
+            top: 50%;
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: bold; /* font-bold */
+            color: #fca5a5; /* Tailwind red-300 */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            opacity: 0;
+            transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none; /* So text doesn't interfere with image hover */
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .party-text-left {
+            right: 100%; 
+            margin-right: 1rem; /* Space between text and image */
+            transform: translateY(-50%) translateX(25px); /* Start offset towards center, hidden by opacity */
+        }
+
+        .party-text-right {
+            left: 100%;
+            margin-left: 1rem; /* Space between text and image */
+            transform: translateY(-50%) translateX(-25px); /* Start offset towards center, hidden by opacity */
+        }
+
+        .group:hover .party-text-left,
+        .group:hover .party-text-right {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0); /* Slide into final position */
         }
 
     </style>
@@ -255,24 +288,14 @@
         </div>
 
         <div class="mt-8 pt-6 border-t border-slate-600">
-            <h2 class="text-xl font-semibold text-indigo-400 mb-4">My Favourite Jams</h2>
-            <div class="playlist-container">
-                <!-- 
-                    Instructions for YouTube Playlist:
-                    1. Go to your playlist on YouTube (not YouTube Music directly for the ID).
-                    2. The URL will look something like: https://www.youtube.com/playlist?list=PLxxxxxxxxxxxxxx
-                    3. Copy the part after "list=" (e.g., PLxxxxxxxxxxxxxx). This is your PLAYLIST_ID.
-                    4. Replace "YOUR_YOUTUBE_PLAYLIST_ID_HERE" in the src attribute below with your actual playlist ID.
-                    5. If your YouTube Music playlist doesn't have a public YouTube equivalent, direct embedding might be more complex.
-                -->
-                <iframe 
-                    src="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=7-IekDYi4F-IoVku" 
-                    title="YouTube video player" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    referrerpolicy="strict-origin-when-cross-origin" 
-                    allowfullscreen>
-                </iframe>
+            <div class="playlist-container flex justify-center items-center my-6">
+                <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj" 
+                   target="_blank" rel="noopener noreferrer" class="relative group inline-block">
+                    <img src="Sisu.jpg" alt="Sisu the Dragon"
+                         class="sisu-image w-56 h-56 rounded-full object-cover shadow-lg">
+                    <span class="party-text party-text-left">Party</span>
+                    <span class="party-text party-text-right">Time</span>
+                </a>
             </div>
         </div>
 
@@ -287,7 +310,8 @@
             </a>
             
             <h3 class="text-xl font-semibold text-indigo-400 mt-6 mb-3">My Stories</h3>
-            <button id="backstoryTrigger" class="backstory-trigger-btn">
+            <button id="backstoryTrigger"
+                    class="backstory-trigger-btn w-full flex items-center justify-center text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2">
                 Kazu's backstory
             </button>
 
@@ -511,8 +535,6 @@
             if (ageElement) {
                 calculateAge();
             }
-
-            // Gemini Bio Enhancer REMOVED
             
         }; // End of window.onload
         
