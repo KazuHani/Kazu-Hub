@@ -140,6 +140,33 @@
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
 
+        /* Discord Button Specific Styles */
+        #discordButton {
+            background-color: #5865F2; /* Discord blurple */
+        }
+        #discordButton:hover {
+            background-color: #4752C4; /* Darker blurple */
+        }
+
+        .discord-dropdown-text {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out, margin-top 0.4s ease-out;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0; /* Start with no margin, will be added when visible */
+            background-color: rgba(55, 65, 81, 0.85); /* e.g., slate-700 with opacity */
+            border-radius: 0 0 0.375rem 0.375rem; /* Tailwind's rounded-md for bottom */
+        }
+        .discord-dropdown-text.visible {
+            max-height: 70px; /* Adjust if text is longer or needs more space */
+            opacity: 1;
+            padding-top: 0.75rem;  /* Tailwind's py-3 equivalent for consistency */
+            padding-bottom: 0.75rem; /* Tailwind's py-3 equivalent */
+            margin-top: 0.25rem; /* Tailwind's mt-1, to give a little space from the button */
+        }
+
         /* Backstory Modal Styles */
         #backstoryModal {
             display: none; 
@@ -369,6 +396,20 @@
                 <img src="reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
                 <span>Reddit</span>
             </a>
+
+            <!-- New Discord Button and Dropdown -->
+            <div class="discord-container">
+                <button id="discordButton"
+                   class="social-icon flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md"
+                   aria-expanded="false" aria-controls="discordDropdownText">
+                    <i class="fab fa-discord w-6 h-6 mr-3" aria-hidden="true"></i>
+                    <span>Discord</span>
+                </button>
+                <div id="discordDropdownText" class="discord-dropdown-text text-center text-slate-300 text-sm" role="region" aria-labelledby="discordButton">
+                    add me kazu_hani
+                </div>
+            </div>
+
         </div>
 
         <div class="mt-8 pt-6 border-t border-slate-600">
@@ -880,6 +921,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             setupCurrentTimeClock(); // Initialize the current time clock
             setupFadeInOnScroll(); // Initialize the fade-in on scroll effect
             
+            setupDiscordButton(); // Initialize the Discord button
             // Initialize Bouncing Logo Animation with a delay
             setTimeout(() => {
                 initBouncingLogoAnimation();
@@ -887,6 +929,28 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             window.addEventListener('resize', handleBouncingLogoResize);
             setupBackToTopButton();
         }; 
+
+        function setupDiscordButton() {
+            const discordButton = document.getElementById('discordButton');
+            const discordDropdown = document.getElementById('discordDropdownText');
+
+            if (discordButton && discordDropdown) {
+                discordButton.addEventListener('click', (event) => {
+                    event.preventDefault(); 
+                    const isVisible = discordDropdown.classList.toggle('visible');
+                    discordButton.setAttribute('aria-expanded', isVisible.toString());
+                });
+                // Set initial ARIA attributes
+                // Dropdown is initially not visible, so button is not expanded.
+                discordButton.setAttribute('aria-expanded', 'false');
+            } else {
+                if (!discordButton) console.warn("Discord button element not found (ID: discordButton).");
+                if (!discordDropdown) console.warn("Discord dropdown element not found (ID: discordDropdownText).");
+            }
+        }
+
+
+
 
         // --- Bouncing Logo Animation Functions ---
         function measureBouncerDimensions(bouncer) {
