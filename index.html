@@ -238,6 +238,7 @@
             width: 100px; /* Adjust size as needed */
             height: auto;  /* Maintain aspect ratio */
             z-index: 9999; /* Ensure it's on top of other content */
+            opacity: 0.7; /* Added for transparency */
         }
     </style>
 </head>
@@ -591,8 +592,8 @@
                 ...config,
                 element: document.getElementById(config.id),
                 x: 0, y: 0,
-                dx: (Math.random() * 1.5 + 1) * (Math.random() < 0.5 ? 1 : -1), // Random speed & direction (1 to 2.5)
-                dy: (Math.random() * 1.5 + 1) * (Math.random() < 0.5 ? 1 : -1), // Random speed & direction (1 to 2.5)
+                dx: (Math.random() * 0.5 + 0.5) * (Math.random() < 0.5 ? 1 : -1), // Slower: Random speed & direction (0.5 to 1.0)
+                dy: (Math.random() * 0.5 + 0.5) * (Math.random() < 0.5 ? 1 : -1), // Slower: Random speed & direction (0.5 to 1.0)
                 width: 0, height: 0
             }));
 
