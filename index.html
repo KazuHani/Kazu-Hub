@@ -50,6 +50,7 @@
             background-color: rgba(30, 41, 59, 0.9); 
             position: relative; /* Establish stacking context */
             z-index: 2;         /* Ensure container is above bouncing images */
+            /* margin-top: 4rem; /* Removed as icons are now in normal flow */
         }
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
@@ -334,9 +335,40 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* Sun/Moon Time Indicator Icons */
+        .time-indicator-icon {
+            /* position: fixed; Removed for normal flow */
+            font-size: 2.5rem; /* Adjust size as needed */ 
+            display: none; /* Default: hidden and does not take up space */
+            /*
+                Opacity and transition are now handled by the .fade-in-on-scroll class
+                and its .is-visible state.
+            */
+            margin-bottom: 1.5rem; /* Space below the icon when visible */
+            /* Centered by body's "items-center" flex property */
+        }
+        /* 
+           No .layout-active or .fade-in-effect classes needed anymore.
+           Direct style manipulation in JS will handle display and opacity.
+        */
+
+        #moonIcon {
+            /* top, left, transform removed */
+            color: #e2e8f0; /* Tailwind slate-200, a soft white/grey */
+        }
+        #sunIcon {
+            /* top, left, transform removed */
+            color: #facc15; /* Tailwind yellow-400, a bright sun color */
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
+
+    <!-- Sun/Moon Time Indicators (Moved here for DOM order) -->
+    <i id="moonIcon" class="fas fa-moon time-indicator-icon fade-in-on-scroll"></i>
+    <i id="sunIcon" class="fas fa-sun time-indicator-icon fade-in-on-scroll"></i>
+
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
         <div class="mb-6"> 
@@ -802,12 +834,15 @@
         function setupCurrentTimeClock() {
             const currentTimeElement = document.getElementById('currentTime');
             const availabilityMessageElement = document.getElementById('availabilityMessage');
+            const moonIcon = document.getElementById('moonIcon');
+            const sunIcon = document.getElementById('sunIcon');
 
             // Check if both elements are found
-            if (!currentTimeElement || !availabilityMessageElement) {
-                console.error("Required time or availability elements not found!");
+            if (!currentTimeElement || !availabilityMessageElement || !moonIcon || !sunIcon) {
+                console.error("Required time, availability, or sun/moon icon elements not found!");
                 if (currentTimeElement) currentTimeElement.textContent = "Time display error.";
                 if (availabilityMessageElement) availabilityMessageElement.textContent = "Status display error.";
+                // Icons will remain hidden by default CSS if not found, which is acceptable.
                 return;
             }
 
@@ -832,7 +867,29 @@
                 const sunriseHour = 7;  // Example: 7 AM (UK time)
                 const sunsetHour = 21; // Example: 9 PM (UK time, 21:00)
 
-                if (currentUKHour >= sunsetHour || currentUKHour < sunriseHour) {
+                const isNight = (currentUKHour >= sunsetHour || currentUKHour < sunriseHour);
+                const iconToShow = isNight ? moonIcon : sunIcon;
+                const iconToHide = isNight ? sunIcon : moonIcon;
+
+                // --- Show Routine for the icon that should be visible ---
+                // If it's not already 'block', make it so.
+                // The IntersectionObserver (for fade-in-on-scroll) will handle
+                // adding 'is-visible' to trigger the animation if it's in the viewport.
+                if (iconToShow.style.display !== 'block') {
+                    iconToShow.style.display = 'block'; // Make space for the icon
+                    // Note: The .fade-in-on-scroll class will keep it opacity:0 initially
+                    // until .is-visible is added by the IntersectionObserver.
+                }
+
+                // --- Hide Routine for the icon that should not be visible ---
+                // If it's not already 'none', make it so.
+                // Also remove 'is-visible' to ensure it's reset for the next time it might show.
+                if (iconToHide.style.display !== 'none') {
+                    iconToHide.classList.remove('is-visible'); // Reset animation state
+                    iconToHide.style.display = 'none';
+                }
+
+                if (isNight) {
                     // It's "asleep" time (e.g., 9 PM or later, or before 7 AM)
                     availabilityMessageElement.textContent = "Do not contact me I am asleep";
                 } else {
@@ -922,11 +979,11 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 
             setupProfilePicInteraction();
+            setupFadeInOnScroll(); // Initialize the fade-in on scroll effect first
             setupModal();
             setupBirthdayCountdown();
             setupAgeCalculation();
             setupCurrentTimeClock(); // Initialize the current time clock
-            setupFadeInOnScroll(); // Initialize the fade-in on scroll effect
             
             setupDiscordButton(); // Initialize the Discord button
             // Initialize Bouncing Logo Animation with a delay
