@@ -224,6 +224,12 @@
             transform: translateY(-50%) translateX(0); /* Slide into final position */
         }
 
+        /* Responsive adjustments for party text on smaller screens */
+        @media (max-width: 767px) { /* Adjust breakpoint as needed, 767px is typical for mobile */
+            .party-text {
+                font-size: 1.5rem; /* text-2xl, smaller for mobile */
+            }
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
