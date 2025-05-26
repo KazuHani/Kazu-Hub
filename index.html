@@ -1134,7 +1134,7 @@
             const observerOptions = {
                 root: null, // relative to document viewport
                 rootMargin: '0px', // Use the actual viewport boundaries
-                threshold: 0.01 // Trigger as soon as a tiny part is visible
+                threshold: 0 // Trigger as soon as any part is visible / not visible
             };
 
             const observerCallback = (entries, observer) => {
