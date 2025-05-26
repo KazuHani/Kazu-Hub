@@ -1079,7 +1079,7 @@
                     // It's "asleep" time (e.g., 9 PM or later, or before 7 AM)
                     // Apply Dark Theme (current default)
                     bodyElement.classList.remove('body-light-theme');
-                    bodyElement.classList.remove('bg-gray-100'); // Remove gray-100 background if it was there
+                    bodyElement.classList.remove('bg-gray-200'); // Remove gray-200 background if it was there
                     bodyElement.classList.add('from-slate-900', 'to-slate-700', 'text-white');
 
                     availabilityMessageElement.textContent = "Do not contact me I am asleep";
@@ -1087,7 +1087,7 @@
                     // It's "awake" time (e.g., 7 AM up to, but not including, 9 PM)
                     // Apply Light Theme
                     bodyElement.classList.add('body-light-theme');
-                    bodyElement.classList.add('bg-gray-100'); // Add gray-100 background
+                    bodyElement.classList.add('bg-gray-200'); // Add gray-200 background
                     bodyElement.classList.remove('from-slate-900', 'to-slate-700', 'text-white');
 
                     availabilityMessageElement.textContent = "Feel free to message me, I am awake";
