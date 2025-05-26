@@ -169,6 +169,18 @@
             margin-top: 0.25rem; /* Tailwind's mt-1, to give a little space from the button */
         }
 
+        @keyframes fancyDiscordTextAnimation {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 4px rgba(220, 220, 255, 0.6); /* Softer white/lavender glow */
+            }
+            50% {
+                transform: scale(1.02); /* Further reduced scale for an even smaller pulse */
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.9), /* Brighter white */
+                             0 0 20px rgba(129, 140, 248, 0.7), /* Indigo-400 like glow */
+                             0 0 30px rgba(99, 102, 241, 0.5);  /* Indigo-500 like glow */
+            }
+        }
         /* Responsive adjustments for Discord dropdown text on smaller screens */
         @media (max-width: 767px) { /* Consistent with other mobile adjustments */
             .discord-dropdown-text {
@@ -176,6 +188,17 @@
             }
         }
 
+        .discord-dropdown-text.visible {
+            max-height: 120px; /* Increased max-height for larger text and animation */
+            opacity: 1;
+            padding-top: 1rem;   /* Increased padding a bit */
+            padding-bottom: 1rem;/* Increased padding a bit */
+            margin-top: 0.5rem;  /* Slightly more margin */
+            font-size: 2.25rem;  /* Tailwind's text-4xl, "huge" */
+            line-height: 1.2;    /* Adjust line-height for larger font */
+            font-weight: 600;    /* Tailwind's font-semibold */
+            animation: fancyDiscordTextAnimation 2s ease-in-out infinite; /* Apply the fancy animation */
+        }
         /* Backstory Modal Styles */
         #backstoryModal {
             display: none; 
@@ -430,6 +453,12 @@
             background-color: rgba(229, 231, 235, 0.9); /* Tailwind gray-200 with opacity */
         }
 
+        body.body-light-theme .discord-dropdown-text.visible {
+            color: #4f46e5; /* Tailwind indigo-600 for better visibility */
+            background-color: rgba(229, 231, 235, 0.95); /* Slightly more opaque gray-200 */
+            /* The existing fancyDiscordTextAnimation should still look good with its light glows */
+        }
+
         body.body-light-theme #backstoryModalContent {
             background-color: #ffffff;
             color: #1f2937;
@@ -472,6 +501,13 @@
         body.body-light-theme .border-slate-600 { border-color: #d1d5db !important; /* gray-300 */ }
         body.body-light-theme .border-slate-700 { border-color: #e5e7eb !important; /* gray-200 */ }
     </style>
+    <script>
+        // Adjustments for responsive font size of the animated Discord text
+        // This script block is placed early to ensure CSS overrides can be managed if needed,
+        // but the actual application of styles is done via CSS classes.
+        // The main logic is in the CSS media queries.
+        // This is more of a placeholder if complex JS-driven responsiveness was needed.
+    </script>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
 
@@ -564,6 +600,13 @@
             </div>
 
         </div>
+        <script>
+            // Media query for responsive font size of Discord text is handled in CSS.
+            // This script block is just for structural context if we needed JS later.
+            if (window.matchMedia("(max-width: 767px)").matches) {
+                // CSS : `.discord-dropdown-text.visible` has its own @media query for font-size
+            }
+        </script>
 
         <div class="mt-8 pt-6 border-t border-slate-600">
             <h2 class="text-xl font-semibold text-indigo-400 mb-4 text-center fade-in-on-scroll">My music playlist</h2>
