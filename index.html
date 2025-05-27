@@ -1146,29 +1146,41 @@
             if (backToTopButton) {
                 window.addEventListener('scroll', () => {
                     // Check scroll position (cross-browser)
-                    const scrolled = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                    const scrolled = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0; // Renamed for clarity
                     const scrollHeight = document.documentElement.scrollHeight;
                     const clientHeight = document.documentElement.clientHeight;
+                    const isMobile = window.matchMedia("(max-width: 767px)").matches; // Check current viewport state
 
                     // Show/hide logic based on scrollThreshold
                     if (scrolled > scrollThreshold) {
                         backToTopButton.classList.add('show');
                     } else {
                         backToTopButton.classList.remove('show');
+                        // Ensure .at-bottom is also removed if button is hidden and was at bottom
+                        // This handles cases where user scrolls up quickly from the very bottom
+                        if (backToTopButton.classList.contains('at-bottom')) {
+                            backToTopButton.classList.remove('at-bottom');
+                            backToTopButton.querySelector('.btn-icon').setAttribute('aria-hidden', 'false');
+                            backToTopButton.querySelector('.btn-text').setAttribute('aria-hidden', 'true');
+                        }
                     }
 
                     // Logic to move button to center when at the very bottom of the page
                     if (scrolled + clientHeight >= scrollHeight - bottomProximityThreshold) {
                         if (!backToTopButton.classList.contains('at-bottom')) {
                             backToTopButton.classList.add('at-bottom');
-                            // Icon and Text are now visible in .at-bottom state
                             backToTopButton.querySelector('.btn-icon').setAttribute('aria-hidden', 'false');
-                            backToTopButton.querySelector('.btn-text').setAttribute('aria-hidden', 'false');
+                            // Adjust text's aria-hidden based on visibility in .at-bottom state
+                            if (isMobile) { // On mobile, text is hidden by CSS in .at-bottom state
+                                backToTopButton.querySelector('.btn-text').setAttribute('aria-hidden', 'true');
+                            } else { // On desktop, text is visible in .at-bottom state
+                                backToTopButton.querySelector('.btn-text').setAttribute('aria-hidden', 'false');
+                            }
                         }
                     } else {
                         if (backToTopButton.classList.contains('at-bottom')) {
                             backToTopButton.classList.remove('at-bottom');
-                            // CSS handles visual change of content
+                            // Default state: icon visible, text hidden
                             backToTopButton.querySelector('.btn-icon').setAttribute('aria-hidden', 'false');
                             backToTopButton.querySelector('.btn-text').setAttribute('aria-hidden', 'true');
                         }
