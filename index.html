@@ -360,7 +360,7 @@
         #backToTopBtn {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            /* 'right: 20px;' is replaced by the 'left' calculation below for smoother animation */
             background-color: #4f46e5; /* Tailwind indigo-600 */
             color: white;
             border: none;
@@ -372,7 +372,15 @@
             z-index: 998; /* Above fixed social bar (990), below modal (1000) */
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease, transform 0.2s ease;
+
+            /* Default positioning (bottom-right):
+               Positions the left edge of the button such that the button itself is 20px from the right.
+               Assumes button width is 48px. */
+            left: calc(100% - 48px - 20px);
+            transform: translateX(0); /* Initial transform state */
+
+            /* Transition for all animated properties. 'right' is removed as 'left' is now primary. */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease, transform 0.5s ease-in-out, left 0.5s ease-in-out, bottom 0.5s ease-in-out;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -380,11 +388,24 @@
         }
         #backToTopBtn:hover {
             background-color: #4338ca; /* Tailwind indigo-700 */
-            transform: scale(1.1);
+            /* The transform from the base style (translateX(0)) will be overridden by this scale on hover.
+               If .at-bottom is active, .at-bottom:hover will take precedence. */
+            transform: translateX(0) scale(1.1); /* Explicitly combine with base transform if needed, or just scale */
         }
         #backToTopBtn.show {
             opacity: 1;
             visibility: visible;
+        }
+        /* Styles for when the button is at the bottom of the page */
+        #backToTopBtn.at-bottom {
+            /* 'right: auto;' is implicit as 'left' now dictates position */
+            left: 50%;   /* Position the left edge at the center */
+            transform: translateX(-50%); /* Shift the button left by half its width to truly center it */
+            /* bottom: 20px; /* Stays the same, or adjust as needed */
+        }
+
+        #backToTopBtn.at-bottom:hover {
+            transform: translateX(-50%) scale(1.1);
         }
 
         /* Fade-in on Scroll Effect */
@@ -426,80 +447,32 @@
             color: #facc15; /* Tailwind yellow-400, a bright sun color */
         }
 
-        /* Light Theme Styles */
-        body.body-light-theme {
-            /* background-color: white !important; /* Set by JS adding bg-white */
-            /* background-image: none !important; /* Set by JS removing gradient classes */
-            color: #111827; /* Tailwind gray-900 for general text */
+        /* Screen Edge Glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none; /* Allows interaction with elements underneath */
+            z-index: 1002; /* Above modal (1000) and close button (1001) */
+            transition: box-shadow 0.7s ease-in-out; /* Smooth transition for glow changes */
         }
 
-        body.body-light-theme .container {
-            background-color: #ffffff; /* white */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05); /* Softer shadow */
+        body.day-glow-active::before {
+            box-shadow:
+                0 0 0 5px rgba(255, 128, 0, 1),   /* Super Bright Orange Line, 5px thick, fully opaque */
+                0 0 35px 12px rgba(255, 255, 0, 0.95),/* Bright Yellow Glow, 35px blur, 12px spread, very opaque */
+                0 0 70px 18px rgba(255, 100, 0, 0.85);/* Wider Vibrant Orange Glow, 70px blur, 18px spread, very opaque */
         }
 
-        body.body-light-theme .text-indigo-400 { color: #4f46e5 !important; /* Tailwind indigo-600 */ }
-        body.body-light-theme #kazuName.text-indigo-400 { color: #4f46e5 !important; } /* More specific for h1 */
-        body.body-light-theme h2.text-indigo-400 { color: #4f46e5 !important; } /* More specific for h2 */
-        body.body-light-theme h3.text-indigo-400 { color: #4f46e5 !important; } /* More specific for h3 */
-
-        body.body-light-theme .text-slate-300 { color: #374151 !important; /* Tailwind gray-700 */ }
-        body.body-light-theme .text-slate-400 { color: #4b5563 !important; /* Tailwind gray-600 */ }
-        body.body-light-theme #dragonText { color: #dc2626 !important; background-color: rgba(229, 231, 235, 0.85) !important; }
-        body.body-light-theme .highlight-text { color: #6366f1 !important; /* Tailwind indigo-500 */ }
-
-        body.body-light-theme .discord-dropdown-text {
-            color: #374151; /* Tailwind gray-700 */
-            background-color: rgba(229, 231, 235, 0.9); /* Tailwind gray-200 with opacity */
+        body.night-glow-active::before {
+            box-shadow:
+                0 0 0 5px rgba(0, 0, 0, 1),       /* Black, 5px thick line, fully opaque */
+                0 0 30px 10px rgba(0, 0, 0, 0.9),  /* Black, 30px blur, 10px spread glow, very opaque */
+                0 0 60px 15px rgba(0, 0, 0, 0.85); /* Black, 60px blur, 15px spread wider glow, very opaque */
         }
-
-        body.body-light-theme .discord-dropdown-text.visible {
-            color: #4f46e5; /* Tailwind indigo-600 for better visibility */
-            background-color: rgba(229, 231, 235, 0.95); /* Slightly more opaque gray-200 */
-            /* The existing fancyDiscordTextAnimation should still look good with its light glows */
-        }
-
-        body.body-light-theme #backstoryModalContent {
-            background-color: #ffffff;
-            color: #1f2937;
-        }
-        body.body-light-theme #backstoryModalContent h2 { color: #4f46e5; }
-        body.body-light-theme .close-modal-button {
-            background-color: #d1d5db; /* gray-300 for light theme */
-            color: #374151; /* gray-700 for 'X' in light theme */
-        }
-        body.body-light-theme .close-modal-button:hover {
-            background-color: #9ca3af; /* gray-400 for light theme hover */
-            color: #1f2937; /* gray-800 for 'X' on hover */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Standard shadow for light theme */
-        }
-
-        body.body-light-theme .party-text-left,
-        body.body-light-theme .party-text-right {
-            color: #ef4444; /* Tailwind red-500 */
-            text-shadow: 1px 1px 2px rgba(150,150,150,0.5);
-        }
-        body.body-light-theme .playlist-arrow { color: #4f46e5; }
-
-        body.body-light-theme #moonIcon { color: #6b7280 !important; }
-        body.body-light-theme #sunIcon { color: #f59e0b !important; }
-
-        /* Enhanced readability for time and availability in light theme */
-        body.body-light-theme #currentTimeContainer,
-        body.body-light-theme #availabilityStatusContainer {
-            color: #1f2937 !important; /* Tailwind gray-800, for better contrast */
-        }
-
-        /* Light theme adjustment for the flames background */
-        body.body-light-theme.flames-background {
-            background: linear-gradient(-45deg, #FFFACD, #FFEFD5, #FFDAB9, #FFA07A, #FFB6C1, #FFE4E1, #FFFACD) !important;
-            /* background-size and animation are inherited from the .flames-background rule due to !important */
-        }
-
-
-        body.body-light-theme footer .text-slate-400 { color: #6b7280 !important; }
-        body.body-light-theme .border-slate-600 { border-color: #d1d5db !important; /* gray-300 */ }
-        body.body-light-theme .border-slate-700 { border-color: #e5e7eb !important; /* gray-200 */ }
     </style>
     <script>
         // Adjustments for responsive font size of the animated Discord text
@@ -1021,6 +994,7 @@
             const availabilityMessageElement = document.getElementById('availabilityMessage');
             const moonIcon = document.getElementById('moonIcon');
             const sunIcon = document.getElementById('sunIcon');
+            const bodyElement = document.body; // Get body element for glow effect
 
             // Check if both elements are found
             if (!currentTimeElement || !availabilityMessageElement || !moonIcon || !sunIcon) {
@@ -1031,7 +1005,7 @@
                 return;
             }
 
-            function updateDisplays() { // Renamed to reflect it updates more than just the clock
+            function updateDisplays() {
                 const now = new Date();
 
                 // 1. Update Current Time
@@ -1044,7 +1018,7 @@
                 };
                 currentTimeElement.textContent = now.toLocaleString('en-GB', timeDisplayOptions);
 
-                // 2. Update Availability Message
+                // 2. Update Availability Message, Sun/Moon Icons, and Screen Glow
                 const hourCheckOptions = { timeZone: 'Europe/London', hour: 'numeric', hour12: false };
                 const currentUKHour = parseInt(now.toLocaleTimeString('en-GB', hourCheckOptions), 10);
 
@@ -1056,17 +1030,13 @@
                 const iconToShow = isNight ? moonIcon : sunIcon;
                 const iconToHide = isNight ? sunIcon : moonIcon;
                 const bodyElement = document.body;
-
                 // --- Show Routine for the icon that should be visible ---
                 // If it's not already 'block', make it so.
                 // The IntersectionObserver (for fade-in-on-scroll) will handle
                 // adding 'is-visible' to trigger the animation if it's in the viewport.
                 if (iconToShow.style.display !== 'block') {
                     iconToShow.style.display = 'block'; // Make space for the icon
-                    // Note: The .fade-in-on-scroll class will keep it opacity:0 initially
-                    // until .is-visible is added by the IntersectionObserver.
                 }
-
                 // --- Hide Routine for the icon that should not be visible ---
                 // If it's not already 'none', make it so.
                 // Also remove 'is-visible' to ensure it's reset for the next time it might show.
@@ -1076,21 +1046,13 @@
                 }
 
                 if (isNight) {
-                    // It's "asleep" time (e.g., 9 PM or later, or before 7 AM)
-                    // Apply Dark Theme (current default)
-                    bodyElement.classList.remove('body-light-theme');
-                    bodyElement.classList.remove('bg-gray-300'); // Remove gray-300 background if it was there
-                    bodyElement.classList.add('from-slate-900', 'to-slate-700', 'text-white');
-
                     availabilityMessageElement.textContent = "Do not contact me I am asleep";
+                    bodyElement.classList.add('night-glow-active');
+                    bodyElement.classList.remove('day-glow-active');
                 } else {
-                    // It's "awake" time (e.g., 7 AM up to, but not including, 9 PM)
-                    // Apply Light Theme
-                    bodyElement.classList.add('body-light-theme');
-                    bodyElement.classList.add('bg-gray-300'); // Add gray-300 background
-                    bodyElement.classList.remove('from-slate-900', 'to-slate-700', 'text-white');
-
                     availabilityMessageElement.textContent = "Feel free to message me, I am awake";
+                    bodyElement.classList.add('day-glow-active');
+                    bodyElement.classList.remove('night-glow-active');
                 }
             }
             setInterval(updateDisplays, 1000); // Update every second
@@ -1101,23 +1063,31 @@
             // Back to Top Button Logic
             const backToTopButton = document.getElementById('backToTopBtn');
             const scrollThreshold = 200; // Show button after scrolling 200px
+            const bottomProximityThreshold = 5; // Pixels from bottom to consider "at bottom"
 
             if (backToTopButton) {
                 window.addEventListener('scroll', () => {
                     // Check scroll position (cross-browser)
                     const scrolled = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                    const scrollHeight = document.documentElement.scrollHeight;
+                    const clientHeight = document.documentElement.clientHeight;
+
+                    // Show/hide logic based on scrollThreshold
                     if (scrolled > scrollThreshold) {
                         backToTopButton.classList.add('show');
                     } else {
                         backToTopButton.classList.remove('show');
                     }
+
+                    // Logic to move button to center when at the very bottom of the page
+                    if (scrolled + clientHeight >= scrollHeight - bottomProximityThreshold) {
+                        backToTopButton.classList.add('at-bottom');
+                    } else {
+                        backToTopButton.classList.remove('at-bottom');
+                    }
                 });
 
                 backToTopButton.addEventListener('click', () => {
-                    // window.scrollTo({
-                    //     top: 0,
-                    //     behavior: 'smooth' // Replaced by custom smooth scroll
-                    // });
                     // Now calls the global, coordinated smooth scroll function
                     smoothScrollToProgrammatic(0, 800); // Scroll to top (0) in 800ms
                 });
