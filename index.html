@@ -377,15 +377,54 @@
                Positions the left edge of the button such that the button itself is 20px from the right.
                Assumes button width is 48px. */
             left: calc(100% - 48px - 20px);
+            padding-left: 0; /* Explicit initial padding for transition */
+            padding-right: 0; /* Explicit initial padding for transition */
             transform: translateX(0); /* Initial transform state */
 
             /* Transition for all animated properties. 'right' is removed as 'left' is now primary. */
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease, transform 0.5s ease-in-out, left 0.5s ease-in-out, bottom 0.5s ease-in-out;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease,
+                        transform 0.5s ease-in-out, left 0.5s ease-in-out, bottom 0.5s ease-in-out,
+                        border-radius 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out, /* Added height */
+                        padding-left 0.3s ease-in-out, padding-right 0.3s ease-in-out;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.25rem; /* Adjust icon size */
         }
+
+        /* Styles for icon and text within the Back to Top button for smooth transition */
+        #backToTopBtn .btn-icon,
+        #backToTopBtn .btn-text {
+            display: inline-flex; /* Allows alignment and behaves like inline for flex layout */
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease-in-out, max-width 0.3s ease-in-out;
+            overflow: hidden;     /* Crucial for max-width to act as a "clip" */
+            white-space: nowrap;  /* Prevent text/icon from wrapping during transition */
+        }
+
+        /* Default state: Icon visible, Text hidden and takes no space */
+        #backToTopBtn .btn-icon {
+            opacity: 1;
+            max-width: 3em; /* Adjust as needed to fit the icon */
+        }
+        #backToTopBtn .btn-text {
+            opacity: 0;
+            max-width: 0;
+        }
+
+        /* At-bottom state: Icon and Text visible */
+        #backToTopBtn.at-bottom .btn-icon {
+            opacity: 1;         /* Make icon visible */
+            max-width: 3em;     /* Allow space for icon (matches default state) */
+            margin-right: 0.25rem; /* Add a small space between icon and text */
+
+        }
+        #backToTopBtn.at-bottom .btn-text {
+            opacity: 1;
+            max-width: 5em; /* Adjust as needed to fit "Top" text */
+        }
+
         #backToTopBtn:hover {
             background-color: #4338ca; /* Tailwind indigo-700 */
             /* The transform from the base style (translateX(0)) will be overridden by this scale on hover.
@@ -398,16 +437,51 @@
         }
         /* Styles for when the button is at the bottom of the page */
         #backToTopBtn.at-bottom {
+            /* Shape change to a more standard button */
+            /* border-radius: 0px; */      /* Old: Remove rounded corners for a sharp look */
+            width: auto;             /* Allow width to fit content (text + padding) */
+            border-top-left-radius: 0.375rem;    /* Rounded top-left corner */
+            border-top-right-radius: 0.375rem;   /* Rounded top-right corner */
+            border-bottom-left-radius: 0px;      /* Sharp bottom-left corner */
+            border-bottom-right-radius: 0px;     /* Sharp bottom-right corner */
+            padding-left: 1rem;      /* Horizontal padding for the text */
+            padding-right: 1rem;
+            /* Position change - move it up to avoid footer text */
+            bottom: 0px;             /* Pinned to the very bottom of the screen when centered */
             /* 'right: auto;' is implicit as 'left' now dictates position */
             left: 50%;   /* Position the left edge at the center */
             transform: translateX(-50%); /* Shift the button left by half its width to truly center it */
-            /* bottom: 20px; /* Stays the same, or adjust as needed */
         }
 
         #backToTopBtn.at-bottom:hover {
             transform: translateX(-50%) scale(1.1);
         }
 
+        /* Mobile Optimizations for Back to Top Button when at bottom */
+        @media (max-width: 767px) {
+            #backToTopBtn.at-bottom {
+                width: 56px;    /* Fixed width for a more compact, tappable button */
+                height: 56px;   /* Fixed height, slightly larger for mobile */
+                padding-left: 0;  /* Reset padding as size is fixed */
+                padding-right: 0;
+                /* border-radius for top corners is inherited from the desktop .at-bottom state */
+                /* transform: translateX(-50%) and bottom: 0px are inherited */
+            }
+
+            #backToTopBtn.at-bottom .btn-text {
+                opacity: 0;       /* Hide text on mobile when at bottom */
+                max-width: 0;
+                /* No specific padding needed as it's hidden */
+            }
+
+            #backToTopBtn.at-bottom .btn-icon {
+                margin-right: 0;  /* No margin needed as text is hidden */
+                font-size: 1.5rem; /* Slightly larger icon for better visibility */
+            }
+
+            /* Hover effect for mobile .at-bottom state (transform is inherited) */
+            /* #backToTopBtn.at-bottom:hover {} */ /* No change needed, existing hover is fine */
+        }
         /* Fade-in on Scroll Effect */
         .fade-in-on-scroll {
             opacity: 0;
@@ -669,7 +743,8 @@
 
 
     <button id="backToTopBtn" title="Go to top">
-        <i class="fas fa-arrow-up"></i>
+        <span class="btn-icon" aria-hidden="false"><i class="fas fa-arrow-up"></i></span>
+        <span class="btn-text" aria-hidden="true">Top</span>
     </button>
     <script defer>
         // Bouncing Logo Animation Variables
@@ -682,13 +757,13 @@
         let generalScrollAnimationId = null;
         const generalSmoothingFactor = 0.05; // Adjust for more/less "lag" (0.05 to 0.15) - Lowered for a "heavier" feel
         let isProgrammaticScrollActive = false; // True if smoothScrollToProgrammatic is active
-
+/*
         // --- START: Scroll Bounce Parameters ---
         let isBouncing = false;
         const BOUNCE_AMOUNT = 40; // Pixels to "jiggle"
         const BOUNCE_OVERSHOOT_DURATION = 120; // Duration of the scroll away from the edge
         const BOUNCE_RETURN_DURATION = 280;    // Duration of the scroll back to the edge (slightly slower for a smoother feel)
-        // --- END: Scroll Bounce Parameters ---
+        // --- END: Scroll Bounce Parameters --- */
 
         // Easing function (easeInOutQuad) - used by programmatic scroll
         function easeInOutQuad(t, b, c, d) {
@@ -730,45 +805,45 @@
             }
 
             // If a bounce animation is already in progress, ignore further wheel inputs.
-            if (isBouncing) {
-                return;
-            }
+            // if (isBouncing) { // isBouncing will no longer be set to true by edge scroll
+            //     return;
+            // }
 
             const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
 
-            // --- START: Edge Bounce Logic ---
+            // --- START: Edge Bounce Logic (Now Disabled) ---
             // Only attempt bounce if the page is actually scrollable
             if (maxScroll > 0) {
                 if (event.deltaY < 0 && window.pageYOffset <= 0) { // Scrolling up at/past top
                     isBouncing = true;
                     const bounceDownTarget = Math.min(BOUNCE_AMOUNT, maxScroll); // Don't bounce further than page height
                     smoothScrollToProgrammatic(bounceDownTarget, BOUNCE_OVERSHOOT_DURATION, () => {
-                        smoothScrollToProgrammatic(0, BOUNCE_RETURN_DURATION, () => {
-                            isBouncing = false;
-                            targetScrollY = 0; // Ensure scroll state is synced
-                            currentScrollY = 0;
-                        });
+                         smoothScrollToProgrammatic(0, BOUNCE_RETURN_DURATION, () => {
+                             isBouncing = false;
+                             targetScrollY = 0; // Ensure scroll state is synced
+                             currentScrollY = 0;
+                         });
                     });
-                    return; // Bounce initiated, stop further processing for this event
+                    return; // Bounce initiated, stop further processing for this event */
                 }
 
                 if (event.deltaY > 0 && window.pageYOffset >= maxScroll) { // Scrolling down at/past bottom
-                    isBouncing = true;
+                    /*
+                    // isBouncing = true; // Bounce logic disabled
                     const bounceUpTarget = Math.max(0, maxScroll - BOUNCE_AMOUNT); // Don't bounce to a negative scroll
                     smoothScrollToProgrammatic(bounceUpTarget, BOUNCE_OVERSHOOT_DURATION, () => {
                         smoothScrollToProgrammatic(maxScroll, BOUNCE_RETURN_DURATION, () => {
-                            isBouncing = false;
+                            // isBouncing = false;
                             targetScrollY = maxScroll; // Ensure scroll state is synced
                             currentScrollY = maxScroll;
                         });
                     });
-                    return; // Bounce initiated, stop further processing for this event
+                    return; // Bounce initiated, stop further processing for this event */
                 }
             }
             // --- END: Edge Bounce Logic ---
 
             // Normal scroll handling (if not bouncing and not overridden by other programmatic scroll)
-            // event.preventDefault(); // Already called at the beginning
 
             targetScrollY += event.deltaY;
             targetScrollY = Math.max(0, Math.min(targetScrollY, maxScroll)); // Clamp to bounds
@@ -1084,9 +1159,19 @@
 
                     // Logic to move button to center when at the very bottom of the page
                     if (scrolled + clientHeight >= scrollHeight - bottomProximityThreshold) {
-                        backToTopButton.classList.add('at-bottom');
+                        if (!backToTopButton.classList.contains('at-bottom')) {
+                            backToTopButton.classList.add('at-bottom');
+                            // Icon and Text are now visible in .at-bottom state
+                            backToTopButton.querySelector('.btn-icon').setAttribute('aria-hidden', 'false');
+                            backToTopButton.querySelector('.btn-text').setAttribute('aria-hidden', 'false');
+                        }
                     } else {
-                        backToTopButton.classList.remove('at-bottom');
+                        if (backToTopButton.classList.contains('at-bottom')) {
+                            backToTopButton.classList.remove('at-bottom');
+                            // CSS handles visual change of content
+                            backToTopButton.querySelector('.btn-icon').setAttribute('aria-hidden', 'false');
+                            backToTopButton.querySelector('.btn-text').setAttribute('aria-hidden', 'true');
+                        }
                     }
                 });
 
