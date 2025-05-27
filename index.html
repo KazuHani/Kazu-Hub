@@ -101,7 +101,7 @@
             transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
         }
         #dragonText.visible {
-            max-height: 70px; opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
+            max-height: 70px; /* Ensure this is enough for the text */ opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
         }
         @keyframes flameAnimation {
             0%, 100% { background-position: 0% 50%; }
@@ -562,6 +562,27 @@
             transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
             transform: translateZ(0); /* Attempt to promote to its own rendering layer */
         }
+
+        /* Table of Contents Styles */
+        .active-toc-link {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white !important;
+            font-weight: 500; /* semibold */
+        }
+        #tableOfContents::-webkit-scrollbar {
+            width: 6px;
+        }
+        #tableOfContents::-webkit-scrollbar-track {
+            background: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
+            border-radius: 3px;
+        }
+        #tableOfContents::-webkit-scrollbar-thumb {
+            background: #64748b; /* slate-500 */
+            border-radius: 3px;
+        }
+        #tableOfContents::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5; /* indigo-600 */
+        }
     </style>
     <script>
         // Adjustments for responsive font size of the animated Discord text
@@ -572,6 +593,14 @@
     </script>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
+
+    <!-- Table of Contents -->
+    <div id="tableOfContents" class="hidden lg:block fixed top-1/4 right-4 w-36 bg-slate-800/90 backdrop-blur-sm p-1 rounded-md shadow-xl z-[999] max-h-[60vh] overflow-y-auto">
+        <h3 class="text-base font-semibold text-indigo-300 mb-1 border-b border-slate-700 pb-1">Contents</h3>
+        <ul id="tocList" class="space-y-1">
+            <!-- Links will be dynamically inserted by JavaScript -->
+        </ul>
+    </div>
 
     <!-- Sun/Moon Time Indicators (Moved here for DOM order) -->
     <i id="moonIcon" class="fas fa-moon time-indicator-icon fade-in-on-scroll"></i>
@@ -676,7 +705,7 @@
         </script>
 
         <div class="mt-8 pt-6 border-t border-slate-600">
-            <h2 class="text-xl font-semibold text-indigo-400 mb-4 text-center fade-in-on-scroll">My music playlist</h2>
+            <h2 id="toc-music-playlist" class="toc-section-header text-xl font-semibold text-indigo-400 mb-4 text-center fade-in-on-scroll">My music playlist</h2>
             <div class="playlist-container flex justify-center items-center mt-10 mb-6">
                 <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj"
                    target="_blank" rel="noopener noreferrer" class="relative group inline-block fade-in-on-scroll">
@@ -690,7 +719,7 @@
         </div>
 
         <div class="mt-8 pt-6 border-t border-slate-700"> 
-            <h2 class="text-xl font-semibold text-indigo-400 mb-4 fade-in-on-scroll">Code used for this website</h2>
+            <h2 id="toc-website-code" class="toc-section-header text-xl font-semibold text-indigo-400 mb-4 fade-in-on-scroll">Code used for this website</h2>
             <a href="https://github.com/KazuHani/Kazu-Hub" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -699,7 +728,7 @@
                 <span>View on GitHub</span>
             </a>
             
-            <h3 class="text-xl font-semibold text-indigo-400 mt-6 mb-3 fade-in-on-scroll">My Stories</h3>
+            <h3 id="toc-my-stories" class="toc-section-header text-xl font-semibold text-indigo-400 mt-6 mb-3 fade-in-on-scroll">My Stories</h3>
             <button id="backstoryTrigger"
                     class="backstory-trigger-btn w-full flex items-center justify-center text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2 fade-in-on-scroll">
                 Kazu's backstory
@@ -718,7 +747,7 @@
         </div> <!-- End of My Stories Section -->
 
         <div class="mt-8 pt-6 border-t border-slate-700">
-            <h2 class="text-xl font-semibold text-indigo-400 mb-4 fade-in-on-scroll">Where I am</h2>
+            <h2 id="toc-where-i-am" class="toc-section-header text-xl font-semibold text-indigo-400 mb-4 fade-in-on-scroll">Where I am</h2>
             <div class="rounded-lg shadow-md overflow-hidden fade-in-on-scroll"> <!-- Wrapper for iframe styling -->
                 <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5021369.004948138!2d-4.208000000000001!3d54.268000000000005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x25a3b1142c791a9%3A0xc4f8a0433288257a!2sUnited%20Kingdom!5e0!3m2!1sen!2sus!4v1716467858509!5m2!1sen!2sus"
@@ -734,7 +763,7 @@
 
         <footer class="mt-10 pt-6 border-t border-slate-600 fade-in-on-scroll">
             <p class="text-center text-sm text-slate-400">
-                Written & Coded by Google Gemini
+                Coded by Google Gemini
             </p>
         </footer>
     </div>
@@ -1231,7 +1260,7 @@
         function setupBackToTopButton() {
             // Back to Top Button Logic
             const backToTopButton = document.getElementById('backToTopBtn');
-            const scrollThreshold = 200; // Show button after scrolling 200px
+            const scrollThreshold = 1; // Show button after scrolling 200px
             const bottomProximityThreshold = 5; // Pixels from bottom to consider "at bottom"
 
             if (backToTopButton) {
@@ -1343,13 +1372,15 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             setupCurrentTimeClock(); // Initialize the current time clock
             
             manageChristmasSnowflakes(); // Initial check for snowflakes on page load
-            setupDiscordButton(); // Initialize the Discord button
+            setupDiscordButton(); 
+            setupTableOfContents(); // Initialize Table of Contents
             // Initialize Bouncing Logo Animation with a delay
             setTimeout(() => {
                 initKazuBouncerAnimation();
             }, 1500); 
             window.addEventListener('resize', handleBouncerResize);
             setupBackToTopButton();
+
         }; 
 
         function setupDiscordButton() {
@@ -1369,6 +1400,111 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 if (!discordButton) console.warn("Discord button element not found (ID: discordButton).");
                 if (!discordDropdown) console.warn("Discord dropdown element not found (ID: discordDropdownText).");
             }
+        }
+
+        function setupTableOfContents() {
+            const tocContainer = document.getElementById('tableOfContents');
+            const tocList = document.getElementById('tocList');
+            const mainContentContainer = document.querySelector('.container'); // Scope for section headers
+
+            // console.log("TOC Setup: tocContainer:", tocContainer);
+            // console.log("TOC Setup: tocList:", tocList);
+            // console.log("TOC Setup: mainContentContainer:", mainContentContainer);
+
+            if (!tocContainer || !tocList || !mainContentContainer) {
+                console.warn("TOC setup: Essential elements (tocContainer, tocList, or mainContentContainer) missing. TOC will not be populated.");
+                if (tocContainer) tocContainer.style.display = 'none'; // Explicitly hide if JS setup fails
+                return;
+            }
+
+            const sections = mainContentContainer.querySelectorAll('.toc-section-header');
+            const tocItems = []; 
+            // console.log("TOC Setup: Found sections:", sections.length, sections);
+
+            if (sections.length === 0) {
+                console.warn("TOC setup: No sections found with '.toc-section-header'. TOC will be hidden.");
+                tocContainer.style.display = 'none'; // Explicitly hide if no sections
+                return;
+            }
+
+            sections.forEach((section, index) => {
+                const title = section.textContent.trim();
+                let id = section.id;
+
+                if (!id) { // Ensure section has an ID
+                    id = `toc-section-${index}`;
+                    section.id = id;
+                }
+
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                link.href = `#${id}`;
+                link.textContent = title;
+                // Tailwind classes for styling TOC links
+                link.classList.add('text-slate-300', 'hover:text-white', 'hover:bg-slate-700', 'block', 'py-0.5', 'px-1.5', 'rounded', 'text-sm', 'transition-colors', 'duration-150');
+                link.dataset.tocLinkFor = id; 
+
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetElement = document.getElementById(id);
+                    if (targetElement) {
+                        const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                        smoothScrollToProgrammatic(targetPosition, 800);
+                    }
+                });
+
+                listItem.appendChild(link);
+                tocList.appendChild(listItem); // tocList already has space-y-0.5
+                tocItems.push({ id: id, element: section, link: link });
+            });
+
+            let activeLinkTimeout;
+            function highlightActiveLink() {
+                clearTimeout(activeLinkTimeout);
+                activeLinkTimeout = setTimeout(() => {
+                    let currentActiveId = null;
+                    const scrollPosition = window.pageYOffset;
+                    const viewportHeight = window.innerHeight;
+                    const activationOffset = viewportHeight * 0.25; // Section top needs to be above this point (25% from top of viewport)
+                    const totalScrollableHeight = document.documentElement.scrollHeight - viewportHeight;
+
+                    for (let i = tocItems.length - 1; i >= 0; i--) {
+                        const sectionTopAbsolute = tocItems[i].element.getBoundingClientRect().top + window.pageYOffset;
+                        if (sectionTopAbsolute - activationOffset <= scrollPosition) {
+                            currentActiveId = tocItems[i].id;
+                            break;
+                        }
+                    }
+
+                    if (!currentActiveId && tocItems.length > 0) {
+                        const firstSectionTopRelative = tocItems[0].element.getBoundingClientRect().top;
+                        // If the top of the first section is within, say, 80% of the viewport height from the top AND it's on screen
+                        if (firstSectionTopRelative < viewportHeight * 0.8 && firstSectionTopRelative >= -activationOffset) { // Allow slightly above viewport
+                            currentActiveId = tocItems[0].id;
+                        }
+                    }
+                    
+                    // If scrolled to the very bottom, make the last item active
+                    // (Added a small threshold, e.g., 20px, to ensure it triggers reliably)
+                    if (tocItems.length > 0 && (scrollPosition >= totalScrollableHeight - 20)) {
+                         currentActiveId = tocItems[tocItems.length - 1].id;
+                    }
+
+                    tocItems.forEach(item => {
+                        if (item.id === currentActiveId) {
+                            item.link.classList.add('active-toc-link');
+                            item.link.setAttribute('aria-current', 'section');
+                        } else {
+                            item.link.classList.remove('active-toc-link');
+                            item.link.removeAttribute('aria-current');
+                        }
+                    });
+                }, 100); // Debounce
+            }
+
+            window.addEventListener('scroll', highlightActiveLink, { passive: true });
+            window.addEventListener('resize', highlightActiveLink, { passive: true }); // Re-check on resize
+            highlightActiveLink(); // Initial call
         }
 
         // --- Bouncing Logo Animation Functions ---
