@@ -450,28 +450,31 @@
         /* Screen Edge Glow */
         body::before {
             content: '';
-            position: fixed;
+            position: absolute; /* Changed from fixed to scroll with the page */
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
+            height: 1px; /* Further reduced thickness for the line/glow origin at the top */
             pointer-events: none; /* Allows interaction with elements underneath */
             z-index: 1002; /* Above modal (1000) and close button (1001) */
-            transition: box-shadow 0.7s ease-in-out; /* Smooth transition for glow changes */
+            /* Transition for background (the line color) and box-shadow (the glow) */
+            transition: background-color 0.7s ease-in-out, box-shadow 0.7s ease-in-out;
         }
 
         body.day-glow-active::before {
+            /* background-color removed to have no solid line for daytime */
             box-shadow:
-                0 0 0 5px rgba(255, 128, 0, 1),   /* Super Bright Orange Line, 5px thick, fully opaque */
-                0 0 35px 12px rgba(255, 255, 0, 0.95),/* Bright Yellow Glow, 35px blur, 12px spread, very opaque */
-                0 0 70px 18px rgba(255, 100, 0, 0.85);/* Wider Vibrant Orange Glow, 70px blur, 18px spread, very opaque */
+                /* Glows emanate from the top edge (0px y-offset) */
+                0 0 30px 8px rgba(255, 255, 0, 0.95),  /* Bright Yellow Glow, slightly less spread/blur */
+                0 0 60px 12px rgba(255, 100, 0, 0.85); /* Wider Vibrant Orange Glow, slightly less spread/blur */
         }
 
         body.night-glow-active::before {
+            background-color: rgba(0, 0, 0, 1); /* Black Line (now 1px thick) */
             box-shadow:
-                0 0 0 5px rgba(0, 0, 0, 1),       /* Black, 5px thick line, fully opaque */
-                0 0 30px 10px rgba(0, 0, 0, 0.9),  /* Black, 30px blur, 10px spread glow, very opaque */
-                0 0 60px 15px rgba(0, 0, 0, 0.85); /* Black, 60px blur, 15px spread wider glow, very opaque */
+                /* Glows start 1px below the top (at the bottom edge of the 1px high ::before element) */
+                0 1px 30px 10px rgba(0, 0, 0, 0.9),  /* Black Glow */
+                0 1px 60px 15px rgba(0, 0, 0, 0.85); /* Wider Black Glow */
         }
     </style>
     <script>
