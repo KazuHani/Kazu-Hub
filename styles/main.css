@@ -558,6 +558,7 @@
             background-color: #4f46e5; /* indigo-600 */
             color: white !important;
             font-weight: 500; /* semibold */
+            
         }
         #tableOfContents::-webkit-scrollbar {
             width: 6px;
@@ -573,3 +574,20 @@
         #tableOfContents::-webkit-scrollbar-thumb:hover {
             background: #4f46e5; /* indigo-600 */
         }
+
+        /* Add these styles to your styles/main.css file */
+
+/* Table of Contents fade-in styles */
+#tableOfContents {
+    /* Define the transition property on the element itself */
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    /* Default state when visible and not 'loading' (opacity 1 is default for visible elements) */
+    /* transform: translateY(0); /* Default transform state */
+}
+
+#tableOfContents.toc-is-loading {
+    /* Initial state before fade-in */
+    opacity: 0;
+    transform: translateY(-15px); /* Start slightly above and fade/drop in */
+    /* pointer-events: none; /* Optional: prevent interaction while loading/invisible */
+}

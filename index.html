@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="Styles/main.css">
     <script>
         // Adjustments for responsive font size of the animated Discord text
         // This script block is placed early to ensure CSS overrides can be managed if needed,
@@ -20,7 +20,7 @@
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
 
     <!-- Table of Contents -->
-    <div id="tableOfContents" class="hidden lg:block fixed top-1/4 right-4 w-36 bg-slate-800/90 backdrop-blur-sm p-1 rounded-md shadow-xl z-[999] max-h-[60vh] overflow-y-auto">
+    <div id="tableOfContents" class="toc-is-loading hidden lg:block fixed top-1/4 right-4 w-36 bg-slate-800/90 backdrop-blur-sm p-1 rounded-md shadow-xl z-[999] max-h-[60vh] overflow-y-auto">
         <h3 class="text-base font-semibold text-indigo-300 mb-1 border-b border-slate-700 pb-1">Contents</h3>
         <ul id="tocList" class="space-y-1">
             <!-- Links will be dynamically inserted by JavaScript -->
@@ -834,10 +834,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             const tocList = document.getElementById('tocList');
             const mainContentContainer = document.querySelector('.container'); // Scope for section headers
 
-            // console.log("TOC Setup: tocContainer:", tocContainer);
-            // console.log("TOC Setup: tocList:", tocList);
-            // console.log("TOC Setup: mainContentContainer:", mainContentContainer);
-
             if (!tocContainer || !tocList || !mainContentContainer) {
                 console.warn("TOC setup: Essential elements (tocContainer, tocList, or mainContentContainer) missing. TOC will not be populated.");
                 if (tocContainer) tocContainer.style.display = 'none'; // Explicitly hide if JS setup fails
@@ -845,48 +841,16 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             }
 
             const sections = mainContentContainer.querySelectorAll('.toc-section-header');
-            const tocItems = [];
-            // console.log("TOC Setup: Found sections:", sections.length, sections);
+            let tocItems = []; // Will be populated by populateAndActivateTOC
+            tocContainer.classList.remove('toc-is-loading');
+            let activeLinkTimeout;
 
-            if (sections.length === 0) {
-                console.warn("TOC setup: No sections found with '.toc-section-header'. TOC will be hidden.");
-                tocContainer.style.display = 'none'; // Explicitly hide if no sections
-                return;
-            }
-
-            sections.forEach((section, index) => {
-                const title = section.textContent.trim();
-                let id = section.id;
-
-                if (!id) { // Ensure section has an ID
-                    id = `toc-section-${index}`;
-                    section.id = id;
+            function highlightActiveLink() {
+                // Guard against running if tocItems is not yet populated or is empty
+                if (!tocItems || tocItems.length === 0) {
+                    return;
                 }
 
-                const listItem = document.createElement('li');
-                const link = document.createElement('a');
-                link.href = `#${id}`;
-                link.textContent = title;
-                // Tailwind classes for styling TOC links
-                link.classList.add('text-slate-300', 'hover:text-white', 'hover:bg-slate-700', 'block', 'py-0.5', 'px-1.5', 'rounded', 'text-sm', 'transition-colors', 'duration-150');
-                link.dataset.tocLinkFor = id;
-
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetElement = document.getElementById(id);
-                    if (targetElement) {
-                        const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
-                        smoothScrollToProgrammatic(targetPosition, 800);
-                    }
-                });
-
-                listItem.appendChild(link);
-                tocList.appendChild(listItem); // tocList already has space-y-0.5
-                tocItems.push({ id: id, element: section, link: link });
-            });
-
-            let activeLinkTimeout;
-            function highlightActiveLink() {
                 clearTimeout(activeLinkTimeout);
                 activeLinkTimeout = setTimeout(() => {
                     let currentActiveId = null;
@@ -894,44 +858,102 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                     const viewportHeight = window.innerHeight;
                     const activationOffset = viewportHeight * 0.25; // Section top needs to be above this point (25% from top of viewport)
                     const totalScrollableHeight = document.documentElement.scrollHeight - viewportHeight;
-
+    
                     for (let i = tocItems.length - 1; i >= 0; i--) {
-                        const sectionTopAbsolute = tocItems[i].element.getBoundingClientRect().top + window.pageYOffset;
+                        const sectionElement = tocItems[i].element;
+                        if (!sectionElement || !document.body.contains(sectionElement)) continue; // Check if element exists
+                        const sectionTopAbsolute = sectionElement.getBoundingClientRect().top + window.pageYOffset;
                         if (sectionTopAbsolute - activationOffset <= scrollPosition) {
                             currentActiveId = tocItems[i].id;
                             break;
                         }
                     }
-
+    
                     if (!currentActiveId && tocItems.length > 0) {
-                        const firstSectionTopRelative = tocItems[0].element.getBoundingClientRect().top;
-                        // If the top of the first section is within, say, 80% of the viewport height from the top AND it's on screen
-                        if (firstSectionTopRelative < viewportHeight * 0.8 && firstSectionTopRelative >= -activationOffset) { // Allow slightly above viewport
-                            currentActiveId = tocItems[0].id;
+                        const firstSectionElement = tocItems[0].element;
+                        if (firstSectionElement && document.body.contains(firstSectionElement)) {
+                            const firstSectionTopRelative = firstSectionElement.getBoundingClientRect().top;
+                            if (firstSectionTopRelative < viewportHeight * 0.8 && firstSectionTopRelative >= -activationOffset) {
+                                currentActiveId = tocItems[0].id;
+                            }
                         }
                     }
-
+    
                     // If scrolled to the very bottom, make the last item active
-                    // (Added a small threshold, e.g., 20px, to ensure it triggers reliably)
                     if (tocItems.length > 0 && (scrollPosition >= totalScrollableHeight - 20)) {
                          currentActiveId = tocItems[tocItems.length - 1].id;
                     }
-
+    
                     tocItems.forEach(item => {
-                        if (item.id === currentActiveId) {
-                            item.link.classList.add('active-toc-link');
-                            item.link.setAttribute('aria-current', 'section');
-                        } else {
-                            item.link.classList.remove('active-toc-link');
-                            item.link.removeAttribute('aria-current');
+                        if (item.link) { // Ensure link exists
+                            if (item.id === currentActiveId) {
+                                item.link.classList.add('active-toc-link');
+                                item.link.setAttribute('aria-current', 'section');
+                            } else {
+                                item.link.classList.remove('active-toc-link');
+                                item.link.removeAttribute('aria-current');
+                            }
                         }
                     });
                 }, 100); // Debounce
             }
 
-            window.addEventListener('scroll', highlightActiveLink, { passive: true });
-            window.addEventListener('resize', highlightActiveLink, { passive: true }); // Re-check on resize
-            highlightActiveLink(); // Initial call
+            function populateAndActivateTOC() {
+                tocList.innerHTML = ''; // Clear any pre-existing items
+                tocItems = []; // Reset tocItems array
+
+                const sections = mainContentContainer.querySelectorAll('.toc-section-header');
+
+                if (sections.length === 0) {
+                    console.warn("TOC populate: No sections found with '.toc-section-header'. TOC will be hidden.");
+                    tocContainer.style.display = 'none'; // Ensure it's hidden if no content
+                    return; // Do not remove 'toc-is-loading' if no content
+                }
+
+                sections.forEach((section, index) => {
+                    const title = section.textContent.trim();
+                    let id = section.id;
+
+                    if (!id) {
+                        id = `toc-section-${index}`;
+                        section.id = id;
+                    }
+
+                    const listItem = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.href = `#${id}`;
+                    link.textContent = title;
+                    link.classList.add('text-slate-300', 'hover:text-white', 'hover:bg-slate-700', 'block', 'py-0.5', 'px-1.5', 'rounded', 'text-sm', 'transition-colors', 'duration-150');
+                    link.dataset.tocLinkFor = id;
+
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const targetElement = document.getElementById(id);
+                        if (targetElement) {
+                            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                            smoothScrollToProgrammatic(targetPosition, 800);
+                        }
+                    });
+
+                    listItem.appendChild(link);
+                    tocList.appendChild(listItem);
+                    tocItems.push({ id: id, element: section, link: link });
+                });
+
+                // TOC is populated, remove loading state so CSS classes can take over.
+                tocContainer.classList.remove('toc-is-loading');
+
+                // Add event listeners for highlighting active link *after* TOC is populated
+                window.addEventListener('scroll', highlightActiveLink, { passive: true });
+                window.addEventListener('resize', highlightActiveLink, { passive: true });
+                highlightActiveLink(); // Initial call to set active link
+            }
+
+            // Populate the TOC now that the page is considered fully loaded
+            // (since setupTableOfContents is called from window.onload).
+            // The CSS classes (e.g., `hidden lg:block`) on the tocContainer
+            // will control its actual visibility based on screen size.
+            populateAndActivateTOC();
         }
 
         // --- Bouncing Logo Animation Functions ---
