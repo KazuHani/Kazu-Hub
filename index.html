@@ -3,10 +3,41 @@
 <head>
     <link rel="icon" href="Images/com.png" type="image/x-icon">
     <meta charset="UTF-8">
+    <!-- SEO: Viewport is crucial for mobile-friendliness -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Social Links</title>
+
+    <!-- SEO: Updated Title -->
+    <title>Kazu Hani - Social Links & Personal Hub</title>
+
+    <!-- SEO: Meta Description -->
+    <meta name="description" content="Welcome to Kazu Hani's personal hub! Connect with Kazu across various social platforms, discover stories, and learn more about this fun-loving ice dragon.">
+
+    <!-- SEO: Meta Keywords -->
+    <meta name="keywords" content="Kazu Hani, social media, personal website, ice dragon, online presence, portfolio, content creator, Kazu Hub, social links">
+
+    <!-- SEO: Meta Robots -->
+    <meta name="robots" content="index, follow">
+
+    <!-- SEO: Canonical URL (IMPORTANT: Replace with your actual domain and path if different) -->
+    <link rel="canonical" href="https://kazuhani.github.io/Kazu-Hub/">
+
+    <!-- SEO: Open Graph / Facebook Card Tags
+    <meta property="og:title" content="Kazu Hani - Social Links & Personal Hub">
+    <meta property="og:description" content="Welcome to Kazu Hani's personal hub! Connect, discover stories, and learn more.">
+    <meta property="og:image" content="https://kazuhani.github.io/Kazu-Hub/Images/com.png">
+    <meta property="og:url" content="https://kazuhani.github.io/Kazu-Hub/">
+    <meta property="og:type" content="website">
+
+    <!-- SEO: Twitter Card Tags (IMPORTANT: Replace 'https://kazuhani.github.io/Kazu-Hub/' with your actual URL and @YourTwitterHandle if you have one) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Kazu Hani - Social Links & Personal Hub">
+    <meta name="twitter:description" content="Welcome to Kazu Hani's personal hub! Connect, discover stories, and learn more.">
+    <meta name="twitter:image" content="https://kazuhani.github.io/Kazu-Hub/Images/com.png">
+    <!-- <meta name="twitter:site" content="@YourTwitterHandle"> -->
+    <meta name="twitter:creator" content="@Kazu_Hani">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="styles/main.css">
     <script>
@@ -15,6 +46,63 @@
         // but the actual application of styles is done via CSS classes.
         // The main logic is in the CSS media queries.
         // This is more of a placeholder if complex JS-driven responsiveness was needed.
+    </script>
+
+    <!-- SEO: JSON-LD Structured Data (IMPORTANT: Replace 'https://kazuhani.github.io/Kazu-Hub/' with your actual URL) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@id": "https://kazuhani.github.io/Kazu-Hub/#person", // Added @id for referencing
+      "@type": "Person",
+      "name": "Kazu Hani",
+      "url": "https://kazuhani.github.io/Kazu-Hub/",
+      "image": "https://kazuhani.github.io/Kazu-Hub/Images/com.png",
+      "jobTitle": "Ice Dragon", // Optional: Added jobTitle
+      "sameAs": [
+        "https://x.com/Kazu_Hani",
+        "https://www.tiktok.com/@kazu_hani",
+        "https://www.youtube.com/@Kazu_Hani",
+        "https://steamcommunity.com/id/Kazu-Hani/",
+        "https://www.reddit.com/user/Korat24/",
+        "https://myanimelist.net/animelist/Kazu_Hani",
+        "https://character.ai/profile/Kazu_Hani"
+      ],
+      "description": "A fun-loving ice dragon. Welcome to my personal hub for social links, stories, and more."
+    }
+    </script>
+    <script type="application/ld+json">
+    // SEO: Enhanced Structured Data - ProfilePage including WebSite and Breadcrumbs
+    {
+      "@context": "https://schema.org",
+      "@type": ["WebPage", "ProfilePage"],
+      "url": "https://kazuhani.github.io/Kazu-Hub/",
+      "name": "Kazu Hani - Social Links & Personal Hub",
+      "description": "Welcome to Kazu Hani's personal hub! Connect with Kazu across various social platforms, discover stories, and learn more about this fun-loving ice dragon.",
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": "https://kazuhani.github.io/Kazu-Hub/Images/com.png"
+      },
+      "mainEntity": {
+        "@id": "https://kazuhani.github.io/Kazu-Hub/#person" // References the Person schema
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "url": "https://kazuhani.github.io/Kazu-Hub/", // Base URL of the website
+        "name": "Kazu Hani's Personal Hub",
+        "publisher": {
+          "@id": "https://kazuhani.github.io/Kazu-Hub/#person" // References the Person schema as publisher
+        }
+      },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://kazuhani.github.io/Kazu-Hub/"
+        }]
+      }
+    }
     </script>
 </head>
 <body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white flex flex-col items-center min-h-screen p-4">
@@ -43,7 +131,7 @@
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
         <div class="mb-6">
             <div class="profile-image-wrapper">
-                <img src="Images/com.png" alt="Profile Picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-2 border-indigo-500 shadow-lg object-cover fade-in-on-scroll" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
+                <img src="Images/com.png" alt="Kazu Hani, profile picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-2 border-indigo-500 shadow-lg object-cover fade-in-on-scroll" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found'; this.alt='Placeholder image for Kazu Hani';">
                 <p id="dragonText">Do Not The Dragon</p>
             </div>
         </div>
@@ -55,7 +143,7 @@
             </p>
             <div class="mt-4 mb-4 fade-in-on-scroll">
                  <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
-                   class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md">
+                   class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-sm shadow-md" title="Learn more about Kazu Hani on VGen">
                     More info about Kazu
                 </a>
             </div>
@@ -71,38 +159,38 @@
 
         <div class="space-y-4 mb-8"> <!-- fade-in-on-scroll removed from parent -->
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="Follow Kazu Hani on X (formerly Twitter)">
                 <img src="Images/twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
                 <span>Twitter</span>
             </a>
             <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="Watch Kazu Hani on TikTok">
                 <img src="Images/tiktok_logo.png" alt="TikTok Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/000000/ffffff?text=TT&font=roboto'; this.alt='TikTok Placeholder';">
                 <span>TikTok</span>
             </a>
             <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="Subscribe to Kazu Hani on YouTube">
                 <img src="Images/youtube_logo.png" alt="YouTube Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF0000/ffffff?text=YT&font=roboto'; this.alt='YouTube Placeholder';">
                 <span>YouTube</span>
             </a>
             <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="View Kazu Hani's Steam Profile">
                 <img src="Images/steam_logo.png" alt="Steam Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1b2838/ffffff?text=S&font=roboto'; this.alt='Steam Placeholder';">
                 <span>Steam</span>
             </a>
             <a href="https://www.reddit.com/user/Korat24/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="View Kazu Hani's (Korat24) Reddit Profile">
                 <img src="Images/reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
                 <span>Reddit</span>
             </a>
             <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="View Kazu Hani's Anime List on MyAnimeList">
                 <!-- Using MyAnimeList_Logo.jpg -->
                 <img src="Images/MyAnimeList_Logo.jpg" alt="MyAnimeList Logo Icon" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/2e51a2/ffffff?text=MAL&font=roboto'; this.alt='MyAnimeList Placeholder';">
                 <span>MyAnimeList</span>
             </a>
             <a href="https://character.ai/profile/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="Chat with Kazu Hani on Character.ai">
                 <img src="Images/CharacterAIlogo.png" alt="Character.ai Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/8B5CF6/ffffff?text=C.AI&font=roboto'; this.alt='Character.ai Placeholder';">
                 <span>Character.ai</span>
             </a>
@@ -111,7 +199,7 @@
             <div class="discord-container">
                 <button id="discordButton"
                    class="social-icon flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll"
-                   aria-expanded="false" aria-controls="discordDropdownText">
+                   aria-expanded="false" aria-controls="discordDropdownText" title="Get Kazu Hani's Discord username">
                     <i class="fab fa-discord w-6 h-6 mr-3" aria-hidden="true"></i>
                     <span>Discord</span>
                 </button>
@@ -134,9 +222,9 @@
             <div class="playlist-container flex justify-center items-center mt-10 mb-6">
                 <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj"
                    target="_blank" rel="noopener noreferrer" class="relative group inline-block fade-in-on-scroll">
-                    <i class="fas fa-arrow-down playlist-arrow"></i>
+                    <i class="fas fa-arrow-down playlist-arrow" title="Listen to Kazu Hani's playlist on YouTube Music"></i>
                     <img src="Images/Sisu.jpg" alt="Sisu the Dragon"
-                         class="sisu-image w-56 h-56 rounded-full object-cover shadow-lg">
+                         class="sisu-image w-56 h-56 rounded-full object-cover shadow-lg" loading="lazy">
                     <span class="party-text party-text-left">Party</span>
                     <span class="party-text party-text-right">Time</span>
                 </a>
@@ -146,27 +234,27 @@
         <div class="mt-8 pt-6 border-t border-slate-700">
             <h2 id="toc-website-code" class="toc-section-header text-xl font-semibold text-indigo-400 mb-4 fade-in-on-scroll">Code used for this website</h2>
             <a href="https://github.com/KazuHani/Kazu-Hub" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll">
+               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="View the source code for Kazu Hub on GitHub">
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
                 </svg>
                 <span>View on GitHub</span>
             </a>
 
-            <h3 id="toc-my-stories" class="toc-section-header text-xl font-semibold text-indigo-400 mt-6 mb-3 fade-in-on-scroll">My Stories</h3>
+            <h2 id="toc-my-stories" class="toc-section-header text-xl font-semibold text-indigo-400 mt-6 mb-3 fade-in-on-scroll">My Stories</h2>
             <button id="backstoryTrigger"
-                    class="backstory-trigger-btn w-full flex items-center justify-center text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2 fade-in-on-scroll">
+                    class="backstory-trigger-btn w-full flex items-center justify-center text-white font-semibold py-3 px-4 rounded-lg shadow-md mb-2 fade-in-on-scroll" title="Read Kazu's backstory">
                 Kazu's backstory
             </button>
 
             <div class="mt-4 space-y-2">
                 <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll"
+                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="Read Kazu's story: The Legend That Bleeds"
                    style="background-image: url('Images/blood.png'); background-size: cover; background-position: center; background-repeat: no-repeat;">
                     <span style="text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">The Legend That Bleeds</span>
                 </a>
                 <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll"
+                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-on-scroll" title="Read Kazu's story: The Naga And Human Kind"
                    style="background-image: url('Images/arctic.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
                     <span style="text-shadow: 1px 1px 3px rgba(0,0,0,0.7);">The Naga And Human Kind</span>
                 </a>
