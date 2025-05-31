@@ -1,0 +1,574 @@
+/* Custom fonts - Roboto (primary), Inter (fallback) */
+        body {
+            font-family: 'Roboto', 'Inter', sans-serif;
+            margin: 0; /* Basic reset */
+            transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out, color 0.5s ease-in-out; /* Smooth transition for background and text color changes */
+            position: relative; /* Ensure body is a stacking context for its children */
+        }
+        body.modal-open {
+            overflow: hidden; /* Prevent background scroll when modal is open */
+        }
+        /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> */
+        /* Styling for social icons and similar buttons. Increased specificity for transition. */
+        a.social-icon, button.social-icon {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            font-size: 0.9rem;
+            position: relative;
+            /* overflow: hidden; /* Removed to allow hover effects like scale and shadow to be fully visible */
+            z-index: 1;
+        }
+        .social-icon span { /* Target the text span directly for z-index if needed */
+            position: relative;
+            z-index: 2;
+        }
+        .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
+            position: relative;
+            z-index: 2;
+        }
+
+        a.social-icon:hover, button.social-icon:hover { /* Matched specificity for hover */
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            padding: 1rem;
+            animation: zoomInEffect 0.7s ease-out forwards;
+            background-color: rgba(30, 41, 59, 0.9);
+            position: relative; /* Establish stacking context */
+            z-index: 2;         /* Ensure container is above bouncing images */
+            /* margin-top: 4rem; /* Removed as icons are now in normal flow */
+        }
+        @media (min-width: 640px) { /* sm breakpoint in Tailwind */
+            .container {
+                padding: 2rem;
+            }
+        }
+        .info-button {
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .info-button:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        @keyframes continuousSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .profile-picture {
+            transition: transform 0.5s ease-in-out;
+        }
+        /* .profile-picture:hover {
+            animation: continuousSpin 2s linear infinite;
+        } */
+
+        @keyframes zoomInEffect {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        #birthdayCountdown {
+            font-size: 1rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+        #ageDisplay {
+            font-size: 1rem;
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+        }
+        .bio-text { font-size: 0.95rem; }
+        .highlight-text { color: #818cf8; font-weight: 600; }
+        .profile-image-wrapper { display: inline-block; text-align: center; }
+        #dragonText {
+            max-height: 0; opacity: 0; overflow: hidden; color: #f87171;
+            font-weight: bold; font-size: 1.5rem; white-space: nowrap;
+            background-color: rgba(30, 41, 59, 0.85); border-radius: 0.375rem;
+            padding: 0 12px; margin-top: 0; box-sizing: border-box;
+            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
+        }
+        #dragonText.visible {
+            max-height: 70px; /* Ensure this is enough for the text */ opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
+        }
+        @keyframes flameAnimation {
+            0%, 100% { background-position: 0% 50%; }
+            25%, 75% { background-position: 100% 50%; }
+            50% { background-position: 0% 50%; }
+        }
+        .flames-background {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab, #ff4500, #ff8c00, #ff0000) !important;
+            background-size: 600% 600% !important;
+            animation: flameAnimation 15s ease infinite !important;
+        }
+        .story-button-legend, .story-button-naga {
+            background-size: cover; background-position: center center; background-repeat: no-repeat; color: white;
+        }
+        .story-button-legend::before, .story-button-naga::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4); border-radius: inherit;
+            z-index: 1; transition: background-color 0.3s ease;
+        }
+        .story-button-legend:hover::before, .story-button-naga:hover::before {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        .story-button-legend { background-image: url('blood.png'); }
+        .story-button-naga { background-image: url('arctic.jpg'); }
+
+        /* Increased specificity for transition for the backstory trigger button */
+        button.backstory-trigger-btn {
+            background-color: #4a5568;
+            /* Tailwind classes now handle: color, padding, border-radius, font-weight, margin-bottom */
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            border: none;
+            font-size: 1rem; /* Retaining specific font size for this button */
+        }
+        /* Discord Button Specific Styles */
+        #discordButton {
+            background-color: #5865F2; /* Discord blurple */
+        }
+        #discordButton:hover {
+            background-color: #4752C4; /* Darker blurple */
+        }
+        /* Hover effect for backstory-trigger-btn, matched specificity */
+        button.backstory-trigger-btn:hover {
+            background-color: #2d3748;
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .discord-dropdown-text {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out, margin-top 0.4s ease-out;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: 0; /* Start with no margin, will be added when visible */
+            background-color: rgba(55, 65, 81, 0.85); /* e.g., slate-700 with opacity */
+            border-radius: 0 0 0.375rem 0.375rem; /* Tailwind's rounded-md for bottom */
+        }
+        .discord-dropdown-text.visible {
+            max-height: 70px; /* Adjust if text is longer or needs more space */
+            opacity: 1;
+            padding-top: 0.75rem;  /* Tailwind's py-3 equivalent for consistency */
+            padding-bottom: 0.75rem; /* Tailwind's py-3 equivalent */
+            margin-top: 0.25rem; /* Tailwind's mt-1, to give a little space from the button */
+        }
+
+        @keyframes fancyDiscordTextAnimation {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 4px rgba(220, 220, 255, 0.6); /* Softer white/lavender glow */
+            }
+            50% {
+                transform: scale(1.02); /* Further reduced scale for an even smaller pulse */
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.9), /* Brighter white */
+                             0 0 20px rgba(129, 140, 248, 0.7), /* Indigo-400 like glow */
+                             0 0 30px rgba(99, 102, 241, 0.5);  /* Indigo-500 like glow */
+            }
+        }
+        /* Responsive adjustments for Discord dropdown text on smaller screens */
+        @media (max-width: 767px) { /* Consistent with other mobile adjustments */
+            .discord-dropdown-text {
+                font-size: 1.125rem; /* Tailwind's text-lg, adjust as needed */
+            }
+        }
+
+        .discord-dropdown-text.visible {
+            max-height: 120px; /* Increased max-height for larger text and animation */
+            opacity: 1;
+            padding-top: 1rem;   /* Increased padding a bit */
+            padding-bottom: 1rem;/* Increased padding a bit */
+            margin-top: 0.5rem;  /* Slightly more margin */
+            font-size: 2.25rem;  /* Tailwind's text-4xl, "huge" */
+            line-height: 1.2;    /* Adjust line-height for larger font */
+            font-weight: 600;    /* Tailwind's font-semibold */
+            animation: fancyDiscordTextAnimation 2s ease-in-out infinite; /* Apply the fancy animation */
+        }
+        /* Backstory Modal Styles */
+        #backstoryModal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1000; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease-in-out;
+            pointer-events: none;
+        }
+        #backstoryModal.visible {
+            display: flex;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #backstoryModalContent {
+            background-color: #1f2937;
+            /* Adjusted for full-screen display */
+            padding: clamp(1.5rem, 4vw, 3rem); /* Responsive padding for screen edges */
+            border-radius: 0; /* No border radius for full screen */
+            width: 100%;      /* Take full width */
+            height: 100%;     /* Take full height */
+            max-width: 100%;  /* Override any previous max-width */
+            max-height: 100vh;/* Ensure it doesn't exceed viewport height */
+            overflow-y: auto; /* Allow scrolling for content longer than screen */
+            position: relative; text-align: left;
+            color: #e2e8f0;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        }
+        #backstoryModal.visible #backstoryModalContent { transform: scale(1); }
+        .close-modal-button {
+            position: absolute; top: 10px; right: 15px;
+            /* --- Repositioned to bottom center --- */
+            position: fixed; /* Changed from absolute to ensure viewport-relative positioning */
+            top: auto;
+            right: auto; /* Remove right positioning */
+            bottom: 20px; /* Distance from the bottom */
+            left: 50%;    /* Center horizontally */
+            transform: translateX(-50%); /* Base transform for centering */
+
+            /* --- New Circular Button Styles --- */
+            width: 60px; /* Define width for the circle */
+            height: 60px; /* Define height for the circle */
+            border-radius: 50%; /* Make it circular */
+            background-color: #334155; /* slate-700 for dark theme */
+            color: #cbd5e1; /* slate-300 for 'X' in dark theme */
+            font-size: 2.8rem; /* Adjusted 'X' size to fit circle */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            cursor: pointer; background: none; border: none;
+            line-height: 1; /* Important for flex centering */
+            padding: 0; /* Remove previous padding, flex handles centering */
+            z-index: 1001; /* Above modal backdrop (z-index: 1000) */
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .close-modal-button:hover {
+            background-color: #475569; /* slate-600 for dark theme hover */
+            color: #e2e8f0; /* slate-200 for 'X' on hover */
+            transform: translateX(-50%) translateY(-5px) scale(1.03); /* Combine centering with hover effects */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25); /* Slightly more pronounced shadow for dark theme */
+        }
+        /* Make it even larger on mobile */
+        @media (max-width: 767px) {
+            .close-modal-button {
+                width: 75px; /* Increased width for mobile */
+                height: 75px; /* Increased height for mobile */
+                font-size: 3.5rem; /* Increased 'X' size for larger mobile button */
+                bottom: 20px; /* More space from the bottom edge on mobile */
+            }
+        }
+        #backstoryModalContent p { margin-bottom: 1rem; }
+        #backstoryModalContent p:last-child { margin-bottom: 0; }
+
+        /* Sisu Image and Party Time Text Styles */
+        .sisu-image {
+            transform: rotate(0deg); /* Initial upright state */
+            /* Transition for returning to upright and for box-shadow changes */
+            transition: transform 0.7s ease-out, box-shadow 0.3s ease-in-out;
+            backface-visibility: hidden; /* May help stabilize transform rendering and transitions */
+            /* Ensure no animation is running by default, which might help clarify state for transitions */
+            animation: none;
+            /* Tailwind classes used: w-56 h-56 rounded-full object-cover shadow-lg */
+        }
+
+        .group:hover .sisu-image {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25); /* Enhanced shadow */
+            /* The 'animation' property takes precedence over the 'transform' transition during hover.
+               Upon hover exit, the base 'transition' on '.sisu-image' for 'transform'
+               will ensure a smooth return to the upright position. */
+        }
+
+        .party-text {
+            position: absolute;
+            top: 50%;
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: bold; /* font-bold */
+            color: #fca5a5; /* Tailwind red-300 */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            opacity: 0;
+            transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none; /* So text doesn't interfere with image hover */
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .party-text-left {
+            right: 100%;
+            margin-right: 1rem; /* Space between text and image */
+            transform: translateY(-50%) translateX(25px); /* Start offset towards center, hidden by opacity */
+        }
+
+        .party-text-right {
+            left: 100%;
+            margin-left: 1rem; /* Space between text and image */
+            transform: translateY(-50%) translateX(-25px); /* Start offset towards center, hidden by opacity */
+        }
+
+        .group:hover .party-text-left,
+        .group:hover .party-text-right {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0); /* Slide into final position */
+        }
+
+        .playlist-arrow {
+            position: absolute;
+            top: -30px; /* Position above the image */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            font-size: 1.8rem; /* Size of the arrow */
+            color: #818cf8; /* Tailwind indigo-400, matching other highlights */
+            z-index: 5; /* Below party text (z-index: 10), above default image flow */
+        }
+
+        /* Responsive adjustments for party text on smaller screens */
+        @media (max-width: 767px) { /* Adjust breakpoint as needed, 767px is typical for mobile */
+            .party-text {
+                font-size: 1.5rem; /* text-2xl, smaller for mobile */
+            }
+        }
+
+        .bouncing-image { /* Changed from #bouncingLogo to a class */
+            position: absolute;
+            width: 250px; /* Adjust size as needed - Made them larger */
+            height: auto;  /* Maintain aspect ratio */
+            z-index: 1; /* Lower z-index to be in the background */
+            opacity: 0; /* Start fully transparent for fade-in */
+            visibility: hidden; /* Initially hide to prevent alt text flash */
+            transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
+            transform: translateZ(0); /* Attempt to promote to its own rendering layer */
+        }
+
+
+        /* Back to Top Button */
+        #backToTopBtn {
+            position: fixed;
+            bottom: 20px;
+            /* 'right: 20px;' is replaced by the 'left' calculation below for smoother animation */
+            background-color: #4f46e5; /* Tailwind indigo-600 */
+            color: white;
+            border: none;
+            width: 48px; /* Fixed size for a circular button */
+            height: 48px;
+            border-radius: 50%; /* Make it circular */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            z-index: 998; /* Above fixed social bar (990), below modal (1000) */
+            opacity: 0;
+            visibility: hidden;
+
+            /* Default positioning (bottom-right):
+               Positions the left edge of the button such that the button itself is 20px from the right.
+               Assumes button width is 48px. */
+            left: calc(100% - 48px - 20px);
+            padding-left: 0; /* Explicit initial padding for transition */
+            padding-right: 0; /* Explicit initial padding for transition */
+            transform: translateX(0); /* Initial transform state */
+
+            /* Transition for all animated properties. 'right' is removed as 'left' is now primary. */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease,
+                        transform 0.5s ease-in-out, left 0.5s ease-in-out, bottom 0.5s ease-in-out,
+                        border-radius 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out, /* Added height */
+                        padding-left 0.3s ease-in-out, padding-right 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem; /* Adjust icon size */
+        }
+
+        /* Styles for icon and text within the Back to Top button for smooth transition */
+        #backToTopBtn .btn-icon,
+        #backToTopBtn .btn-text {
+            display: inline-flex; /* Allows alignment and behaves like inline for flex layout */
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s ease-in-out, max-width 0.3s ease-in-out;
+            overflow: hidden;     /* Crucial for max-width to act as a "clip" */
+            white-space: nowrap;  /* Prevent text/icon from wrapping during transition */
+        }
+
+        /* Default state: Icon visible, Text hidden and takes no space */
+        #backToTopBtn .btn-icon {
+            opacity: 1;
+            max-width: 3em; /* Adjust as needed to fit the icon */
+        }
+        #backToTopBtn .btn-text {
+            opacity: 0;
+            max-width: 0;
+        }
+
+        /* At-bottom state: Icon and Text visible */
+        #backToTopBtn.at-bottom .btn-icon {
+            opacity: 1;         /* Make icon visible */
+            max-width: 3em;     /* Allow space for icon (matches default state) */
+            margin-right: 0.25rem; /* Add a small space between icon and text */
+
+        }
+        #backToTopBtn.at-bottom .btn-text {
+            opacity: 1;
+            max-width: 5em; /* Adjust as needed to fit "Top" text */
+        }
+
+        #backToTopBtn:hover {
+            background-color: #4338ca; /* Tailwind indigo-700 */
+            /* The transform from the base style (translateX(0)) will be overridden by this scale on hover.
+               If .at-bottom is active, .at-bottom:hover will take precedence. */
+            transform: translateX(0) scale(1.1); /* Explicitly combine with base transform if needed, or just scale */
+        }
+        #backToTopBtn.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        /* Styles for when the button is at the bottom of the page */
+        #backToTopBtn.at-bottom {
+            /* Shape change to a more standard button */
+            /* border-radius: 0px; */      /* Old: Remove rounded corners for a sharp look */
+            width: auto;             /* Allow width to fit content (text + padding) */
+            border-top-left-radius: 0.375rem;    /* Rounded top-left corner */
+            border-top-right-radius: 0.375rem;   /* Rounded top-right corner */
+            border-bottom-left-radius: 0px;      /* Sharp bottom-left corner */
+            border-bottom-right-radius: 0px;     /* Sharp bottom-right corner */
+            padding-left: 1rem;      /* Horizontal padding for the text */
+            padding-right: 1rem;
+            /* Position change - move it up to avoid footer text */
+            bottom: 0px;             /* Pinned to the very bottom of the screen when centered */
+            /* 'right: auto;' is implicit as 'left' now dictates position */
+            left: 50%;   /* Position the left edge at the center */
+            transform: translateX(-50%); /* Shift the button left by half its width to truly center it */
+        }
+
+        #backToTopBtn.at-bottom:hover {
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        /* Mobile Optimizations for Back to Top Button when at bottom */
+        @media (max-width: 767px) {
+            #backToTopBtn.at-bottom {
+                width: 56px;    /* Fixed width for a more compact, tappable button */
+                height: 56px;   /* Fixed height, slightly larger for mobile */
+                padding-left: 0;  /* Reset padding as size is fixed */
+                padding-right: 0;
+                /* border-radius for top corners is inherited from the desktop .at-bottom state */
+                /* transform: translateX(-50%) and bottom: 0px are inherited */
+            }
+
+            #backToTopBtn.at-bottom .btn-text {
+                opacity: 0;       /* Hide text on mobile when at bottom */
+                max-width: 0;
+                /* No specific padding needed as it's hidden */
+            }
+
+            #backToTopBtn.at-bottom .btn-icon {
+                margin-right: 0;  /* No margin needed as text is hidden */
+                font-size: 1.5rem; /* Slightly larger icon for better visibility */
+            }
+
+            /* Hover effect for mobile .at-bottom state (transform is inherited) */
+            /* #backToTopBtn.at-bottom:hover {} */ /* No change needed, existing hover is fine */
+        }
+        /* Fade-in on Scroll Effect */
+        .fade-in-on-scroll {
+            opacity: 0;
+            transform: translateY(30px); /* Start slightly lower */
+            transition: opacity 0.8s cubic-bezier(0.645, 0.045, 0.355, 1), transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+            /* will-change: opacity, transform; /* Removed for testing transition behavior */
+        }
+
+        .fade-in-on-scroll.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Sun/Moon Time Indicator Icons */
+        .time-indicator-icon {
+            /* position: fixed; Removed for normal flow */
+            font-size: 2.5rem; /* Adjust size as needed */
+            display: none; /* Default: hidden and does not take up space */
+            /*
+                Opacity and transition are now handled by the .fade-in-on-scroll class
+                and its .is-visible state.
+            */
+            margin-bottom: 1.5rem; /* Space below the icon when visible */
+            /* Centered by body's "items-center" flex property */
+        }
+        /*
+           No .layout-active or .fade-in-effect classes needed anymore.
+           Direct style manipulation in JS will handle display and opacity.
+        */
+
+        #moonIcon {
+            /* top, left, transform removed */
+            color: #e2e8f0; /* Tailwind slate-200, a soft white/grey */
+        }
+        #sunIcon {
+            /* top, left, transform removed */
+            color: #facc15; /* Tailwind yellow-400, a bright sun color */
+        }
+
+        /* Screen Edge Glow */
+        body::before {
+            content: '';
+            position: absolute; /* Changed from fixed to scroll with the page */
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px; /* Further reduced thickness for the line/glow origin at the top */
+            pointer-events: none; /* Allows interaction with elements underneath */
+            z-index: 1002; /* Above modal (1000) and close button (1001) */
+            /* Transition for background (the line color) and box-shadow (the glow) */
+            transition: background-color 0.7s ease-in-out, box-shadow 0.7s ease-in-out;
+        }
+
+        body.day-glow-active::before {
+            /* background-color removed to have no solid line for daytime */
+            box-shadow:
+                /* Glows emanate from the top edge (0px y-offset) */
+                0 0 30px 8px rgba(255, 255, 0, 0.95),  /* Bright Yellow Glow, slightly less spread/blur */
+                0 0 60px 12px rgba(255, 100, 0, 0.85); /* Wider Vibrant Orange Glow, slightly less spread/blur */
+        }
+
+        body.night-glow-active::before {
+            background-color: rgba(0, 0, 0, 1); /* Black Line (now 1px thick) */
+            box-shadow:
+                /* Glows start 1px below the top (at the bottom edge of the 1px high ::before element) */
+                0 1px 30px 10px rgba(0, 0, 0, 0.9),  /* Black Glow */
+                0 1px 60px 15px rgba(0, 0, 0, 0.85); /* Wider Black Glow */
+        }
+
+        /* Snowflake Styles */
+        .bouncing-snowflake {
+            position: absolute;
+            width: 50px; /* Smaller than Kazu images */
+            height: auto; /* Maintain aspect ratio */
+            z-index: 1; /* Same layer as Kazu bouncers */
+            opacity: 0; /* Start fully transparent for fade-in */
+            visibility: hidden; /* Initially hide */
+            transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
+            transform: translateZ(0); /* Attempt to promote to its own rendering layer */
+        }
+
+        /* Table of Contents Styles */
+        .active-toc-link {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white !important;
+            font-weight: 500; /* semibold */
+        }
+        #tableOfContents::-webkit-scrollbar {
+            width: 6px;
+        }
+        #tableOfContents::-webkit-scrollbar-track {
+            background: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
+            border-radius: 3px;
+        }
+        #tableOfContents::-webkit-scrollbar-thumb {
+            background: #64748b; /* slate-500 */
+            border-radius: 3px;
+        }
+        #tableOfContents::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5; /* indigo-600 */
+        }
