@@ -104,6 +104,7 @@
         }
         .story-button-legend, .story-button-naga {
             background-size: cover; background-position: center center; background-repeat: no-repeat; color: white;
+            
         }
         .story-button-legend::before, .story-button-naga::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -113,8 +114,8 @@
         .story-button-legend:hover::before, .story-button-naga:hover::before {
             background-color: rgba(0, 0, 0, 0.6);
         }
-        .story-button-legend { background-image: url('blood.png'); }
-        .story-button-naga { background-image: url('arctic.jpg'); }
+        .story-button-legend { background-image: url('/images/blood.png'); }
+        .story-button-naga { background-image: url('/images/arctic.jpg'); }
 
         /* Increased specificity for transition for the backstory trigger button */
         button.backstory-trigger-btn {
