@@ -1,4 +1,19 @@
 /* Custom fonts - Roboto (primary), Inter (fallback) */
+        :root {
+            --rocket-size: 50px;
+            --rocket-bottom-offset: 20px;
+            --rocket-side-offset: 20px; /* Used for right offset by default */
+            --rocket-initial-transform-out: translateX(calc(var(--rocket-size) + var(--rocket-side-offset) + 20px)); /* Slide out further than just its size */
+            --rocket-color-idle: #6b7280; /* Tailwind gray-500 */
+            --rocket-color-hover: #4f46e5; /* Tailwind indigo-600 (from original button) */
+            --rocket-flame-color-outer: #fb923c; /* Tailwind orange-400 */
+            --rocket-flame-color-inner: #fcd34d; /* Tailwind yellow-300 */
+            --rocket-slide-in-duration: 0.3s;
+            --rocket-bobbing-duration: 2.5s;
+            --rocket-ignition-duration: 0.2s; /* JS should use this for timing */
+            --rocket-departure-duration: 0.6s; /* JS should use this for timing */
+        }
+
         body {
             font-family: 'Roboto', 'Inter', sans-serif;
             margin: 0; /* Basic reset */
@@ -345,133 +360,192 @@
             transform: translateZ(0); /* Attempt to promote to its own rendering layer */
         }
 
-
-        /* Back to Top Button */
+        /* --- Scroll Rocket (Replaces Back to Top Button) --- */
+        /*
+            JS Interaction Plan:
+            1. On scroll (e.g., > 800px or 2 viewports): Add '.rocket-visible' to #backToTopBtn.
+            2. On #backToTopBtn click:
+               a. Add '.rocket-igniting'.
+               b. Play sound (optional).
+               c. setTimeout for var(--rocket-ignition-duration):
+                  i. Remove '.rocket-igniting', add '.rocket-launching'.
+                  ii. Start smooth scroll to top (e.g., window.scrollTo({top: 0, behavior: 'smooth'})).
+            3. On scroll completion (page at top):
+               a. Remove '.rocket-launching', add '.rocket-departing'.
+               b. setTimeout for var(--rocket-departure-duration):
+                  i. Remove '.rocket-departing'. (Rocket is now off-screen and hidden).
+            4. If user scrolls down again while rocket is visible (but not launching/departing), it remains.
+               If user scrolls back to top manually, JS should remove '.rocket-visible'.
+        */
         #backToTopBtn {
             position: fixed;
-            bottom: 20px;
-            /* 'right: 20px;' is replaced by the 'left' calculation below for smoother animation */
-            background-color: #4f46e5; /* Tailwind indigo-600 */
+            bottom: var(--rocket-bottom-offset);
+            right: var(--rocket-side-offset);
+            /* For bottom-left: left: var(--rocket-side-offset); right: auto; transform: var(--rocket-initial-transform-out-left, translateX(-120%)); */
+            width: var(--rocket-size);
+            height: var(--rocket-size);
+            background-color: var(--rocket-color-idle);
             color: white;
             border: none;
-            width: 48px; /* Fixed size for a circular button */
-            height: 48px;
-            border-radius: 50%; /* Make it circular */
+            /* A simple rocket-like shape. An SVG would be more precise. */
+            border-radius: 40% 40% 20% 20% / 60% 60% 40% 40%;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             cursor: pointer;
-            z-index: 998; /* Above fixed social bar (990), below modal (1000) */
-            opacity: 0;
-            visibility: hidden;
-
-            /* Default positioning (bottom-right):
-               Positions the left edge of the button such that the button itself is 20px from the right.
-               Assumes button width is 48px. */
-            left: calc(100% - 48px - 20px);
-            padding-left: 0; /* Explicit initial padding for transition */
-            padding-right: 0; /* Explicit initial padding for transition */
-            transform: translateX(0); /* Initial transform state */
-
-            /* Transition for all animated properties. 'right' is removed as 'left' is now primary. */
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease,
-                        transform 0.5s ease-in-out, left 0.5s ease-in-out, bottom 0.5s ease-in-out,
-                        border-radius 0.3s ease-in-out, width 0.3s ease-in-out, height 0.3s ease-in-out, /* Added height */
-                        padding-left 0.3s ease-in-out, padding-right 0.3s ease-in-out;
+            z-index: 999; /* Ensure it's above most content */
+            /* --- TEMPORARY CHANGE: Make rocket visible by default for styling/testing --- */
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0); /* Position it in view */
+            /* Start bobbing animation immediately if always visible */
+            animation: rocketBobbing var(--rocket-bobbing-duration) infinite ease-in-out;
+            /* --- END TEMPORARY CHANGE --- */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem; /* Adjust icon size */
+            font-size: 0; /* Effectively hide direct text content, icon is in ::before */
+            transition: /* opacity var(--rocket-slide-in-duration) ease-out, */ /* Transitions for initial appearance handled by direct visibility now */
+                        /* visibility var(--rocket-slide-in-duration) ease-out, */
+                        transform var(--rocket-slide-in-duration) ease-out,
+                        background-color 0.3s ease,
+                        box-shadow 0.3s ease;
         }
 
-        /* Styles for icon and text within the Back to Top button for smooth transition */
-        #backToTopBtn .btn-icon,
-        #backToTopBtn .btn-text {
-            display: inline-flex; /* Allows alignment and behaves like inline for flex layout */
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.2s ease-in-out, max-width 0.3s ease-in-out;
-            overflow: hidden;     /* Crucial for max-width to act as a "clip" */
-            white-space: nowrap;  /* Prevent text/icon from wrapping during transition */
+        /* Rocket icon placeholder - ideally use an SVG */
+        #backToTopBtn::before {
+            content: '🚀'; /* Placeholder rocket emoji */
+            display: inline-block;
+            line-height: 1;
+            font-size: calc(var(--rocket-size) * 0.5); /* Actual icon size */
         }
 
-        /* Default state: Icon visible, Text hidden and takes no space */
-        #backToTopBtn .btn-icon {
+        /* Subtle exhaust/particle effect for idle state */
+        #backToTopBtn::after {
+            content: '';
+            position: absolute;
+            bottom: -6px; /* Position below the rocket base */
+            left: 50%;
+            width: calc(var(--rocket-size) * 0.25);
+            height: calc(var(--rocket-size) * 0.25);
+            background: radial-gradient(circle, var(--rocket-flame-color-outer) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0; /* Hidden by default, shown with .rocket-visible */
+            transform: translateX(-50%);
+            transition: opacity 0.3s ease-out, width 0.3s ease, height 0.3s ease, bottom 0.3s ease, background 0.3s ease;
+        }
+
+        #backToTopBtn.rocket-visible {
             opacity: 1;
-            max-width: 3em; /* Adjust as needed to fit the icon */
-        }
-        #backToTopBtn .btn-text {
-            opacity: 0;
-            max-width: 0;
+            visibility: visible;
+            transform: translateX(0); /* Slide in - This class will still be used by JS for the slide-in effect if you revert the temporary change */
+            /* Bobbing animation is now on the base style for the temporary always-visible state.
+               If you revert, you might want to add the animation delay back here:
+               animation: rocketBobbing var(--rocket-bobbing-duration) infinite ease-in-out var(--rocket-slide-in-duration); */
         }
 
-        /* At-bottom state: Icon and Text visible */
-        #backToTopBtn.at-bottom .btn-icon {
-            opacity: 1;         /* Make icon visible */
-            max-width: 3em;     /* Allow space for icon (matches default state) */
-            margin-right: 0.25rem; /* Add a small space between icon and text */
-
-        }
-        #backToTopBtn.at-bottom .btn-text {
-            opacity: 1;
-            max-width: 5em; /* Adjust as needed to fit "Top" text */
+        #backToTopBtn.rocket-visible::after, #backToTopBtn::after { /* Apply to base style as well for always-visible */
+            opacity: 0.6;
+            animation: subtleSparks 1.5s infinite ease-in-out;
         }
 
         #backToTopBtn:hover {
-            background-color: #4338ca; /* Tailwind indigo-700 */
-            /* The transform from the base style (translateX(0)) will be overridden by this scale on hover.
-               If .at-bottom is active, .at-bottom:hover will take precedence. */
-            transform: translateX(0) scale(1.1); /* Explicitly combine with base transform if needed, or just scale */
+            /* Only apply hover effects if rocket is visible and not in a launching/departing state */
+            /* JS might need to add a class like '.can-hover' or this can be handled by specificity */
         }
-        #backToTopBtn.show {
+        #backToTopBtn.rocket-visible:hover {
+            background-color: var(--rocket-color-hover);
+            /* Tilt and scale, ensure translateX(0) is maintained from .rocket-visible */
+            transform: translateX(0) rotate(-10deg) scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        #backToTopBtn.rocket-visible:hover::after {
+            bottom: calc(var(--rocket-size) * -0.2); /* Further down */
+            width: calc(var(--rocket-size) * 0.35);
+            height: calc(var(--rocket-size) * 0.35);
+            background: radial-gradient(circle, var(--rocket-flame-color-inner) 20%, var(--rocket-flame-color-outer) 50%, transparent 80%);
             opacity: 1;
-            visibility: visible;
-        }
-        /* Styles for when the button is at the bottom of the page */
-        #backToTopBtn.at-bottom {
-            /* Shape change to a more standard button */
-            /* border-radius: 0px; */      /* Old: Remove rounded corners for a sharp look */
-            width: auto;             /* Allow width to fit content (text + padding) */
-            border-top-left-radius: 0.375rem;    /* Rounded top-left corner */
-            border-top-right-radius: 0.375rem;   /* Rounded top-right corner */
-            border-bottom-left-radius: 0px;      /* Sharp bottom-left corner */
-            border-bottom-right-radius: 0px;     /* Sharp bottom-right corner */
-            padding-left: 1rem;      /* Horizontal padding for the text */
-            padding-right: 1rem;
-            /* Position change - move it up to avoid footer text */
-            bottom: 0px;             /* Pinned to the very bottom of the screen when centered */
-            /* 'right: auto;' is implicit as 'left' now dictates position */
-            left: 50%;   /* Position the left edge at the center */
-            transform: translateX(-50%); /* Shift the button left by half its width to truly center it */
+            animation: intenseSparks 0.5s infinite linear; /* More rapid sparks */
         }
 
-        #backToTopBtn.at-bottom:hover {
-            transform: translateX(-50%) scale(1.1);
+        /* Ignition State (briefly on click) */
+        #backToTopBtn.rocket-igniting {
+            animation: rocketShake var(--rocket-ignition-duration) ease-out;
+        }
+        #backToTopBtn.rocket-igniting::after {
+            bottom: calc(var(--rocket-size) * -0.3);
+            width: calc(var(--rocket-size) * 0.4);
+            height: calc(var(--rocket-size) * 0.7); /* Elongated flame */
+            background: linear-gradient(to top, var(--rocket-flame-color-inner), var(--rocket-flame-color-outer), transparent 70%);
+            border-radius: 50% 50% 10% 10% / 80% 80% 20% 20%; /* Flame shape */
+            opacity: 1;
+            animation: ignitionFlameBurst var(--rocket-ignition-duration) ease-out forwards;
         }
 
-        /* Mobile Optimizations for Back to Top Button when at bottom */
-        @media (max-width: 767px) {
-            #backToTopBtn.at-bottom {
-                width: 56px;    /* Fixed width for a more compact, tappable button */
-                height: 56px;   /* Fixed height, slightly larger for mobile */
-                padding-left: 0;  /* Reset padding as size is fixed */
-                padding-right: 0;
-                /* border-radius for top corners is inherited from the desktop .at-bottom state */
-                /* transform: translateX(-50%) and bottom: 0px are inherited */
-            }
-
-            #backToTopBtn.at-bottom .btn-text {
-                opacity: 0;       /* Hide text on mobile when at bottom */
-                max-width: 0;
-                /* No specific padding needed as it's hidden */
-            }
-
-            #backToTopBtn.at-bottom .btn-icon {
-                margin-right: 0;  /* No margin needed as text is hidden */
-                font-size: 1.5rem; /* Slightly larger icon for better visibility */
-            }
-
-            /* Hover effect for mobile .at-bottom state (transform is inherited) */
-            /* #backToTopBtn.at-bottom:hover {} */ /* No change needed, existing hover is fine */
+        /* Launching State (during page scroll) */
+        #backToTopBtn.rocket-launching::after {
+            bottom: calc(var(--rocket-size) * -0.3);
+            width: calc(var(--rocket-size) * 0.4);
+            height: calc(var(--rocket-size) * 0.7);
+            background: linear-gradient(to top, var(--rocket-flame-color-inner), var(--rocket-flame-color-outer), transparent 70%);
+            border-radius: 50% 50% 10% 10% / 80% 80% 20% 20%;
+            opacity: 1;
+            animation: sustainedFlame 0.3s infinite alternate ease-in-out;
         }
+
+        /* Departing State (flies off screen) */
+        #backToTopBtn.rocket-departing {
+            /* The main transform is handled by rocketFlyOff animation */
+            animation: rocketFlyOff var(--rocket-departure-duration) ease-in forwards;
+        }
+        #backToTopBtn.rocket-departing::after {
+            animation: flameFadeOut var(--rocket-departure-duration) ease-in forwards;
+        }
+
+        @keyframes rocketBobbing {
+            0%, 100% { transform: translateY(0); } /* Base transform from .rocket-visible is translateX(0) */
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes subtleSparks {
+            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(0.8); }
+            50% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+        }
+
+        @keyframes intenseSparks {
+            0%   { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+            50%  { transform: translateX(-50%) scale(1.2) translateY(2px); opacity: 0.7; }
+            100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes rocketShake { /* Applied to the rocket itself for a launch shudder */
+            0%, 100% { transform: translateX(0) rotate(0); }
+            20% { transform: translateX(-2px) translateY(1px) rotate(-2deg); }
+            40% { transform: translateX(2px) translateY(-1px) rotate(2deg); }
+            60% { transform: translateX(-1px) translateY(1px) rotate(-1deg); }
+            80% { transform: translateX(1px) translateY(-1px) rotate(1deg); }
+        }
+
+        @keyframes ignitionFlameBurst {
+            from { transform: translateX(-50%) scaleY(0.5); opacity: 0.7; }
+            to   { transform: translateX(-50%) scaleY(1); opacity: 1; }
+        }
+
+        @keyframes sustainedFlame {
+            from { transform: translateX(-50%) scaleY(1) scaleX(1); opacity: 1; }
+            to   { transform: translateX(-50%) scaleY(0.85) scaleX(1.1); opacity: 0.9; }
+        }
+
+        @keyframes rocketFlyOff {
+            0%   { transform: translateX(0) translateY(0) rotate(-10deg); opacity: 1; } /* Assumes it might be tilted from hover/click */
+            100% { transform: translateX(0) translateY(-150vh) rotate(-45deg); opacity: 0; } /* Fly far off screen */
+        }
+
+        @keyframes flameFadeOut {
+            from { opacity: 1; transform: translateX(-50%) scaleY(1); }
+            to   { opacity: 0; transform: translateX(-50%) scaleY(0.2); }
+        }
+
+
         /* Fade-in on Scroll Effect */
         .fade-in-on-scroll {
             opacity: 0;
