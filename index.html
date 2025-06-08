@@ -119,7 +119,7 @@
     <i id="sunIcon" class="fas fa-sun time-indicator-icon"></i>
 
     <!-- Moved Time and Availability Status Here -->
-    <div id="currentTimeContainer" class="mb-1 p-1 text-sm font-mono" style="background-color: #c0c0c0; color: black; border-style: solid; border-width: 2px; border-color: #808080 #ffffff #ffffff #808080; box-shadow: inset 1px 1px 0px #000000, inset -1px -1px 0px #dfdfdf; display: inline-block; min-width: 80px; text-align: center;">
+    <div id="currentTimeContainer" class="mb-1 p-1 text-sm font-mono" style="background-color: #c0c0c0; color: black; border-style: solid; border-width: 2px; border-color: #808080 #ffffff #ffffff #808080; box-shadow: inset 1px 1px 0px #000000, inset -1px -1px 0px #dfdfdf; display: inline-block; min-width: 80px; text-align: center; visibility: hidden;">
         <span id="currentTime">Loading...</span>
     </div>
     <div id="availabilityStatusContainer" class="text-sm mb-4"> <!-- Reduced mb-6 to mb-4 -->
@@ -497,13 +497,14 @@
         function setupCurrentTimeClock() {
             const currentTimeElement = document.getElementById('currentTime');
             const availabilityMessageElement = document.getElementById('availabilityMessage');
+            const currentTimeContainer = document.getElementById('currentTimeContainer'); // Get the container
             const moonIcon = document.getElementById('moonIcon');
             const sunIcon = document.getElementById('sunIcon');
             const bodyElement = document.body; // Get body element for glow effect
             const profilePicElement = document.getElementById('profilePic');
 
             // Check if both elements are found
-            if (!currentTimeElement || !availabilityMessageElement || !moonIcon || !sunIcon || !profilePicElement) {
+            if (!currentTimeElement || !availabilityMessageElement || !currentTimeContainer || !moonIcon || !sunIcon || !profilePicElement) {
                 console.error("Required time, availability, sun/moon icon, or profile picture elements not found!");
                 if (currentTimeElement) currentTimeElement.textContent = "Time display error.";
                 if (availabilityMessageElement) availabilityMessageElement.textContent = "Status display error.";
@@ -522,6 +523,11 @@
                     hour12: true
                 };
                 currentTimeElement.textContent = now.toLocaleString('en-GB', timeDisplayOptions);
+
+                // Make the clock visible if it's currently hidden (ensures this happens on first update)
+                if (currentTimeContainer.style.visibility === 'hidden') {
+                    currentTimeContainer.style.visibility = 'visible';
+                }
 
                 // 2. Update Availability Message, Sun/Moon Icons, and Screen Glow
                 const hourCheckOptions = { timeZone: 'Europe/London', hour: 'numeric', hour12: false };
