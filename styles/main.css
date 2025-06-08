@@ -15,7 +15,9 @@
         }
 
         body {
-            font-family: 'Roboto', 'Inter', sans-serif;
+            font-family: Arial, sans-serif;
+            background-color: #008080;
+            color: #000000;
             margin: 0; /* Basic reset */
             transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out, color 0.5s ease-in-out; /* Smooth transition for background and text color changes */
             position: relative; /* Ensure body is a stacking context for its children */
@@ -25,25 +27,69 @@
         }
         /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> */
         /* Styling for social icons and similar buttons. Increased specificity for transition. */
-        a.social-icon, button.social-icon {
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        button,
+        a.social-icon,
+        button.social-icon,
+        .info-button,
+        button.backstory-trigger-btn {
+            background-color: #C0C0C0;
+            color: #000000;
+            border: 2px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            box-shadow: none;
+            border-radius: 0;
+            padding: 5px 10px; /* Basic padding for buttons */
             font-size: 0.9rem;
             position: relative;
-            /* overflow: hidden; /* Removed to allow hover effects like scale and shadow to be fully visible */
             z-index: 1;
+            text-decoration: none; /* Remove underline from <a> tags styled as buttons */
+            transition: border-color 0.1s ease-in-out; /* For hover effect */
         }
-        .social-icon span { /* Target the text span directly for z-index if needed */
-            position: relative;
-            z-index: 2;
+
+        /* General link styling */
+        a {
+            color: #0000FF;
+            text-decoration: underline;
         }
+        a:hover {
+            /* Consider a slightly different shade of blue or other Win95 link hover style if desired */
+        }
+
         .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
             position: relative;
             z-index: 2;
+            filter: none; /* Attempt to reset any color changes on icons */
         }
 
-        a.social-icon:hover, button.social-icon:hover { /* Matched specificity for hover */
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        button, /* Ensure buttons (which might be <a>) don't get underlined */
+        a.social-icon,
+        button.social-icon,
+        .info-button,
+        button.backstory-trigger-btn {
+            text-decoration: none !important; /* Override general <a> underline for button-styled links */
+        }
+
+
+        button:hover,
+        a.social-icon:hover,
+        button.social-icon:hover,
+        .info-button:hover,
+        button.backstory-trigger-btn:hover,
+        button:active,
+        a.social-icon:active,
+        button.social-icon:active,
+        .info-button:active,
+        button.backstory-trigger-btn:active {
+            transform: none;
+            box-shadow: none;
+            border-top-color: #808080;
+            border-left-color: #808080;
+            border-bottom-color: #FFFFFF;
+            border-right-color: #FFFFFF;
+            background-image: none; /* Ensure no gradient/image on hover */
         }
 
         .container {
@@ -51,7 +97,14 @@
             max-width: 500px;
             padding: 1rem;
             animation: zoomInEffect 0.7s ease-out forwards;
-            background-color: rgba(30, 41, 59, 0.9);
+            background-color: #C0C0C0;
+            border: 2px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            box-shadow: none;
+            border-radius: 0;
             position: relative; /* Establish stacking context */
             z-index: 2;         /* Ensure container is above bouncing images */
             /* margin-top: 4rem; /* Removed as icons are now in normal flow */
@@ -59,22 +112,20 @@
         @media (min-width: 640px) { /* sm breakpoint in Tailwind */
             .container {
                 padding: 2rem;
+                /* Ensure border-radius is also reset here if it was previously set for larger screens */
+                border-radius: 0;
             }
         }
-        .info-button {
-            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-        }
-        .info-button:hover {
-            transform: translateY(-5px) scale(1.1);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-        }
+        /* .info-button specific overrides if any (already covered by general button styling) */
 
         @keyframes continuousSpin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
         .profile-picture {
-            transition: transform 0.5s ease-in-out;
+            transition: transform 0.5s ease-in-out; /* Keep existing transition for now */
+            border: 1px solid #808080; /* Simple gray border */
+            border-radius: 0; /* Ensure no rounded corners if previously set by Tailwind */
         }
         /* .profile-picture:hover {
             animation: continuousSpin 2s linear infinite;
@@ -86,26 +137,33 @@
         }
         #birthdayCountdown {
             font-size: 1rem;
-            color: #cbd5e1;
+            /* color: #cbd5e1; */ /* Replaced by body color or container color */
             margin-bottom: 0.5rem;
         }
         #ageDisplay {
             font-size: 1rem;
-            color: #cbd5e1;
+            /* color: #cbd5e1; */ /* Replaced by body color or container color */
             margin-bottom: 1.5rem;
         }
-        .bio-text { font-size: 0.95rem; }
-        .highlight-text { color: #818cf8; font-weight: 600; }
+        .bio-text { font-size: 0.95rem; /* Color will be inherited */ }
+        .highlight-text { color: #000000; font-weight: bold; /* Black and bold for highlight */ }
         .profile-image-wrapper { display: inline-block; text-align: center; }
         #dragonText {
-            max-height: 0; opacity: 0; overflow: hidden; color: #f87171;
+            max-height: 0; opacity: 0; overflow: hidden; color: #000000; /* Black text */
             font-weight: bold; font-size: 1.5rem; white-space: nowrap;
-            background-color: rgba(30, 41, 59, 0.85); border-radius: 0.375rem;
-            padding: 0 12px; margin-top: 0; box-sizing: border-box;
+            background-color: #C0C0C0;
+            border-radius: 0; /* Silver background, no radius */
+            border: 2px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            padding: 5px 10px; /* Consistent padding */
+            margin-top: 0; box-sizing: border-box;
             transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
         }
         #dragonText.visible {
-            max-height: 70px; /* Ensure this is enough for the text */ opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
+            max-height: 70px; /* Ensure this is enough for the text */ opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px; /* Keep padding for visibility transition */
         }
         @keyframes flameAnimation {
             0%, 100% { background-position: 0% 50%; }
@@ -118,42 +176,35 @@
             animation: flameAnimation 15s ease infinite !important;
         }
         .story-button-legend, .story-button-naga {
-            background-size: cover; background-position: center center; background-repeat: no-repeat; color: white;
-            
+            /* background-size: cover; background-position: center center; background-repeat: no-repeat; */ /* Removed */
+            /* color: white; */ /* Handled by general button */
+            background-image: none !important; /* Ensure no background image */
         }
         .story-button-legend::before, .story-button-naga::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.4); border-radius: inherit;
-            z-index: 1; transition: background-color 0.3s ease;
+            content: none; /* Remove overlay */
         }
-        .story-button-legend:hover::before, .story-button-naga:hover::before {
-            background-color: rgba(0, 0, 0, 0.6);
-        }
-        .story-button-legend { background-image: url('/images/blood.png'); }
-        .story-button-naga { background-image: url('/images/arctic.jpg'); }
+        /* .story-button-legend:hover::before, .story-button-naga:hover::before { Removed } */
+        /* .story-button-legend { background-image: url('/images/blood.png'); } */ /* Removed */
+        /* .story-button-naga { background-image: url('/images/arctic.jpg'); } */ /* Removed */
 
-        /* Increased specificity for transition for the backstory trigger button */
-        button.backstory-trigger-btn {
-            background-color: #4a5568;
-            /* Tailwind classes now handle: color, padding, border-radius, font-weight, margin-bottom */
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-            border: none;
-            font-size: 1rem; /* Retaining specific font size for this button */
-        }
-        /* Discord Button Specific Styles */
+        /* backstory-trigger-btn is covered by general button styling */
+        /* Discord Button Specific Styles - override general button styles */
         #discordButton {
-            background-color: #5865F2; /* Discord blurple */
+            background-color: #C0C0C0 !important; /* Override specific Discord blurple */
+            color: #000000 !important;
         }
-        #discordButton:hover {
-            background-color: #4752C4; /* Darker blurple */
+        #discordButton:hover, #discordButton:active {
+            background-color: #C0C0C0 !important; /* Consistent Win95 feel */
+            border-top-color: #808080 !important;
+            border-left-color: #808080 !important;
+            border-bottom-color: #FFFFFF !important;
+            border-right-color: #FFFFFF !important;
         }
-        /* Hover effect for backstory-trigger-btn, matched specificity */
-        button.backstory-trigger-btn:hover {
-            background-color: #2d3748;
-            transform: translateY(-5px) scale(1.03);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        /* Ensure Discord icon itself is not colored by its original SVG fill if possible, or use a monochrome version */
+        #discordButton .fab.fa-discord {
+            color: #000000 !important; /* Make Discord icon black */
         }
+
 
         .discord-dropdown-text {
             max-height: 0;
@@ -163,8 +214,11 @@
             padding-top: 0;
             padding-bottom: 0;
             margin-top: 0; /* Start with no margin, will be added when visible */
-            background-color: rgba(55, 65, 81, 0.85); /* e.g., slate-700 with opacity */
-            border-radius: 0 0 0.375rem 0.375rem; /* Tailwind's rounded-md for bottom */
+            background-color: #FFFFFF !important; /* White background for dropdown */
+            border: 2px inset #808080 !important; /* Inset border */
+            border-radius: 0 !important; /* No rounded corners */
+            color: #000000 !important; /* Black text */
+            padding: 5px; /* Add some padding */
         }
         .discord-dropdown-text.visible {
             max-height: 70px; /* Adjust if text is longer or needs more space */
@@ -229,86 +283,97 @@
             max-height: 100vh;/* Ensure it doesn't exceed viewport height */
             overflow-y: auto; /* Allow scrolling for content longer than screen */
             position: relative; text-align: left;
-            color: #e2e8f0;
+            color: #000000; /* Black text */
             font-size: 1.05rem;
             line-height: 1.7;
-            transform: scale(0.95);
-            transition: transform 0.3s ease-in-out;
+            transform: scale(1); /* No scale effect */
+            transition: none; /* No transition */
             box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            border: 2px solid; /* Standard Win95 border */
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            background-color: #C0C0C0; /* Silver background */
         }
         #backstoryModal.visible #backstoryModalContent { transform: scale(1); }
         .close-modal-button {
-            position: absolute; top: 10px; right: 15px;
-            /* --- Repositioned to bottom center --- */
-            position: fixed; /* Changed from absolute to ensure viewport-relative positioning */
-            top: auto;
-            right: auto; /* Remove right positioning */
-            bottom: 20px; /* Distance from the bottom */
-            left: 50%;    /* Center horizontally */
-            transform: translateX(-50%); /* Base transform for centering */
-
-            /* --- New Circular Button Styles --- */
-            width: 60px; /* Define width for the circle */
-            height: 60px; /* Define height for the circle */
-            border-radius: 50%; /* Make it circular */
-            background-color: #334155; /* slate-700 for dark theme */
-            color: #cbd5e1; /* slate-300 for 'X' in dark theme */
-            font-size: 2.8rem; /* Adjusted 'X' size to fit circle */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            cursor: pointer; background: none; border: none;
-            line-height: 1; /* Important for flex centering */
-            padding: 0; /* Remove previous padding, flex handles centering */
-            z-index: 1001; /* Above modal backdrop (z-index: 1000) */
-            transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            /* Already covered by general button styling, but ensure specific overrides if needed */
+            background-color: #C0C0C0 !important;
+            color: #000000 !important;
+            border: 2px solid;
+            border-top-color: #FFFFFF !important;
+            border-left-color: #FFFFFF !important;
+            border-bottom-color: #808080 !important;
+            border-right-color: #808080 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            width: auto; /* Auto width based on content */
+            height: auto; /* Auto height */
+            font-size: 1rem; /* Standard button font size */
+            padding: 5px 10px; /* Standard button padding */
+            /* Resetting flex properties if they conflict */
+            display: inline-block;
+            text-align: center;
+            line-height: normal;
+            /* Ensure transform is reset from previous fixed positioning */
+            transform: none;
+            position: absolute; /* Or static/relative as needed for flow */
+            top: 10px;
+            right: 10px;
+            bottom: auto;
+            left: auto;
         }
-        .close-modal-button:hover {
-            background-color: #475569; /* slate-600 for dark theme hover */
-            color: #e2e8f0; /* slate-200 for 'X' on hover */
-            transform: translateX(-50%) translateY(-5px) scale(1.03); /* Combine centering with hover effects */
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25); /* Slightly more pronounced shadow for dark theme */
+        .close-modal-button:hover, .close-modal-button:active {
+            transform: none !important;
+            box-shadow: none !important;
+            border-top-color: #808080 !important;
+            border-left-color: #808080 !important;
+            border-bottom-color: #FFFFFF !important;
+            border-right-color: #FFFFFF !important;
+            background-image: none !important;
         }
-        /* Make it even larger on mobile */
-        @media (max-width: 767px) {
+
+        /* Make it even larger on mobile - this might be removed if not fitting Win95 style */
+        /* @media (max-width: 767px) {
             .close-modal-button {
-                width: 75px; /* Increased width for mobile */
-                height: 75px; /* Increased height for mobile */
-                font-size: 3.5rem; /* Increased 'X' size for larger mobile button */
-                bottom: 20px; /* More space from the bottom edge on mobile */
+                width: 75px;
+                height: 75px;
+                font-size: 3.5rem;
+                bottom: 20px;
             }
-        }
+        } */
         #backstoryModalContent p { margin-bottom: 1rem; }
         #backstoryModalContent p:last-child { margin-bottom: 0; }
 
         /* Sisu Image and Party Time Text Styles */
         .sisu-image {
-            transform: rotate(0deg); /* Initial upright state */
-            /* Transition for returning to upright and for box-shadow changes */
-            transition: transform 0.7s ease-out, box-shadow 0.3s ease-in-out;
-            backface-visibility: hidden; /* May help stabilize transform rendering and transitions */
-            /* Ensure no animation is running by default, which might help clarify state for transitions */
+            transform: none;
+            transition: none;
+            backface-visibility: hidden;
             animation: none;
-            /* Tailwind classes used: w-56 h-56 rounded-full object-cover shadow-lg */
+            border: 2px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            border-radius: 0; /* Override rounded-full from HTML if not removed */
+            box-shadow: none;
         }
 
         .group:hover .sisu-image {
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25); /* Enhanced shadow */
-            /* The 'animation' property takes precedence over the 'transform' transition during hover.
-               Upon hover exit, the base 'transition' on '.sisu-image' for 'transform'
-               will ensure a smooth return to the upright position. */
+            box-shadow: none;
+            /* No specific hover transform or animation */
         }
-
-        .party-text {
+        .party-text { /* party-text color already changed to black */
             position: absolute;
             top: 50%;
             font-size: 2.25rem; /* text-4xl */
             font-weight: bold; /* font-bold */
-            color: #fca5a5; /* Tailwind red-300 */
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            color: #000000; /* Black text */
+            text-shadow: none; /* Remove text shadow */
             opacity: 0;
-            transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Keep transition for now */
             pointer-events: none; /* So text doesn't interfere with image hover */
             white-space: nowrap;
             z-index: 10;
@@ -338,7 +403,8 @@
             left: 50%;
             transform: translateX(-50%); /* Center horizontally */
             font-size: 1.8rem; /* Size of the arrow */
-            color: #818cf8; /* Tailwind indigo-400, matching other highlights */
+            color: #0000FF; /* Standard link blue */
+            text-decoration: none; /* Arrows usually aren't underlined */
             z-index: 5; /* Below party text (z-index: 10), above default image flow */
         }
 
@@ -349,201 +415,76 @@
             }
         }
 
-        .bouncing-image { /* Changed from #bouncingLogo to a class */
-            position: absolute;
-            width: 250px; /* Adjust size as needed - Made them larger */
-            height: auto;  /* Maintain aspect ratio */
-            z-index: 1; /* Lower z-index to be in the background */
-            opacity: 0; /* Start fully transparent for fade-in */
-            visibility: hidden; /* Initially hide to prevent alt text flash */
-            transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
-            transform: translateZ(0); /* Attempt to promote to its own rendering layer */
+        .bouncing-image {
+            display: none !important;
+        }
+        .bouncing-snowflake {
+            display: none !important;
         }
 
         /* --- Scroll Rocket (Replaces Back to Top Button) --- */
-        /*
-            JS Interaction Plan:
-            1. On scroll (e.g., > 800px or 2 viewports): Add '.rocket-visible' to #backToTopBtn.
-            2. On #backToTopBtn click:
-               a. Add '.rocket-igniting'.
-               b. Play sound (optional).
-               c. setTimeout for var(--rocket-ignition-duration):
-                  i. Remove '.rocket-igniting', add '.rocket-launching'.
-                  ii. Start smooth scroll to top (e.g., window.scrollTo({top: 0, behavior: 'smooth'})).
-            3. On scroll completion (page at top):
-               a. Remove '.rocket-launching', add '.rocket-departing'.
-               b. setTimeout for var(--rocket-departure-duration):
-                  i. Remove '.rocket-departing'. (Rocket is now off-screen and hidden).
-            4. If user scrolls down again while rocket is visible (but not launching/departing), it remains.
-               If user scrolls back to top manually, JS should remove '.rocket-visible'.
-        */
         #backToTopBtn {
             position: fixed;
-            bottom: var(--rocket-bottom-offset);
-            right: var(--rocket-side-offset);
-            /* For bottom-left: left: var(--rocket-side-offset); right: auto; transform: var(--rocket-initial-transform-out-left, translateX(-120%)); */
-            width: var(--rocket-size);
-            height: var(--rocket-size);
-            background-color: var(--rocket-color-idle);
-            color: white;
-            border: none;
-            /* A simple rocket-like shape. An SVG would be more precise. */
-            border-radius: 40% 40% 20% 20% / 60% 60% 40% 40%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            bottom: 20px; /* Default offset */
+            right: 20px;  /* Default offset */
+            width: 50px;  /* Default size */
+            height: 50px; /* Default size */
+            background-color: #C0C0C0; /* Silver */
+            color: #000000; /* Black icon/text */
+            border: 2px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            box-shadow: none;
+            border-radius: 0;
             cursor: pointer;
-            z-index: 999; /* Ensure it's above most content */
-            /* --- TEMPORARY CHANGE: Make rocket visible by default for styling/testing --- */
-            opacity: 1;
+            z-index: 999;
+            opacity: 1; /* Always visible for now, JS can hide/show */
             visibility: visible;
-            transform: translateX(0); /* Position it in view */
-            /* Start bobbing animation immediately if always visible */
-            animation: rocketBobbing var(--rocket-bobbing-duration) infinite ease-in-out;
-            /* --- END TEMPORARY CHANGE --- */
+            transform: none; /* No slide-in/out transform by default */
+            animation: none; /* No bobbing or other animations */
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0; /* Effectively hide direct text content, icon is in ::before */
-            transition: /* opacity var(--rocket-slide-in-duration) ease-out, */ /* Transitions for initial appearance handled by direct visibility now */
-                        /* visibility var(--rocket-slide-in-duration) ease-out, */
-                        transform var(--rocket-slide-in-duration) ease-out,
-                        background-color 0.3s ease,
-                        box-shadow 0.3s ease;
+            font-size: 1.5rem; /* Size for Font Awesome icon */
+            transition: border-color 0.1s ease-in-out; /* For hover effect */
         }
 
-        /* Rocket icon placeholder - ideally use an SVG */
+        #backToTopBtn:hover, #backToTopBtn:active {
+            border-top-color: #808080;
+            border-left-color: #808080;
+            border-bottom-color: #FFFFFF;
+            border-right-color: #FFFFFF;
+            background-image: none;
+            transform: none; /* No hover transform */
+            box-shadow: none;
+        }
+
+        /* Original rocket icon was in ::before, let's ensure it's still there or use direct icon */
+        /* If using Font Awesome directly in the button HTML, this ::before might not be needed or can be simplified */
         #backToTopBtn::before {
-            content: '🚀'; /* Placeholder rocket emoji */
-            display: inline-block;
-            line-height: 1;
-            font-size: calc(var(--rocket-size) * 0.5); /* Actual icon size */
+            /* content: '🚀'; /* Using Font Awesome icon directly in HTML now */
+            /* display: inline-block; */
+            /* line-height: 1; */
+            /* font-size: calc(var(--rocket-size) * 0.5); */
+            /* Ensure icon color is black */
+            color: #000000;
         }
 
-        /* Subtle exhaust/particle effect for idle state */
-        #backToTopBtn::after {
-            content: '';
-            position: absolute;
-            bottom: -6px; /* Position below the rocket base */
-            left: 50%;
-            width: calc(var(--rocket-size) * 0.25);
-            height: calc(var(--rocket-size) * 0.25);
-            background: radial-gradient(circle, var(--rocket-flame-color-outer) 0%, transparent 70%);
-            border-radius: 50%;
-            opacity: 0; /* Hidden by default, shown with .rocket-visible */
-            transform: translateX(-50%);
-            transition: opacity 0.3s ease-out, width 0.3s ease, height 0.3s ease, bottom 0.3s ease, background 0.3s ease;
+        #backToTopBtn::after { /* Flame/exhaust effects */
+            display: none !important;
         }
 
-        #backToTopBtn.rocket-visible {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0); /* Slide in - This class will still be used by JS for the slide-in effect if you revert the temporary change */
-            /* Bobbing animation is now on the base style for the temporary always-visible state.
-               If you revert, you might want to add the animation delay back here:
-               animation: rocketBobbing var(--rocket-bobbing-duration) infinite ease-in-out var(--rocket-slide-in-duration); */
-        }
-
-        #backToTopBtn.rocket-visible::after, #backToTopBtn::after { /* Apply to base style as well for always-visible */
-            opacity: 0.6;
-            animation: subtleSparks 1.5s infinite ease-in-out;
-        }
-
-        #backToTopBtn:hover {
-            /* Only apply hover effects if rocket is visible and not in a launching/departing state */
-            /* JS might need to add a class like '.can-hover' or this can be handled by specificity */
-        }
-        #backToTopBtn.rocket-visible:hover {
-            background-color: var(--rocket-color-hover);
-            /* Tilt and scale, ensure translateX(0) is maintained from .rocket-visible */
-            transform: translateX(0) rotate(-10deg) scale(1.1);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        #backToTopBtn.rocket-visible:hover::after {
-            bottom: calc(var(--rocket-size) * -0.2); /* Further down */
-            width: calc(var(--rocket-size) * 0.35);
-            height: calc(var(--rocket-size) * 0.35);
-            background: radial-gradient(circle, var(--rocket-flame-color-inner) 20%, var(--rocket-flame-color-outer) 50%, transparent 80%);
-            opacity: 1;
-            animation: intenseSparks 0.5s infinite linear; /* More rapid sparks */
-        }
-
-        /* Ignition State (briefly on click) */
-        #backToTopBtn.rocket-igniting {
-            animation: rocketShake var(--rocket-ignition-duration) ease-out;
-        }
-        #backToTopBtn.rocket-igniting::after {
-            bottom: calc(var(--rocket-size) * -0.3);
-            width: calc(var(--rocket-size) * 0.4);
-            height: calc(var(--rocket-size) * 0.7); /* Elongated flame */
-            background: linear-gradient(to top, var(--rocket-flame-color-inner), var(--rocket-flame-color-outer), transparent 70%);
-            border-radius: 50% 50% 10% 10% / 80% 80% 20% 20%; /* Flame shape */
-            opacity: 1;
-            animation: ignitionFlameBurst var(--rocket-ignition-duration) ease-out forwards;
-        }
-
-        /* Launching State (during page scroll) */
-        #backToTopBtn.rocket-launching::after {
-            bottom: calc(var(--rocket-size) * -0.3);
-            width: calc(var(--rocket-size) * 0.4);
-            height: calc(var(--rocket-size) * 0.7);
-            background: linear-gradient(to top, var(--rocket-flame-color-inner), var(--rocket-flame-color-outer), transparent 70%);
-            border-radius: 50% 50% 10% 10% / 80% 80% 20% 20%;
-            opacity: 1;
-            animation: sustainedFlame 0.3s infinite alternate ease-in-out;
-        }
-
-        /* Departing State (flies off screen) */
-        #backToTopBtn.rocket-departing {
-            /* The main transform is handled by rocketFlyOff animation */
-            animation: rocketFlyOff var(--rocket-departure-duration) ease-in forwards;
-        }
-        #backToTopBtn.rocket-departing::after {
-            animation: flameFadeOut var(--rocket-departure-duration) ease-in forwards;
-        }
-
-        @keyframes rocketBobbing {
-            0%, 100% { transform: translateY(0); } /* Base transform from .rocket-visible is translateX(0) */
-            50% { transform: translateY(-5px); }
-        }
-
-        @keyframes subtleSparks {
-            0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(0.8); }
-            50% { opacity: 0.7; transform: translateX(-50%) scale(1); }
-        }
-
-        @keyframes intenseSparks {
-            0%   { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
-            50%  { transform: translateX(-50%) scale(1.2) translateY(2px); opacity: 0.7; }
-            100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
-        }
-
-        @keyframes rocketShake { /* Applied to the rocket itself for a launch shudder */
-            0%, 100% { transform: translateX(0) rotate(0); }
-            20% { transform: translateX(-2px) translateY(1px) rotate(-2deg); }
-            40% { transform: translateX(2px) translateY(-1px) rotate(2deg); }
-            60% { transform: translateX(-1px) translateY(1px) rotate(-1deg); }
-            80% { transform: translateX(1px) translateY(-1px) rotate(1deg); }
-        }
-
-        @keyframes ignitionFlameBurst {
-            from { transform: translateX(-50%) scaleY(0.5); opacity: 0.7; }
-            to   { transform: translateX(-50%) scaleY(1); opacity: 1; }
-        }
-
-        @keyframes sustainedFlame {
-            from { transform: translateX(-50%) scaleY(1) scaleX(1); opacity: 1; }
-            to   { transform: translateX(-50%) scaleY(0.85) scaleX(1.1); opacity: 0.9; }
-        }
-
-        @keyframes rocketFlyOff {
-            0%   { transform: translateX(0) translateY(0) rotate(-10deg); opacity: 1; } /* Assumes it might be tilted from hover/click */
-            100% { transform: translateX(0) translateY(-150vh) rotate(-45deg); opacity: 0; } /* Fly far off screen */
-        }
-
-        @keyframes flameFadeOut {
-            from { opacity: 1; transform: translateX(-50%) scaleY(1); }
-            to   { opacity: 0; transform: translateX(-50%) scaleY(0.2); }
-        }
+        /* Remove all animation keyframes related to the rocket */
+        @keyframes rocketBobbing {}
+        @keyframes subtleSparks {}
+        @keyframes intenseSparks {}
+        @keyframes rocketShake {}
+        @keyframes ignitionFlameBurst {}
+        @keyframes sustainedFlame {}
+        @keyframes rocketFlyOff {}
+        @keyframes flameFadeOut {}
 
 
         /* Fade-in on Scroll Effect */
@@ -578,90 +519,81 @@
 
         #moonIcon {
             /* top, left, transform removed */
-            color: #e2e8f0; /* Tailwind slate-200, a soft white/grey */
+            color: #000000; /* Black icon */
         }
         #sunIcon {
             /* top, left, transform removed */
-            color: #facc15; /* Tailwind yellow-400, a bright sun color */
+            color: #000000; /* Black icon (or consider yellow if it looks ok on teal) */
         }
 
-        /* Screen Edge Glow */
+        /* Screen Edge Glow - REMOVED */
         body::before {
-            content: '';
-            position: absolute; /* Changed from fixed to scroll with the page */
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px; /* Further reduced thickness for the line/glow origin at the top */
-            pointer-events: none; /* Allows interaction with elements underneath */
-            z-index: 1002; /* Above modal (1000) and close button (1001) */
-            /* Transition for background (the line color) and box-shadow (the glow) */
-            transition: background-color 0.7s ease-in-out, box-shadow 0.7s ease-in-out;
+            display: none !important;
+        }
+        body.day-glow-active::before, body.night-glow-active::before {
+            display: none !important;
         }
 
-        body.day-glow-active::before {
-            /* background-color removed to have no solid line for daytime */
-            box-shadow:
-                /* Glows emanate from the top edge (0px y-offset) */
-                0 0 30px 8px rgba(255, 255, 0, 0.95),  /* Bright Yellow Glow, slightly less spread/blur */
-                0 0 60px 12px rgba(255, 100, 0, 0.85); /* Wider Vibrant Orange Glow, slightly less spread/blur */
-        }
-
-        body.night-glow-active::before {
-            background-color: rgba(0, 0, 0, 1); /* Black Line (now 1px thick) */
-            box-shadow:
-                /* Glows start 1px below the top (at the bottom edge of the 1px high ::before element) */
-                0 1px 30px 10px rgba(0, 0, 0, 0.9),  /* Black Glow */
-                0 1px 60px 15px rgba(0, 0, 0, 0.85); /* Wider Black Glow */
-        }
-
-        /* Snowflake Styles */
-        .bouncing-snowflake {
-            position: absolute;
-            width: 50px; /* Smaller than Kazu images */
-            height: auto; /* Maintain aspect ratio */
-            z-index: 1; /* Same layer as Kazu bouncers */
-            opacity: 0; /* Start fully transparent for fade-in */
-            visibility: hidden; /* Initially hide */
-            transition: opacity 0.5s ease-in-out; /* Transition for smooth fade-in */
-            transform: translateZ(0); /* Attempt to promote to its own rendering layer */
-        }
 
         /* Table of Contents Styles */
+        /* Table of Contents Styles */
+        #tableOfContents {
+            background-color: #C0C0C0;
+            border: 2px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            box-shadow: none;
+            border-radius: 0;
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* Keep existing transition */
+        }
+        #tableOfContents h3 { /* Assuming h3 is "Contents" title */
+            color: #000000;
+            border-bottom-color: #808080; /* Match border style */
+        }
+        #tableOfContents ul li a {
+            /* color: #0000FF; /* Standard link blue - will be inherited from general <a> */
+            /* text-decoration: underline; */ /* Will be inherited */
+            /* background-color: transparent; */ /* Ensure no conflicting bg */
+        }
         .active-toc-link {
-            background-color: #4f46e5; /* indigo-600 */
-            color: white !important;
-            font-weight: 500; /* semibold */
-            
+            background-color: #808080 !important; /* Gray background for active */
+            color: #FFFFFF !important; /* White text for active */
+            font-weight: bold; /* Make active link bold */
+            text-decoration: none !important; /* Remove underline for active link */
         }
         #tableOfContents::-webkit-scrollbar {
-            width: 6px;
+            width: 16px; /* Wider scrollbar like Win95 */
         }
         #tableOfContents::-webkit-scrollbar-track {
-            background: rgba(51, 65, 85, 0.5); /* slate-700 with opacity */
-            border-radius: 3px;
+            background: #C0C0C0; /* Silver track */
         }
         #tableOfContents::-webkit-scrollbar-thumb {
-            background: #64748b; /* slate-500 */
-            border-radius: 3px;
+            background: #A0A0A0; /* Darker gray thumb */
+            border: 1px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
         }
         #tableOfContents::-webkit-scrollbar-thumb:hover {
-            background: #4f46e5; /* indigo-600 */
+            background: #808080; /* Even darker on hover */
         }
 
-        /* Add these styles to your styles/main.css file */
+        /* Table of Contents fade-in styles */
+        #tableOfContents.toc-is-loading {
+            opacity: 0;
+            transform: translateY(-15px);
+        }
 
-/* Table of Contents fade-in styles */
-#tableOfContents {
-    /* Define the transition property on the element itself */
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-    /* Default state when visible and not 'loading' (opacity 1 is default for visible elements) */
-    /* transform: translateY(0); /* Default transform state */
-}
-
-#tableOfContents.toc-is-loading {
-    /* Initial state before fade-in */
-    opacity: 0;
-    transform: translateY(-15px); /* Start slightly above and fade/drop in */
-    /* pointer-events: none; /* Optional: prevent interaction while loading/invisible */
-}
+        /* Footer styling */
+        footer {
+            /* Assuming footer is outside .container, on the main body background */
+            color: #000000; /* Black text for readability on teal */
+            padding: 1rem;
+            text-align: center;
+        }
+        footer p {
+            margin: 0;
+        }
