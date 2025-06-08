@@ -1,50 +1,95 @@
-/* Base styles - some may be overridden by Tailwind if Tailwind is active */
+/* Windows 98 Theming - Overrides Tailwind where necessary */
 
         body {
             margin: 0; /* Basic reset */
             position: relative; /* Ensure body is a stacking context for its children */
-            /* transition: none !important; */ /* Remove transitions */
+            background-color: #008080 !important; /* Teal */
+            color: #000000 !important; /* Black text */
+            font-family: Arial, Helvetica, sans-serif !important;
+            transition: none !important;
+            font-size: 14px !important; /* Default for smaller screens */
         }
-        /* Remove Win98 scrollbar style from the main body - and any other custom scrollbars */
-        body::-webkit-scrollbar { display: none; } /* Hide custom scrollbars */
-        *::-webkit-scrollbar { display: none; } /* Hide custom scrollbars for all elements */
-        /* body::-webkit-scrollbar-track { ... } */
-        /* body::-webkit-scrollbar-thumb { ... } */
-        /* body::-webkit-scrollbar-thumb:hover { ... } */
+
+        @media (min-width: 768px) { /* md breakpoint (Tailwind's default) */
+            body {
+                font-size: 16px !important; /* Slightly larger for desktops */
+            }
+        }
+
+        body::-webkit-scrollbar {
+            width: 16px !important;
+        }
+        body::-webkit-scrollbar-track {
+            background: #C0C0C0 !important;
+        }
+        body::-webkit-scrollbar-thumb {
+            background: #808080 !important;
+            border: 1px solid !important;
+            border-top-color: #FFFFFF !important;
+            border-left-color: #FFFFFF !important;
+            border-bottom-color: #606060 !important;
+            border-right-color: #606060 !important;
+        }
+        body::-webkit-scrollbar-thumb:hover {
+            background: #A0A0A0 !important;
+        }
+        *::-webkit-scrollbar { /* Apply to all elements including TOC */
+            width: 16px !important;
+        }
+        *::-webkit-scrollbar-track {
+            background: #C0C0C0 !important;
+        }
+        *::-webkit-scrollbar-thumb {
+            background: #808080 !important;
+            border: 1px solid !important;
+            border-top-color: #FFFFFF !important;
+            border-left-color: #FFFFFF !important;
+            border-bottom-color: #606060 !important;
+            border-right-color: #606060 !important;
+        }
+        *::-webkit-scrollbar-thumb:hover {
+            background: #A0A0A0 !important;
+        }
+
 
         body.modal-open {
-            overflow: hidden; /* Prevent background scroll when modal is open - Essential, keep */
+            overflow: hidden !important; /* Prevent background scroll when modal is open - Essential, keep */
         }
-        /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> */
+        /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> - Arial will override */
         /* Styling for social icons and similar buttons. */
         button,
-        a.social-icon,
+        a.social-icon, /* Assuming these are styled like buttons */
         button.social-icon,
         .info-button,
+        #discordButton, /* Explicitly target for Win98 style */
+        #backToTopBtn,  /* Explicitly target for Win98 style */
         button.backstory-trigger-btn {
-            /* background-color: #C0C0C0; */ /* Revert to original or Tailwind */
-            /* color: #000000; */ /* Revert to original or Tailwind */
-            /* border: 2px solid; */ /* Revert to original or Tailwind */
-            /* border-top-color: #FFFFFF; */
-            /* border-left-color: #FFFFFF; */
-            /* border-bottom-color: #808080; */
-            /* border-right-color: #808080; */
-            padding: 5px 10px; /* Basic padding - keep if original, or let Tailwind handle */
-            font-size: 0.9rem; /* Keep if original, or let Tailwind handle */
-            position: relative; /* Keep if needed for z-index or positioning context */
-            z-index: 1; /* Keep if needed for stacking */
-            text-decoration: none; /* Remove underline from <a> tags styled as buttons */
-            transition: none !important; /* Remove transitions */
+            background-color: #C0C0C0 !important; /* Silver */
+            color: #000000 !important; /* Black text */
+            border: 2px solid !important;
+            border-top-color: #FFFFFF !important;
+            border-left-color: #FFFFFF !important;
+            border-bottom-color: #808080 !important;
+            border-right-color: #808080 !important;
+            padding: 3px 8px !important; /* Adjusted padding for Win98 feel */
+            font-size: 0.9rem !important; /* Consistent font size */
+            position: relative;
+            z-index: 1;
+            text-decoration: none !important;
+            transition: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
         }
 
         /* General link styling */
         a {
-            /* color: #0000FF; */ /* Allow Tailwind or original CSS */
-            text-decoration: underline; /* Common default, keep or let Tailwind manage */
+            color: #0000FF !important; /* Blue */
+            text-decoration: underline !important;
         }
         a:hover {
-            /* color: #800080; */ /* Allow Tailwind or original CSS */
-            /* text-decoration: underline; */
+            color: #800080 !important; /* Purple for visited/hover */
+            text-decoration: underline !important;
         }
 
         .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
@@ -66,51 +111,82 @@
         button.social-icon:hover,
         .info-button:hover,
         button.backstory-trigger-btn:hover,
+        button:hover,
+        a.social-icon:hover, /* Assuming these are styled like buttons */
+        button.social-icon:hover,
+        .info-button:hover,
+        #discordButton:hover,
+        #backToTopBtn:hover,
+        button.backstory-trigger-btn:hover,
         button:active,
-        a.social-icon:active,
+        a.social-icon:active, /* Assuming these are styled like buttons */
         button.social-icon:active,
         .info-button:active,
+        #discordButton:active,
+        #backToTopBtn:active,
         button.backstory-trigger-btn:active {
-            /* border-top-color: #808080; */ /* Revert to original or Tailwind */
-            /* border-left-color: #808080; */
-            /* border-bottom-color: #FFFFFF; */
-            /* border-right-color: #FFFFFF; */
-            /* background-image: none; */ /* Keep if originally no image, remove if Tailwind handles */
-            transform: none !important; /* Remove transforms */
-            box-shadow: none !important; /* Remove box-shadows */
+            border-top-color: #808080 !important; /* Inset border */
+            border-left-color: #808080 !important;
+            border-bottom-color: #FFFFFF !important;
+            border-right-color: #FFFFFF !important;
+            background-image: none !important; /* Ensure no gradient/image on hover */
+            transform: none !important;
+            box-shadow: none !important;
         }
 
+        .container,
+        #backstoryModalContent,
+        #tableOfContents,
+        #dragonText,
+        .discord-dropdown-text {
+            background-color: #C0C0C0 !important; /* Silver */
+            border: 2px solid !important;
+            border-top-color: #FFFFFF !important;
+            border-left-color: #FFFFFF !important;
+            border-bottom-color: #808080 !important;
+            border-right-color: #808080 !important;
+            color: #000000 !important; /* Default black text for containers */
+            animation: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
+        }
+        /* Specific padding for container if needed, otherwise use Tailwind classes in HTML */
         .container {
-            width: 100%;
-            max-width: 500px; /* Keep if this is original layout constraint */
-            padding: 1rem; /* Keep if original, or let Tailwind handle */
-            /* background-color: #C0C0C0; */ /* Revert to original or Tailwind */
-            /* border: 2px solid; */ /* Revert to original or Tailwind */
-            /* border-top-color: #FFFFFF; */
-            /* border-left-color: #FFFFFF; */
-            /* border-bottom-color: #808080; */
-            /* border-right-color: #808080; */
-            position: relative; /* Keep if needed for stacking */
-            z-index: 2;         /* Keep if needed for stacking */
-            animation: none !important; /* Remove animation */
-            border-radius: 0 !important; /* Ensure sharp corners */
-            box-shadow: none !important; /* Remove box-shadows */
+            width: 90% !important; /* More fluid on small screens */
+            max-width: 700px !important; /* Allow it to be wider on desktops */
+            margin-left: auto !important; /* Ensure centering */
+            margin-right: auto !important; /* Ensure centering */
+            margin-top: 20px !important; /* Add some top margin */
+            margin-bottom: 20px !important; /* Add some bottom margin */
+            padding: 1rem !important; /* Keep padding or adjust as needed */
+            position: relative !important; /* Ensure this doesn't get overridden if critical */
+            z-index: 2 !important;  /* Ensure this doesn't get overridden if critical */
         }
-        /* .info-button specific overrides if any (already covered by general button styling) */
 
-        .profile-picture {
-            /* border: 2px solid; */ /* Revert to original or Tailwind */
-            /* border-top-color: #FFFFFF; */
-            /* border-left-color: #FFFFFF; */
-            /* border-bottom-color: #808080; */
-            /* border-right-color: #808080; */
-            transition: none !important; /* Remove transition */
-            border-radius: 0 !important; /* Ensure sharp corners */
-            animation: none !important; /* Remove animation */
-            transform: none !important; /* Remove transforms */
+
+        img { /* General responsive image rule */
+            max-width: 100%;
+            height: auto;
+            display: block; /* Optional: helps with spacing issues */
+        }
+
+        .profile-picture,
+        .sisu-image {
+            border: 2px solid !important;
+            border-top-color: #FFFFFF !important;
+            border-left-color: #FFFFFF !important;
+            border-bottom-color: #808080 !important;
+            border-right-color: #808080 !important;
+            transition: none !important;
+            border-radius: 0 !important;
+            animation: none !important;
+            transform: none !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
         }
         .profile-picture:hover {
-            animation: none !important; /* Specifically remove hover animation */
+            animation: none !important;
             transform: none !important;
         }
 
@@ -134,18 +210,18 @@
             /* border-left-color: #FFFFFF; */
             /* border-bottom-color: #808080; */
             /* border-right-color: #808080; */
-            padding: 5px 10px; /* Keep if original, or let Tailwind handle */
-            margin-top: 0; box-sizing: border-box;
-            transition: none !important; /* Remove transition */
-            border-radius: 0 !important; /* Ensure sharp corners */
+            padding: 5px 10px !important; /* Win98 style padding */
+            margin-top: 0; box-sizing: border-box !important;
+            transition: none !important;
+            border-radius: 0 !important;
         }
-        #dragonText.visible {
+        #dragonText.visible { /* This class is toggled by JS */
             max-height: 70px; opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
         }
 
-        .flames-background {
-            background: none !important; /* Remove complex background effects */
-            animation: none !important; /* Remove animation */
+        .flames-background { /* This class might be unused now but ensure it's neutral */
+            background: none !important;
+            animation: none !important;
         }
         .story-button-legend, .story-button-naga {
             /* color: white; */ /* Handled by general button */
@@ -190,12 +266,12 @@
             /* border-left-color: #FFFFFF; */
             /* border-bottom-color: #808080; */
             /* border-right-color: #808080; */
-            /* color: #000000; */ /* Revert to original or Tailwind */
-            padding: 5px; /* Keep if original, or let Tailwind handle */
-            transition: none !important; /* Remove transition */
-            border-radius: 0 !important; /* Ensure sharp corners */
+            /* color: #000000; */
+            padding: 5px !important; /* Win98 style padding */
+            transition: none !important;
+            border-radius: 0 !important;
         }
-        .discord-dropdown-text.visible {
+        .discord-dropdown-text.visible { /* This class is toggled by JS */
             max-height: 70px; /* Adjust if text is longer or needs more space */
             opacity: 1; /* Keep for visibility toggle */
             padding-top: 0.75rem;
@@ -242,13 +318,13 @@
             /* border-left-color: #FFFFFF; */
             /* border-bottom-color: #808080; */
             /* border-right-color: #808080; */
-            border-radius: 0 !important; /* Ensure sharp corners */
-            transform: none !important; /* Remove transforms */
-            transition: none !important; /* Ensure no transitions here */
-            box-shadow: none !important; /* Remove box-shadows */
+            border-radius: 0 !important;
+            transform: none !important;
+            transition: none !important;
+            box-shadow: none !important;
         }
-
-        .close-modal-button {
+        /* .close-modal-button inherits from general button styling */
+        .close-modal-button { /* If specific overrides are needed beyond general button */
             width: auto; /* Auto width based on content */
             height: auto; /* Auto height */
             font-size: 1rem; /* Standard button font size */
@@ -284,39 +360,38 @@
             /* transition: none; */ /* Remove if it was for disabling effect */
             /* backface-visibility: hidden; */ /* Remove */
             /* animation: none; */ /* Remove if it was for disabling effect */
-            border-radius: 0 !important; /* Ensure sharp corners */
-            box-shadow: none !important; /* Remove box-shadows */
-            animation: none !important; /* Remove animation */
-            transform: none !important; /* Remove transforms */
-            backface-visibility: hidden; /* Remove */
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            animation: none !important;
+            transform: none !important;
+            backface-visibility: hidden !important; /* Remove */
         }
 
         .group:hover .sisu-image {
-            box-shadow: none !important; /* Remove box-shadows */
-            transform: none !important; /* Remove hover transforms */
+            box-shadow: none !important;
+            transform: none !important;
         }
         .party-text {
             position: absolute; /* Keep if original layout */
             top: 50%; /* Keep if original layout */
             font-size: 1.5rem; /* Keep if original, or let Tailwind handle */
             font-weight: bold; /* Keep if original, or let Tailwind handle */
-            /* color: #000000; */ /* Revert to original or Tailwind */
-            opacity: 0; /* Original behavior was likely opacity toggle on hover */
-            transition: none !important; /* Remove transition */
-            pointer-events: none; /* Keep if original, so text doesn't interfere with image hover */
+            color: #000000 !important; /* Black text */
+            opacity: 0; /* JS toggles this with .group:hover .party-text */
+            transition: none !important;
+            pointer-events: none; /* Keep if original */
             white-space: nowrap; /* Keep if original */
             z-index: 10; /* Keep if original */
-            transform: translateY(-50%); /* Base transform for vertical centering - KEEP if original */
-            /* background-color: #C0C0C0; */ /* Revert to original or Tailwind */
-            /* padding: 2px 5px; */ /* Revert to original or Tailwind */
-            /* border: 1px solid #808080; */ /* Revert to original or Tailwind */
-            text-shadow: none !important; /* Remove text-shadow */
+            transform: translateY(-50%); /* Base transform for vertical centering - KEEP */
+            text-shadow: none !important;
+            /* background-color: #C0C0C0; */ /* Optional: Add silver panel background */
+            /* border: 1px solid #808080; */   /* Optional: Add simple border */
+            /* padding: 2px 4px; */           /* Optional: Add padding if bg/border used */
         }
-         .group:hover .party-text {
-            transform: translateY(-50%) translateX(0) !important; /* Ensure no animated transform on hover */
-            opacity: 1; /* Instant opacity change */
+         .group:hover .party-text { /* This rule should make it appear instantly */
+            opacity: 1 !important;
+            transform: translateY(-50%) translateX(0) !important;
         }
-
 
         .party-text-left {
             right: 100%;
@@ -377,29 +452,27 @@
             /* border-left-color: #FFFFFF; */
             /* border-bottom-color: #808080; */
             /* border-right-color: #808080; */
-            box-shadow: none !important; /* Remove */
-            border-radius: 0 !important; /* Remove or let Tailwind handle */
-            cursor: pointer; /* Keep */
-            z-index: 999; /* Keep */
+            /* Properties inherited from general button style due to #backToTopBtn selector addition */
+            /* Specific overrides if it needs to differ from standard button */
             opacity: 0; /* Original behavior was likely opacity toggle by JS */
             visibility: hidden; /* Original behavior was likely visibility toggle by JS */
-            transform: none !important; /* Remove if it was for disabling effect */
-            animation: none !important; /* Remove all animations */
             display: flex; /* Original was flex for centering icon */
             align-items: center; /* Original was flex for centering icon */
             justify-content: center; /* Original was flex for centering icon */
-            font-size: 1.5rem; /* Keep if for icon, or let Tailwind handle */
-            transition: none !important; /* Remove transition */
+            font-size: 1.5rem; /* Keep if for icon */
         }
 
-        #backToTopBtn:hover, #backToTopBtn:active {
-            /* border-top-color: #808080; */ /* Revert to original or Tailwind */
-            /* border-left-color: #808080; */
-            /* border-bottom-color: #FFFFFF; */
-            /* border-right-color: #FFFFFF; */
-            /* background-image: none; */
-            transform: none !important;
-            box-shadow: none !important;
+        /* #backToTopBtn:hover, #backToTopBtn:active {} */ /* Handled by general button hover/active */
+
+        #backToTopBtn::before {
+            /* color: #000000; */ /* Revert to original or Tailwind */
+            /* content: '🚀'; */ /* Original was likely Font Awesome icon */
+            /* display: inline-block; */
+            /* line-height: 1; */
+        }
+
+        #backToTopBtn::after { /* Flame/exhaust effects */
+            display: none !important; /* Remove decorative flame */
         }
 
         #backToTopBtn::before {
@@ -459,52 +532,34 @@
 
         /* Screen Edge Glow - REMOVED */
         body::before {
-            display: none !important; /* Remove screen edge glows */
+            display: none !important;
         }
         body.day-glow-active::before, body.night-glow-active::before {
-            display: none !important; /* Remove screen edge glows */
+            display: none !important;
         }
 
 
         /* Table of Contents Styles */
-        #tableOfContents {
-            /* background-color: #C0C0C0; */ /* Revert to original or Tailwind */
-            /* border: 2px solid; */ /* Revert to original or Tailwind */
-            /* border-top-color: #FFFFFF; */
-            /* border-left-color: #FFFFFF; */
-            /* border-bottom-color: #808080; */
-            /* border-right-color: #808080; */
-            opacity: 1; /* Default to visible, JS might hide it initially */
-            box-shadow: none !important; /* Remove */
-            border-radius: 0 !important; /* Remove or let Tailwind handle */
-            transition: none !important; /* Remove transition */
-            transform: none !important; /* Remove transforms */
-        }
+        /* #tableOfContents styling (bg, border) inherited from general container rule */
         #tableOfContents h3 {
-            /* color: #FFFFFF; */ /* Revert to original or Tailwind */
-            /* background-color: #000080; */ /* Revert to original or Tailwind */
-            /* padding: 2px 4px; */ /* Revert to original or Tailwind */
-            /* border-bottom: 2px solid; */ /* Revert to original or Tailwind */
-            /* border-bottom-color: #808080; */
+            background-color: #000080 !important; /* Dark Blue title bar */
+            color: #FFFFFF !important; /* White text */
+            padding: 3px 5px !important; /* Win98 title bar padding */
+            /* border-bottom: 2px solid #808080 !important; */ /* Optional: border under title */
         }
-        #tableOfContents ul li a {
-            /* Styles inherited or defined by Tailwind */
+        /* #tableOfContents ul li a {} */ /* Let general 'a' styling apply or Tailwind */
+
+        .active-toc-link { /* This class is added by JS */
+            background-color: #000080 !important; /* Dark Blue for selected item */
+            color: #FFFFFF !important; /* White text for selected item */
+            font-weight: bold !important;
+            text-decoration: none !important;
         }
-        .active-toc-link { /* This class is added by JS, style it simply or let Tailwind handle */
-            /* background-color: #000080 !important; */ /* Revert to original or Tailwind */
-            /* color: #FFFFFF !important; */ /* Revert to original or Tailwind */
-            font-weight: bold; /* Common for active links */
-            /* text-decoration: none !important; */ /* Keep if desired for active */
-        }
-        /* Remove Win98 scrollbar styling for TOC */
-        /* #tableOfContents::-webkit-scrollbar { ... } */
-        /* #tableOfContents::-webkit-scrollbar-track { ... } */
-        /* #tableOfContents::-webkit-scrollbar-thumb { ... } */
-        /* #tableOfContents::-webkit-scrollbar-thumb:hover { ... } */
+        /* Scrollbar styling for TOC handled by *::-webkit-scrollbar */
 
         #tableOfContents.toc-is-loading { /* JS might use this to hide/show before population */
-            opacity: 0; /* Hide initially if JS handles visibility after populating */
-            transform: none !important; /* Remove transform */
+            opacity: 0 !important; /* Hide initially if JS handles visibility after populating */
+            transform: none !important;
         }
 
         /* Footer styling */
