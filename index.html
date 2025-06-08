@@ -115,14 +115,14 @@
     </div>
 
     <!-- Sun/Moon Time Indicators (Moved here for DOM order) -->
-    <i id="moonIcon" class="fas fa-moon time-indicator-icon fade-in-on-scroll"></i>
-    <i id="sunIcon" class="fas fa-sun time-indicator-icon fade-in-on-scroll"></i>
+    <i id="moonIcon" class="fas fa-moon time-indicator-icon"></i>
+    <i id="sunIcon" class="fas fa-sun time-indicator-icon"></i>
 
     <!-- Moved Time and Availability Status Here -->
-    <div id="currentTimeContainer" class="text-base mb-1 fade-in-on-scroll">
-        <span class="font-bold text-lg">My current time is </span><span id="currentTime" class="text-lg">Loading...</span>
+    <div id="currentTimeContainer" class="mb-1 p-1 text-sm font-mono" style="background-color: #c0c0c0; color: black; border-style: solid; border-width: 2px; border-color: #808080 #ffffff #ffffff #808080; box-shadow: inset 1px 1px 0px #000000, inset -1px -1px 0px #dfdfdf; display: inline-block; min-width: 80px; text-align: center;">
+        <span id="currentTime">Loading...</span>
     </div>
-    <div id="availabilityStatusContainer" class="text-sm mb-4 fade-in-on-scroll"> <!-- Reduced mb-6 to mb-4 -->
+    <div id="availabilityStatusContainer" class="text-sm mb-4"> <!-- Reduced mb-6 to mb-4 -->
         <span id="availabilityMessage" class="font-bold text-base">Checking availability...</span>
     </div>
 
@@ -130,66 +130,66 @@
     <div class="container p-4 md:p-6 text-center"> <!-- Reduced p-6 md:p-10 to p-4 md:p-6 -->
         <div class="mb-4"> <!-- Reduced mb-6 to mb-4 -->
             <div class="profile-image-wrapper">
-                <img src="Images/com.png" alt="Kazu Hani, profile picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 mx-auto border-2 object-cover fade-in-on-scroll" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found'; this.alt='Placeholder image for Kazu Hani';">
+                <img src="Images/com.png" alt="Kazu Hani, profile picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 mx-auto border-2 object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found'; this.alt='Placeholder image for Kazu Hani';">
                 <p id="dragonText">Do Not The Dragon</p>
             </div>
         </div>
 
-        <div class="mb-6 text-center "> <!-- Added fade-in-on-scroll to the parent div -->
-            <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2 fade-in-on-scroll">Kazu Hani</h1>
-            <p class="bio-text text-base md:text-lg mt-2 mb-1 fade-in-on-scroll" id="bioTextParagraph">
+        <div class="mb-6 text-center ">
+            <h1 id="kazuName" class="text-3xl md:text-4xl font-bold mb-2">Kazu Hani</h1>
+            <p class="bio-text text-base md:text-lg mt-2 mb-1" id="bioTextParagraph">
                 <span class="highlight-text">Welcome to my personal hub!</span>
             </p>
-            <div class="mt-3 mb-3 fade-in-on-scroll"> <!-- Reduced mt-4 mb-4 to mt-3 mb-3 -->
+            <div class="mt-3 mb-3"> <!-- Reduced mt-4 mb-4 to mt-3 mb-3 -->
                  <a href="https://vgen.co/c/kazu-hani/kazu-hani" target="_blank" rel="noopener noreferrer"
-                   class="info-button inline-block font-medium text-sm" title="Learn more about Kazu Hani on VGen"> <!-- Removed py-2 px-4 -->
+                   class="info-button inline-block font-medium text-sm py-3 px-4" title="Learn more about Kazu Hani on VGen">
                     More info about Kazu
                 </a>
             </div>
         </div>
 
-        <div id="birthdayCountdown" class="fade-in-on-scroll mb-2"> <!-- Added mb-2 -->
+        <div id="birthdayCountdown" class="mb-2"> <!-- Added mb-2 -->
             Birthday is in <span id="countdownTimer">Loading...</span>
         </div>
 
-        <div id="ageDisplay" class="fade-in-on-scroll mb-4"> <!-- Added mb-4 -->
+        <div id="ageDisplay" class="mb-4"> <!-- Added mb-4 -->
             I am currently <span id="currentAge"></span> years old.
         </div>
 
         <div class="space-y-2 mb-6"> <!-- Reduced space-y-4 to space-y-2, mb-8 to mb-6 -->
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="Follow Kazu Hani on X (formerly Twitter)"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="Follow Kazu Hani on X (formerly Twitter)">
                 <img src="Images/twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
                 <span>Twitter</span>
             </a>
             <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="Watch Kazu Hani on TikTok"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="Watch Kazu Hani on TikTok">
                 <img src="Images/tiktok_logo.png" alt="TikTok Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/000000/ffffff?text=TT&font=roboto'; this.alt='TikTok Placeholder';">
                 <span>TikTok</span>
             </a>
             <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="Subscribe to Kazu Hani on YouTube"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="Subscribe to Kazu Hani on YouTube">
                 <img src="Images/youtube_logo.png" alt="YouTube Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF0000/ffffff?text=YT&font=roboto'; this.alt='YouTube Placeholder';">
                 <span>YouTube</span>
             </a>
             <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="View Kazu Hani's Steam Profile"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="View Kazu Hani's Steam Profile">
                 <img src="Images/steam_logo.png" alt="Steam Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1b2838/ffffff?text=S&font=roboto'; this.alt='Steam Placeholder';">
                 <span>Steam</span>
             </a>
             <a href="https://www.reddit.com/user/Korat24/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="View Kazu Hani's (Korat24) Reddit Profile"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="View Kazu Hani's (Korat24) Reddit Profile">
                 <img src="Images/reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
                 <span>Reddit</span>
             </a>
             <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="View Kazu Hani's Anime List on MyAnimeList"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="View Kazu Hani's Anime List on MyAnimeList">
                 <!-- Using MyAnimeList_Logo.jpg -->
                 <img src="Images/MyAnimeList_Logo.jpg" alt="MyAnimeList Logo Icon" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/2e51a2/ffffff?text=MAL&font=roboto'; this.alt='MyAnimeList Placeholder';">
                 <span>MyAnimeList</span>
             </a>
             <a href="https://character.ai/profile/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="Chat with Kazu Hani on Character.ai"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="Chat with Kazu Hani on Character.ai">
                 <img src="Images/CharacterAIlogo.png" alt="Character.ai Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/8B5CF6/ffffff?text=C.AI&font=roboto'; this.alt='Character.ai Placeholder';">
                 <span>Character.ai</span>
             </a>
@@ -197,7 +197,7 @@
             <!-- New Discord Button and Dropdown -->
             <div class="discord-container">
                 <button id="discordButton"
-                   class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll"  aria-expanded="false" aria-controls="discordDropdownText" title="Get Kazu Hani's Discord username"> <!-- Removed py-3 px-4 -->
+                   class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4"  aria-expanded="false" aria-controls="discordDropdownText" title="Get Kazu Hani's Discord username">
                     <i class="fab fa-discord w-6 h-6 mr-3" aria-hidden="true"></i>
                     <span>Discord</span>
                 </button>
@@ -216,13 +216,13 @@
         </script>
 
         <div class="mt-6 pt-4 border-t"> <!-- Reduced mt-8 pt-6 to mt-6 pt-4 -->
-            <h2 id="toc-music-playlist" class="toc-section-header text-xl font-semibold mb-3 text-center fade-in-on-scroll">My music playlist</h2> <!-- Reduced mb-4 to mb-3 -->
+            <h2 id="toc-music-playlist" class="toc-section-header text-xl font-semibold mb-3 text-center">My music playlist</h2> <!-- Reduced mb-4 to mb-3 -->
             <div class="playlist-container flex justify-center items-center mt-8 mb-4"> <!-- Reduced mt-10 mb-6 to mt-8 mb-4 -->
                 <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj"
-                   target="_blank" rel="noopener noreferrer" class="relative group inline-block fade-in-on-scroll">
+                   target="_blank" rel="noopener noreferrer" class="relative group inline-block">
                     <i class="fas fa-arrow-down playlist-arrow" title="Listen to Kazu Hani's playlist on YouTube Music"></i>
                     <img src="Images/Sisu.jpg" alt="Sisu the Dragon"
-                         class="sisu-image w-56 h-56 object-cover fade-in-on-scroll" loading="lazy"> <!-- Ensure rounded-full is removed if it was here -->
+                         class="sisu-image w-56 h-56 object-cover" loading="lazy"> <!-- Ensure rounded-full is removed if it was here -->
                     <span class="party-text party-text-left">Party</span>
                     <span class="party-text party-text-right">Time</span>
                 </a>
@@ -230,36 +230,36 @@
         </div>
 
         <div class="mt-6 pt-4 border-t"> <!-- Reduced mt-8 pt-6 to mt-6 pt-4 -->
-            <h2 id="toc-website-code" class="toc-section-header text-xl font-semibold mb-3 fade-in-on-scroll">Code used for this website</h2> <!-- Reduced mb-4 to mb-3 -->
+            <h2 id="toc-website-code" class="toc-section-header text-xl font-semibold mb-3">Code used for this website</h2> <!-- Reduced mb-4 to mb-3 -->
             <a href="https://github.com/KazuHani/Kazu-Hub" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="View the source code for Kazu Hub on GitHub"> <!-- Removed py-3 px-4 -->
+               class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="View the source code for Kazu Hub on GitHub">
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
                 </svg>
                 <span>View on GitHub</span>
             </a>
 
-            <h2 id="toc-my-stories" class="toc-section-header text-xl font-semibold mt-4 mb-2 fade-in-on-scroll">My Stories</h2> <!-- Reduced mt-6 mb-3 to mt-4 mb-2 -->
+            <h2 id="toc-my-stories" class="toc-section-header text-xl font-semibold mt-4 mb-2">My Stories</h2> <!-- Reduced mt-6 mb-3 to mt-4 mb-2 -->
             <button id="backstoryTrigger"
-                    class="backstory-trigger-btn w-full flex items-center justify-center font-semibold mb-2 fade-in-on-scroll" title="Read Kazu's backstory"> <!-- Removed py-3 px-4 -->
+                    class="backstory-trigger-btn w-full flex items-center justify-center font-semibold mb-2 py-3 px-4" title="Read Kazu's backstory">
                 Kazu's backstory
             </button>
 
             <div class="mt-3 space-y-2"> <!-- Reduced mt-4 to mt-3 -->
                 <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-legend flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="Read Kazu's story: The Legend That Bleeds"> <!-- Removed py-3 px-4 -->
+                   class="social-icon story-button-legend flex items-center justify-center w-full font-semibold py-3 px-4" title="Read Kazu's story: The Legend That Bleeds">
                     <span>The Legend That Bleeds</span>
                 </a>
                 <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-naga flex items-center justify-center w-full font-semibold fade-in-on-scroll" title="Read Kazu's story: The Naga And Human Kind"> <!-- Removed py-3 px-4 -->
+                   class="social-icon story-button-naga flex items-center justify-center w-full font-semibold py-3 px-4" title="Read Kazu's story: The Naga And Human Kind">
                     <span>The Naga And Human Kind</span>
                 </a>
             </div>
         </div> <!-- End of My Stories Section -->
 
         <div class="mt-6 pt-4 border-t"> <!-- Reduced mt-8 pt-6 to mt-6 pt-4 -->
-            <h2 id="toc-where-i-am" class="toc-section-header text-xl font-semibold mb-3 fade-in-on-scroll">Where I am</h2> <!-- Reduced mb-4 to mb-3 -->
-            <div class="overflow-hidden fade-in-on-scroll"> <!-- Wrapper for iframe styling -->
+            <h2 id="toc-where-i-am" class="toc-section-header text-xl font-semibold mb-3">Where I am</h2> <!-- Reduced mb-4 to mb-3 -->
+            <div class="overflow-hidden"> <!-- Wrapper for iframe styling -->
                 <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5021369.004948138!2d-4.208000000000001!3d54.268000000000005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x25a3b1142c791a9%3A0xc4f8a0433288257a!2sUnited%20Kingdom!5e0!3m2!1sen!2sus!4v1716467858509!5m2!1sen!2sus"
                     class="w-full h-80 md:h-96" <!-- Responsive height, full width -->
@@ -272,7 +272,7 @@
             </div>
         </div> <!-- End of Where I am Section -->
 
-        <footer class="mt-8 pt-4 border-t fade-in-on-scroll"> <!-- Reduced mt-10 pt-6 to mt-8 pt-4 -->
+        <footer class="mt-8 pt-4 border-t"> <!-- Reduced mt-10 pt-6 to mt-8 pt-4 -->
             <p class="text-center text-sm">
                 Coded by Google Gemini
             </p>
@@ -310,170 +310,6 @@
         let allBouncers = []; // Combined array for the animation loop
         let bouncerAnimationFrameId = null;
         let areSnowflakesVisible = false; // Tracks if snowflakes are currently in the DOM
-
-        // --- START: Unified Smooth Scrolling Logic ---
-        let currentScrollY = 0;
-        let targetScrollY = 0;
-        let generalScrollAnimationId = null;
-        const generalSmoothingFactor = 0.05; // Adjust for more/less "lag" (0.05 to 0.15) - Lowered for a "heavier" feel
-        let isProgrammaticScrollActive = false; // True if smoothScrollToProgrammatic is active
-/*
-        // --- START: Scroll Bounce Parameters ---
-        let isBouncing = false;
-        const BOUNCE_AMOUNT = 40; // Pixels to "jiggle"
-        const BOUNCE_OVERSHOOT_DURATION = 120; // Duration of the scroll away from the edge
-        const BOUNCE_RETURN_DURATION = 280;    // Duration of the scroll back to the edge (slightly slower for a smoother feel)
-        // --- END: Scroll Bounce Parameters --- */
-
-        // Easing function (easeInOutQuad) - used by programmatic scroll
-        function easeInOutQuad(t, b, c, d) {
-            t /= d / 2;
-            if (t < 1) return c / 2 * t * t + b;
-            t--;
-            return -c / 2 * (t * (t - 2) - 1) + b;
-        }
-
-        // Main animation loop for general "lazy" page scrolling (wheel scroll)
-        function animateGeneralPageScroll() {
-            if (isProgrammaticScrollActive) {
-                generalScrollAnimationId = null; // Stop if a programmatic scroll takes over
-                return;
-            }
-
-            const diff = targetScrollY - currentScrollY;
-
-            if (Math.abs(diff) < 0.5) { // If difference is negligible, snap and stop
-                currentScrollY = targetScrollY;
-                window.scrollTo(0, Math.round(currentScrollY));
-                if (generalScrollAnimationId) cancelAnimationFrame(generalScrollAnimationId);
-                generalScrollAnimationId = null;
-                return;
-            }
-
-            currentScrollY += diff * generalSmoothingFactor;
-            window.scrollTo(0, Math.round(currentScrollY));
-            generalScrollAnimationId = requestAnimationFrame(animateGeneralPageScroll);
-        }
-
-        // Handles user mouse wheel input for general scrolling
-        function handleUserWheelScroll(event) {
-            event.preventDefault(); // We are handling scroll, so prevent default browser behavior
-
-            // If a non-bounce programmatic scroll is active (e.g., "Back to Top"), let it finish.
-            if (isProgrammaticScrollActive && !isBouncing) {
-                return;
-            }
-
-            // If a bounce animation is already in progress, ignore further wheel inputs.
-            // if (isBouncing) { // isBouncing will no longer be set to true by edge scroll
-            //     return;
-            // }
-
-            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-
-            // --- START: Edge Bounce Logic (Now Disabled) ---
-            // Only attempt bounce if the page is actually scrollable
-            if (maxScroll > 0) {
-                if (event.deltaY < 0 && window.pageYOffset <= 0) { // Scrolling up at/past top
-                    isBouncing = true;
-                    const bounceDownTarget = Math.min(BOUNCE_AMOUNT, maxScroll); // Don't bounce further than page height
-                    smoothScrollToProgrammatic(bounceDownTarget, BOUNCE_OVERSHOOT_DURATION, () => {
-                         smoothScrollToProgrammatic(0, BOUNCE_RETURN_DURATION, () => {
-                             isBouncing = false;
-                             targetScrollY = 0; // Ensure scroll state is synced
-                             currentScrollY = 0;
-                         });
-                    });
-                    return; // Bounce initiated, stop further processing for this event */
-                }
-
-                if (event.deltaY > 0 && window.pageYOffset >= maxScroll) { // Scrolling down at/past bottom
-                    /*
-                    // isBouncing = true; // Bounce logic disabled
-                    const bounceUpTarget = Math.max(0, maxScroll - BOUNCE_AMOUNT); // Don't bounce to a negative scroll
-                    smoothScrollToProgrammatic(bounceUpTarget, BOUNCE_OVERSHOOT_DURATION, () => {
-                        smoothScrollToProgrammatic(maxScroll, BOUNCE_RETURN_DURATION, () => {
-                            // isBouncing = false;
-                            targetScrollY = maxScroll; // Ensure scroll state is synced
-                            currentScrollY = maxScroll;
-                        });
-                    });
-                    return; // Bounce initiated, stop further processing for this event */
-                }
-            }
-            // --- END: Edge Bounce Logic ---
-
-            // Normal scroll handling (if not bouncing and not overridden by other programmatic scroll)
-
-            targetScrollY += event.deltaY;
-            targetScrollY = Math.max(0, Math.min(targetScrollY, maxScroll)); // Clamp to bounds
-
-            if (!generalScrollAnimationId) {
-                currentScrollY = window.pageYOffset; // Sync before starting new animation
-                generalScrollAnimationId = requestAnimationFrame(animateGeneralPageScroll);
-            }
-        }
-
-        // Function for programmatic smooth scrolls (e.g., BackToTop, anchor links)
-        function smoothScrollToProgrammatic(destinationPosition, duration = 800, callback = null) {
-            isProgrammaticScrollActive = true;
-            if (generalScrollAnimationId) {
-                cancelAnimationFrame(generalScrollAnimationId);
-                generalScrollAnimationId = null;
-            }
-
-            const startPosition = window.pageYOffset;
-            let startTime = null;
-
-            function programmaticAnimation(currentTime) {
-                if (startTime === null) startTime = currentTime;
-                const timeElapsed = currentTime - startTime;
-                const newPosition = easeInOutQuad(timeElapsed, startPosition, destinationPosition - startPosition, duration);
-
-                window.scrollTo(0, newPosition);
-
-                if (timeElapsed < duration) {
-                    requestAnimationFrame(programmaticAnimation);
-                } else {
-                    window.scrollTo(0, destinationPosition); // Final snap
-                    currentScrollY = destinationPosition;    // Sync global state for general scroll
-                    targetScrollY = destinationPosition;     // Sync global state for general scroll
-                    isProgrammaticScrollActive = false;
-                    if (callback) {
-                        callback(); // Execute the callback if provided
-                    }
-                }
-            }
-            requestAnimationFrame(programmaticAnimation);
-        }
-
-        // Sets up listeners for general smooth scrolling and synchronization
-        function setupGeneralSmoothScroll() {
-            currentScrollY = window.pageYOffset;
-            targetScrollY = window.pageYOffset;
-            window.addEventListener('wheel', handleUserWheelScroll, { passive: false });
-
-            // Fallback to keep internal state synced if user drags scrollbar
-            let scrollSyncTimeout;
-            window.addEventListener('scroll', () => {
-                if (isProgrammaticScrollActive || generalScrollAnimationId) {
-                    // If our animations are running, they control the scroll.
-                    return;
-                }
-                // Scroll happened via other means (scrollbar, keyboard) and no animation is active.
-                clearTimeout(scrollSyncTimeout);
-                scrollSyncTimeout = setTimeout(() => {
-                    targetScrollY = window.pageYOffset;
-                    currentScrollY = window.pageYOffset;
-                }, 100); // Debounce
-            }, { passive: true });
-        }
-        // --- END: Unified Smooth Scrolling Logic ---
-
-        // Explicitly set scroll restoration to manual before anything else
-        if (history.scrollRestoration) {
-            history.scrollRestoration = 'manual';
-        }
 
         function setupProfilePicInteraction() {
             // const spinSound = document.getElementById('spinSound'); // Sound removed
@@ -704,13 +540,9 @@
                 // The IntersectionObserver (for fade-in-on-scroll) will handle
                 // adding 'is-visible' to trigger the animation if it's in the viewport.
                 if (iconToShow.style.display !== 'block') {
-                    iconToShow.style.display = 'block'; // Make space for the icon
+                    iconToShow.style.display = 'block';
                 }
-                // --- Hide Routine for the icon that should not be visible ---
-                // If it's not already 'none', make it so.
-                // Also remove 'is-visible' to ensure it's reset for the next time it might show.
                 if (iconToHide.style.display !== 'none') {
-                    iconToHide.classList.remove('is-visible'); // Reset animation state
                     iconToHide.style.display = 'none';
                 }
 
@@ -778,94 +610,35 @@
                     const scrolled = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
                     if (scrolled > scrollThreshold) {
-                        // If not already launching, show it
-                        if (!backToTopButton.classList.contains('launching')) {
-                            backToTopButton.classList.add('show');
-                        }
+                        backToTopButton.classList.add('show');
                     } else {
-                        // If not launching, hide it
-                        if (!backToTopButton.classList.contains('launching')) {
-                            backToTopButton.classList.remove('show');
-                        }
+                        backToTopButton.classList.remove('show');
                     }
                 });
 
                 backToTopButton.addEventListener('click', () => {
-                    if (backToTopButton.classList.contains('launching')) {
-                        return; // Already launching
-                    }
-
-                    backToTopButton.classList.add('launching');
-                    // The rocketLaunch animation duration is 0.8s (see CSS)
-                    smoothScrollToProgrammatic(0, 800); 
-
-                    // After animation, reset the button's state
-                    setTimeout(() => {
-                        backToTopButton.classList.remove('launching');
-                        // Determine visibility based on current scroll position
-                        const scrolled = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-                        if (scrolled <= scrollThreshold) {
-                           backToTopButton.classList.remove('show');
-                        } else {
-                           backToTopButton.classList.add('show');
-                        }
-                    }, 800); // Match animation duration
+                    window.scrollTo({ top: 0, behavior: 'auto' });
+                    // The scroll listener above will handle hiding the button.
                 });
             }
         }
 
-        function setupFadeInOnScroll() {
-            const elementsToFade = document.querySelectorAll('.fade-in-on-scroll');
-
-            if (!elementsToFade.length) {
-                return;
-            }
-
-            const observerOptions = {
-                root: null, // relative to document viewport
-                rootMargin: '0px', // Use the actual viewport boundaries
-                threshold: 0 // Trigger as soon as any part is visible / not visible
-            };
-
-            const observerCallback = (entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        // No longer unobserving, so it can fade out again
-                    } else {
-                        entry.target.classList.remove('is-visible');
-                    }
-                });
-            };
-
-            const intersectionObserver = new IntersectionObserver(observerCallback, observerOptions);
-            elementsToFade.forEach(el => {
-                intersectionObserver.observe(el);
-            });
-        }
         window.onload = function() {
             window.scrollTo(0, 0);
 
-            setupGeneralSmoothScroll(); // Initialize the unified smooth scroll system
-
             // Example for handling anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault(); // Prevent default jump
-        const targetId = this.getAttribute('href');
-        const targetElement = document.querySelector(targetId);
-        if (targetElement) {
-            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
-            // You might want to adjust targetPosition if you have a fixed header
-            // Now calls the global, coordinated smooth scroll function
-            smoothScrollToProgrammatic(targetPosition, 1000);
-        }
-    });
-});
-
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'auto' });
+                    }
+                });
+            });
 
             setupProfilePicInteraction();
-            setupFadeInOnScroll(); // Initialize the fade-in on scroll effect first
             setupModal();
             setupBirthdayCountdown();
             setupAgeCalculation();
@@ -1005,8 +778,8 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                         e.preventDefault();
                         const targetElement = document.getElementById(id);
                         if (targetElement) {
-                            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
-                            smoothScrollToProgrammatic(targetPosition, 800);
+                            // Native smooth scroll or instant scroll for TOC links
+                            targetElement.scrollIntoView({ behavior: 'auto' });
                         }
                     });
 
