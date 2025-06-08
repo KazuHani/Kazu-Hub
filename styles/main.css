@@ -220,14 +220,6 @@
             color: #000000 !important; /* Black text */
             padding: 5px; /* Add some padding */
         }
-        .discord-dropdown-text.visible {
-            max-height: 70px; /* Adjust if text is longer or needs more space */
-            opacity: 1;
-            padding-top: 0.75rem;  /* Tailwind's py-3 equivalent for consistency */
-            padding-bottom: 0.75rem; /* Tailwind's py-3 equivalent */
-            margin-top: 0.25rem; /* Tailwind's mt-1, to give a little space from the button */
-        }
-
         @keyframes fancyDiscordTextAnimation {
             0%, 100% {
                 transform: scale(1);
@@ -535,7 +527,6 @@
         }
 
 
-        /* Table of Contents Styles */
         /* Table of Contents Styles */
         #tableOfContents {
             background-color: #C0C0C0;
