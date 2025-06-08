@@ -1,32 +1,36 @@
-/* Custom fonts - Roboto (primary), Inter (fallback) */
-        :root {
-            --rocket-size: 50px;
-            --rocket-bottom-offset: 20px;
-            --rocket-side-offset: 20px; /* Used for right offset by default */
-            --rocket-initial-transform-out: translateX(calc(var(--rocket-size) + var(--rocket-side-offset) + 20px)); /* Slide out further than just its size */
-            --rocket-color-idle: #6b7280; /* Tailwind gray-500 */
-            --rocket-color-hover: #4f46e5; /* Tailwind indigo-600 (from original button) */
-            --rocket-flame-color-outer: #fb923c; /* Tailwind orange-400 */
-            --rocket-flame-color-inner: #fcd34d; /* Tailwind yellow-300 */
-            --rocket-slide-in-duration: 0.3s;
-            --rocket-bobbing-duration: 2.5s;
-            --rocket-ignition-duration: 0.2s; /* JS should use this for timing */
-            --rocket-departure-duration: 0.6s; /* JS should use this for timing */
-        }
+/* Custom fonts - Roboto (primary), Inter (fallback) are not used directly in this CSS. Common system fonts are used. */
 
         body {
             font-family: Arial, sans-serif;
-            background-color: #008080;
-            color: #000000;
+            background-color: #008080; /* Teal */
+            color: #000000; /* Black text */
             margin: 0; /* Basic reset */
-            transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out, color 0.5s ease-in-out; /* Smooth transition for background and text color changes */
             position: relative; /* Ensure body is a stacking context for its children */
         }
+        /* Apply Win98 scrollbar style to the main body */
+        body::-webkit-scrollbar {
+            width: 16px;
+        }
+        body::-webkit-scrollbar-track {
+            background: #C0C0C0; /* Silver track */
+        }
+        body::-webkit-scrollbar-thumb {
+            background: #A0A0A0; /* Darker gray thumb */
+            border: 1px solid;
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+        }
+        body::-webkit-scrollbar-thumb:hover {
+            background: #808080; /* Even darker on hover */
+        }
+
         body.modal-open {
-            overflow: hidden; /* Prevent background scroll when modal is open */
+            overflow: hidden; /* Prevent background scroll when modal is open - Essential, keep */
         }
         /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> */
-        /* Styling for social icons and similar buttons. Increased specificity for transition. */
+        /* Styling for social icons and similar buttons. */
         button,
         a.social-icon,
         button.social-icon,
@@ -39,29 +43,26 @@
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
             border-right-color: #808080;
-            box-shadow: none;
-            border-radius: 0;
             padding: 5px 10px; /* Basic padding for buttons */
             font-size: 0.9rem;
             position: relative;
             z-index: 1;
             text-decoration: none; /* Remove underline from <a> tags styled as buttons */
-            transition: border-color 0.1s ease-in-out; /* For hover effect */
         }
 
         /* General link styling */
         a {
-            color: #0000FF;
+            color: #0000FF; /* Blue */
             text-decoration: underline;
         }
         a:hover {
-            /* Consider a slightly different shade of blue or other Win95 link hover style if desired */
+            color: #800080; /* Purple for visited/hover */
+            text-decoration: underline;
         }
 
         .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
             position: relative;
             z-index: 2;
-            filter: none; /* Attempt to reset any color changes on icons */
         }
 
         button, /* Ensure buttons (which might be <a>) don't get underlined */
@@ -83,8 +84,6 @@
         button.social-icon:active,
         .info-button:active,
         button.backstory-trigger-btn:active {
-            transform: none;
-            box-shadow: none;
             border-top-color: #808080;
             border-left-color: #808080;
             border-bottom-color: #FFFFFF;
@@ -96,87 +95,56 @@
             width: 100%;
             max-width: 500px;
             padding: 1rem;
-            animation: zoomInEffect 0.7s ease-out forwards;
             background-color: #C0C0C0;
             border: 2px solid;
             border-top-color: #FFFFFF;
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
             border-right-color: #808080;
-            box-shadow: none;
-            border-radius: 0;
             position: relative; /* Establish stacking context */
             z-index: 2;         /* Ensure container is above bouncing images */
-            /* margin-top: 4rem; /* Removed as icons are now in normal flow */
-        }
-        @media (min-width: 640px) { /* sm breakpoint in Tailwind */
-            .container {
-                padding: 2rem;
-                /* Ensure border-radius is also reset here if it was previously set for larger screens */
-                border-radius: 0;
-            }
         }
         /* .info-button specific overrides if any (already covered by general button styling) */
 
-        @keyframes continuousSpin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
         .profile-picture {
-            transition: transform 0.5s ease-in-out; /* Keep existing transition for now */
-            border: 1px solid #808080; /* Simple gray border */
-            border-radius: 0; /* Ensure no rounded corners if previously set by Tailwind */
+            border: 2px solid; /* Win98 style border */
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
         }
-        /* .profile-picture:hover {
-            animation: continuousSpin 2s linear infinite;
-        } */
 
-        @keyframes zoomInEffect {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
         #birthdayCountdown {
             font-size: 1rem;
-            /* color: #cbd5e1; */ /* Replaced by body color or container color */
             margin-bottom: 0.5rem;
         }
         #ageDisplay {
             font-size: 1rem;
-            /* color: #cbd5e1; */ /* Replaced by body color or container color */
             margin-bottom: 1.5rem;
         }
         .bio-text { font-size: 0.95rem; /* Color will be inherited */ }
-        .highlight-text { color: #000000; font-weight: bold; /* Black and bold for highlight */ }
+        .highlight-text { font-weight: bold; /* color will be inherited (black) */ }
         .profile-image-wrapper { display: inline-block; text-align: center; }
         #dragonText {
             max-height: 0; opacity: 0; overflow: hidden; color: #000000; /* Black text */
             font-weight: bold; font-size: 1.5rem; white-space: nowrap;
-            background-color: #C0C0C0;
-            border-radius: 0; /* Silver background, no radius */
-            border: 2px solid;
+            background-color: #C0C0C0; /* Silver background */
+            border: 2px solid; /* Standard Win98 outset border */
             border-top-color: #FFFFFF;
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
             border-right-color: #808080;
             padding: 5px 10px; /* Consistent padding */
             margin-top: 0; box-sizing: border-box;
-            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
         }
         #dragonText.visible {
-            max-height: 70px; /* Ensure this is enough for the text */ opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px; /* Keep padding for visibility transition */
+            max-height: 70px; /* Ensure this is enough for the text */ opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px; /* Keep padding for visibility */
         }
-        @keyframes flameAnimation {
-            0%, 100% { background-position: 0% 50%; }
-            25%, 75% { background-position: 100% 50%; }
-            50% { background-position: 0% 50%; }
-        }
-        .flames-background {
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab, #ff4500, #ff8c00, #ff0000) !important;
-            background-size: 600% 600% !important;
-            animation: flameAnimation 15s ease infinite !important;
+
+        .flames-background { /* Ensure no lingering gradient styles */
+            background-color: #C0C0C0; /* Silver, consistent with other containers */
         }
         .story-button-legend, .story-button-naga {
-            /* background-size: cover; background-position: center center; background-repeat: no-repeat; */ /* Removed */
             /* color: white; */ /* Handled by general button */
             background-image: none !important; /* Ensure no background image */
         }
@@ -188,145 +156,110 @@
         /* .story-button-naga { background-image: url('/images/arctic.jpg'); } */ /* Removed */
 
         /* backstory-trigger-btn is covered by general button styling */
-        /* Discord Button Specific Styles - override general button styles */
+        /* Discord Button Specific Styles - ensure it adopts standard button look */
         #discordButton {
-            background-color: #C0C0C0 !important; /* Override specific Discord blurple */
-            color: #000000 !important;
+            /* background-color: #C0C0C0 !important; */ /* Already covered by general button */
+            /* color: #000000 !important; */ /* Already covered by general button */
+            /* Specific border overrides for hover/active if needed, but should inherit from general button */
         }
-        #discordButton:hover, #discordButton:active {
-            background-color: #C0C0C0 !important; /* Consistent Win95 feel */
-            border-top-color: #808080 !important;
-            border-left-color: #808080 !important;
-            border-bottom-color: #FFFFFF !important;
-            border-right-color: #FFFFFF !important;
-        }
+        /* #discordButton:hover, #discordButton:active { */
+            /* border-top-color: #808080 !important; */
+            /* border-left-color: #808080 !important; */
+            /* border-bottom-color: #FFFFFF !important; */
+            /* border-right-color: #FFFFFF !important; */
+        /* } */
         /* Ensure Discord icon itself is not colored by its original SVG fill if possible, or use a monochrome version */
         #discordButton .fab.fa-discord {
-            color: #000000 !important; /* Make Discord icon black */
+            color: #000000 !important; /* Make Discord icon black, if it's an actual font icon */
         }
 
 
         .discord-dropdown-text {
             max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out, margin-top 0.4s ease-out;
+            opacity: 0; /* Keep for visibility toggle */
+            overflow: hidden; /* Keep for visibility toggle */
             padding-top: 0;
             padding-bottom: 0;
             margin-top: 0; /* Start with no margin, will be added when visible */
-            background-color: #FFFFFF !important; /* White background for dropdown */
-            border: 2px inset #808080 !important; /* Inset border */
-            border-radius: 0 !important; /* No rounded corners */
-            color: #000000 !important; /* Black text */
+            background-color: #C0C0C0; /* Silver background, was #FFFFFF */
+            border: 2px solid; /* Standard Win98 outset border, was inset */
+            border-top-color: #FFFFFF;
+            border-left-color: #FFFFFF;
+            border-bottom-color: #808080;
+            border-right-color: #808080;
+            color: #000000; /* Black text */
             padding: 5px; /* Add some padding */
         }
         .discord-dropdown-text.visible {
             max-height: 70px; /* Adjust if text is longer or needs more space */
-            opacity: 1;
-            padding-top: 0.75rem;  /* Tailwind's py-3 equivalent for consistency */
-            padding-bottom: 0.75rem; /* Tailwind's py-3 equivalent */
-            margin-top: 0.25rem; /* Tailwind's mt-1, to give a little space from the button */
+            opacity: 1; /* Keep for visibility toggle */
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            margin-top: 0.25rem;
+            font-size: 1.125rem; /* Default size */
         }
 
-        @keyframes fancyDiscordTextAnimation {
-            0%, 100% {
-                transform: scale(1);
-                text-shadow: 0 0 4px rgba(220, 220, 255, 0.6); /* Softer white/lavender glow */
-            }
-            50% {
-                transform: scale(1.02); /* Further reduced scale for an even smaller pulse */
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.9), /* Brighter white */
-                             0 0 20px rgba(129, 140, 248, 0.7), /* Indigo-400 like glow */
-                             0 0 30px rgba(99, 102, 241, 0.5);  /* Indigo-500 like glow */
-            }
-        }
-        /* Responsive adjustments for Discord dropdown text on smaller screens */
-        @media (max-width: 767px) { /* Consistent with other mobile adjustments */
-            .discord-dropdown-text {
-                font-size: 1.125rem; /* Tailwind's text-lg, adjust as needed */
-            }
-        }
+        /* Removed @keyframes fancyDiscordTextAnimation */
+        /* Removed @media (max-width: 767px) for .discord-dropdown-text */
+        /* Removed animated/larger .discord-dropdown-text.visible styles */
 
-        .discord-dropdown-text.visible {
-            max-height: 120px; /* Increased max-height for larger text and animation */
-            opacity: 1;
-            padding-top: 1rem;   /* Increased padding a bit */
-            padding-bottom: 1rem;/* Increased padding a bit */
-            margin-top: 0.5rem;  /* Slightly more margin */
-            font-size: 2.25rem;  /* Tailwind's text-4xl, "huge" */
-            line-height: 1.2;    /* Adjust line-height for larger font */
-            font-weight: 600;    /* Tailwind's font-semibold */
-            animation: fancyDiscordTextAnimation 2s ease-in-out infinite; /* Apply the fancy animation */
-        }
         /* Backstory Modal Styles */
         #backstoryModal {
             display: none;
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.85);
-            z-index: 1000; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s ease-in-out;
-            pointer-events: none;
+            z-index: 1000;
+            opacity: 0; /* Keep for visibility toggle */
+            pointer-events: none; /* Keep for initial state */
         }
         #backstoryModal.visible {
-            display: flex;
-            opacity: 1;
-            pointer-events: auto;
+            display: block;
+            opacity: 1; /* Keep for visibility toggle */
+            pointer-events: auto; /* Keep for visible state */
         }
         #backstoryModalContent {
-            background-color: #1f2937;
-            /* Adjusted for full-screen display */
-            padding: clamp(1.5rem, 4vw, 3rem); /* Responsive padding for screen edges */
-            border-radius: 0; /* No border radius for full screen */
-            width: 100%;      /* Take full width */
-            height: 100%;     /* Take full height */
-            max-width: 100%;  /* Override any previous max-width */
-            max-height: 100vh;/* Ensure it doesn't exceed viewport height */
+            background-color: #C0C0C0; /* Silver background */
+            padding: 1.5rem; /* Simplified padding */
+            width: 90%; /* Not full width, to show it's a modal */
+            height: 90%; /* Not full height */
+            margin: 5%; /* Center the modal */
+            max-width: 100%;
+            max-height: 90vh;
             overflow-y: auto; /* Allow scrolling for content longer than screen */
             position: relative; text-align: left;
             color: #000000; /* Black text */
             font-size: 1.05rem;
             line-height: 1.7;
-            transform: scale(1); /* No scale effect */
-            transition: none; /* No transition */
-            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            box-sizing: border-box;
             border: 2px solid; /* Standard Win95 border */
             border-top-color: #FFFFFF;
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
             border-right-color: #808080;
-            background-color: #C0C0C0; /* Silver background */
         }
-        #backstoryModal.visible #backstoryModalContent { transform: scale(1); }
-        .close-modal-button {
-            /* Already covered by general button styling, but ensure specific overrides if needed */
-            background-color: #C0C0C0 !important;
-            color: #000000 !important;
-            border: 2px solid;
-            border-top-color: #FFFFFF !important;
-            border-left-color: #FFFFFF !important;
-            border-bottom-color: #808080 !important;
-            border-right-color: #808080 !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
+
+        .close-modal-button { /* Should inherit from general button styles */
+            /* background-color: #C0C0C0 !important; */
+            /* color: #000000 !important; */
+            /* border: 2px solid; */
+            /* border-top-color: #FFFFFF !important; */
+            /* border-left-color: #FFFFFF !important; */
+            /* border-bottom-color: #808080 !important; */
+            /* border-right-color: #808080 !important; */
             width: auto; /* Auto width based on content */
             height: auto; /* Auto height */
             font-size: 1rem; /* Standard button font size */
             padding: 5px 10px; /* Standard button padding */
-            /* Resetting flex properties if they conflict */
             display: inline-block;
             text-align: center;
             line-height: normal;
-            /* Ensure transform is reset from previous fixed positioning */
-            transform: none;
-            position: absolute; /* Or static/relative as needed for flow */
+            position: absolute;
             top: 10px;
             right: 10px;
             bottom: auto;
             left: auto;
         }
         .close-modal-button:hover, .close-modal-button:active {
-            transform: none !important;
-            box-shadow: none !important;
             border-top-color: #808080 !important;
             border-left-color: #808080 !important;
             border-bottom-color: #FFFFFF !important;
@@ -334,121 +267,94 @@
             background-image: none !important;
         }
 
-        /* Make it even larger on mobile - this might be removed if not fitting Win95 style */
-        /* @media (max-width: 767px) {
-            .close-modal-button {
-                width: 75px;
-                height: 75px;
-                font-size: 3.5rem;
-                bottom: 20px;
-            }
-        } */
         #backstoryModalContent p { margin-bottom: 1rem; }
         #backstoryModalContent p:last-child { margin-bottom: 0; }
 
         /* Sisu Image and Party Time Text Styles */
         .sisu-image {
-            transform: none;
-            transition: none;
-            backface-visibility: hidden;
-            animation: none;
-            border: 2px solid;
+            border: 2px solid; /* Win98 style border */
             border-top-color: #FFFFFF;
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
             border-right-color: #808080;
-            border-radius: 0; /* Override rounded-full from HTML if not removed */
-            box-shadow: none;
         }
 
         .group:hover .sisu-image {
-            box-shadow: none;
             /* No specific hover transform or animation */
         }
-        .party-text { /* party-text color already changed to black */
+        .party-text {
             position: absolute;
             top: 50%;
-            font-size: 2.25rem; /* text-4xl */
-            font-weight: bold; /* font-bold */
+            font-size: 1.5rem;
+            font-weight: bold;
             color: #000000; /* Black text */
-            text-shadow: none; /* Remove text shadow */
-            opacity: 0;
-            transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Keep transition for now */
-            pointer-events: none; /* So text doesn't interfere with image hover */
+            opacity: 1; /* Made party text always visible */
             white-space: nowrap;
             z-index: 10;
+            transform: translateY(-50%); /* Base transform for vertical centering */
+            background-color: #C0C0C0; /* Silver background like a panel */
+            padding: 2px 5px; /* Small padding */
+            border: 1px solid #808080; /* Simple border for the text panel */
         }
 
         .party-text-left {
             right: 100%;
-            margin-right: 1rem; /* Space between text and image */
-            transform: translateY(-50%) translateX(25px); /* Start offset towards center, hidden by opacity */
+            margin-right: 1rem;
+            transform: translateY(-50%);
         }
 
         .party-text-right {
             left: 100%;
-            margin-left: 1rem; /* Space between text and image */
-            transform: translateY(-50%) translateX(-25px); /* Start offset towards center, hidden by opacity */
+            margin-left: 1rem;
+            transform: translateY(-50%);
         }
 
         .group:hover .party-text-left,
         .group:hover .party-text-right {
-            opacity: 1;
-            transform: translateY(-50%) translateX(0); /* Slide into final position */
+            opacity: 1; /* Remains visible, no change on hover needed now */
         }
 
         .playlist-arrow {
             position: absolute;
-            top: -30px; /* Position above the image */
+            top: -30px;
             left: 50%;
-            transform: translateX(-50%); /* Center horizontally */
-            font-size: 1.8rem; /* Size of the arrow */
-            color: #0000FF; /* Standard link blue */
-            text-decoration: none; /* Arrows usually aren't underlined */
-            z-index: 5; /* Below party text (z-index: 10), above default image flow */
+            /* transform: translateX(-50%); */ /* Consider text-align: center on parent for this */
+            font-size: 1.8rem;
+            color: #0000FF;
+            text-decoration: none;
+            z-index: 5;
         }
 
-        /* Responsive adjustments for party text on smaller screens */
-        @media (max-width: 767px) { /* Adjust breakpoint as needed, 767px is typical for mobile */
-            .party-text {
-                font-size: 1.5rem; /* text-2xl, smaller for mobile */
-            }
-        }
+        /* Removed @media (max-width: 767px) for .party-text */
 
         .bouncing-image {
-            display: none !important;
+            display: none !important; /* Remains hidden */
         }
         .bouncing-snowflake {
-            display: none !important;
+            display: none !important; /* Remains hidden */
         }
 
         /* --- Scroll Rocket (Replaces Back to Top Button) --- */
         #backToTopBtn {
             position: fixed;
-            bottom: 20px; /* Default offset */
-            right: 20px;  /* Default offset */
-            width: 50px;  /* Default size */
-            height: 50px; /* Default size */
-            background-color: #C0C0C0; /* Silver */
-            color: #000000; /* Black icon/text */
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #C0C0C0;
+            color: #000000;
             border: 2px solid;
             border-top-color: #FFFFFF;
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
             border-right-color: #808080;
-            box-shadow: none;
-            border-radius: 0;
             cursor: pointer;
             z-index: 999;
-            opacity: 1; /* Always visible for now, JS can hide/show */
+            opacity: 1;
             visibility: visible;
-            transform: none; /* No slide-in/out transform by default */
-            animation: none; /* No bobbing or other animations */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem; /* Size for Font Awesome icon */
-            transition: border-color 0.1s ease-in-out; /* For hover effect */
+            text-align: center;
+            line-height: 50px;
+            font-size: 1.5rem;
         }
 
         #backToTopBtn:hover, #backToTopBtn:active {
@@ -457,85 +363,53 @@
             border-bottom-color: #FFFFFF;
             border-right-color: #FFFFFF;
             background-image: none;
-            transform: none; /* No hover transform */
-            box-shadow: none;
         }
 
-        /* Original rocket icon was in ::before, let's ensure it's still there or use direct icon */
-        /* If using Font Awesome directly in the button HTML, this ::before might not be needed or can be simplified */
         #backToTopBtn::before {
-            /* content: '🚀'; /* Using Font Awesome icon directly in HTML now */
-            /* display: inline-block; */
-            /* line-height: 1; */
-            /* font-size: calc(var(--rocket-size) * 0.5); */
-            /* Ensure icon color is black */
             color: #000000;
         }
 
         #backToTopBtn::after { /* Flame/exhaust effects */
-            display: none !important;
+            display: none !important; /* Remains hidden */
         }
 
-        /* Remove all animation keyframes related to the rocket */
-        @keyframes rocketBobbing {}
-        @keyframes subtleSparks {}
-        @keyframes intenseSparks {}
-        @keyframes rocketShake {}
-        @keyframes ignitionFlameBurst {}
-        @keyframes sustainedFlame {}
-        @keyframes rocketFlyOff {}
-        @keyframes flameFadeOut {}
+        /* Removed all rocket @keyframes */
 
 
-        /* Fade-in on Scroll Effect */
+        /* Fade-in on Scroll Effect - REMOVED */
         .fade-in-on-scroll {
-            opacity: 0;
-            transform: translateY(30px); /* Start slightly lower */
-            transition: opacity 0.8s cubic-bezier(0.645, 0.045, 0.355, 1), transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
-            /* will-change: opacity, transform; /* Removed for testing transition behavior */
+            opacity: 1; /* Default to visible */
         }
 
         .fade-in-on-scroll.is-visible {
-            opacity: 1;
-            transform: translateY(0);
+            opacity: 1; /* Remains visible */
         }
 
         /* Sun/Moon Time Indicator Icons */
         .time-indicator-icon {
-            /* position: fixed; Removed for normal flow */
-            font-size: 2.5rem; /* Adjust size as needed */
-            display: none; /* Default: hidden and does not take up space */
-            /*
-                Opacity and transition are now handled by the .fade-in-on-scroll class
-                and its .is-visible state.
-            */
-            margin-bottom: 1.5rem; /* Space below the icon when visible */
-            /* Centered by body's "items-center" flex property */
+            font-size: 2.5rem;
+            display: block;
+            opacity: 1;
+            margin-bottom: 1.5rem;
+            text-align: center;
         }
-        /*
-           No .layout-active or .fade-in-effect classes needed anymore.
-           Direct style manipulation in JS will handle display and opacity.
-        */
 
         #moonIcon {
-            /* top, left, transform removed */
-            color: #000000; /* Black icon */
+            color: #000000;
         }
         #sunIcon {
-            /* top, left, transform removed */
-            color: #000000; /* Black icon (or consider yellow if it looks ok on teal) */
+            color: #000000;
         }
 
         /* Screen Edge Glow - REMOVED */
         body::before {
-            display: none !important;
+            display: none !important; /* Remains hidden */
         }
         body.day-glow-active::before, body.night-glow-active::before {
-            display: none !important;
+            display: none !important; /* Remains hidden */
         }
 
 
-        /* Table of Contents Styles */
         /* Table of Contents Styles */
         #tableOfContents {
             background-color: #C0C0C0;
@@ -544,34 +418,33 @@
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
             border-right-color: #808080;
-            box-shadow: none;
-            border-radius: 0;
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* Keep existing transition */
+            opacity: 1; /* Default to visible */
         }
-        #tableOfContents h3 { /* Assuming h3 is "Contents" title */
-            color: #000000;
-            border-bottom-color: #808080; /* Match border style */
+        #tableOfContents h3 {
+            color: #FFFFFF; /* White text on dark blue */
+            background-color: #000080; /* Dark Blue background for title bar */
+            padding: 2px 4px; /* Add some padding to mimic title bar */
+            border-bottom: 2px solid; /* Border below title */
+            border-bottom-color: #808080;
         }
         #tableOfContents ul li a {
-            /* color: #0000FF; /* Standard link blue - will be inherited from general <a> */
-            /* text-decoration: underline; */ /* Will be inherited */
-            /* background-color: transparent; */ /* Ensure no conflicting bg */
+            /* Styles inherited: blue, underline */
         }
         .active-toc-link {
-            background-color: #808080 !important; /* Gray background for active */
-            color: #FFFFFF !important; /* White text for active */
-            font-weight: bold; /* Make active link bold */
-            text-decoration: none !important; /* Remove underline for active link */
+            background-color: #000080 !important; /* Dark Blue background for selected */
+            color: #FFFFFF !important; /* White text for selected */
+            font-weight: bold;
+            text-decoration: none !important;
         }
         #tableOfContents::-webkit-scrollbar {
-            width: 16px; /* Wider scrollbar like Win95 */
+            width: 16px;
         }
         #tableOfContents::-webkit-scrollbar-track {
             background: #C0C0C0; /* Silver track */
         }
         #tableOfContents::-webkit-scrollbar-thumb {
             background: #A0A0A0; /* Darker gray thumb */
-            border: 1px solid;
+            border: 1px solid; /* Standard Win98 outset border for thumb */
             border-top-color: #FFFFFF;
             border-left-color: #FFFFFF;
             border-bottom-color: #808080;
@@ -581,10 +454,9 @@
             background: #808080; /* Even darker on hover */
         }
 
-        /* Table of Contents fade-in styles */
+        /* Table of Contents fade-in styles - REMOVED */
         #tableOfContents.toc-is-loading {
-            opacity: 0;
-            transform: translateY(-15px);
+            opacity: 1; /* Default to visible */
         }
 
         /* Footer styling */
