@@ -336,18 +336,16 @@
 
             if (backstoryTrigger && backstoryModal && closeModalButton) {
                 backstoryTrigger.addEventListener('click', () => {
-                    backstoryModal.style.display = 'flex';
-                    setTimeout(() => {
-                        backstoryModal.classList.add('visible');
-                    }, 10);
+                    backstoryModal.style.display = 'block'; // Ensure consistency with CSS if it was changed there
+                    // Apply 'visible' class directly for instant effect
+                    backstoryModal.classList.add('visible');
                     document.body.classList.add('modal-open');
                 });
 
                 function closeTheModal() {
                     backstoryModal.classList.remove('visible');
-                    setTimeout(() => {
-                        backstoryModal.style.display = 'none';
-                    }, 300);
+                    // Hide the modal immediately
+                    backstoryModal.style.display = 'none';
                     document.body.classList.remove('modal-open');
                 }
 
@@ -650,14 +648,14 @@
             setupAgeCalculation();
             setupCurrentTimeClock(); // Initialize the current time clock
 
-            manageChristmasSnowflakes(); // Initial check for snowflakes on page load
+            // manageChristmasSnowflakes(); // Disable script-driven snowflake animation
             setupDiscordButton();
             setupTableOfContents(); // Initialize Table of Contents
-            // Initialize Bouncing Logo Animation with a delay
-            setTimeout(() => {
-                initKazuBouncerAnimation();
-            }, 1500);
-            window.addEventListener('resize', handleBouncerResize);
+            // Initialize Bouncing Logo Animation with a delay - Disable script-driven bouncing animation
+            // setTimeout(() => {
+            //     initKazuBouncerAnimation();
+            // }, 1500);
+            // window.addEventListener('resize', handleBouncerResize); // Disable resize listener for bouncers
             setupBackToTopButton();
 
         };
