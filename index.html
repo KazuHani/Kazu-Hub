@@ -36,8 +36,8 @@
     <!-- <meta name="twitter:site" content="@YourTwitterHandle"> -->
     <meta name="twitter:creator" content="@Kazu_Hani">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> -->
     <link rel="stylesheet" href="styles/main.css">
     <script>
         // Adjustments for responsive font size of the animated Discord text
@@ -336,18 +336,16 @@
 
             if (backstoryTrigger && backstoryModal && closeModalButton) {
                 backstoryTrigger.addEventListener('click', () => {
-                    backstoryModal.style.display = 'flex';
-                    setTimeout(() => {
-                        backstoryModal.classList.add('visible');
-                    }, 10);
+                    backstoryModal.style.display = 'block'; // Ensure consistency with CSS if it was changed there
+                    // Apply 'visible' class directly for instant effect
+                    backstoryModal.classList.add('visible');
                     document.body.classList.add('modal-open');
                 });
 
                 function closeTheModal() {
                     backstoryModal.classList.remove('visible');
-                    setTimeout(() => {
-                        backstoryModal.style.display = 'none';
-                    }, 300);
+                    // Hide the modal immediately
+                    backstoryModal.style.display = 'none';
                     document.body.classList.remove('modal-open');
                 }
 
@@ -650,14 +648,14 @@
             setupAgeCalculation();
             setupCurrentTimeClock(); // Initialize the current time clock
 
-            manageChristmasSnowflakes(); // Initial check for snowflakes on page load
+            // manageChristmasSnowflakes(); // Snowflakes are hidden by CSS
             setupDiscordButton();
             setupTableOfContents(); // Initialize Table of Contents
-            // Initialize Bouncing Logo Animation with a delay
-            setTimeout(() => {
-                initKazuBouncerAnimation();
-            }, 1500);
-            window.addEventListener('resize', handleBouncerResize);
+            // Initialize Bouncing Logo Animation with a delay - Bouncing logos are hidden by CSS
+            // setTimeout(() => {
+            //     initKazuBouncerAnimation();
+            // }, 1500);
+            // window.addEventListener('resize', handleBouncerResize); // Not needed if bouncers are hidden
             setupBackToTopButton();
 
         };
