@@ -39,13 +39,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="styles/main.css">
-    <script>
-        // Adjustments for responsive font size of the animated Discord text
-        // This script block is placed early to ensure CSS overrides can be managed if needed,
-        // but the actual application of styles is done via CSS classes.
-        // The main logic is in the CSS media queries.
-        // This is more of a placeholder if complex JS-driven responsiveness was needed.
-    </script>
 
     <!-- SEO: JSON-LD Structured Data (IMPORTANT: Replace 'https://kazuhani.github.io/Kazu-Hub/' with your actual URL) -->
     <script type="application/ld+json">
@@ -106,14 +99,6 @@
 </head>
 <body class="flex flex-col items-center min-h-screen p-4">
 
-    <!-- Table of Contents -->
-    <div id="tableOfContents" class="toc-is-loading hidden lg:block fixed top-1/4 right-4 w-36 p-1 z-[999] max-h-[60vh] overflow-y-auto">
-        <h3 class="text-base font-semibold mb-1 border-b pb-1">Contents</h3>
-        <ul id="tocList" class="space-y-1">
-            <!-- Links will be dynamically inserted by JavaScript -->
-        </ul>
-    </div>
-
     <!-- Sun/Moon Time Indicators (Moved here for DOM order) -->
     <i id="moonIcon" class="fas fa-moon time-indicator-icon"></i>
     <i id="sunIcon" class="fas fa-sun time-indicator-icon"></i>
@@ -122,8 +107,8 @@
     <div id="currentTimeContainer" class="mb-1 p-1 text-sm font-mono" style="background-color: #c0c0c0; color: black; border-style: solid; border-width: 2px; border-color: #808080 #ffffff #ffffff #808080; box-shadow: inset 1px 1px 0px #000000, inset -1px -1px 0px #dfdfdf; display: inline-block; min-width: 80px; text-align: center; visibility: hidden;">
         <span id="currentTime">Loading...</span>
     </div>
-    <div id="availabilityStatusContainer" class="text-sm mb-4"> <!-- Reduced mb-6 to mb-4 -->
-        <span id="availabilityMessage" class="font-bold text-base">Checking availability...</span>
+    <div id="availabilityStatusContainer" class="text-sm mb-4 py-2"> <!-- Adjusted padding to py-2 for more top/bottom padding -->
+        <span id="availabilityMessage" class="font-bold text-xl">United Kingdom Time</span> <!-- Changed text and increased size -->
     </div>
 
 
@@ -206,17 +191,10 @@
                 </div>
             </div>
 
-        </div>
-        <script>
-            // Media query for responsive font size of Discord text is handled in CSS.
-            // This script block is just for structural context if we needed JS later.
-            if (window.matchMedia("(max-width: 767px)").matches) {
-                // CSS : `.discord-dropdown-text.visible` has its own @media query for font-size
-            }
         </script>
 
         <div class="mt-6 pt-4 border-t"> <!-- Reduced mt-8 pt-6 to mt-6 pt-4 -->
-            <h2 id="toc-music-playlist" class="toc-section-header text-xl font-semibold mb-3 text-center">My music playlist</h2> <!-- Reduced mb-4 to mb-3 -->
+            <h2 class="text-xl font-semibold mb-3 text-center">My music playlist</h2> <!-- Reduced mb-4 to mb-3 -->
             <div class="playlist-container flex justify-center items-center mt-8 mb-4"> <!-- Reduced mt-10 mb-6 to mt-8 mb-4 -->
                 <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=w-bZgfAEO1mV_faj"
                    target="_blank" rel="noopener noreferrer" class="relative group inline-block">
@@ -230,7 +208,7 @@
         </div>
 
         <div class="mt-6 pt-4 border-t"> <!-- Reduced mt-8 pt-6 to mt-6 pt-4 -->
-            <h2 id="toc-website-code" class="toc-section-header text-xl font-semibold mb-3">Code used for this website</h2> <!-- Reduced mb-4 to mb-3 -->
+            <h2 class="text-xl font-semibold mb-3">Code used for this website</h2> <!-- Reduced mb-4 to mb-3 -->
             <a href="https://github.com/KazuHani/Kazu-Hub" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full font-semibold py-3 px-4" title="View the source code for Kazu Hub on GitHub">
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -239,7 +217,7 @@
                 <span>View on GitHub</span>
             </a>
 
-            <h2 id="toc-my-stories" class="toc-section-header text-xl font-semibold mt-4 mb-2">My Stories</h2> <!-- Reduced mt-6 mb-3 to mt-4 mb-2 -->
+            <h2 class="text-xl font-semibold mt-4 mb-2">My Stories</h2> <!-- Reduced mt-6 mb-3 to mt-4 mb-2 -->
             <button id="backstoryTrigger"
                     class="backstory-trigger-btn w-full flex items-center justify-center font-semibold mb-2 py-3 px-4" title="Read Kazu's backstory">
                 Kazu's backstory
@@ -258,7 +236,7 @@
         </div> <!-- End of My Stories Section -->
 
         <div class="mt-6 pt-4 border-t"> <!-- Reduced mt-8 pt-6 to mt-6 pt-4 -->
-            <h2 id="toc-where-i-am" class="toc-section-header text-xl font-semibold mb-3">Where I am</h2> <!-- Reduced mb-4 to mb-3 -->
+            <h2 class="text-xl font-semibold mb-3">Where I am</h2> <!-- Reduced mb-4 to mb-3 -->
             <div class="overflow-hidden"> <!-- Wrapper for iframe styling -->
                 <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5021369.004948138!2d-4.208000000000001!3d54.268000000000005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x25a3b1142c791a9%3A0xc4f8a0433288257a!2sUnited%20Kingdom!5e0!3m2!1sen!2sus!4v1716467858509!5m2!1sen!2sus"
@@ -299,7 +277,7 @@
     <img id="bouncingLogoSad"   class="bouncing-image" alt="Bouncing Kazu Sad">
 
 
-    <button id="backToTopBtn" title="Go to top" class="rocket-button">
+    <button id="backToTopBtn" title="Go to top">
         <i class="fas fa-rocket" aria-hidden="true"></i>
         <span class="sr-only">Go to top</span>
     </button>
@@ -310,23 +288,6 @@
         let allBouncers = []; // Combined array for the animation loop
         let bouncerAnimationFrameId = null;
         let areSnowflakesVisible = false; // Tracks if snowflakes are currently in the DOM
-
-        function setupProfilePicInteraction() {
-            // const spinSound = document.getElementById('spinSound'); // Sound removed
-            const dragonText = document.getElementById('dragonText');
-            let dragonTimeout;
-
-            const profilePic = document.getElementById('profilePic');
-            if (profilePic) {
-                profilePic.addEventListener('mouseenter', () => {
-                    // Sound and spin logic removed. Dragon text/flames logic also removed from here.
-                });
-
-                profilePic.addEventListener('mouseleave', () => {
-                    // Sound and spin logic removed. Dragon text/flames logic also removed from here.
-                });
-            }
-        }
 
         function setupModal() {
             // Backstory Modal Logic
@@ -499,8 +460,7 @@
             const availabilityMessageElement = document.getElementById('availabilityMessage');
             const currentTimeContainer = document.getElementById('currentTimeContainer'); // Get the container
             const moonIcon = document.getElementById('moonIcon');
-            const sunIcon = document.getElementById('sunIcon');
-            const bodyElement = document.body; // Get body element for glow effect
+            const sunIcon = document.getElementById('sunIcon'); // bodyElement was here, removed as unused in this scope
             const profilePicElement = document.getElementById('profilePic');
 
             // Check if both elements are found
@@ -510,6 +470,9 @@
                 if (availabilityMessageElement) availabilityMessageElement.textContent = "Status display error.";
                 return;
             }
+
+            // Set the availability message to "UK Time" permanently.
+            availabilityMessageElement.textContent = "United Kingdom Time";
 
             function updateDisplays() {
                 const now = new Date();
@@ -541,23 +504,34 @@
                 const iconToShow = isNight ? moonIcon : sunIcon;
                 const iconToHide = isNight ? sunIcon : moonIcon;
                 const bodyElement = document.body;
-                // --- Show Routine for the icon that should be visible ---
-                // If it's not already 'block', make it so.
-                // The IntersectionObserver (for fade-in-on-scroll) will handle
-                // adding 'is-visible' to trigger the animation if it's in the viewport.
-                if (iconToShow.style.display !== 'block') {
+
+                // Handle icon to show instantly (remove fade-in)
+                if (iconToShow.style.display !== 'block' || iconToShow.style.opacity !== '1' || iconToShow.style.visibility !== 'visible') {
+                    const prevTransitionShow = iconToShow.style.transition;
+                    iconToShow.style.transition = 'none'; // Disable transitions temporarily
                     iconToShow.style.display = 'block';
+                    iconToShow.style.opacity = '1';
+                    iconToShow.style.visibility = 'visible';
+                    iconToShow.offsetHeight; // Force reflow to apply styles without transition
+                    iconToShow.style.transition = prevTransitionShow; // Restore original transition
                 }
-                if (iconToHide.style.display !== 'none') {
+
+                // Handle icon to hide instantly (remove fade-out)
+                if (iconToHide.style.display !== 'none' || iconToHide.style.opacity !== '0' || iconToHide.style.visibility !== 'hidden') {
+                    const prevTransitionHide = iconToHide.style.transition;
+                    iconToHide.style.transition = 'none'; // Disable transitions temporarily
+                    // Set opacity and visibility before display none for robustness, though display:none usually suffices
+                    iconToHide.style.opacity = '0';
+                    iconToHide.style.visibility = 'hidden';
+                    iconToHide.offsetHeight; // Force reflow
                     iconToHide.style.display = 'none';
+                    iconToHide.style.transition = prevTransitionHide; // Restore original transition
                 }
 
                 if (isNight) {
-                    availabilityMessageElement.textContent = "Do not contact me I am asleep";
                     bodyElement.classList.add('night-glow-active');
                     bodyElement.classList.remove('day-glow-active');
                 } else {
-                    availabilityMessageElement.textContent = "Feel free to message me, I am awake";
                     bodyElement.classList.add('day-glow-active');
                     bodyElement.classList.remove('night-glow-active');
                 }
@@ -623,7 +597,7 @@
                 });
 
                 backToTopButton.addEventListener('click', () => {
-                    window.scrollTo({ top: 0, behavior: 'auto' });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                     // The scroll listener above will handle hiding the button.
                 });
             }
@@ -644,7 +618,6 @@
                 });
             });
 
-            setupProfilePicInteraction();
             setupModal();
             setupBirthdayCountdown();
             setupAgeCalculation();
@@ -652,7 +625,6 @@
 
             manageChristmasSnowflakes(); // Initial check for snowflakes on page load
             setupDiscordButton();
-            setupTableOfContents(); // Initialize Table of Contents
             // Initialize Bouncing Logo Animation with a delay
             setTimeout(() => {
                 initKazuBouncerAnimation();
@@ -679,135 +651,6 @@
                 if (!discordButton) console.warn("Discord button element not found (ID: discordButton).");
                 if (!discordDropdown) console.warn("Discord dropdown element not found (ID: discordDropdownText).");
             }
-        }
-
-        function setupTableOfContents() {
-            const tocContainer = document.getElementById('tableOfContents');
-            const tocList = document.getElementById('tocList');
-            const mainContentContainer = document.querySelector('.container'); // Scope for section headers
-
-            if (!tocContainer || !tocList || !mainContentContainer) {
-                console.warn("TOC setup: Essential elements (tocContainer, tocList, or mainContentContainer) missing. TOC will not be populated.");
-                if (tocContainer) tocContainer.style.display = 'none'; // Explicitly hide if JS setup fails
-                return;
-            }
-
-            const sections = mainContentContainer.querySelectorAll('.toc-section-header');
-            let tocItems = []; // Will be populated by populateAndActivateTOC
-            tocContainer.classList.remove('toc-is-loading');
-            let activeLinkTimeout;
-
-            function highlightActiveLink() {
-                // Guard against running if tocItems is not yet populated or is empty
-                if (!tocItems || tocItems.length === 0) {
-                    return;
-                }
-
-                clearTimeout(activeLinkTimeout);
-                activeLinkTimeout = setTimeout(() => {
-                    let currentActiveId = null;
-                    const scrollPosition = window.pageYOffset;
-                    const viewportHeight = window.innerHeight;
-                    const activationOffset = viewportHeight * 0.25; // Section top needs to be above this point (25% from top of viewport)
-                    const totalScrollableHeight = document.documentElement.scrollHeight - viewportHeight;
-    
-                    for (let i = tocItems.length - 1; i >= 0; i--) {
-                        const sectionElement = tocItems[i].element;
-                        if (!sectionElement || !document.body.contains(sectionElement)) continue; // Check if element exists
-                        const sectionTopAbsolute = sectionElement.getBoundingClientRect().top + window.pageYOffset;
-                        if (sectionTopAbsolute - activationOffset <= scrollPosition) {
-                            currentActiveId = tocItems[i].id;
-                            break;
-                        }
-                    }
-    
-                    if (!currentActiveId && tocItems.length > 0) {
-                        const firstSectionElement = tocItems[0].element;
-                        if (firstSectionElement && document.body.contains(firstSectionElement)) {
-                            const firstSectionTopRelative = firstSectionElement.getBoundingClientRect().top;
-                            if (firstSectionTopRelative < viewportHeight * 0.8 && firstSectionTopRelative >= -activationOffset) {
-                                currentActiveId = tocItems[0].id;
-                            }
-                        }
-                    }
-    
-                    // If scrolled to the very bottom, make the last item active
-                    if (tocItems.length > 0 && (scrollPosition >= totalScrollableHeight - 20)) {
-                         currentActiveId = tocItems[tocItems.length - 1].id;
-                    }
-    
-                    tocItems.forEach(item => {
-                        if (item.link) { // Ensure link exists
-                            if (item.id === currentActiveId) {
-                                item.link.classList.add('active-toc-link');
-                                item.link.setAttribute('aria-current', 'section');
-                            } else {
-                                item.link.classList.remove('active-toc-link');
-                                item.link.removeAttribute('aria-current');
-                            }
-                        }
-                    });
-                }, 100); // Debounce
-            }
-
-            function populateAndActivateTOC() {
-                tocList.innerHTML = ''; // Clear any pre-existing items
-                tocItems = []; // Reset tocItems array
-
-                const sections = mainContentContainer.querySelectorAll('.toc-section-header');
-
-                if (sections.length === 0) {
-                    console.warn("TOC populate: No sections found with '.toc-section-header'. TOC will be hidden.");
-                    tocContainer.style.display = 'none'; // Ensure it's hidden if no content
-                    return; // Do not remove 'toc-is-loading' if no content
-                }
-
-                sections.forEach((section, index) => {
-                    const title = section.textContent.trim();
-                    let id = section.id;
-
-                    if (!id) {
-                        id = `toc-section-${index}`;
-                        section.id = id;
-                    }
-
-                    const listItem = document.createElement('li');
-                    const link = document.createElement('a');
-                    link.href = `#${id}`;
-                    link.textContent = title;
-                    // Adjusted classes for Win95 style: block for layout, py-0.5/px-1.5 for padding, text-sm for size.
-                    // Removed: text-slate-300, hover:text-white, hover:bg-slate-700, rounded, transition-colors, duration-150
-                    link.classList.add('block', 'py-0.5', 'px-1.5', 'text-sm');
-                    link.dataset.tocLinkFor = id;
-
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const targetElement = document.getElementById(id);
-                        if (targetElement) {
-                            // Native smooth scroll or instant scroll for TOC links
-                            targetElement.scrollIntoView({ behavior: 'auto' });
-                        }
-                    });
-
-                    listItem.appendChild(link);
-                    tocList.appendChild(listItem);
-                    tocItems.push({ id: id, element: section, link: link });
-                });
-
-                // TOC is populated, remove loading state so CSS classes can take over.
-                tocContainer.classList.remove('toc-is-loading');
-
-                // Add event listeners for highlighting active link *after* TOC is populated
-                window.addEventListener('scroll', highlightActiveLink, { passive: true });
-                window.addEventListener('resize', highlightActiveLink, { passive: true });
-                highlightActiveLink(); // Initial call to set active link
-            }
-
-            // Populate the TOC now that the page is considered fully loaded
-            // (since setupTableOfContents is called from window.onload).
-            // The CSS classes (e.g., `hidden lg:block`) on the tocContainer
-            // will control its actual visibility based on screen size.
-            populateAndActivateTOC();
         }
 
         // --- Bouncing Logo Animation Functions ---

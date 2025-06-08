@@ -54,7 +54,9 @@
             color: #0000FF;
             text-decoration: underline;
         }
-        a:hover {
+        a:hover {            color: #000000; /* Change color to black on hover */
+                    text-decoration: none; /* Remove underline on hover */
+                
             /* Consider a slightly different shade of blue or other Win95 link hover style if desired */
         }
 
@@ -432,15 +434,16 @@
             border-radius: 0;
             cursor: pointer;
             z-index: 999;
-            opacity: 1; /* Always visible for now, JS can hide/show */
-            visibility: visible;
+            opacity: 0; /* Hidden by default, JS will show it */
+            visibility: hidden; /* Hidden by default */
             transform: none; /* No slide-in/out transform by default */
             animation: none; /* No bobbing or other animations */
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem; /* Size for Font Awesome icon */
-            transition: border-color 0.1s ease-in-out; /* For hover effect */
+            /* Combined transitions: for hover effect and for show/hide */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, border-color 0.1s ease-in-out;
         }
 
         #backToTopBtn:hover, #backToTopBtn:active {
@@ -543,11 +546,23 @@
             color: #000000;
             border-bottom-color: #808080; /* Match border style */
         }
-        #tableOfContents ul li a {
-            /* color: #0000FF; /* Standard link blue - will be inherited from general <a> */
-            /* text-decoration: underline; */ /* Will be inherited */
-            /* background-color: transparent; */ /* Ensure no conflicting bg */
-        }
+        #tableOfContents ul li a{
+                    display: block; /* Ensure links take up full width of list item */
+                    padding: 5px 10px; /* Add padding for click area */
+                    margin: 2px 0; /* Small margin between items */
+                    border-radius: 0; /* No rounded corners */
+                    transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out;
+                }
+                #tableOfContents ul li a:hover {
+                    background-color: #E0E0E0; /* Lighter gray on hover */
+                    color: #000000; /* Black text on hover */
+                    text-decoration: none; /* Remove underline on hover */
+                }
+                #tableOfContents ul li a:active {
+                    background-color: #808080; /* Darker gray on active */
+                    color: #FFFFFF; /* White text on active */
+                    text-decoration: none; /* Remove underline on active */
+                }
         .active-toc-link {
             background-color: #808080 !important; /* Gray background for active */
             color: #FFFFFF !important; /* White text for active */
