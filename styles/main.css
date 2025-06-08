@@ -446,6 +446,11 @@
             transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, border-color 0.1s ease-in-out;
         }
 
+        #backToTopBtn.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
         #backToTopBtn:hover, #backToTopBtn:active {
             border-top-color: #808080;
             border-left-color: #808080;
@@ -454,6 +459,17 @@
             background-image: none;
             transform: none; /* No hover transform */
             box-shadow: none;
+        }
+
+        /* Optional: Adjust for very small screens */
+        @media (max-width: 480px) {
+            #backToTopBtn {
+                width: 45px;          /* Slightly smaller width */
+                height: 45px;         /* Slightly smaller height */
+                bottom: 15px;         /* Slightly less offset from bottom */
+                right: 15px;          /* Slightly less offset from right */
+                font-size: 1.3rem;    /* Adjust icon size if needed */
+            }
         }
 
         /* Original rocket icon was in ::before, let's ensure it's still there or use direct icon */
