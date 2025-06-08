@@ -615,7 +615,26 @@
             color: #000000; /* Black text for readability on teal */
             padding: 1rem;
             text-align: center;
+            /* Added for lazy rendering: skip rendering work until near viewport */
+            content-visibility: auto;
+            /* Provide an estimated height for the footer to prevent layout shifts. Adjust as needed. */
+            contain-intrinsic-block-size: 60px;
         }
         footer p {
             margin: 0;
         }
+/* Example for a specific section that fades in */
+.my-large-fade-in-section {
+    /* ... your existing styles for this section ... */
+    opacity: 0; /* from .fade-in-on-scroll logic */
+    transform: translateY(30px); /* from .fade-in-on-scroll logic */
+    transition: opacity 0.8s ease, transform 0.8s ease; /* from .fade-in-on-scroll logic */
+
+    content-visibility: auto;
+    contain-intrinsic-block-size: 300px; /* IMPORTANT: Adjust this based on the typical height of this specific section */
+}
+
+.my-large-fade-in-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
