@@ -221,11 +221,6 @@
             </a>
 
             <h2 class="text-xl font-semibold mt-4 mb-2">My Stories</h2> <!-- Reduced mt-6 mb-3 to mt-4 mb-2 -->
-            <button id="backstoryTrigger"
-                    class="backstory-trigger-btn w-full flex items-center justify-center font-semibold mb-2 py-3 px-4" title="Read Kazu's backstory">
-                Kazu's backstory
-            </button>
-
             <div class="mt-3 space-y-2"> <!-- Reduced mt-4 to mt-3 -->
                 <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
                    class="social-icon story-button-legend flex items-center justify-center w-full font-semibold py-3 px-4" title="Read Kazu's story: The Legend That Bleeds">
@@ -260,19 +255,6 @@
         </footer>
     </div>
 
-    <div id="backstoryModal">
-        <button id="closeModalButton" class="close-modal-button">×</button> <!-- Moved Here -->
-        <div id="backstoryModalContent">
-            <h2>Kazu's Backstory</h2>
-            <p>Kazu was born in a small cave nestled within the vast, icy expanse of the Arctic. His parents, both magnificent ice dragons, cherished their newborn with a love as boundless as the frozen landscape they called home. Tragically, their time as parents was cut short. When Kazu was merely a babe, his parents were slain, leaving him orphaned in the unforgiving Arctic wilderness.</p>
-            <p>Fate, however, had other plans for the young ice dragon. A nearby village of humans discovered the abandoned Kazu and, touched by his helplessness, took him in as one of their own. Despite the inherent differences between humans and dragons, the villagers welcomed Kazu with open arms, providing him with the warmth, care, and love he so desperately needed growing up amidst the hustle and bustle of the human village, Kazu was a curious and bright child, always eager to explore the nooks and crannies of his new home. Unlike his Arctic-dwelling ancestors, Kazu discovered a love for the indoors, finding comfort and endless fascination within the four walls of the village houses. He loved nothing more than to spend his days reading scrolls, playing games, and engaging in all sorts of imaginative play with his human friends.</p>
-            <p>Kazu's personality blossomed in the village. He was known for his infectious laughter, his playful antics, and his knack for finding joy in the simplest of things. He was always up for a good time, whether it was joining in a snowball fight, building snow forts, or participating in the village's many festivals and celebrations.</p>
-            <p>As Kazu matured, his innate magical abilities began to manifest. He discovered he could control and manipulate ice and snow, a testament to his ice dragon lineage. This revelation sparked a deep passion within him to understand and master his powers. He practiced his magic in secret, often incorporating it into his playful antics, much to the amusement of his friends.</p>
-            <p>Despite his dragon heritage, Kazu felt most at home in the human village. He loved his adoptive family and the friends he had made, and he couldn't imagine living anywhere else. The village had become his world, a place where he could be himself, a silly, fun-loving ice dragon with a heart of gold.</p>
-            <p>Now, Kazu spends his days exploring the village, practicing his magic, and bringing laughter and joy to those around him. He loves soaring through the skies with the other ice dragons, engaging in playful races and mock battles. But at the end of a long day, he always returns to the warmth and comfort of his human home, where a steaming mug of hot cocoa and a cozy blanket await him.</p>
-        </div>
-    </div>
-
     <img id="bouncingLogoHappy" class="bouncing-image" alt="Bouncing Kazu Happy">
     <img id="bouncingLogoLove"  class="bouncing-image" alt="Bouncing Kazu Love">
     <img id="bouncingLogoSmug"  class="bouncing-image" alt="Bouncing Kazu Smug">
@@ -291,39 +273,6 @@
         let allBouncers = []; // Combined array for the animation loop
         let bouncerAnimationFrameId = null;
         let areSnowflakesVisible = false; // Tracks if snowflakes are currently in the DOM
-
-        function setupModal() {
-            // Backstory Modal Logic
-            const backstoryTrigger = document.getElementById('backstoryTrigger');
-            const backstoryModal = document.getElementById('backstoryModal');
-            const closeModalButton = document.getElementById('closeModalButton');
-
-            if (backstoryTrigger && backstoryModal && closeModalButton) {
-                backstoryTrigger.addEventListener('click', () => {
-                    backstoryModal.style.display = 'flex';
-                    setTimeout(() => {
-                        backstoryModal.classList.add('visible');
-                    }, 10);
-                    document.body.classList.add('modal-open');
-                });
-
-                function closeTheModal() {
-                    backstoryModal.classList.remove('visible');
-                    setTimeout(() => {
-                        backstoryModal.style.display = 'none';
-                    }, 300);
-                    document.body.classList.remove('modal-open');
-                }
-
-                closeModalButton.addEventListener('click', closeTheModal);
-
-                backstoryModal.addEventListener('click', (event) => {
-                    if (event.target === backstoryModal) {
-                        closeTheModal();
-                    }
-                });
-            }
-        }
 
         function setupBirthdayCountdown() {
             // Birthday Countdown Logic
@@ -621,7 +570,6 @@
                 });
             });
 
-            setupModal();
             setupBirthdayCountdown();
             setupAgeCalculation();
             setupCurrentTimeClock(); // Initialize the current time clock

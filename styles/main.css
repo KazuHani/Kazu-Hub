@@ -41,8 +41,8 @@
             border-right-color: #808080;
             box-shadow: none;
             border-radius: 0;
-            padding: 5px 10px; /* Basic padding for buttons */
-            font-size: 0.9rem;
+            padding: 10px 10px; /* Basic padding for buttons */
+            font-size: 1.0rem;
             position: relative;
             z-index: 1;
             text-decoration: none; /* Remove underline from <a> tags styled as buttons */
@@ -264,6 +264,7 @@
         #backstoryModal.visible {
             display: flex;
             opacity: 1;
+            visibility: visible; /* Ensure modal becomes visible, overriding Tailwind's 'invisible' */
             pointer-events: auto;
         }
         #backstoryModalContent {
