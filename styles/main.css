@@ -1,617 +1,286 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-/* Custom fonts - Roboto (primary), Inter (fallback) */
-        :root {
-            --rocket-size: 50px;
-            --rocket-bottom-offset: 20px;
-            --rocket-side-offset: 20px; /* Used for right offset by default */
-            --rocket-initial-transform-out: translateX(calc(var(--rocket-size) + var(--rocket-side-offset) + 20px)); /* Slide out further than just its size */
-            --rocket-color-idle: #6b7280; /* Tailwind gray-500 */
-            --rocket-color-hover: #4f46e5; /* Tailwind indigo-600 (from original button) */
-            --rocket-flame-color-outer: #fb923c; /* Tailwind orange-400 */
-            --rocket-flame-color-inner: #fcd34d; /* Tailwind yellow-300 */
-            --rocket-slide-in-duration: 0.3s;
-            --rocket-bobbing-duration: 2.5s;
-            --rocket-ignition-duration: 0.2s; /* JS should use this for timing */
-            --rocket-departure-duration: 0.6s; /* JS should use this for timing */
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            background-color: #f8f9fa; /* Light gray background */
-            color: #212529; /* Dark gray text color */
-            margin: 0;
-            line-height: 1.6; /* Modern default for readability */
-            -webkit-font-smoothing: antialiased; /* Smoother fonts on WebKit */
-            -moz-osx-font-smoothing: grayscale; /* Smoother fonts on Firefox */
-            /* transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out, color 0.5s ease-in-out; */ /* Smooth transition for background and text color changes */
-            position: relative; /* Ensure body is a stacking context for its children */
+ body {
+            font-family: 'Inter', sans-serif;
+            margin: 0; /* Basic reset */
+            transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
         }
         body.modal-open {
             overflow: hidden; /* Prevent background scroll when modal is open */
         }
-        /* Google Fonts 'Roboto' and 'Inter' are linked in the <head> */
+        /* Fallback for Inter font if Google Fonts is not available */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
-        /* Base styles for modern buttons and links styled as buttons */
-        button,
-        a.social-icon, /* Will need further refinement for image layout */
-        .info-button,
-        .story-button-legend,
-        .story-button-naga,
-        #discordButton, /* Specific ID, ensure it gets these base styles */
-        button.backstory-trigger-btn { /* If this class is still used */
-            background-color: #007bff; /* Primary blue */
-            color: #FFFFFF;
-            border: none;
-            padding: 0.75rem 1.25rem; /* Generous padding */
-            border-radius: 6px; /* Rounded corners */
-            text-decoration: none; /* For <a> tags */
-            cursor: pointer;
-            font-size: 1rem; /* Reset font size */
-            font-weight: 600; /* Semi-bold text */
-            line-height: 1.5;
-            text-align: center;
-            display: inline-block; /* Or inline-flex for better alignment with icons */
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow */
+        /* Styling for the social media icons for a little pop */
+        .social-icon { /* Also used for GitHub, Story buttons */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            position: relative; 
+            overflow: hidden; 
+            z-index: 1; 
         }
-
-        button:hover,
-        a.social-icon:hover,
-        .info-button:hover,
-        .story-button-legend:hover,
-        .story-button-naga:hover,
-        #discordButton:hover,
-        button.backstory-trigger-btn:hover {
-            background-color: #0056b3; /* Darker blue on hover */
-            text-decoration: none; /* For <a> tags */
-            transform: translateY(-1px); /* Slight lift on hover */
+        .social-icon span { /* Target the text span directly for z-index if needed */
+            position: relative;
+            z-index: 2;
         }
-
-        button:active,
-        a.social-icon:active,
-        .info-button:active,
-        .story-button-legend:active,
-        .story-button-naga:active,
-        #discordButton:active,
-        button.backstory-trigger-btn:active {
-            background-color: #004085; /* Even darker blue on active */
-            transform: translateY(0px); /* Pressed down effect */
-        }
-
-        /* Ensure social icons with images are flex containers for alignment */
-        a.social-icon {
-            display: inline-flex; /* Use inline-flex for items on the same line */
-            align-items: center;
-            justify-content: center; /* Center content if text is also present and centered */
-        }
-
-        /* General link styling */
-        a {
-            color: #007bff; /* Primary blue for text links */
-            text-decoration: none; /* No underline by default */
-        }
-        a:hover {
-            color: #0056b3; /* Darker blue on hover */
-            text-decoration: underline; /* Underline on hover */
-        }
-
         .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
-            position: relative; /* Keep if needed for z-indexing, but not for layout */
-            /* z-index: 2; */ /* Might not be needed anymore */
-            filter: none; /* Attempt to reset any color changes on icons */
+            position: relative;
+            z-index: 2;
         }
 
-        /*
-        button, // Ensure buttons (which might be <a>) don't get underlined
-        a.social-icon,
-        button.social-icon, // This selector might be redundant now
-        .info-button,
-        button.backstory-trigger-btn {
-            text-decoration: none !important; // Override general <a> underline for button-styled links
+        .social-icon:hover {
+            transform: translateY(-5px) scale(1.03); 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
         }
-        */
-        /* Old hover/active states for Win95 buttons are removed by replacing the block above */
 
         .container {
             width: 100%;
-            max-width: 700px; /* Increased max-width */
-            padding: 2rem; /* Adjust padding for better spacing */
-            animation: zoomInEffect 0.7s ease-out forwards;
-            background-color: #FFFFFF;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Softer shadow */
-            position: relative; /* Establish stacking context */
-            z-index: 2;         /* Ensure container is above bouncing images */
-            margin: 2rem auto; /* Add some margin to top/bottom and keep it centered */
+            max-width: 500px; 
+            padding: 1rem; 
+            animation: zoomInEffect 0.7s ease-out forwards; 
+            background-color: rgba(30, 41, 59, 0.9); 
         }
-        /* Ensure media query for padding is removed or adjusted if necessary, padding is now 2rem */
-        /* @media (min-width: 640px) { ... } */
-        /* .info-button specific overrides if any (already covered by general button styling) */
+        @media (min-width: 640px) { /* sm breakpoint in Tailwind */
+            .container {
+                padding: 2rem; 
+            }
+        }
+        .info-button {
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .info-button:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
 
-        @keyframes continuousSpin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        /* Removed spin animation keyframes */
+
+        .profile-picture {
+            transition: transform 0.5s ease-in-out;
         }
-        .profile-picture { /* Assuming #profilePic refers to this class used in HTML */
-            border-radius: 50%; /* Circular */
-            border: 3px solid #FFFFFF; /* White border to lift from background */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Modern shadow */
-            transition: transform 0.5s ease-in-out; /* Keep existing transition */
-            /* object-cover is likely from Tailwind, ensure it's not overridden */
-        }
-        /* .profile-picture:hover {
-            animation: continuousSpin 2s linear infinite;
-        } */
+        /* Removed hover animation for spinning */
 
         @keyframes zoomInEffect {
             from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
         }
         #birthdayCountdown {
-            font-size: 1rem;
-            /* color: #cbd5e1; */ /* Replaced by body color or container color */
+            color: #cbd5e1;
             margin-bottom: 0.5rem;
         }
         #ageDisplay {
-            font-size: 1rem;
-            /* color: #cbd5e1; */ /* Replaced by body color or container color */
+            color: #cbd5e1;
             margin-bottom: 1.5rem;
         }
-        .bio-text { font-size: 0.95rem; /* Color will be inherited */ }
-        .highlight-text { color: #000000; font-weight: bold; /* Black and bold for highlight */ }
+        .highlight-text { color: #818cf8; font-weight: 600; }
         .profile-image-wrapper { display: inline-block; text-align: center; }
         #dragonText {
-            max-height: 0; opacity: 0; overflow: hidden; color: #000000; /* Black text */
-            font-weight: bold; font-size: 1.5rem; white-space: nowrap;
-            background-color: #C0C0C0;
-            border-radius: 0; /* Silver background, no radius */
-            border: 2px solid;
-            border-top-color: #FFFFFF;
-            border-left-color: #FFFFFF;
-            border-bottom-color: #808080;
-            border-right-color: #808080;
-            padding: 5px 10px; /* Consistent padding */
-            margin-top: 0; box-sizing: border-box;
+            max-height: 0; opacity: 0; overflow: hidden; color: #f87171; /* font-size removed */
+            font-weight: bold; white-space: nowrap;
+            background-color: rgba(30, 41, 59, 0.85); border-radius: 0.375rem;
+            padding: 0 12px; margin-top: 0; box-sizing: border-box;
             transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
         }
         #dragonText.visible {
-            max-height: 70px; /* Ensure this is enough for the text */ opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px; /* Keep padding for visibility transition */
-        }
-        @keyframes flameAnimation {
-            0%, 100% { background-position: 0% 50%; }
-            25%, 75% { background-position: 100% 50%; }
-            50% { background-position: 0% 50%; }
-        }
-        .flames-background {
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab, #ff4500, #ff8c00, #ff0000) !important;
-            background-size: 600% 600% !important;
-            animation: flameAnimation 15s ease infinite !important;
-        }
-        /* .story-button-legend, .story-button-naga styles are now covered by the base button styles */
-        /* No specific background images or ::before overlays needed */
-
-        /* backstory-trigger-btn is covered by general button styling */
-        /* Discord Button Specific Styles - #discordButton is now covered by the new base button styles */
-        /* Old #discordButton Win95 overrides are removed by replacing the block above */
-
-        /* Ensure Discord icon itself is not colored by its original SVG fill if possible, or use a monochrome version */
-        /* This might need adjustment if the icon color is not white by default with the new button style */
-        #discordButton .fab.fa-discord {
-            /* color: #FFFFFF !important; */ /* If the icon needs to be white on the blue button */
+            max-height: 70px; opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
         }
 
+        /* Removed flame animation and background styles */
 
-        .discord-dropdown-text {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out, margin-top 0.4s ease-out;
-            padding-top: 0;
-            padding-bottom: 0;
-            margin-top: 0; /* Start with no margin, will be added when visible */
-            background-color: #FFFFFF; /* Modern white background */
-            color: #333333; /* Modern dark text */
-            border: 1px solid #e0e0e0; /* Subtle border */
-            border-radius: 6px; /* Rounded corners */
-            padding: 0.75rem 1rem; /* Modern padding */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Modern shadow */
-            text-align: center; /* Keep text centered if desired */
-            font-size: 0.95rem; /* Reset font size */
-            font-weight: normal; /* Reset font weight */
-            /* Keep existing transition for max-height, opacity */
+        .story-button-legend, .story-button-naga {
+            background-size: cover; background-position: center center; background-repeat: no-repeat; color: white;
         }
-        /* Remove fancyDiscordTextAnimation */
-        /* @keyframes fancyDiscordTextAnimation {
-            0%, 100% {
-                transform: scale(1);
-                text-shadow: 0 0 4px rgba(220, 220, 255, 0.6); /* Softer white/lavender glow */
-            }
-            50% {
-                transform: scale(1.02); /* Further reduced scale for an even smaller pulse */
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.9), /* Brighter white */
-                             0 0 20px rgba(129, 140, 248, 0.7), /* Indigo-400 like glow */
-                             0 0 30px rgba(99, 102, 241, 0.5);  /* Indigo-500 like glow */
-            }
+        .story-button-legend::before, .story-button-naga::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4); border-radius: inherit; 
+            z-index: 1; transition: background-color 0.3s ease;
         }
-        /* Responsive adjustments for Discord dropdown text on smaller screens */
-        @media (max-width: 767px) { /* Consistent with other mobile adjustments */
-            .discord-dropdown-text {
-                font-size: 1.125rem; /* Tailwind's text-lg, adjust as needed */
-            }
+        .story-button-legend:hover::before, .story-button-naga:hover::before {
+            background-color: rgba(0, 0, 0, 0.6);
         }
+        .story-button-legend { background-image: url('blood.png'); }
+        .story-button-naga { background-image: url('arctic.jpg'); }
 
-        .discord-dropdown-text.visible {
-            max-height: 120px; /* Increased max-height for larger text and animation */
-            opacity: 1;
-            padding-top: 1rem;   /* Increased padding a bit */
-            padding-bottom: 1rem;/* Increased padding a bit */
-            margin-top: 0.5rem;  /* Slightly more margin */
-            /* font-size: 2.25rem; */  /* Remove - was for fancy animation */
-            /* line-height: 1.2; */    /* Remove - was for fancy animation */
-            /* font-weight: 600; */    /* Remove - was for fancy animation */
-            /* animation: fancyDiscordTextAnimation 2s ease-in-out infinite; */ /* Remove fancy animation */
-        }
         /* Backstory Modal Styles */
         #backstoryModal {
-            display: none;
+            display: none; 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
+            background-color: rgba(0, 0, 0, 0.85); 
             z-index: 1000; align-items: center; justify-content: center;
             opacity: 0; transition: opacity 0.3s ease-in-out;
-            pointer-events: none;
+            pointer-events: none; 
         }
         #backstoryModal.visible {
-            display: flex;
+            display: flex; 
             opacity: 1;
-            visibility: visible; /* Ensure modal becomes visible, overriding Tailwind's 'invisible' */
-            pointer-events: auto;
+            pointer-events: auto; 
         }
         #backstoryModalContent {
-            background-color: #1f2937;
-            /* Adjusted for full-screen display */
-            padding: clamp(1.5rem, 4vw, 3rem); /* Responsive padding for screen edges */
-            border-radius: 0; /* No border radius for full screen */
-            width: 100%;      /* Take full width */
-            height: 100%;     /* Take full height */
-            max-width: 100%;  /* Override any previous max-width */
-            max-height: 100vh;/* Ensure it doesn't exceed viewport height */
-            overflow-y: auto; /* Allow scrolling for content longer than screen */
+            background-color: #1f2937; 
+            padding: 2rem; border-radius: 0.5rem; 
+            width: 90%; max-width: 700px; 
+            max-height: 85vh; overflow-y: auto;
             position: relative; text-align: left;
-            color: #000000; /* Black text */
-            font-size: 1.05rem;
+            color: #e2e8f0; 
             line-height: 1.7;
-            transform: scale(1); /* No scale effect */
-            transition: none; /* No transition */
-            box-sizing: border-box; /* Include padding and border in the element's total width and height */
-            border: 2px solid; /* Standard Win95 border */
-            border-top-color: #FFFFFF;
-            border-left-color: #FFFFFF;
-            border-bottom-color: #808080;
-            border-right-color: #808080;
-            background-color: #C0C0C0; /* Silver background */
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
         }
         #backstoryModal.visible #backstoryModalContent { transform: scale(1); }
         .close-modal-button {
-            /* Assuming .close-modal-button is also a button and should inherit new styles */
-            /* Specific positioning styles will remain, but background/border/color will come from new button styles */
-            /* background-color: #C0C0C0 !important; */ /* Remove to inherit */
-            /* color: #000000 !important; */ /* Remove to inherit */
-            /* border: 2px solid; */ /* Remove to inherit */
-            /* border-top-color: #FFFFFF !important; */ /* Remove to inherit */
-            /* border-left-color: #FFFFFF !important; */ /* Remove to inherit */
-            /* border-bottom-color: #808080 !important; */ /* Remove to inherit */
-            /* border-right-color: #808080 !important; */ /* Remove to inherit */
-            /* box-shadow: none !important; */ /* Remove to inherit */
-            /* border-radius: 0 !important; */ /* Remove to inherit */
-            width: auto; /* Auto width based on content */
-            height: auto; /* Auto height */
-            /* font-size: 1rem; */ /* Inherited */
-            /* padding: 5px 10px; */ /* Inherited, but can be overridden if needed */
-
-            /* display: inline-block; */ /* Inherited */
-            /* text-align: center; */ /* Inherited */
-            /* line-height: normal; */ /* Inherited */
-
-            /* transform: none; */ /* This might conflict with hover/active states, review */
-            position: absolute; /* Or static/relative as needed for flow */
-            top: 10px;
-            right: 10px;
-            bottom: auto;
-            left: auto;
+            position: absolute; top: 10px; right: 15px;
+            color: #9ca3af; /* font-size removed */
+            cursor: pointer; background: none; border: none;
+            line-height: 1; padding: 0.25rem;
         }
-        /* .close-modal-button:hover, .close-modal-button:active will inherit from general button hover/active */
-        /* Remove specific Win95 hover/active for .close-modal-button */
-
-        /* Make it even larger on mobile - this might be removed if not fitting Win95 style */
-        /* @media (max-width: 767px) {
-            .close-modal-button {
-                width: 75px;
-                height: 75px;
-                font-size: 3.5rem;
-                bottom: 20px;
-            }
-        } */
+        .close-modal-button:hover { color: #e5e7eb; }
         #backstoryModalContent p { margin-bottom: 1rem; }
         #backstoryModalContent p:last-child { margin-bottom: 0; }
 
-        /* Sisu Image and Party Time Text Styles */
-        .sisu-image {
-            border-radius: 6px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            border: none; /* Remove old Win95 border */
-            /* object-cover and w-56 h-56 from Tailwind should be fine */
-            /* transform: none; */ /* Kept from original */
-            /* transition: none; */ /* Kept from original */
-            /* backface-visibility: hidden; */ /* Kept from original */
-            /* animation: none; */ /* Kept from original */
+        .backstory-trigger-btn {
+            background-color: #4a5568; 
+            color: white; padding: 0.5rem 1rem;
+            border-radius: 0.375rem; cursor: pointer;
+            font-weight: 600; transition: background-color 0.2s ease; /* font-size removed */
+            border: none;
+            margin-bottom: 0.5rem; 
+        }
+        .backstory-trigger-btn:hover { background-color: #2d3748; }
+
+        /* YouTube Playlist Embed Styling */
+        .playlist-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+        }
+        .playlist-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            border: none; /* Remove iframe border */
         }
 
-        .group:hover .sisu-image {
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Keep shadow, or define hover if needed */
-            /* No specific hover transform or animation */
+        /* Keyframes for the pulsing glow effect */
+        @keyframes pulse-indigo-glow {
+            0% {
+                /* More subtle glow for readability - using indigo-300 and indigo-400 with alpha */
+                text-shadow: 0 0 4px rgba(165, 180, 252, 0.5), /* Tailwind indigo-300 */
+                             0 0 8px rgba(129, 140, 248, 0.3);  /* Tailwind indigo-400 */
+            }
+            50% {
+                /* Brighter and slightly more spread glow at the peak of the pulse */
+                text-shadow: 0 0 6px rgba(165, 180, 252, 0.7),  /* Tailwind indigo-300 */
+                             0 0 12px rgba(129, 140, 248, 0.5), /* Tailwind indigo-400 */
+                             0 0 18px rgba(99, 102, 241, 0.3);   /* Tailwind indigo-500 for outer pulse */
+            }
+            100% {
+                /* Return to the subtle glow */
+                text-shadow: 0 0 4px rgba(165, 180, 252, 0.5),
+                             0 0 8px rgba(129, 140, 248, 0.3);
+            }
         }
-        .party-text {
+
+        /* Text Glow Effect */
+        .text-glow-indigo {
+            /* Apply the pulsing animation. The base text color is text-indigo-400 from HTML */
+            animation: pulse-indigo-glow 2.5s infinite ease-in-out;
+            /* Fallback for initial state or if animations are off */
+            text-shadow: 0 0 4px rgba(165, 180, 252, 0.5), 0 0 8px rgba(129, 140, 248, 0.3);
+        }
+
+        /* Vintage Vinyl Record Styling */
+        .vinyl-record-wrapper {
+            display: inline-block; /* Allows centering with flex on parent */
+            position: relative;
+            /* Sizing is now primarily handled by Tailwind classes in HTML (e.g., w-60 h-60) */
+            /* Fallback size if Tailwind classes are removed: */
+            /* width: 240px; */
+            /* height: 240px; */
+            border-radius: 50%;
+            background-color: #202020; /* Dark vinyl color */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.25), /* Softer base shadow for depth */
+                        0 0 0 4px #383838;       /* Vinyl rim */
+            overflow: hidden; /* Crucial for circular image and pseudo-elements */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .vinyl-record-wrapper:hover {
+            transform: scale(1.05); /* Slightly enlarge on hover */
+            /* Warm, retro glow */
+            box-shadow: 0 8px 20px rgba(227, 160, 70, 0.45), /* Amber/Orange prominent glow */
+                        0 0 0 6px #4a4a4a; /* Slightly thicker/lighter rim on hover */
+        }
+
+        .vinyl-record-wrapper .vinyl-artwork-img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the image covers the circular area */
+            border-radius: 50%; /* Clips the image to be circular */
+        }
+
+        /* Record Label */
+        .vinyl-record-wrapper::before {
+            content: '';
             position: absolute;
             top: 50%;
-            font-size: 2.25rem; /* text-4xl - kept from original, adjust if too large */
-            font-weight: 600; /* Semi-bold */
-            color: #333333; /* Modern dark text */
-            text-shadow: none; /* Remove any old text-shadow */
-            opacity: 0;
-            transition: opacity 0.3s ease-out, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            pointer-events: none;
-            white-space: nowrap;
-            z-index: 10;
-        }
-
-        .party-text-left {
-            right: 100%;
-            margin-right: 1rem; /* Space between text and image */
-            transform: translateY(-50%) translateX(25px); /* Start offset towards center, hidden by opacity */
-        }
-
-        .party-text-right {
-            left: 100%;
-            margin-left: 1rem; /* Space between text and image */
-            transform: translateY(-50%) translateX(-25px); /* Start offset towards center, hidden by opacity */
-        }
-
-        .group:hover .party-text-left,
-        .group:hover .party-text-right {
-            opacity: 1;
-            transform: translateY(-50%) translateX(0); /* Slide into final position */
-        }
-
-        .playlist-arrow {
-            position: absolute;
-            top: -30px; /* Position above the image */
             left: 50%;
-            transform: translateX(-50%);
-            font-size: 1.8rem;
-            color: #007bff; /* Primary blue */
-            text-decoration: none;
-            z-index: 5;
+            width: 33%; /* Percentage of the wrapper's size for the label */
+            padding-bottom: 33%; /* Maintain aspect ratio (height = width) */
+            height: 0;
+            transform: translate(-50%, -50%);
+            background-color: #f3e9d2; /* Warm cream/light beige for label */
+            border-radius: 50%;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1); /* Subtle depth */
+            z-index: 1; /* Label on top of the artwork image */
         }
 
-        /* Responsive adjustments for party text on smaller screens */
-        @media (max-width: 767px) { /* Adjust breakpoint as needed, 767px is typical for mobile */
-            .party-text {
-                font-size: 1.5rem; /* text-2xl, smaller for mobile */
-            }
+        /* Spindle Hole */
+        .vinyl-record-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6%; /* Percentage of the wrapper's size for the hole */
+            padding-bottom: 6%; /* Maintain aspect ratio */
+            height: 0;
+            transform: translate(-50%, -50%);
+            background-color: #202020; /* Match vinyl body color */
+            border-radius: 50%;
+            border: 1px solid #111111; /* Darker border for the hole's edge */
+            box-shadow: inset 0 0 2px rgba(0,0,0,0.3); /* Inner shadow for hole depth */
+            z-index: 2; /* Spindle hole on top of the label */
         }
 
-        .bouncing-image {
-            display: none !important;
-        }
-        .bouncing-snowflake {
-            display: none !important;
-        }
+        /* Add to styles/main.css */
 
-        /* --- Scroll Rocket (Replaces Back to Top Button) --- */
-        #backToTopBtn {
-            background-color: #343a40; /* Dark gray */
-            color: #FFFFFF;
-            width: 44px; /* Slightly larger for touch */
-            height: 44px;
-            border-radius: 50%; /* Circular */
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            display: flex; /* For centering icon */
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem; /* Adjust icon size */
-            position: fixed; /* Keep from original logic */
-            bottom: 20px;    /* Keep from original logic */
-            right: 20px;     /* Keep from original logic */
-            z-index: 999;    /* Keep from original logic */
-            opacity: 0;      /* Hidden by default, JS will show it */
-            visibility: hidden; /* Hidden by default */
-            cursor: pointer; /* Ensure cursor is pointer */
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Modern transitions */
-        }
+/* Styles for the Discord username dropdown */
+#discordUsername {
+    /* Tailwind classes from HTML already provide:
+       absolute, left-0, right-0, mt-2, p-3, bg-slate-700, text-white,
+       text-base, rounded-md, shadow-lg, z-10, text-center
+    */
 
-        #backToTopBtn.show {
-            opacity: 1;
-            visibility: visible;
-        }
+    /* Initial state for animation: hidden, slightly above, and scaled down */
+    opacity: 0;
+    transform: translateY(-12px) scale(0.90); /* Starts slightly above and smaller for a pop-out effect */
+    visibility: hidden; /* Ensures the element is not interactive or visible before animation */
+    pointer-events: none; /* Prevent interactions when hidden */
 
-        #backToTopBtn:hover {
-            background-color: #495057; /* Lighter gray on hover */
-            transform: none; /* No transform on hover */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.25);
-        }
-        #backToTopBtn:active {
-             background-color: #23272b; /* Darker on active */
-             transform: none;
-        }
-
-        /* Optional: Adjust for very small screens - keep if relevant */
-        @media (max-width: 480px) {
-            #backToTopBtn {
-                width: 40px;      /* Adjusted for modern look */
-                height: 40px;     /* Adjusted for modern look */
-                bottom: 15px;
-                right: 15px;
-                font-size: 1.1rem; /* Adjusted icon size */
-            }
-        }
-
-        /* Remove ::before and ::after if they were for Win95 style rocket flames */
-        #backToTopBtn::before, #backToTopBtn::after {
-            display: none !important;
-        }
-
-        /* Remove all animation keyframes related to the old rocket, if any are left */
-        @keyframes rocketBobbing {}
-        @keyframes subtleSparks {}
-        @keyframes intenseSparks {}
-        @keyframes rocketShake {}
-        @keyframes ignitionFlameBurst {}
-        @keyframes sustainedFlame {}
-        @keyframes rocketFlyOff {}
-        @keyframes flameFadeOut {}
-
-
-        /* Fade-in on Scroll Effect */
-        .fade-in-on-scroll {
-            opacity: 0;
-            transform: translateY(30px); /* Start slightly lower */
-            transition: opacity 0.8s cubic-bezier(0.645, 0.045, 0.355, 1), transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
-            /* will-change: opacity, transform; /* Removed for testing transition behavior */
-        }
-
-        .fade-in-on-scroll.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Sun/Moon Time Indicator Icons */
-        .time-indicator-icon {
-            /* position: fixed; Removed for normal flow */
-            font-size: 2.5rem; /* Adjust size as needed */
-            display: none; /* Default: hidden and does not take up space */
-            /*
-                Opacity and transition are now handled by the .fade-in-on-scroll class
-                and its .is-visible state.
-            */
-            margin-bottom: 1.5rem; /* Space below the icon when visible */
-            /* Centered by body's "items-center" flex property */
-        }
-        /*
-           No .layout-active or .fade-in-effect classes needed anymore.
-           Direct style manipulation in JS will handle display and opacity.
-        */
-
-        #moonIcon, #sunIcon {
-            color: inherit; /* Inherit color from parent, e.g. #currentTimeContainer */
-            /* display: none is handled by JS logic if these are used */
-            /* font-size can remain or be adjusted if they become visible */
-        }
-
-        /* Screen Edge Glow - REMOVED */
-        body::before {
-            display: none !important;
-        }
-        body.day-glow-active::before, body.night-glow-active::before {
-            display: none !important;
-        }
-
-
-        /* Table of Contents Styles */
-        #tableOfContents {
-            background-color: #FFFFFF;
-            border: 1px solid #dee2e6; /* Modern subtle border */
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* Keep existing transition */
-        }
-        #tableOfContents h3 {
-            color: #333333;
-            border-bottom: 1px solid #e0e0e0; /* Modern separator */
-        }
-        #tableOfContents ul li a {
-            color: #007bff;
-            border-radius: 4px;
-            padding: 6px 10px;
-            display: block;
-            margin: 2px 0;
-            transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out;
-        }
-        #tableOfContents ul li a:hover {
-            background-color: #e9ecef; /* Light hover */
-            color: #0056b3;
-            text-decoration: none;
-        }
-        /* #tableOfContents ul li a:active - can be removed or styled if needed */
-        .active-toc-link {
-            background-color: #007bff !important;
-            color: #FFFFFF !important;
-            font-weight: bold;
-            text-decoration: none !important;
-        }
-        /* Remove old Win95 scrollbar styles, attempt to reset to browser defaults */
-        #tableOfContents::-webkit-scrollbar,
-        #tableOfContents::-webkit-scrollbar-track,
-        #tableOfContents::-webkit-scrollbar-thumb,
-        #tableOfContents::-webkit-scrollbar-thumb:hover {
-            all: unset;
-        }
-
-        /* Table of Contents fade-in styles */
-        #tableOfContents.toc-is-loading {
-            opacity: 0;
-            transform: translateY(-15px);
-        }
-
-        /* Time/Availability Indicators - Adding these styles as they might not exist */
-        /* Note: #currentTimeContainer and #availabilityMessage are not in the original CSS, so these are new additions */
-        #currentTimeContainer {
-            background-color: #e9ecef; /* Light neutral background */
-            color: #495057; /* Darker neutral text */
-            padding: 0.3rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-family: 'Inter', sans-serif; /* Ensure modern font */
-            border: none;
-            box-shadow: none;
-            min-width: auto;
-            /* visibility is handled by JS, keep that */
-        }
-
-        #availabilityMessage {
-            font-size: 0.9rem; /* Slightly smaller */
-            color: #6c757d; /* Secondary text color */
-            font-weight: normal;
-            /* Assuming this is a sibling or near #currentTimeContainer and will be shown/hidden by JS */
-        }
-
-        /* Footer styling */
-        footer {
-            /* Assuming footer is outside .container, on the main body background */
-            color: #212529; /* Match body text color */
-            padding: 1.5rem; /* Slightly more padding */
-            text-align: center;
-            /* Added for lazy rendering: skip rendering work until near viewport */
-            content-visibility: auto;
-            /* Provide an estimated height for the footer to prevent layout shifts. Adjust as needed. */
-            contain-intrinsic-block-size: 60px;
-        }
-        footer p {
-            margin: 0;
-        }
-/* Example for a specific section that fades in */
-.my-large-fade-in-section {
-    /* ... your existing styles for this section ... */
-    opacity: 0; /* from .fade-in-on-scroll logic */
-    transform: translateY(30px); /* from .fade-in-on-scroll logic */
-    transition: opacity 0.8s ease, transform 0.8s ease; /* from .fade-in-on-scroll logic */
-
-    content-visibility: auto;
-    contain-intrinsic-block-size: 300px; /* IMPORTANT: Adjust this based on the typical height of this specific section */
+    /* Smooth transition for properties */
+    transition: opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), /* Custom easing for a smoother feel */
+                transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+                visibility 0.3s; /* Transition visibility to ensure it's properly hidden/shown */
 }
 
-.my-large-fade-in-section.is-visible {
+#discordUsername.active {
+    /* Active state: fully visible, normal position, and full size */
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    visibility: visible; /* Make it visible and interactive */
+    pointer-events: auto; /* Allow interactions (like text selection) */
 }
