@@ -107,7 +107,7 @@
     <i id="sunIcon" class="fas fa-sun time-indicator-icon"></i>
 
     <!-- Moved Time and Availability Status Here -->
-    <div id="currentTimeContainer" class="mb-1 p-1 text-sm font-mono" style="visibility: hidden;"> <!-- Removed Win95 inline styles, kept visibility:hidden for JS control -->
+    <div id="currentTimeContainer" class="mb-1 p-1 text-sm font-mono" style="background-color: #c0c0c0; color: black; border-style: solid; border-width: 2px; border-color: #808080 #ffffff #ffffff #808080; box-shadow: inset 1px 1px 0px #000000, inset -1px -1px 0px #dfdfdf; display: inline-block; min-width: 80px; text-align: center; visibility: hidden;">
         <span id="currentTime">Loading...</span>
     </div>
     <div id="availabilityStatusContainer" class="text-sm mb-4 py-2"> <!-- Adjusted padding to py-2 for more top/bottom padding -->
