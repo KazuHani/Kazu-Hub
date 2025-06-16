@@ -1,0 +1,781 @@
+/* Basic Resets and Defaults */
+:root {
+  --primary-color: #3498db; /* A modern blue */
+  --primary-color-rgb: 52, 152, 219; /* For focus ring shadow */
+  --secondary-color: #2ecc71; /* A modern green */
+  --secondary-color-rgb: 46, 204, 113; /* For focus ring shadow */
+  --link-hover-color: #2980b9; /* Darker blue on hover */
+  --link-hover-color-rgb: 41, 128, 185; /* for focus ring, derived from #2980b9 */
+  --background-color: #f4f6f8; /* Light grey background */
+  --text-color: #333; /* Dark grey for text */
+  --header-bg-color: #2c3e50; /* Dark blue-grey for header */
+  --header-text-color: #ecf0f1; /* Light grey for header text */
+  --footer-bg-color: #34495e; /* Slightly lighter dark blue-grey for footer */
+  --footer-text-color: #ecf0f1; /* Light grey for footer text */
+  --link-color: var(--primary-color);
+  /* --link-hover-color is defined above with its RGB version */
+  --button-bg-color: var(--primary-color);
+  --button-text-color: white;
+  --button-hover-bg-color: var(--secondary-color);
+
+  --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Christmas Theme Variables (RGB versions for focus rings) */
+  --primary-color-christmas-rgb: 217, 83, 79;
+  --secondary-color-christmas-rgb: 92, 184, 92;
+  --link-hover-color-christmas-rgb: 172, 41, 37; /* derived from #ac2925 (festive link hover) */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px; /* Base font size */
+  line-height: 1.6;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-sans-serif);
+  color: var(--text-color);
+  background-color: var(--background-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem; /* Consistent padding */
+}
+
+/* Header Styles */
+header {
+  width: 100%;
+  max-width: 960px; /* Max width for content */
+  background-color: var(--header-bg-color);
+  color: var(--header-text-color);
+  padding: 1.5rem;
+  text-align: center;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+header p {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.profile-image-wrapper {
+  margin-bottom: 1rem;
+}
+
+.profile-picture {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%; /* Circular profile picture */
+  border: 3px solid var(--secondary-color);
+  object-fit: cover;
+  margin: 0 auto 0.5rem; /* Centered with bottom margin */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-picture:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--secondary-color);
+}
+
+#dragonText {
+  font-style: italic;
+  color: var(--secondary-color); /* Fun color for this text */
+}
+
+/* Time and Availability */
+#currentTimeContainer {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  font-family: var(--font-family-monospace);
+  /* background-color, color, border, box-shadow are inline for now */
+}
+
+#availabilityStatusContainer {
+  margin-bottom: 1rem;
+}
+
+#availabilityMessage {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* Info button in header */
+.info-button {
+  display: inline-block;
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-button:hover {
+  background-color: var(--button-hover-bg-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.info-button:active {
+  transform: translateY(0px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Birthday and Age */
+#birthdayCountdown,
+#ageDisplay {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+/* Main Content Area */
+main.container {
+  width: 100%;
+  max-width: 960px; /* Consistent max-width */
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Spacing between sections */
+}
+
+/* Sections */
+section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+section h2 {
+  font-size: 1.75rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Navigation / Social Links */
+nav.social-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem; /* Space between links */
+}
+
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  text-decoration: none;
+  color: var(--text-color);
+  background-color: #fff;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.social-icon:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.social-icon:active {
+  transform: translateY(0px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.social-icon img.social-icon-img,
+.social-icon i.social-icon-img {
+  width: 24px;
+  height: 24px;
+  margin-right: 0.75rem;
+}
+
+/* Discord specific */
+.discord-container {
+  position: relative; /* For dropdown positioning */
+}
+
+.discord-dropdown-text {
+  display: none; /* Hidden by default */
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.discord-dropdown-text.visible {
+  display: block;
+}
+
+
+/* Playlist Section */
+.playlist-section h2 {
+  text-align: center;
+}
+.playlist-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.playlist-link {
+  position: relative;
+  display: inline-block;
+}
+
+.playlist-arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem; /* Adjust size as needed */
+  color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.playlist-link:hover .playlist-arrow {
+  opacity: 1;
+}
+
+.sisu-image {
+  width: 224px; /* Equivalent to w-56 in Tailwind (56*4px) */
+  height: 224px;
+  object-fit: cover;
+  border-radius: 8px; /* Slightly rounded corners */
+  transition: filter 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.playlist-link:hover .sisu-image {
+  filter: brightness(0.7); /* Darken image on hover */
+  transform: scale(1.03);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.party-text {
+  position: absolute;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 1px 1px 2px black;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.party-text-left {
+  top: 20px;
+  left: 20px;
+  transform: translateX(-20px);
+}
+
+.party-text-right {
+  bottom: 20px;
+  right: 20px;
+  transform: translateX(20px);
+}
+
+.playlist-link:hover .party-text-left,
+.playlist-link:hover .party-text-right {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Content Section (Code & Stories) */
+.content-section h2 {
+  margin-top: 1rem; /* Space above subsequent h2s in this section */
+}
+
+.stories-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.story-button-legend,
+.story-button-naga {
+  /* General story button styles, specific styles can be added if needed */
+}
+
+
+/* Location Section */
+.map-container {
+  overflow: hidden; /* To contain the iframe's rounded corners if desired */
+  border-radius: 8px; /* Match section radius */
+  margin-top: 1rem;
+}
+
+.map-iframe {
+  width: 100%;
+  height: 320px; /* Default height */
+  border: none; /* Remove default iframe border */
+}
+
+/* Footer */
+footer {
+  width: 100%;
+  max-width: 960px;
+  background-color: var(--footer-bg-color);
+  color: var(--footer-text-color);
+  text-align: center;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Links */
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--link-hover-color);
+  text-decoration: underline;
+}
+
+/* Buttons (General) */
+button {
+  font-family: inherit; /* Inherit font from body */
+  cursor: pointer;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Specific button types that inherit from general button but might have own hover/active if needed */
+#discordButton { /* Already covered by .social-icon but can be more specific if needed */
+}
+
+
+/* Time Indicator Icons (Sun/Moon) */
+.time-indicator-icon {
+  position: fixed; /* Fixed position on the screen */
+  top: 20px;
+  right: 20px;
+  font-size: 2rem; /* Adjust size as needed */
+  z-index: 1000; /* Ensure it's above other content */
+  display: none; /* Hidden by default, JS will show the correct one */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+  color: #f1c40f; /* Sun color */
+}
+
+#moonIcon {
+ color: #bdc3c7; /* Moon color */
+}
+
+/* Glow effects for body based on time */
+body.day-glow-active {
+  box-shadow: 0 0 25px 10px rgba(241, 196, 15, 0.3); /* Sun glow */
+}
+
+body.night-glow-active {
+  box-shadow: 0 0 25px 10px rgba(189, 195, 199, 0.3); /* Moon glow */
+}
+
+/* Removed .bouncing-image and .bouncing-snowflake styles as they are no longer used */
+
+/* Back to Top Button */
+#backToTopBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50%; /* Circular button */
+  width: 50px;
+  height: 50px;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px); /* Start off-screen */
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
+  z-index: 1000;
+}
+
+#backToTopBtn.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0); /* Slide in */
+}
+
+#backToTopBtn:hover {
+  background-color: var(--link-hover-color);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+#backToTopBtn:active {
+  transform: translateY(0) scale(1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#backToTopBtn:focus { /* Specific focus style if different from hover, merged if same */
+    outline: 2px solid var(--link-hover-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--link-hover-color-rgb), 0.4); /* Use its own hover color for focus ring */
+}
+
+
+/* General focus styles for buttons and links for accessibility */
+a:focus,
+button:focus, /* This will cover .info-button and #discordButton (as it's a button) */
+.social-icon:focus { /* .social-icon is an 'a' tag, but we can style its focus like a button */
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.3);
+}
+
+/* Refine focus for plain links if they look too much like buttons with the above rule */
+a:not(.social-icon):not(.info-button):not(#backToTopBtn):focus {
+    box-shadow: none; /* Remove box-shadow for non-button links, keep outline */
+}
+
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  html {
+    font-size: 15px; /* Slightly smaller base font for smaller screens */
+  }
+
+  header h1 {
+    font-size: 2rem;
+  }
+
+  section h2 {
+    font-size: 1.5rem;
+  }
+
+  .profile-picture {
+    width: 100px;
+    height: 100px;
+  }
+
+  .map-iframe {
+    height: 250px;
+  }
+
+  .social-icon {
+    padding: 0.6rem 0.8rem; /* Slightly reduce padding for social icons on tablet */
+  }
+
+  .info-button {
+    padding: 0.6rem 1.2rem;
+  }
+
+  #backToTopBtn {
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+    bottom: 15px;
+    right: 15px;
+  }
+
+  .time-indicator-icon {
+    top: 15px;
+    right: 15px;
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0.5rem;
+  }
+
+  header, main.container, footer {
+    padding: 1rem;
+    margin-left: 0.5rem; /* Add small margins for very small screens */
+    margin-right: 0.5rem;
+    width: calc(100% - 1rem); /* Adjust width to account for padding and potential small margins */
+  }
+
+  header {
+    margin-bottom: 1rem;
+  }
+
+  main.container {
+     gap: 1rem;
+  }
+
+  footer {
+    margin-top: 1rem;
+  }
+
+
+  header h1 {
+    font-size: 1.8rem;
+  }
+
+  header p {
+    font-size: 1rem;
+  }
+
+  .profile-picture {
+    width: 80px;
+    height: 80px;
+  }
+
+  #availabilityMessage {
+    font-size: 1rem;
+  }
+
+  section {
+    padding: 1rem;
+  }
+
+  section h2 {
+    font-size: 1.3rem;
+  }
+
+  .social-icon {
+    flex-direction: column; /* Stack icon and text vertically */
+    padding: 0.75rem 0.5rem; /* Adjust padding */
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  .social-icon img.social-icon-img,
+  .social-icon i.social-icon-img {
+    margin-right: 0; /* Remove right margin */
+    margin-bottom: 0.25rem; /* Add bottom margin */
+    width: 20px; /* Slightly smaller icons */
+    height: 20px;
+  }
+
+  .discord-dropdown-text {
+    font-size: 0.85rem;
+  }
+
+  .sisu-image {
+    width: 160px; /* Further reduce playlist image size */
+    height: 160px;
+  }
+
+  .party-text {
+    font-size: 1.2rem;
+  }
+  .party-text-left {
+    top: 10px;
+    left: 10px;
+  }
+  .party-text-right {
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .map-iframe {
+    height: 200px; /* Reduce map height */
+  }
+
+  #backToTopBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+    bottom: 10px;
+    right: 10px;
+  }
+   .time-indicator-icon {
+    top: 10px;
+    right: 10px;
+    font-size: 1.6rem;
+  }
+
+  #currentTimeContainer {
+    padding: 0.3rem;
+    font-size: 0.8rem; /* Make time text smaller */
+  }
+}
+
+/* Christmas Specific Styles (can be toggled by JS) */
+body.christmas-theme {
+    --primary-color-christmas: #d9534f; /* Festive Red */
+    --secondary-color-christmas: #5cb85c; /* Festive Green */
+    --background-color-christmas: #f7f7f7; /* Off-white, like snow */
+    --text-color-christmas: #222; /* Darker text for readability on light bg */
+    --header-bg-color-christmas: #c9302c; /* Darker Festive Red */
+    --header-text-color-christmas: #fff;
+    --footer-bg-color-christmas: #4cae4c; /* Darker Festive Green */
+    --footer-text-color-christmas: #fff;
+    --link-color-christmas: var(--primary-color-christmas);
+    --link-hover-color-christmas: #ac2925; /* Darker red for link hover */
+    --button-bg-color-christmas: var(--secondary-color-christmas);
+    --button-text-color-christmas: #fff;
+    --button-hover-bg-color-christmas: #449d44; /* Darker green for button hover */
+
+    background-image: none !important;
+    background-color: var(--background-color-christmas) !important;
+    color: var(--text-color-christmas) !important;
+}
+
+body.christmas-theme header {
+    background-color: var(--header-bg-color-christmas);
+    color: var(--header-text-color-christmas);
+}
+body.christmas-theme header h1, body.christmas-theme header p, body.christmas-theme #availabilityMessage, body.christmas-theme #dragonText {
+    color: var(--header-text-color-christmas);
+}
+body.christmas-theme #dragonText { /* Override its default green if header is red */
+    color: #f0e68c; /* Khaki - like gold tinsel */
+}
+body.christmas-theme .profile-picture {
+    border-color: var(--secondary-color-christmas);
+}
+body.christmas-theme .profile-picture:hover {
+    box-shadow: 0 0 15px var(--secondary-color-christmas);
+}
+
+
+body.christmas-theme footer {
+    background-color: var(--footer-bg-color-christmas);
+    color: var(--footer-text-color-christmas);
+}
+
+body.christmas-theme a {
+    color: var(--link-color-christmas);
+}
+body.christmas-theme a:hover {
+    color: var(--link-hover-color-christmas);
+}
+
+body.christmas-theme .info-button {
+    background-color: var(--button-bg-color-christmas);
+    color: var(--button-text-color-christmas);
+}
+body.christmas-theme .info-button:hover {
+    background-color: var(--button-hover-bg-color-christmas);
+}
+
+body.christmas-theme .social-icon {
+    border-color: #ddd; /* Keep border for definition */
+    background-color: #fff; /* Keep buttons themselves light */
+    color: var(--text-color-christmas); /* Standard text color for button text */
+}
+
+body.christmas-theme .social-icon:hover {
+  background-color: var(--secondary-color-christmas);
+  color: #fff; /* White text on green hover */
+  border-color: var(--secondary-color-christmas);
+}
+body.christmas-theme .social-icon:hover span,
+body.christmas-theme .social-icon:hover i,
+body.christmas-theme .social-icon:hover svg {
+    color: #fff; /* Ensure icon/text inside social icon turns white */
+}
+
+
+body.christmas-theme section {
+    background-color: #fff; /* Keep sections white for content clarity */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+body.christmas-theme section h2 {
+    color: var(--primary-color-christmas); /* Festive red for section titles */
+}
+
+
+body.christmas-theme #backToTopBtn {
+  background-color: var(--primary-color-christmas);
+  color: #fff;
+}
+body.christmas-theme #backToTopBtn:hover {
+  background-color: var(--link-hover-color-christmas);
+}
+
+/* Current time container - it has inline styles for its retro look.
+   If these clash too much, they might need JS to update or more specific CSS overrides.
+   For now, assuming its unique styling is acceptable. */
+
+/* Glow effects for body based on time */
+body.christmas-theme.day-glow-active {
+  box-shadow: 0 0 25px 10px rgba(220, 196, 100, 0.5); /* Goldish Sun glow for Christmas */
+}
+
+body.christmas-theme.night-glow-active {
+  box-shadow: 0 0 25px 10px rgba(173, 216, 230, 0.5); /* Light Blue/Silver Moon glow for Christmas */
+}
+
+/* Time indicator icons */
+body.christmas-theme #sunIcon {
+    color: #ffd700; /* Gold for sun */
+}
+body.christmas-theme #moonIcon {
+    color: #silver; /* Silver for moon */
+}
+
+/* Christmas theme focus styles */
+body.christmas-theme a:focus,
+body.christmas-theme button:focus,
+body.christmas-theme .social-icon:focus,
+body.christmas-theme .info-button:focus {
+    outline-color: var(--primary-color-christmas); /* Or a specific Christmas focus color */
+    box-shadow: 0 0 0 3px rgba(var(--primary-color-christmas-rgb), 0.4);
+}
+
+body.christmas-theme a:not(.social-icon):not(.info-button):not(#backToTopBtn):focus {
+    outline-color: var(--link-color-christmas); /* Use the Christmas link color for the outline */
+    box-shadow: none; /* Remove box-shadow for non-button links */
+}
+
+body.christmas-theme #backToTopBtn:focus {
+    outline-color: var(--link-hover-color-christmas); /* Match its hover color */
+    box-shadow: 0 0 0 3px rgba(var(--link-hover-color-christmas-rgb), 0.4);
+}
+
+
+/* Fade-in on Scroll Styling */
+.js-fade-in-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.js-fade-in-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
