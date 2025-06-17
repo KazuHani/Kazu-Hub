@@ -28,6 +28,13 @@
 </head>
 <body class="font-sans bg-gradient-to-br from-slate-900 to-slate-800 text-white text-base flex flex-col items-center min-h-screen p-4">
 
+    <!-- UK Time Display Section -->
+    <div id="ukTimeContainer" class="text-center mb-6">
+        <p class="text-xl text-slate-200">
+            Current time in the UK: <span id="ukTimeDisplay" class="font-mono bg-slate-950 text-green-400 px-3 py-1 rounded-md shadow-lg inline-block text-2xl tracking-wider align-middle">Loading...</span>
+        </p>
+    </div>
+
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
         <!-- Profile Picture Section -->
         <div class="mb-6"> 
@@ -172,6 +179,38 @@
         window.onload = function() {
             window.scrollTo(0, 0);
 
+            // UK Time Display Logic
+            const ukTimeElement = document.getElementById('ukTimeDisplay');
+
+            function updateUKTime() {
+                if (!ukTimeElement) return;
+
+                const now = new Date();
+                const options = {
+                    timeZone: 'Europe/London',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                };
+                try {
+                    // 'en-GB' locale is good for UK, but options ensure HH:MM:SS AM/PM
+                    ukTimeElement.textContent = now.toLocaleTimeString('en-GB', options);
+                } catch (error) {
+                    console.error("Error formatting UK time:", error);
+                    // Fallback to system locale if 'en-GB' causes issues, still applying timezone
+                    try {
+                        ukTimeElement.textContent = now.toLocaleTimeString(undefined, options);
+                    } catch (e) {
+                        ukTimeElement.textContent = "Time unavailable";
+                    }
+                }
+            }
+
+            if (ukTimeElement) {
+                updateUKTime(); // Initial call to display time immediately
+                setInterval(updateUKTime, 1000); // Update every second
+            }
 
             // Birthday Countdown Logic
             const countdownTimerElement = document.getElementById('countdownTimer');
