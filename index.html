@@ -5,19 +5,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Social Links</title>
+    <!-- Google Fonts - Roboto -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind Custom Configuration -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Roboto', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
     <!-- Font Awesome for icons (optional, you can use SVGs or other icon libraries) -->
     <link rel="stylesheet" href="styles/main.css">
 </head>
-<body class="bg-gradient-to-br from-slate-900 to-slate-700 text-white text-lg md:text-xl flex flex-col items-center min-h-screen p-4">
+<body class="font-sans bg-gradient-to-br from-slate-900 to-slate-700 text-white text-lg md:text-xl flex flex-col items-center min-h-screen p-4">
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
         <!-- Profile Picture Section -->
         <div class="mb-6"> 
             <div class="profile-image-wrapper">
                 <img src="images/com.png" alt="Profile Picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-2 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
-                <p id="dragonText" class="text-xl md:text-2xl">Do Not The Dragon!</p>
             </div>
         </div>
 
@@ -53,53 +68,53 @@
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="images/twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
-                <span class="text-sm md:text-base">Twitter</span>
+                <span class="text-base md:text-lg">Twitter</span>
             </a>
             <!-- TikTok -->
             <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="images/tiktok_logo.png" alt="TikTok Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/000000/ffffff?text=TT&font=roboto'; this.alt='TikTok Placeholder';">
-                <span class="text-sm md:text-base">TikTok</span>
+                <span class="text-base md:text-lg">TikTok</span>
             </a>
             <!-- YouTube -->
             <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="images/youtube_logo.png" alt="YouTube Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF0000/ffffff?text=YT&font=roboto'; this.alt='YouTube Placeholder';">
-                <span class="text-sm md:text-base">YouTube</span>
+                <span class="text-base md:text-lg">YouTube</span>
             </a>
             <!-- Steam -->
             <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="images/steam_logo.png" alt="Steam Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1b2838/ffffff?text=S&font=roboto'; this.alt='Steam Placeholder';">
-                <span class="text-sm md:text-base">Steam</span>
+                <span class="text-base md:text-lg">Steam</span>
             </a>
             <!-- Reddit -->
             <a href="https://www.reddit.com/user/Korat24/" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="images/reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
-                <span class="text-sm md:text-base">Reddit</span>
+                <span class="text-base md:text-lg">Reddit</span>
             </a>
             <!-- MyAnimeList -->
-            <a href="YOUR_MAL_PROFILE_LINK_HERE" target="_blank" rel="noopener noreferrer"
+            <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="images/mal_logo.png" alt="MyAnimeList Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/2e51a2/ffffff?text=MAL&font=roboto'; this.alt='MyAnimeList Placeholder';">
-                <span class="text-sm md:text-base">MyAnimeList</span>
+                <span class="text-base md:text-lg">MyAnimeList</span>
             </a>
             <!-- Character.ai -->
-            <a href="YOUR_CHARACTER_AI_PROFILE_LINK_HERE" target="_blank" rel="noopener noreferrer"
+            <a href="https://character.ai/profile/Kazu_Hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                 <img src="images/cai_logo.png" alt="Character.ai Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/33363F/ffffff?text=C.ai&font=roboto'; this.alt='Character.ai Placeholder';">
-                <span class="text-sm md:text-base">Character.ai</span>
+                <span class="text-base md:text-lg">Character.ai</span>
             </a>
             <!-- Discord -->
             <div class="relative"> <!-- Wrapper for positioning the dropdown -->
                 <button id="discordButton"
                    class="social-icon flex items-center justify-center w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
                     <img src="images/discord_logo.png" alt="Discord Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/5865F2/ffffff?text=D&font=roboto'; this.alt='Discord Placeholder';">
-                    <span class="text-sm md:text-base">Discord</span>
+                    <span class="text-base md:text-lg">Discord</span>
                 </button>
                 <div id="discordUsername"
-                     class="absolute left-0 right-0 mt-2 p-3 bg-slate-700 text-white text-base md:text-lg rounded-md shadow-lg z-10 text-center">
+                     class="absolute left-0 right-0 mt-2 p-3 bg-indigo-400 text-white text-3xl md:text-4xl rounded-md shadow-lg z-10 text-center">
                     kazu_hani
                 </div>
             </div>
@@ -126,15 +141,10 @@
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
                 </svg>
-                <span class="text-sm md:text-base">View on GitHub</span>
+                <span class="text-base md:text-lg">View on GitHub</span>
             </a>
             
             <h3 class="text-2xl md:text-3xl font-semibold text-indigo-400 mt-6 mb-3">My Stories</h3>
-            <!-- Backstory Modal Trigger Button -->
-            <button id="backstoryTrigger" class="backstory-trigger-btn text-base md:text-lg">
-                Kazu's backstory
-            </button>
-
             <div class="mt-4 space-y-2"> 
                 <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
                    class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md text-base md:text-lg">
@@ -152,20 +162,6 @@
         </footer>
     </div>
 
-    <!-- Backstory Modal HTML -->
-    <div id="backstoryModal">
-        <div id="backstoryModalContent" class="text-lg md:text-xl">
-            <button id="closeModalButton" class="close-modal-button text-2xl md:text-3xl">×</button>
-            <h2 class="text-3xl md:text-4xl mb-4">Kazu's Backstory</h2>
-            <p class="mb-3">Kazu was born in a small cave nestled within the vast, icy expanse of the Arctic. His parents, both magnificent ice dragons, cherished their newborn with a love as boundless as the frozen landscape they called home. Tragically, their time as parents was cut short. When Kazu was merely a babe, his parents were slain, leaving him orphaned in the unforgiving Arctic wilderness.</p>
-            <p class="mb-3">Fate, however, had other plans for the young ice dragon. A nearby village of humans discovered the abandoned Kazu and, touched by his helplessness, took him in as one of their own. Despite the inherent differences between humans and dragons, the villagers welcomed Kazu with open arms, providing him with the warmth, care, and love he so desperately needed growing up amidst the hustle and bustle of the human village, Kazu was a curious and bright child, always eager to explore the nooks and crannies of his new home. Unlike his Arctic-dwelling ancestors, Kazu discovered a love for the indoors, finding comfort and endless fascination within the four walls of the village houses. He loved nothing more than to spend his days reading scrolls, playing games, and engaging in all sorts of imaginative play with his human friends.</p>
-            <p class="mb-3">Kazu's personality blossomed in the village. He was known for his infectious laughter, his playful antics, and his knack for finding joy in the simplest of things. He was always up for a good time, whether it was joining in a snowball fight, building snow forts, or participating in the village's many festivals and celebrations.</p>
-            <p class="mb-3">As Kazu matured, his innate magical abilities began to manifest. He discovered he could control and manipulate ice and snow, a testament to his ice dragon lineage. This revelation sparked a deep passion within him to understand and master his powers. He practiced his magic in secret, often incorporating it into his playful antics, much to the amusement of his friends.</p>
-            <p class="mb-3">Despite his dragon heritage, Kazu felt most at home in the human village. He loved his adoptive family and the friends he had made, and he couldn't imagine living anywhere else. The village had become his world, a place where he could be himself, a silly, fun-loving ice dragon with a heart of gold.</p>
-            <p class="mb-3">Now, Kazu spends his days exploring the village, practicing his magic, and bringing laughter and joy to those around him. He loves soaring through the skies with the other ice dragons, engaging in playful races and mock battles. But at the end of a long day, he always returns to the warmth and comfort of his human home, where a steaming mug of hot cocoa and a cozy blanket await him.</p>
-        </div>
-    </div>
-
 
     <script>
         // Explicitly set scroll restoration to manual before anything else
@@ -175,57 +171,6 @@
 
         window.onload = function() {
             window.scrollTo(0, 0);
-
-            const profilePic = document.getElementById('profilePic');
-            const dragonText = document.getElementById('dragonText'); 
-            let dragonTimeout; 
-
-            if (profilePic) { 
-                profilePic.addEventListener('mouseenter', () => {
-                    // Set timeout to show dragon text
-                    clearTimeout(dragonTimeout); 
-                    dragonTimeout = setTimeout(() => {
-                        if (dragonText) dragonText.classList.add('visible');
-                    }, 3000); 
-                });
-
-                profilePic.addEventListener('mouseleave', () => {
-                    // Hide dragon text and clear timeout
-                    clearTimeout(dragonTimeout);
-                    if (dragonText) dragonText.classList.remove('visible');
-                });
-            }
-
-            // Backstory Modal Logic
-            const backstoryTrigger = document.getElementById('backstoryTrigger');
-            const backstoryModal = document.getElementById('backstoryModal');
-            const closeModalButton = document.getElementById('closeModalButton');
-
-            if (backstoryTrigger && backstoryModal && closeModalButton) {
-                backstoryTrigger.addEventListener('click', () => {
-                    backstoryModal.style.display = 'flex'; 
-                    setTimeout(() => { 
-                        backstoryModal.classList.add('visible');
-                    }, 10);
-                    document.body.classList.add('modal-open');
-                });
-
-                function closeTheModal() {
-                    backstoryModal.classList.remove('visible');
-                    setTimeout(() => { 
-                        backstoryModal.style.display = 'none';
-                    }, 300); 
-                    document.body.classList.remove('modal-open');
-                }
-
-                closeModalButton.addEventListener('click', closeTheModal);
-
-                backstoryModal.addEventListener('click', (event) => {
-                    if (event.target === backstoryModal) {
-                        closeTheModal();
-                    }
-                });
-            }
 
 
             // Birthday Countdown Logic
