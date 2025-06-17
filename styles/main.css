@@ -1,1 +1,247 @@
-body{font-family:'Inter',sans-serif;margin:0;transition:background 0.5s ease-in-out;}body.modal-open{overflow:hidden;}@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');.social-icon{transition:transform 0.3s ease-in-out,box-shadow 0.3s ease-in-out;position:relative;overflow:hidden;z-index:1;}.social-icon span{position:relative;z-index:2;}.social-icon img,.social-icon svg{position:relative;z-index:2;}.social-icon:hover{transform:translateY(-5px) scale(1.03);box-shadow:0 10px 20px rgba(0,0,0,0.15);}.container{width:100%;max-width:500px;padding:1rem;animation:zoomInEffect 0.7s ease-out forwards;background-color:rgba(30,41,59,0.9);}@media (min-width:640px){.container{padding:2rem;}}.info-button{transition:background-color 0.3s ease-in-out,transform 0.3s ease-in-out,box-shadow 0.3s ease-in-out;}.info-button:hover{transform:translateY(-5px) scale(1.1);box-shadow:0 10px 20px rgba(0,0,0,0.15);}.profile-picture{transition:transform 0.5s ease-in-out;}@keyframes zoomInEffect{from{opacity:0;transform:scale(0.9);}to{opacity:1;transform:scale(1);}}#birthdayCountdown{color:#cbd5e1;margin-bottom:0.5rem;}#ageDisplay{color:#cbd5e1;margin-bottom:1.5rem;}.highlight-text{color:#818cf8;font-weight:600;}.profile-image-wrapper{display:inline-block;text-align:center;}#dragonText{max-height:0;opacity:0;overflow:hidden;color:#f87171;font-weight:bold;white-space:nowrap;background-color:rgba(30,41,59,0.85);border-radius:0.375rem;padding:0 12px;margin-top:0;box-sizing:border-box;transition:max-height 0.4s ease-out,opacity 0.4s ease-out,margin-top 0.4s ease-out,padding-top 0.4s ease-out,padding-bottom 0.4s ease-out;}#dragonText.visible{max-height:70px;opacity:1;margin-top:10px;padding-top:6px;padding-bottom:6px;}.story-button-legend,.story-button-naga{background-size:cover;background-position:center center;background-repeat:no-repeat;color:white;}.story-button-legend::before,.story-button-naga::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background-color:rgba(0,0,0,0.4);border-radius:inherit;z-index:1;transition:background-color 0.3s ease;}.story-button-legend:hover::before,.story-button-naga:hover::before{background-color:rgba(0,0,0,0.6);}.story-button-legend{background-image:url('../images/blood.png');}.story-button-naga{background-image:url('../images/arctic.jpg');}.playlist-container{position:relative;overflow:hidden;width:100%;border-radius:0.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);}.playlist-container iframe{position:absolute;top:0;left:0;bottom:0;right:0;width:100%;height:100%;border:none;}@keyframes pulse-indigo-glow{0%{text-shadow:0 0 4px rgba(165,180,252,0.5),0 0 8px rgba(129,140,248,0.3);}50%{text-shadow:0 0 6px rgba(165,180,252,0.7),0 0 12px rgba(129,140,248,0.5),0 0 18px rgba(99,102,241,0.3);}100%{text-shadow:0 0 4px rgba(165,180,252,0.5),0 0 8px rgba(129,140,248,0.3);}}.text-glow-indigo{animation:pulse-indigo-glow 2.5s infinite ease-in-out;text-shadow:0 0 4px rgba(165,180,252,0.5),0 0 8px rgba(129,140,248,0.3);}.vinyl-record-wrapper{display:inline-block;position:relative;border-radius:50%;background-color:#202020;box-shadow:0 4px 10px rgba(0,0,0,0.25),0 0 0 4px #383838;overflow:hidden;transition:transform 0.3s ease,box-shadow 0.3s ease;cursor:pointer;}.vinyl-record-wrapper:hover{transform:scale(1.05);box-shadow:0 8px 20px rgba(227,160,70,0.45),0 0 0 6px #4a4a4a;}.vinyl-record-wrapper .vinyl-artwork-img{display:block;width:100%;height:100%;object-fit:cover;border-radius:50%;}.vinyl-record-wrapper::before{content:'';position:absolute;top:50%;left:50%;width:33%;padding-bottom:33%;height:0;transform:translate(-50%,-50%);background-color:#f3e9d2;border-radius:50%;box-shadow:inset 0 0 4px rgba(0,0,0,0.15),0 1px 2px rgba(0,0,0,0.1);z-index:1;}.vinyl-record-wrapper::after{content:'';position:absolute;top:50%;left:50%;width:6%;padding-bottom:6%;height:0;transform:translate(-50%,-50%);background-color:#202020;border-radius:50%;border:1px solid #111111;box-shadow:inset 0 0 2px rgba(0,0,0,0.3);z-index:2;}#discordUsername{opacity:0;transform:translateY(-12px) scale(0.90);visibility:hidden;pointer-events:none;transition:opacity 0.3s cubic-bezier(0.25,0.8,0.25,1),transform 0.3s cubic-bezier(0.25,0.8,0.25,1),visibility 0.3s;}#discordUsername.active{opacity:1;transform:translateY(0) scale(1);visibility:visible;pointer-events:auto;}@media (max-width:767px){.vinyl-record-wrapper{margin-top:0.75rem;}}
+ body {
+            font-family: 'Inter', sans-serif;
+            margin: 0; /* Basic reset */
+            transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
+        }
+        body.modal-open {
+            overflow: hidden; /* Prevent background scroll when modal is open */
+        }
+        /* Fallback for Inter font if Google Fonts is not available */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        /* Styling for the social media icons for a little pop */
+        .social-icon { /* Also used for GitHub, Story buttons */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            position: relative; 
+            overflow: hidden; 
+            z-index: 1; 
+        }
+        .social-icon span { /* Target the text span directly for z-index if needed */
+            position: relative;
+            z-index: 2;
+        }
+        .social-icon img, .social-icon svg { /* Ensure icons are also above overlay */
+            position: relative;
+            z-index: 2;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-5px) scale(1.03); 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px; 
+            padding: 1rem; 
+            animation: zoomInEffect 0.7s ease-out forwards; 
+            background-color: rgba(30, 41, 59, 0.9); 
+        }
+        @media (min-width: 640px) { /* sm breakpoint in Tailwind */
+            .container {
+                padding: 2rem; 
+            }
+        }
+        .info-button {
+            transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .info-button:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Removed spin animation keyframes */
+
+        .profile-picture {
+            transition: transform 0.5s ease-in-out;
+        }
+        /* Removed hover animation for spinning */
+
+        @keyframes zoomInEffect {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        #birthdayCountdown {
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+        #ageDisplay {
+            color: #cbd5e1;
+            margin-bottom: 1.5rem;
+        }
+        .highlight-text { color: #818cf8; font-weight: 600; }
+        .profile-image-wrapper { display: inline-block; text-align: center; }
+        #dragonText {
+            max-height: 0; opacity: 0; overflow: hidden; color: #f87171; /* font-size removed */
+            font-weight: bold; white-space: nowrap;
+            background-color: rgba(30, 41, 59, 0.85); border-radius: 0.375rem;
+            padding: 0 12px; margin-top: 0; box-sizing: border-box;
+            transition: max-height 0.4s ease-out, opacity 0.4s ease-out, margin-top 0.4s ease-out, padding-top 0.4s ease-out, padding-bottom 0.4s ease-out;
+        }
+        #dragonText.visible {
+            max-height: 70px; opacity: 1; margin-top: 10px; padding-top: 6px; padding-bottom: 6px;
+        }
+
+        /* Removed flame animation and background styles */
+
+        .story-button-legend, .story-button-naga {
+            background-size: cover; background-position: center center; background-repeat: no-repeat; color: white;
+        }
+        .story-button-legend::before, .story-button-naga::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.4); border-radius: inherit; 
+            z-index: 1; transition: background-color 0.3s ease;
+        }
+        .story-button-legend:hover::before, .story-button-naga:hover::before {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+        .story-button-legend { background-image: url('../images/blood.png'); }
+        .story-button-naga { background-image: url('../images/arctic.jpg'); }
+
+        /* YouTube Playlist Embed Styling */
+        .playlist-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            border-radius: 0.5rem; /* rounded-lg */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+        }
+        .playlist-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            border: none; /* Remove iframe border */
+        }
+
+        /* Keyframes for the pulsing glow effect */
+        @keyframes pulse-indigo-glow {
+            0% {
+                /* More subtle glow for readability - using indigo-300 and indigo-400 with alpha */
+                text-shadow: 0 0 4px rgba(165, 180, 252, 0.5), /* Tailwind indigo-300 */
+                             0 0 8px rgba(129, 140, 248, 0.3);  /* Tailwind indigo-400 */
+            }
+            50% {
+                /* Brighter and slightly more spread glow at the peak of the pulse */
+                text-shadow: 0 0 6px rgba(165, 180, 252, 0.7),  /* Tailwind indigo-300 */
+                             0 0 12px rgba(129, 140, 248, 0.5), /* Tailwind indigo-400 */
+                             0 0 18px rgba(99, 102, 241, 0.3);   /* Tailwind indigo-500 for outer pulse */
+            }
+            100% {
+                /* Return to the subtle glow */
+                text-shadow: 0 0 4px rgba(165, 180, 252, 0.5),
+                             0 0 8px rgba(129, 140, 248, 0.3);
+            }
+        }
+
+        /* Text Glow Effect */
+        .text-glow-indigo {
+            /* Apply the pulsing animation. The base text color is text-indigo-400 from HTML */
+            animation: pulse-indigo-glow 2.5s infinite ease-in-out;
+            /* Fallback for initial state or if animations are off */
+            text-shadow: 0 0 4px rgba(165, 180, 252, 0.5), 0 0 8px rgba(129, 140, 248, 0.3);
+        }
+
+        /* Vintage Vinyl Record Styling */
+        .vinyl-record-wrapper {
+            display: inline-block; /* Allows centering with flex on parent */
+            position: relative;
+            /* Sizing is now primarily handled by Tailwind classes in HTML (e.g., w-60 h-60) */
+            /* Fallback size if Tailwind classes are removed: */
+            /* width: 240px; */
+            /* height: 240px; */
+            border-radius: 50%;
+            background-color: #202020; /* Dark vinyl color */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.25), /* Softer base shadow for depth */
+                        0 0 0 4px #383838;       /* Vinyl rim */
+            overflow: hidden; /* Crucial for circular image and pseudo-elements */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .vinyl-record-wrapper:hover {
+            transform: scale(1.05); /* Slightly enlarge on hover */
+            /* Warm, retro glow */
+            box-shadow: 0 8px 20px rgba(227, 160, 70, 0.45), /* Amber/Orange prominent glow */
+                        0 0 0 6px #4a4a4a; /* Slightly thicker/lighter rim on hover */
+        }
+
+        .vinyl-record-wrapper .vinyl-artwork-img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Ensures the image covers the circular area */
+            border-radius: 50%; /* Clips the image to be circular */
+        }
+
+        /* Record Label */
+        .vinyl-record-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 33%; /* Percentage of the wrapper's size for the label */
+            padding-bottom: 33%; /* Maintain aspect ratio (height = width) */
+            height: 0;
+            transform: translate(-50%, -50%);
+            background-color: #f3e9d2; /* Warm cream/light beige for label */
+            border-radius: 50%;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1); /* Subtle depth */
+            z-index: 1; /* Label on top of the artwork image */
+        }
+
+        /* Spindle Hole */
+        .vinyl-record-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6%; /* Percentage of the wrapper's size for the hole */
+            padding-bottom: 6%; /* Maintain aspect ratio */
+            height: 0;
+            transform: translate(-50%, -50%);
+            background-color: #202020; /* Match vinyl body color */
+            border-radius: 50%;
+            border: 1px solid #111111; /* Darker border for the hole's edge */
+            box-shadow: inset 0 0 2px rgba(0,0,0,0.3); /* Inner shadow for hole depth */
+            z-index: 2; /* Spindle hole on top of the label */
+        }
+
+        /* Add to styles/main.css */
+
+/* Styles for the Discord username dropdown */
+#discordUsername {
+    /* Tailwind classes from HTML already provide:
+       absolute, left-0, right-0, mt-2, p-3, bg-slate-700, text-white,
+       text-base, rounded-md, shadow-lg, z-10, text-center
+    */
+
+    /* Initial state for animation: hidden, slightly above, and scaled down */
+    opacity: 0;
+    transform: translateY(-12px) scale(0.90); /* Starts slightly above and smaller for a pop-out effect */
+    visibility: hidden; /* Ensures the element is not interactive or visible before animation */
+    pointer-events: none; /* Prevent interactions when hidden */
+
+    /* Smooth transition for properties */
+    transition: opacity 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), /* Custom easing for a smoother feel */
+                transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+                visibility 0.3s; /* Transition visibility to ensure it's properly hidden/shown */
+}
+
+#discordUsername.active {
+    /* Active state: fully visible, normal position, and full size */
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    visibility: visible; /* Make it visible and interactive */
+    pointer-events: auto; /* Allow interactions (like text selection) */
+}
+
+/* Mobile-specific margin for vinyl record */
+@media (max-width: 767px) { /* Targets screens smaller than Tailwind's md (768px) breakpoint */
+    .vinyl-record-wrapper {
+        margin-top: 0.75rem; /* 12px, adjust if a different "tiny bit" is desired */
+    }
+}
