@@ -245,3 +245,42 @@
         margin-top: 0.75rem; /* 12px, adjust if a different "tiny bit" is desired */
     }
 }
+
+/* Styles for scroll-triggered fade-in/fade-out animation */
+.fade-in-scroll {
+    opacity: 0; /* Start hidden */
+    transform: translateY(20px); /* Start slightly below its final position */
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out; /* Smooth transition */
+    will-change: opacity, transform; /* Optimize for animation */
+}
+
+.fade-in-scroll.visible {
+    opacity: 1; /* Fade in */
+    transform: translateY(0); /* Move to its final position */
+}
+
+/* Specific transition rules for vinyl record when also using fade-in-scroll */
+.vinyl-record-wrapper.fade-in-scroll {
+    transition: opacity 0.6s ease-out, /* Retain from fade-in-scroll */
+                transform 0.3s ease,   /* Use vinyl-record-wrapper's desired transform speed */
+                box-shadow 0.3s ease;  /* Use vinyl-record-wrapper's box-shadow speed */
+    /* will-change is already on .fade-in-scroll, so it's inherited */
+}
+
+/* Specific transition rules for social icons when also using fade-in-scroll */
+.social-icon.fade-in-scroll {
+    transition: opacity 0.6s ease-out,       /* For scroll-in opacity */
+                transform 0.3s ease-in-out,  /* For hover transform and initial scroll-in transform */
+                box-shadow 0.3s ease-in-out; /* For hover box-shadow */
+    /* Ensure all animated properties are hinted for will-change for these specific elements */
+    will-change: opacity, transform, box-shadow;
+}
+
+/* Specific transition rules for info button when also using fade-in-scroll */
+.info-button.fade-in-scroll {
+    transition: opacity 0.6s ease-out,       /* For scroll-in opacity */
+                transform 0.3s ease-in-out,  /* For hover transform and initial scroll-in transform */
+                box-shadow 0.3s ease-in-out, /* For hover box-shadow */
+                background-color 0.3s ease-in-out; /* For hover background-color */
+    /* will-change from .fade-in-scroll is still beneficial for opacity and transform */
+}

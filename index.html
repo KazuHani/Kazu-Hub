@@ -26,6 +26,8 @@
     </script>
     <!-- Font Awesome for icons (optional, you can use SVGs or other icon libraries) -->
     <link rel="stylesheet" href="styles/main.css">
+    <!-- Lenis Smooth Scroll Library -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
 </head>
 <body class="font-sans bg-gradient-to-br from-slate-900 to-slate-800 text-white text-base flex flex-col items-center min-h-screen p-4">
 
@@ -37,14 +39,14 @@
     </div>
 
     <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
-        <!-- Profile Picture Section -->
+        <!-- Profile Picture Section - Added fade-in-scroll -->
         <div class="mb-6"> 
             <div class="profile-image-wrapper">
-                <img src="images/com.png" alt="Profile Picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-2 border-indigo-500 shadow-lg object-cover" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
+                <img src="images/com.png" alt="Profile Picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-2 border-indigo-500 shadow-lg object-cover fade-in-scroll" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
             </div>
         </div>
 
-        <!-- Audio element removed -->
+        <!-- Audio element removed --> 
 
         <!-- Name, Bio, and Info Button Section -->
         <div class="mb-6 text-center">
@@ -54,13 +56,13 @@
             </p>
             <div class="mb-4"> 
                  <a href="https://kazuhani.github.io/Kazu-Lore/" target="_blank" rel="noopener noreferrer"
-                   class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-base shadow-md">
+                   class="info-button inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg text-base shadow-md fade-in-scroll">
                     More info about Kazu
                 </a>
             </div>
         </div>
 
-        <!-- Birthday Countdown Section -->
+        <!-- Birthday Countdown Section - Added fade-in-scroll -->
         <div id="birthdayCountdown" class="text-slate-100"> <!-- text-lg removed, will inherit text-base md:text-lg from body -->
             Birthday is in <span id="countdownTimer">Loading...</span>
         </div>
@@ -71,53 +73,53 @@
         </div>
 
         <!-- Social Media Links Section -->
-        <div class="space-y-4 mb-8"> 
+        <div class="space-y-4 mb-8">
             <!-- Twitter -->
             <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <img src="images/twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
                 <span class="text-base">Twitter</span>
             </a>
             <!-- TikTok -->
             <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <img src="images/tiktok_logo.png" alt="TikTok Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/000000/ffffff?text=TT&font=roboto'; this.alt='TikTok Placeholder';">
                 <span class="text-base">TikTok</span>
             </a>
             <!-- YouTube -->
             <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <img src="images/youtube_logo.png" alt="YouTube Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF0000/ffffff?text=YT&font=roboto'; this.alt='YouTube Placeholder';">
                 <span class="text-base">YouTube</span>
             </a>
             <!-- Steam -->
             <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <img src="images/steam_logo.png" alt="Steam Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1b2838/ffffff?text=S&font=roboto'; this.alt='Steam Placeholder';">
                 <span class="text-base">Steam</span>
             </a>
             <!-- Reddit -->
             <a href="https://www.reddit.com/user/Korat24/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <img src="images/reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
                 <span class="text-base">Reddit</span>
             </a>
             <!-- MyAnimeList -->
             <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <img src="images/mal_logo.png" alt="MyAnimeList Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/2e51a2/ffffff?text=MAL&font=roboto'; this.alt='MyAnimeList Placeholder';">
                 <span class="text-base">MyAnimeList</span>
             </a>
             <!-- Character.ai -->
             <a href="https://character.ai/profile/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <img src="images/cai_logo.png" alt="Character.ai Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/33363F/ffffff?text=C.ai&font=roboto'; this.alt='Character.ai Placeholder';">
                 <span class="text-base">Character.ai</span>
             </a>
             <!-- Discord -->
             <div class="relative"> <!-- Wrapper for positioning the dropdown -->
                 <button id="discordButton"
-                   class="social-icon flex items-center justify-center w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+                   class="social-icon flex items-center justify-center w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                     <img src="images/discord_logo.png" alt="Discord Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/5865F2/ffffff?text=D&font=roboto'; this.alt='Discord Placeholder';">
                     <span class="text-base">Discord</span>
                 </button>
@@ -130,12 +132,12 @@
 
         <!-- YouTube Music Playlist Section -->
         <div class="mt-8 pt-6 border-t border-slate-600">
-            <h2 class="text-3xl font-semibold text-indigo-400 text-glow-indigo">My Favourite Jams</h2>
+            <h2 class="text-3xl font-semibold text-indigo-400 text-glow-indigo fade-in-scroll">My Favourite Jams</h2>
             <div class="playlist-container flex justify-center items-center pt-[3%] pb-8">
                 <!-- Vinyl Record Styled Link -->
                 <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI"
                    target="_blank" rel="noopener noreferrer"
-                   class="vinyl-record-wrapper w-60 h-60 md:w-64 md:h-64"> <!-- Added Tailwind size classes -->
+                   class="vinyl-record-wrapper w-60 h-60 md:w-64 md:h-64 fade-in-scroll"> <!-- Added Tailwind size classes -->
                     <img src="images/Sisu.jpg" alt="My Favourite Jams - Click to listen on YouTube Music" class="vinyl-artwork-img">
                 </a>
             </div>
@@ -143,23 +145,23 @@
 
         <!-- Code for Website & Stories Section -->
         <div class="mt-8 pt-6 border-t border-slate-700"> 
-            <h2 class="text-2xl font-semibold text-indigo-400 mb-4">Code used for this website</h2>
+            <h2 class="text-2xl font-semibold text-indigo-400 mb-4 fade-in-scroll">Code used for this website</h2>
             <a href="https://github.com/KazuHani/Website" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md">
+               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll">
                 <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
                 </svg>
                 <span class="text-base">View on GitHub</span>
             </a>
             
-            <h3 class="text-2xl font-semibold text-indigo-400 mt-6 mb-3">My Stories</h3>
+            <h3 class="text-2xl font-semibold text-indigo-400 mt-6 mb-3 fade-in-scroll">My Stories</h3>
             <div class="mt-4 space-y-2"> 
                 <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md text-base">
+                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md text-base fade-in-scroll">
                     <span>The Legend That Bleeds</span>
                 </a>
                 <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md text-base">
+                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md text-base fade-in-scroll">
                     <span>The Naga And Human Kind</span>
                 </a>
             </div>
@@ -170,6 +172,28 @@
         </footer>
     </div>
 
+    <script>
+        // Intersection Observer for scroll animations
+        document.addEventListener('DOMContentLoaded', () => {
+            const fadeElements = document.querySelectorAll('.fade-in-scroll');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // Optional: Remove 'visible' class when element leaves viewport
+                        // This makes it fade out and fade back in on re-scroll
+                        entry.target.classList.remove('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1 // Trigger when 10% of the element is visible
+            });
+
+            fadeElements.forEach(element => observer.observe(element));
+        });
+    </script>
 
     <script>
         // Explicitly set scroll restoration to manual before anything else
@@ -342,8 +366,30 @@
                     }
                 });
             }
-        }; // End of window.onload
+        }; // End of window.onload (Note: The IntersectionObserver script is now outside this)
         
+    </script>
+    <script>
+        // Lenis Smooth Scroll Initialization
+        // Ensure this runs after the DOM is ready, which it will if placed here.
+        // If you move it into window.onload, ensure it's appropriately placed.
+        const lenis = new Lenis({
+            lerp: 0.07, // Controls the "smoothness" or "heaviness". Lower values (e.g., 0.05) are "heavier". Default is 0.1.
+            smoothWheel: true, // Enables smooth scrolling for mouse wheel events.
+            // You can explore other options like duration, easing for programmatic scrolls, etc.
+        });
+
+        // Optional: Log scroll events
+        // lenis.on('scroll', (e) => {
+        //   console.log(e);
+        // });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+
+        requestAnimationFrame(raf);
     </script>
 </body>
 </html>
