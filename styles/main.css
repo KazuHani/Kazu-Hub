@@ -1,4 +1,7 @@
- body {
+/* Fallback for Inter font if Google Fonts is not available */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+body {
             font-family: 'Inter', sans-serif;
             margin: 0; /* Basic reset */
             transition: background 0.5s ease-in-out; /* Smooth transition for background changes */
@@ -6,8 +9,6 @@
         body.modal-open {
             overflow: hidden; /* Prevent background scroll when modal is open */
         }
-        /* Fallback for Inter font if Google Fonts is not available */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         /* Styling for the social media icons for a little pop */
         .social-icon { /* Also used for GitHub, Story buttons */
@@ -25,10 +26,7 @@
             z-index: 2;
         }
 
-        .social-icon:hover {
-            transform: translateY(-5px) scale(1.03); 
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-        }
+        
 
         .container {
             width: 100%;
@@ -283,4 +281,94 @@
                 box-shadow 0.3s ease-in-out, /* For hover box-shadow */
                 background-color 0.3s ease-in-out; /* For hover background-color */
     /* will-change from .fade-in-scroll is still beneficial for opacity and transform */
+}
+
+/* Social Icon Hover Effects */
+.social-icon:hover {
+    transform: translateY(-5px) scale(1.01);
+}
+
+/* Twitter Hover Glow */
+a.social-icon[href*="x.com"]:hover {
+    box-shadow: 0 8px 25px rgba(29, 161, 242, 0.3), 0 0 15px rgba(29, 161, 242, 0.4);
+}
+
+/* TikTok Hover Glow */
+a.social-icon[href*="tiktok.com"]:hover {
+     box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2), 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+/* YouTube Hover Glow */
+a.social-icon[href*="youtube.com"]:hover {
+    box-shadow: 0 8px 25px rgba(255, 0, 0, 0.3), 0 0 15px rgba(255, 0, 0, 0.4);
+}
+
+/* Steam Hover Glow */
+a.social-icon[href*="steamcommunity.com"]:hover {
+    box-shadow: 0 8px 25px rgba(102, 192, 244, 0.3), 0 0 15px rgba(102, 192, 244, 0.4);
+}
+
+/* Reddit Hover Glow */
+a.social-icon[href*="reddit.com"]:hover {
+    box-shadow: 0 8px 25px rgba(255, 87, 0, 0.3), 0 0 15px rgba(255, 87, 0, 0.4);
+}
+
+/* MyAnimeList Hover Glow */
+a.social-icon[href*="myanimelist.net"]:hover {
+    box-shadow: 0 8px 25px rgba(46, 81, 162, 0.3), 0 0 15px rgba(46, 81, 162, 0.4);
+}
+
+/* Character.ai Hover Glow */
+a.social-icon[href*="character.ai"]:hover {
+    box-shadow: 0 8px 25px rgba(51, 54, 63, 0.3), 0 0 15px rgba(51, 54, 63, 0.4);
+}
+
+/* Discord Hover Glow */
+#discordButton:hover {
+    box-shadow: 0 8px 25px rgba(88, 101, 242, 0.3), 0 0 15px rgba(88, 101, 242, 0.4);
+}
+
+/* To Top Button */
+.to-top-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(79, 70, 229, 0.7); /* Indigo-600 with transparency */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: opacity 0.3s, visibility 0.3s, transform 0.3s, background-color 0.3s;
+    z-index: 1000;
+    backdrop-filter: blur(5px); /* Frosted glass effect */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.to-top-btn.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.to-top-btn:hover {
+    background-color: rgba(67, 56, 202, 0.9); /* Darker Indigo on hover */
+    transform: scale(1.1);
+}
+
+/* Mobile adjustments for the button */
+@media (max-width: 768px) {
+    .to-top-btn {
+        width: 45px;
+        height: 45px;
+        bottom: 15px;
+        right: 15px;
+    }
 }
