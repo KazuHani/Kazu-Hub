@@ -74,13 +74,20 @@
 
         <!-- Social Media Buttons Links Section -->
         <div class="space-y-4 mb-8">
-            <!-- Twitter -->
-            <a href="https://x.com/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-sky-500 hover:bg-sky-8
-               +00 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <img src="images/twitter_logo.png" alt="Twitter Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1DA1F2/ffffff?text=T&font=roboto'; this.alt='Twitter Placeholder';">
-                <span class="text-base">Twitter</span>
-            </a>
+            <!-- Interactive Twitter/X Button -->
+            <div id="twitter-button-container" class="relative w-full">
+                <a href="https://x.com/Kazu_Hani" id="twitter-main-link" target="_blank" rel="noopener noreferrer"
+                   class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-full shadow-md fade-in-scroll transform transition-all duration-300 ease-in-out">
+                    <img src="images/twitter_logo.png" alt="X Logo" class="w-6 h-6 mr-2">
+                    <span class="text-base ml-2">Follow on X</span>
+                    <span class="arrow-icon ml-2 opacity-0 transition-opacity duration-200">→</span>
+                </a>
+                <a href="https://x.com/Kazu_AfterHours" id="twitter-nsfw-link" target="_blank" rel="noopener noreferrer"
+                   class="absolute right-0 top-0 h-full flex items-center justify-center bg-gray-700 text-white font-semibold px-4 rounded-full opacity-0 transition-all duration-300 ease-in-out"
+                   aria-label="Link to NSFW Twitter profile">
+                    NSFW 🔞
+                </a>
+            </div>
             <!-- TikTok -->
             <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
                class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
@@ -397,6 +404,30 @@
                         !discordButton.contains(event.target) &&
                         !discordUsernameDiv.contains(event.target)) {
                         discordUsernameDiv.classList.remove('active'); // Deactivate to hide
+                    }
+                });
+            }
+
+            // Interactive Twitter/X Button Logic
+            const twitterButtonContainer = document.getElementById('twitter-button-container');
+            const twitterMainLink = document.getElementById('twitter-main-link');
+
+            if (twitterButtonContainer && twitterMainLink) {
+                twitterMainLink.addEventListener('click', (event) => {
+                    if (!twitterButtonContainer.classList.contains('expanded')) {
+                        event.preventDefault();
+                        twitterButtonContainer.classList.add('expanded');
+                        twitterButtonContainer.setAttribute('aria-expanded', 'true');
+                    } else {
+                        twitterButtonContainer.classList.remove('expanded');
+                        twitterButtonContainer.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (twitterButtonContainer.classList.contains('expanded') && !twitterButtonContainer.contains(event.target)) {
+                        twitterButtonContainer.classList.remove('expanded');
+                        twitterButtonContainer.setAttribute('aria-expanded', 'false');
                     }
                 });
             }

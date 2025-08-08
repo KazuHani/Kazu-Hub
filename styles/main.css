@@ -328,47 +328,35 @@ a.social-icon[href*="character.ai"]:hover {
     box-shadow: 0 8px 25px rgba(88, 101, 242, 0.3), 0 0 15px rgba(88, 101, 242, 0.4);
 }
 
-/* To Top Button */
-.to-top-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: rgba(79, 70, 229, 0.7); /* Indigo-600 with transparency */
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(20px);
-    transition: opacity 0.3s, visibility 0.3s, transform 0.3s, background-color 0.3s;
-    z-index: 1000;
-    backdrop-filter: blur(5px); /* Frosted glass effect */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.to-top-btn.show {
+/* Interactive Twitter/X Button Styles */
+#twitter-button-container:hover .arrow-icon {
     opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
 }
 
-.to-top-btn:hover {
-    background-color: rgba(67, 56, 202, 0.9); /* Darker Indigo on hover */
-    transform: scale(1.1);
+#twitter-button-container.expanded #twitter-main-link {
+    width: calc(50% - 4px); /* Adjust width to make space for the NSFW button and gap */
+    margin-right: 8px; /* Add gap */
 }
 
-/* Mobile adjustments for the button */
-@media (max-width: 768px) {
-    .to-top-btn {
-        width: 45px;
-        height: 45px;
-        bottom: 15px;
-        right: 15px;
-    }
+#twitter-button-container.expanded #twitter-nsfw-link {
+    opacity: 1;
+    right: 0;
+}
+
+#twitter-nsfw-link {
+    width: calc(50% - 4px); /* Set a fixed width for the NSFW button, accounting for gap */
+    pointer-events: none; /* Initially not clickable */
+}
+
+#twitter-button-container.expanded #twitter-nsfw-link {
+    pointer-events: auto; /* Clickable when expanded */
+}
+
+#twitter-button-container.expanded .arrow-icon {
+    transform: rotate(90deg);
+}
+
+#twitter-nsfw-link:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 8px 25px rgba(255, 0, 0, 0.3), 0 0 15px rgba(255, 0, 0, 0.4);
 }
