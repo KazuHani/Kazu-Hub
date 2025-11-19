@@ -1,508 +1,735 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" href="images/com.png" type="image/x-icon">
     <meta charset="UTF-8">
-    <meta name="google-site-verification" content="-Hlu9Ebiaz6Oxr6qYPBHv7lNOQkxNU1hH0Q-CBkdiW4" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Social Links</title>
-    <!-- Google Fonts - Roboto -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS CDN -->
+    <title>Kazu Hani | Central Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tailwind Custom Configuration -->
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Roboto', 'sans-serif'],
-            },
-          },
-        },
-      }
-    </script>
-    <!-- Font Awesome for icons (optional, you can use SVGs or other icon libraries) -->
-    <link rel="stylesheet" href="styles/main.css">
-    <!-- Lenis Smooth Scroll Library -->
-    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Switched to a more stable version of Lenis to prevent syntax errors -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script> 
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Removed native smooth scroll to let Lenis handle the physics */
+        html.lenis, html.lenis body {
+            height: auto;
+        }
+
+        .lenis.lenis-smooth {
+            scroll-behavior: auto !important;
+        }
+
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+
+        .lenis.lenis-stopped {
+            overflow: hidden;
+        }
+
+        .lenis.lenis-scrolling iframe {
+            pointer-events: none;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0d1b2a; /* Arctic blue */
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, .tech-font {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Canvas Backgrounds */
+        #snow-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 50; /* Above everything else when active */
+            pointer-events: none;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px var(--neon-blue); }
+            50% { box-shadow: 0 0 20px var(--neon-blue), 0 0 10px var(--neon-purple); }
+        }
+
+        .profile-glow {
+            animation: pulse-glow 4s infinite;
+        }
+
+        /* Bounce Effects for Scroll Limits */
+        @keyframes bounce-top {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(20px); }
+            50% { transform: translateY(10px); }
+            70% { transform: translateY(15px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes bounce-bottom {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(-20px); }
+            50% { transform: translateY(-10px); }
+            70% { transform: translateY(-15px); }
+            100% { transform: translateY(0); }
+        }
+
+        .animate-bounce-top {
+            animation: bounce-top 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        .animate-bounce-bottom {
+            animation: bounce-bottom 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        /* Music Visualizer Bars */
+        .music-bar {
+            width: 4px;
+            background: var(--neon-purple);
+            animation: equalize 1s infinite;
+        }
+        @keyframes equalize {
+            0% { height: 10px; }
+            50% { height: 30px; }
+            100% { height: 10px; }
+        }
+        .music-bar:nth-child(1) { animation-delay: 0.1s; }
+        .music-bar:nth-child(2) { animation-delay: 0.3s; }
+        .music-bar:nth-child(3) { animation-delay: 0.5s; }
+        .music-bar:nth-child(4) { animation-delay: 0.2s; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--neon-blue);
+        }
+    </style>
 </head>
-<body class="font-sans bg-gradient-to-br from-slate-900 to-slate-800 text-white text-base flex flex-col items-center min-h-screen p-4">
+<body class="min-h-screen flex flex-col relative">
 
-    <!-- UK Time Display Section -->
-    <div id="ukTimeContainer" class="text-center mb-6">
-        <p class="text-xl text-slate-200">
-            Current time in the UK: <span id="ukTimeDisplay" class="font-mono bg-slate-950 text-green-400 px-3 py-1 rounded-md shadow-lg inline-block text-2xl tracking-wider align-middle">Loading...</span>
-        </p>
-    </div>
+    <!-- Background Animations -->
+    <canvas id="snow-canvas"></canvas>
+    <canvas id="confetti-canvas"></canvas>
 
-    <div class="container bg-slate-800 shadow-2xl rounded-xl p-6 md:p-10 text-center">
-        <!-- Profile Picture Section - Added fade-in-scroll -->
-        <div class="mb-6"> 
-            <div class="profile-image-wrapper">
-                <img src="images/com.png" alt="Profile Picture" id="profilePic" class="profile-picture w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-2 border-indigo-500 shadow-lg object-cover fade-in-scroll" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6366f1/e0e7ff?text=Image+Not+Found';">
+    <!-- Main Content -->
+    <main class="flex-grow pt-12 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full space-y-12 z-10">
+
+        <!-- Profile & Hero Section -->
+        <section class="text-center relative">
+            <div class="inline-block relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+                
+                <img 
+                    src="images/Kazu Hani Pixelart.gif" 
+                    alt="Kazu Hani Profile" 
+                    class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto"
+                    onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'"
+                >
             </div>
-        </div>
+            <h1 class="mt-6 text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-500 animate-float pb-2">
+                KAZU HANI
+            </h1>
+            <p class="mt-2 text-xl text-cyan-300/80 tracking-[0.2em] uppercase">Writer // Gamer // Creative</p>
+        </section>
 
-        <!-- Audio element removed --> 
-
-        <!-- Name, Bio, and Info Button Section -->
-        <div class="mb-6 text-center">
-            <h1 id="kazuName" class="text-4xl font-bold mb-2 text-indigo-400">Kazu Hani</h1>
-            <p class="text-slate-300 bio-text text-lg mt-2 mb-4">
-                <span class="highlight-text">Welcome to my personal hub!</span>
-            </p>
-            <div class="mb-4"> 
-                 <a href="https://kazuhani.github.io/Kazu-Lore/" target="_blank" rel="noopener noreferrer"
-                   class="info-button inline-block bg-indigo-600 hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg text-base shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-105">
-                    More info about Kazu
-                </a>
+        <!-- Status Dashboard (Grid) -->
+        <section id="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- UK Time -->
+            <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-50 transition-opacity">
+                    <i data-lucide="clock" class="w-12 h-12 text-cyan-400"></i>
+                </div>
+                <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">United Kingdom Time</h3>
+                <div id="uk-time" class="text-4xl font-bold text-white tech-font tabular-nums">00:00:00 PM</div>
+                <div id="uk-date" class="text-cyan-400/80 text-sm mt-1">Loading Date...</div>
             </div>
-        </div>
 
-        <!-- Birthday Countdown Section - Added fade-in-scroll -->
-        <div id="birthdayCountdown" class="text-slate-100"> <!-- text-lg removed, will inherit text-base md:text-lg from body -->
-            Birthday is in <span id="countdownTimer">Loading...</span>
-        </div>
-
-        <!-- Age Display Section -->
-        <div id="ageDisplay" class="text-slate-300"> <!-- text-lg removed, will inherit text-base md:text-lg from body -->
-            I am currently <span id="currentAge"></span> years old.
-        </div>
-
-        <!-- Social Media Buttons Links Section -->
-        <div class="space-y-4 mb-8">
-            <!-- Interactive Twitter/X Button -->
-            <div id="twitter-button-container" class="relative w-full">
-                <a href="https://x.com/Kazu_Hani" id="twitter-main-link" target="_blank" rel="noopener noreferrer"
-                   class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-full shadow-md fade-in-scroll transform transition-all duration-300 ease-in-out">
-                    <img src="images/twitter_logo.png" alt="X Logo" class="w-6 h-6 mr-2">
-                    <span class="text-base ml-2">Follow on X</span>
-                    <span class="arrow-icon ml-2 opacity-0 transition-opacity duration-200">→</span>
-                </a>
-                <a href="https://x.com/Kazu_AfterHours" id="twitter-nsfw-link" target="_blank" rel="noopener noreferrer"
-                   class="absolute right-0 top-0 h-full flex items-center justify-center bg-gray-700 text-white font-semibold px-4 rounded-full opacity-0 transition-all duration-300 ease-in-out"
-                   aria-label="Link to NSFW Twitter profile">
-                    NSFW 🔞
-                </a>
+            <!-- Age Calculator -->
+            <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-purple-500/50 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-50 transition-opacity">
+                    <i data-lucide="user" class="w-12 h-12 text-purple-400"></i>
+                </div>
+                <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">Current Age</h3>
+                <div id="current-age" class="text-4xl font-bold text-white tech-font tabular-nums">--</div>
+                <div class="text-purple-400/80 text-sm mt-1">Years Old</div>
             </div>
-            <!-- TikTok -->
-            <a href="https://www.tiktok.com/@kazu_hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <img src="images/tiktok_logo.png" alt="TikTok Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/000000/ffffff?text=TT&font=roboto'; this.alt='TikTok Placeholder';">
-                <span class="text-base">TikTok</span>
-            </a>
-            <!-- YouTube -->
-            <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <img src="images/youtube_logo.png" alt="YouTube Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF0000/ffffff?text=YT&font=roboto'; this.alt='YouTube Placeholder';">
-                <span class="text-base">YouTube</span>
-            </a>
-            <!-- Steam -->
-            <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-slate-600 hover:bg-slate-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <img src="images/steam_logo.png" alt="Steam Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/1b2838/ffffff?text=S&font=roboto'; this.alt='Steam Placeholder';">
-                <span class="text-base">Steam</span>
-            </a>
-            <!-- Reddit -->
-            <a href="https://www.reddit.com/user/Korat24/" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <img src="images/reddit_logo.png" alt="Reddit Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/FF5700/ffffff?text=R&font=roboto'; this.alt='Reddit Placeholder';">
-                <span class="text-base">Reddit</span>
-            </a>
-            <!-- MyAnimeList -->
-            <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <img src="images/mal_logo.png" alt="MyAnimeList Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/2e51a2/ffffff?text=MAL&font=roboto'; this.alt='MyAnimeList Placeholder';">
-                <span class="text-base">MyAnimeList</span>
-            </a>
-            <!-- Character.ai -->
-            <a href="https://character.ai/profile/Kazu_Hani" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <img src="images/cai_logo.png" alt="Character.ai Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/33363F/ffffff?text=C.ai&font=roboto'; this.alt='Character.ai Placeholder';">
-                <span class="text-base">Character.ai</span>
-            </a>
-            <!-- Discord -->
-            <div class="relative"> <!-- Wrapper for positioning the dropdown -->
-                <button id="discordButton"
-                   class="social-icon flex items-center justify-center w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                    <img src="images/discord_logo.png" alt="Discord Logo" class="w-6 h-6 mr-3" onerror="this.onerror=null; this.src='https://placehold.co/24x24/5865F2/ffffff?text=D&font=roboto'; this.alt='Discord Placeholder';">
-                    <span class="text-base">Discord</span>
+
+            <!-- Birthday Countdown -->
+            <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-pink-500/50 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-50 transition-opacity">
+                    <i data-lucide="cake" class="w-12 h-12 text-pink-400"></i>
+                </div>
+                <h3 id="birthday-label" class="text-gray-400 text-sm uppercase tracking-widest mb-2">Next Birthday (Nov 9)</h3>
+                <div id="countdown" class="text-2xl md:text-3xl font-bold text-white tech-font tabular-nums">--d --h --m --s</div>
+                <div class="text-pink-400/80 text-sm mt-1">Until Birthday</div>
+            </div>
+        </section>
+
+        <!-- Social Media Grid -->
+        <section id="socials">
+            <h2 class="text-2xl text-white mb-6 flex items-center gap-2">
+                <i data-lucide="network" class="text-cyan-400"></i> Social Profiles
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                
+                <a href="https://x.com/Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <i data-lucide="twitter" class="w-8 h-8 text-gray-400 group-hover:text-white transition-colors"></i>
+                    <span class="text-sm font-medium">Twitter</span>
+                </a>
+
+                <a href="https://www.tiktok.com/@kazu_hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <svg class="w-8 h-8 text-gray-400 group-hover:text-pink-500 fill-current transition-colors" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                    <span class="text-sm font-medium">TikTok</span>
+                </a>
+
+                <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <i data-lucide="youtube" class="w-8 h-8 text-gray-400 group-hover:text-red-500 transition-colors"></i>
+                    <span class="text-sm font-medium">YouTube</span>
+                </a>
+
+                <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <i data-lucide="gamepad-2" class="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+                    <span class="text-sm font-medium">Steam</span>
+                </a>
+
+                <a href="https://www.reddit.com/user/Korat24/" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <svg class="w-8 h-8 text-gray-400 group-hover:text-orange-500 fill-current transition-colors" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.249-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+                    <span class="text-sm font-medium">Reddit</span>
+                </a>
+
+                <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <i data-lucide="tv" class="w-8 h-8 text-gray-400 group-hover:text-blue-300 transition-colors"></i>
+                    <span class="text-sm font-medium">MyAnimeList</span>
+                </a>
+
+                <!-- Discord with Copy Function -->
+                <button onclick="copyDiscord()" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group col-span-2 md:col-span-2 relative">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-8 h-8 text-indigo-400 group-hover:text-indigo-300 fill-current" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"/></svg>
+                        <span class="font-bold text-lg">kazu_hani</span>
+                    </div>
+                    <span id="discord-tooltip" class="text-xs text-gray-400">Click to copy ID</span>
+                    <div id="copy-success" class="absolute inset-0 bg-green-500/90 rounded-xl flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none">
+                        <span class="font-bold text-white">Copied!</span>
+                    </div>
                 </button>
-                <div id="discordUsername"
-                     class="absolute left-0 right-0 mt-2 p-3 bg-indigo-400 text-white text-3xl rounded-md shadow-lg z-10 text-center">
-                    kazu_hani
+            </div>
+        </section>
+
+        <!-- Music Section -->
+        <section id="music" class="relative group mt-8">
+            <!-- Glow Effect -->
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            
+            <div class="glass-panel relative p-6 md:p-8 rounded-2xl flex flex-col md:flex-row items-center gap-8 overflow-hidden">
+                
+                <!-- Decorative BG Blurs -->
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
+                <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+
+                <!-- Playlist "Stack" Art -->
+                <div class="relative w-32 h-32 flex-shrink-0 transform transition-transform duration-500 group-hover:scale-105">
+                    <!-- Stacked cards effect -->
+                    <div class="absolute top-0 left-4 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5"></div>
+                    <div class="absolute top-0 left-2 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5"></div>
+                    
+                    <!-- Main Cover -->
+                    <div class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10 group/cover">
+                        
+                        <img 
+                            src="images/sisu.jpg" 
+                            alt="Playlist Cover" 
+                            class="w-full h-full object-cover opacity-90 group-hover/cover:opacity-100 transition-opacity duration-500"
+                            onerror="this.src='https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&auto=format&fit=crop'"
+                        >
+
+                        <!-- Mini EQ -->
+                        <div class="absolute bottom-2 left-2 flex gap-1 h-4 items-end z-20">
+                            <div class="w-1 bg-cyan-400/90 animate-[equalize_1s_infinite] h-2 rounded-full shadow-lg shadow-black/50"></div>
+                            <div class="w-1 bg-cyan-400/90 animate-[equalize_1.2s_infinite] h-3 rounded-full shadow-lg shadow-black/50"></div>
+                            <div class="w-1 bg-cyan-400/90 animate-[equalize_0.8s_infinite] h-1 rounded-full shadow-lg shadow-black/50"></div>
+                            <div class="w-1 bg-cyan-400/90 animate-[equalize_1.1s_infinite] h-2.5 rounded-full shadow-lg shadow-black/50"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-grow text-center md:text-left z-10 w-full">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <span class="text-xs font-bold text-cyan-400 tracking-widest uppercase mb-2 block">Now Curating</span>
+                            <h2 class="text-2xl font-bold text-white tech-font tracking-tight">Main Playlist</h2>
+                            <p class="text-slate-400 text-sm mt-1">YouTube Music • Kazu Hani's Selection</p>
+                        </div>
+                        
+                        <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI" target="_blank" class="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-cyan-50 transition-all shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5 group/btn w-full md:w-auto">
+                            <div class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white group-hover/btn:scale-110 transition-transform">
+                                <i data-lucide="play" class="w-3 h-3 fill-current ml-0.5"></i>
+                            </div>
+                            <span>Listen</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Horizontal Waveform Decorative -->
+                    <div class="mt-6 flex items-end justify-between gap-1 h-6 opacity-30">
+                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-5 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-6 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-5 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-5 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-6 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
+                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- YouTube Music Playlist Section -->
-        <div class="mt-8 pt-6 border-t border-slate-600">
-            <h2 class="text-3xl font-semibold text-indigo-400 text-glow-indigo fade-in-scroll">My Favourite Jams</h2>
-            <div class="playlist-container flex justify-center items-center pt-[3%] pb-8">
-                <!-- Vinyl Record Styled Link -->
-                <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI"
-                   target="_blank" rel="noopener noreferrer"
-                   class="vinyl-record-wrapper w-60 h-60 md:w-64 md:h-64 fade-in-scroll"> <!-- Added Tailwind size classes -->
-                    <img src="images/Sisu.jpg" alt="My Favourite Jams - Click to listen on YouTube Music" class="vinyl-artwork-img">
+        <!-- Writing/Stories Section -->
+        <section id="stories">
+            <h2 class="text-2xl text-white mb-6 flex items-center gap-2">
+                <i data-lucide="book-open" class="text-cyan-400"></i> Stories & Writing
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Story 1 -->
+                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-cyan-500 hover:bg-white/5 transition-all group">
+                    <div class="flex justify-end items-start mb-4">
+                        <i data-lucide="external-link" class="w-5 h-5 text-gray-500 group-hover:text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 tech-font">The Legend That Bleeds</h3>
+                    <p class="text-gray-400 text-sm line-clamp-3">Access the chronicles of this ongoing narrative. Click to read the preview on Google Docs.</p>
+                </a>
+
+                <!-- Story 2 (Unlocked) -->
+                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-purple-500 hover:bg-white/5 transition-all group">
+                    <div class="flex justify-end items-start mb-4">
+                        <i data-lucide="external-link" class="w-5 h-5 text-gray-500 group-hover:text-white"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-2 tech-font">The Naga and Human Kind</h3>
+                    <p class="text-gray-400 text-sm">Read the latest draft of this story. Click to open the document.</p>
                 </a>
             </div>
-        </div>
+        </section>
 
-        <!-- Code for Website & Stories Section -->
-        <div class="mt-8 pt-6 border-t border-slate-700"> 
-            <h2 class="text-2xl font-semibold text-indigo-400 mb-4 fade-in-scroll">Code used for this website</h2>
-            <a href="https://github.com/KazuHani/Website" target="_blank" rel="noopener noreferrer"
-               class="social-icon flex items-center justify-center w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg shadow-md fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.419 2.865 8.166 6.839 9.489.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.602-3.369-1.34-3.369-1.34-.455-1.158-1.11-1.468-1.11-1.468-.908-.62.069-.608.069-.608 1.004.071 1.532 1.03 1.532 1.03.891 1.529 2.341 1.089 2.91.833.091-.647.349-1.086.635-1.337-2.22-.251-4.555-1.111-4.555-4.943 0-1.091.39-1.984 1.029-2.682-.103-.252-.446-1.27.098-2.646 0 0 .84-.269 2.75 1.025A9.547 9.547 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.748-1.025 2.748-1.025.546 1.376.203 2.394.1 2.646.64.698 1.027 1.591 1.027 2.682 0 3.842-2.338 4.687-4.565 4.935.358.307.679.917.679 1.852 0 1.336-.012 2.415-.012 2.741 0 .269.18.579.688.481A10.007 10.007 0 0022 12c0-5.523-4.477-10-10-10z" clip-rule="evenodd"/>
-                </svg>
-                <span class="text-base">View on GitHub</span>
-            </a>
-            
-            <h3 class="text-2xl font-semibold text-indigo-400 mt-6 mb-3 fade-in-scroll">My Stories</h3>
-            <div class="mt-4 space-y-2"> 
-                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-legend flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md text-base fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                    <span>The Legend That Bleeds</span>
-                </a>
-                <a href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener noreferrer"
-                   class="social-icon story-button-naga flex items-center justify-center w-full text-white font-semibold py-3 px-4 rounded-lg shadow-md text-base fade-in-scroll transform transition-transform duration-200 hover:scale-102">
-                    <span>The Naga And Human Kind</span>
-                </a>
-            </div>
-        </div>
+    </main>
 
-        <!-- Footer -->
-        <footer class="mt-10 pt-6 border-t border-slate-600">
-        </footer>
-    </div>
-
-    <script>
-        // Intersection Observer for scroll animations
-        document.addEventListener('DOMContentLoaded', () => {
-            const fadeElements = document.querySelectorAll('.fade-in-scroll');
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
-                    } else {
-                        // Optional: Remove 'visible' class when element leaves viewport
-                        // This makes it fade out and fade back in on re-scroll
-                        entry.target.classList.remove('visible');
-                    }
-                });
-            }, {
-                threshold: 0.1 // Trigger when 10% of the element is visible
-            });
-
-            fadeElements.forEach(element => observer.observe(element));
-
-            // Lenis Smooth Scroll Initialization
-            const lenis = new Lenis({
-                lerp: 0.07, // Controls the "smoothness" or "heaviness". Lower values (e.g., 0.05) are "heavier". Default is 0.1.
-                smoothWheel: true, // Enables smooth scrolling for mouse wheel events.
-            });
-
-            function raf(time) {
-                lenis.raf(time);
-                requestAnimationFrame(raf);
-            }
-
-            requestAnimationFrame(raf);
-
-            // To Top Button Logic
-            const toTopBtn = document.getElementById('toTopBtn');
-
-            if (toTopBtn) {
-                const showButtonOffset = 50; // Pixels from the bottom to show the button
-
-                lenis.on('scroll', (e) => {
-                    const atBottom = e.scroll >= lenis.limit - showButtonOffset;
-                    if (atBottom) {
-                        toTopBtn.classList.add('show');
-                    } else {
-                        toTopBtn.classList.remove('show');
-                    }
-                });
-
-                toTopBtn.addEventListener('click', () => {
-                    lenis.scrollTo('top', { duration: 1.5, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
-                });
-            }
-        });
-    </script>
-
-    <script>
-        // Explicitly set scroll restoration to manual before anything else
-        if (history.scrollRestoration) {
-            history.scrollRestoration = 'manual';
-        }
-
-        window.onload = function() {
-            window.scrollTo(0, 0);
-
-            // UK Time Display Logic
-            const ukTimeElement = document.getElementById('ukTimeDisplay');
-
-            function updateUKTime() {
-                if (!ukTimeElement) return;
-
-                const now = new Date();
-                const options = {
-                    timeZone: 'Europe/London',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true
-                };
-                try {
-                    // 'en-GB' locale is good for UK, but options ensure HH:MM:SS AM/PM
-                    ukTimeElement.textContent = now.toLocaleTimeString('en-GB', options);
-                } catch (error) {
-                    console.error("Error formatting UK time:", error);
-                    // Fallback to system locale if 'en-GB' causes issues, still applying timezone
-                    try {
-                        ukTimeElement.textContent = now.toLocaleTimeString(undefined, options);
-                    } catch (e) {
-                        ukTimeElement.textContent = "Time unavailable";
-                    }
-                }
-            }
-
-            if (ukTimeElement) {
-                updateUKTime(); // Initial call to display time immediately
-                setInterval(updateUKTime, 1000); // Update every second
-            }
-
-            // Birthday Countdown Logic
-            const countdownTimerElement = document.getElementById('countdownTimer');
-            const birthdayMonth = 10; // November (0-indexed)
-            const birthdayDay = 9;
-
-            function calculateTimeDifference(endDate, startDate) {
-                let diffMs = endDate.getTime() - startDate.getTime();
-
-                if (diffMs <= 0) {
-                    return { months: 0, weeks: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
-                }
-
-                let seconds = Math.floor((diffMs / 1000) % 60);
-                let minutes = Math.floor((diffMs / (1000 * 60)) % 60);
-                let hours = Math.floor((diffMs / (1000 * 60 * 60)) % 24);
-
-                let months = 0;
-                let tempCounterDate = new Date(startDate);
-
-                for (let i = 0; i < 120; i++) { 
-                    let nextMonthTemp = new Date(tempCounterDate);
-                    nextMonthTemp.setMonth(nextMonthTemp.getMonth() + 1);
-                    if (nextMonthTemp <= endDate) {
-                        months++;
-                        tempCounterDate.setMonth(tempCounterDate.getMonth() + 1);
-                    } else {
-                        break;
-                    }
-                }
-                
-                let remainingMsAfterMonths = endDate.getTime() - tempCounterDate.getTime();
-                if (remainingMsAfterMonths < 0) remainingMsAfterMonths = 0; 
-
-                let totalDaysAfterMonths = Math.floor(remainingMsAfterMonths / (1000 * 60 * 60 * 24));
-                
-                let weeks = Math.floor(totalDaysAfterMonths / 7);
-                let days = totalDaysAfterMonths % 7;
-
-                return { months, weeks, days, hours, minutes, seconds, isPast: false };
-            }
-
-            function updateCountdown() {
-                if (!countdownTimerElement) return; 
-
-                const now = new Date();
-                let currentYear = now.getFullYear();
-                let targetBirthdayDate = new Date(currentYear, birthdayMonth, birthdayDay, 0, 0, 0, 0);
-
-                if (now.getMonth() === birthdayMonth && now.getDate() === birthdayDay) {
-                     countdownTimerElement.innerHTML = "Happy Birthday!";
-                     return;
-                }
-                
-                if (now.getTime() >= targetBirthdayDate.getTime()) {
-                    targetBirthdayDate.setFullYear(currentYear + 1);
-                }
-                
-                const timeParts = calculateTimeDifference(targetBirthdayDate, now);
-
-                if (timeParts.isPast) { 
-                    targetBirthdayDate.setFullYear(targetBirthdayDate.getFullYear() +1);
-                    const newTimeParts = calculateTimeDifference(targetBirthdayDate, now);
-                    if(newTimeParts.isPast) { 
-                         countdownTimerElement.innerHTML = "See you next year!";
-                         return;
-                    }
-                     let partsRecalc = [];
-                    if (newTimeParts.months > 0) partsRecalc.push(`${newTimeParts.months} month${newTimeParts.months > 1 ? 's' : ''}`);
-                    if (newTimeParts.weeks > 0) partsRecalc.push(`${newTimeParts.weeks} week${newTimeParts.weeks > 1 ? 's' : ''}`);
-                    if (newTimeParts.days > 0) partsRecalc.push(`${newTimeParts.days} day${newTimeParts.days !== 1 ? 's' : ''}`);
-                    partsRecalc.push(`${newTimeParts.hours}h ${newTimeParts.minutes}m ${newTimeParts.seconds}s`);
-                    countdownTimerElement.innerHTML = partsRecalc.join(', ');
-                    return;
-                }
-
-                let parts = [];
-                if (timeParts.months > 0) parts.push(`${timeParts.months} month${timeParts.months > 1 ? 's' : ''}`);
-                if (timeParts.weeks > 0) parts.push(`${timeParts.weeks} week${timeParts.weeks > 1 ? 's' : ''}`);
-                if (timeParts.days > 0) parts.push(`${timeParts.days} day${timeParts.days !== 1 ? 's' : ''}`);
-                
-                parts.push(`${timeParts.hours}h ${timeParts.minutes}m ${timeParts.seconds}s`);
-                
-                countdownTimerElement.innerHTML = parts.join(', ');
-            }
-
-            if (countdownTimerElement) {
-                setInterval(updateCountdown, 1000);
-                updateCountdown(); 
-            }
-
-            // Age Calculation Logic
-            const ageElement = document.getElementById('currentAge');
-            const birthDate = new Date(2001, 10, 9); 
-
-            function calculateAge() {
-                const today = new Date();
-                let age = today.getFullYear() - birthDate.getFullYear();
-                const monthDifference = today.getMonth() - birthDate.getMonth();
-                if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-                    age--;
-                }
-                if (ageElement) {
-                    ageElement.textContent = age;
-                }
-            }
-            if (ageElement) {
-                calculateAge();
-            }
-
-            // Discord Dropdown Logic
-            const discordButton = document.getElementById('discordButton');
-            const discordUsernameDiv = document.getElementById('discordUsername');
-
-            if (discordButton && discordUsernameDiv) {
-                discordButton.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Prevent click from bubbling up to the document
-                    discordUsernameDiv.classList.toggle('active'); // Toggle 'active' class for animation
-                });
-
-                // Optional: Close dropdown if clicking outside of it
-                document.addEventListener('click', (event) => {
-                    // If the dropdown is active and the click is outside both button and dropdown
-                    if (discordUsernameDiv.classList.contains('active') &&
-                        !discordButton.contains(event.target) &&
-                        !discordUsernameDiv.contains(event.target)) {
-                        discordUsernameDiv.classList.remove('active'); // Deactivate to hide
-                    }
-                });
-            }
-
-            // Interactive Twitter/X Button Logic
-            const twitterButtonContainer = document.getElementById('twitter-button-container');
-            const twitterMainLink = document.getElementById('twitter-main-link');
-
-            if (twitterButtonContainer && twitterMainLink) {
-                twitterMainLink.addEventListener('click', (event) => {
-                    if (!twitterButtonContainer.classList.contains('expanded')) {
-                        event.preventDefault();
-                        twitterButtonContainer.classList.add('expanded');
-                        twitterButtonContainer.setAttribute('aria-expanded', 'true');
-                    } else {
-                        twitterButtonContainer.classList.remove('expanded');
-                        twitterButtonContainer.setAttribute('aria-expanded', 'false');
-                    }
-                });
-
-                document.addEventListener('click', (event) => {
-                    if (twitterButtonContainer.classList.contains('expanded') && !twitterButtonContainer.contains(event.target)) {
-                        twitterButtonContainer.classList.remove('expanded');
-                        twitterButtonContainer.setAttribute('aria-expanded', 'false');
-                    }
-                });
-            }
-        }; // End of window.onload (Note: The IntersectionObserver script is now outside this)
-        
-    </script>
-    <script>
-        // Lenis Smooth Scroll Initialization
-        // Ensure this runs after the DOM is ready, which it will if placed here.
-        // If you move it into window.onload, ensure it's appropriately placed.
-        const lenis = new Lenis({
-            lerp: 0.07, // Controls the "smoothness" or "heaviness". Lower values (e.g., 0.05) are "heavier". Default is 0.1.
-            smoothWheel: true, // Enables smooth scrolling for mouse wheel events.
-            // You can explore other options like duration, easing for programmatic scrolls, etc.
-        });
-
-        // Optional: Log scroll events
-        // lenis.on('scroll', (e) => {
-        //   console.log(e);
-        // });
-
-        function raf(time) {
-            lenis.raf(time);
-            requestAnimationFrame(raf);
-        }
-
-        requestAnimationFrame(raf);
-    </script>
-    <!-- To Top Button -->
-    <button id="toTopBtn" class="to-top-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-            <path d="M12 4l8 8h-6v8h-4v-8H4l8-8z" />
-        </svg>
+    <!-- Back to Top Button -->
+    <button id="backToTop" onclick="scrollToTop()" class="fixed bottom-6 right-6 bg-cyan-500 hover:bg-cyan-400 text-black p-3 rounded-full shadow-lg shadow-cyan-500/40 transition-all duration-300 transform translate-y-20 z-50">
+        <i data-lucide="arrow-up" class="w-6 h-6"></i>
     </button>
 
     <script>
-        // To Top Button Logic
-        const toTopBtn = document.getElementById('toTopBtn');
+        // Initialize Lucide Icons
+        lucide.createIcons();
 
-        if (toTopBtn) {
-            const showButtonOffset = 50; // Pixels from the bottom to show the button
+        /* --- SMOOTH SCROLLING (Heavy Feel) --- */
+        // Wrapped in check to prevent crashing if script fails to load
+        let lenis;
+        if (typeof Lenis !== 'undefined') {
+            lenis = new Lenis({
+                duration: 2.5, // Much heavier inertia (default is 1.2)
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Exponential easing
+                direction: 'vertical',
+                gestureDirection: 'vertical',
+                smooth: true,
+                mouseMultiplier: 0.8, // Requires more wheel movement to scroll
+                smoothTouch: false, // Use native touch scrolling on mobile for better UX
+                touchMultiplier: 1.5, 
+            });
+        }
 
-            // Use lenis scroll event for accuracy with smooth scrolling
-            if (typeof lenis !== 'undefined') {
-                lenis.on('scroll', (e) => {
-                    const atBottom = e.scroll >= lenis.limit - showButtonOffset;
-                    if (atBottom) {
-                        toTopBtn.classList.add('show');
-                    } else {
-                        toTopBtn.classList.remove('show');
-                    }
-                });
-            } else {
-                // Fallback for when lenis is not active
-                window.onscroll = function() {
-                    const scrollHeight = document.documentElement.scrollHeight;
-                    const scrollTop = document.documentElement.scrollTop;
-                    const clientHeight = document.documentElement.clientHeight;
-                    const atBottom = scrollHeight - scrollTop - clientHeight <= showButtonOffset;
+        // Integrate Lenis into animation loop
+        function raf(time) {
+            if (lenis) lenis.raf(time);
+            // Snow and confetti are animated separately in their own loops,
+            // but requestAnimationFrame is shared by the browser efficiently.
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
 
-                    if (atBottom) {
-                        toTopBtn.classList.add('show');
-                    } else {
-                        toTopBtn.classList.remove('show');
-                    }
-                };
+        /* --- SNOW CANVAS ANIMATION --- */
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const confettiCtx = confettiCanvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        let confettiParticles = [];
+        let isBirthday = false;
+
+        // Resize handling
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            confettiCanvas.width = width;
+            confettiCanvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- Snow Logic ---
+        class Particle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * height; 
             }
 
-            toTopBtn.addEventListener('click', () => {
-                if (typeof lenis !== 'undefined') {
-                    lenis.scrollTo('top', { duration: 1.5, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
-                } else {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+            reset() {
+                this.x = Math.random() * width;
+                this.y = -10;
+                this.size = Math.random() * 2 + 0.5;
+                this.speed = Math.random() * 1 + 0.5;
+                this.windFactor = Math.random() * 0.5 + 0.1;
+                this.opacity = Math.random() * 0.5 + 0.3;
+            }
+
+            update(wind) {
+                this.y += this.speed;
+                this.x += wind * this.windFactor;
+
+                if (this.y > height) {
+                    this.reset();
                 }
+                if (this.x > width) {
+                    this.x = 0;
+                } else if (this.x < 0) {
+                    this.x = width;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Create snow particles
+        for (let i = 0; i < 150; i++) {
+            particles.push(new Particle());
+        }
+
+        // --- Confetti Logic ---
+        class Confetti {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * -height; // Start above screen
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = -10;
+                this.size = Math.random() * 6 + 4;
+                this.speedY = Math.random() * 3 + 2;
+                this.speedX = Math.random() * 2 - 1;
+                this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 10 - 5;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.rotation += this.rotationSpeed;
+
+                if (this.y > height) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                confettiCtx.save();
+                confettiCtx.translate(this.x, this.y);
+                confettiCtx.rotate(this.rotation * Math.PI / 180);
+                confettiCtx.fillStyle = this.color;
+                confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                confettiCtx.restore();
+            }
+        }
+
+        // Init Confetti
+        function initConfetti() {
+            if (confettiParticles.length === 0) {
+                for (let i = 0; i < 100; i++) {
+                    confettiParticles.push(new Confetti());
+                }
+            }
+        }
+
+        let time = 0;
+        function animate() {
+            // Snow
+            ctx.clearRect(0, 0, width, height);
+            time += 0.01;
+            const wind = Math.sin(time) * 1.5 + 0.5;
+
+            particles.forEach(p => {
+                p.update(wind);
+                p.draw();
             });
+
+            // Confetti (only if birthday)
+            confettiCtx.clearRect(0, 0, width, height);
+            if (isBirthday) {
+                confettiParticles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+            }
+
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        /* --- SCROLL BOUNCE EFFECT --- */
+        let isBouncing = false;
+        
+        window.addEventListener('scroll', () => {
+            if (isBouncing) return;
+
+            const mainContent = document.querySelector('main');
+            const scrollY = window.scrollY;
+            const innerHeight = window.innerHeight;
+            const bodyHeight = document.documentElement.scrollHeight;
+
+            // Check Top
+            if (scrollY === 0) {
+                triggerBounce(mainContent, 'animate-bounce-top');
+            } 
+            // Check Bottom (allow 1px buffer for subpixel rendering)
+            else if (Math.ceil(scrollY + innerHeight) >= bodyHeight) {
+                triggerBounce(mainContent, 'animate-bounce-bottom');
+            }
+        });
+
+        function triggerBounce(element, className) {
+            isBouncing = true;
+            element.classList.add(className);
+            
+            // Remove class after animation ends to allow re-triggering
+            setTimeout(() => {
+                element.classList.remove(className);
+                // Add a small cooldown to prevent rapid-fire bouncing while resting at edge
+                setTimeout(() => { isBouncing = false; }, 200);
+            }, 600); // Match CSS animation duration
+        }
+
+        /* --- DATA LOGIC --- */
+
+        // 1. UK Time (12-hour)
+        function updateTime() {
+            const timeElement = document.getElementById('uk-time');
+            const dateElement = document.getElementById('uk-date');
+            
+            const now = new Date();
+            
+            const timeOptions = { 
+                timeZone: 'Europe/London', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: true 
+            };
+            
+            const dateOptions = {
+                timeZone: 'Europe/London',
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+
+            timeElement.textContent = new Intl.DateTimeFormat('en-GB', timeOptions).format(now);
+            dateElement.textContent = new Intl.DateTimeFormat('en-GB', dateOptions).format(now);
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 2. Age Calculator & Birthday Countdown
+        const birthDate = new Date('2001-11-09T00:00:00');
+
+        function updateAgeAndCountdown() {
+            const now = new Date();
+            
+            // Age
+            let age = now.getFullYear() - birthDate.getFullYear();
+            const m = now.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            document.getElementById('current-age').textContent = age;
+
+            // Birthday Logic
+            // Check if today is Nov 9
+            if (now.getMonth() === 10 && now.getDate() === 9) {
+                isBirthday = true;
+                initConfetti();
+                document.getElementById('birthday-label').textContent = "🎉 It's My Birthday! 🎉";
+                document.getElementById('birthday-label').classList.add('text-yellow-400');
+                document.getElementById('countdown').textContent = "Happy Birthday!";
+            } else {
+                isBirthday = false;
+                document.getElementById('birthday-label').textContent = "Next Birthday (Nov 9)";
+                document.getElementById('birthday-label').classList.remove('text-yellow-400');
+
+                // Countdown Calc
+                let nextBirthday = new Date(now.getFullYear(), 10, 9); // Nov 9
+                if (now > nextBirthday) {
+                    nextBirthday.setFullYear(now.getFullYear() + 1);
+                }
+
+                const diff = nextBirthday - now;
+                
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                
+                document.getElementById('countdown').textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+        }
+        setInterval(updateAgeAndCountdown, 1000); // Update every second now
+        updateAgeAndCountdown();
+
+        /* --- UTILITIES --- */
+
+        // Discord Copy
+        function copyDiscord() {
+            const discordId = "kazu_hani";
+            
+            // Use Clipboard API if available, fallback to textarea method
+            // Added .catch() to handle permissions policy errors in iframes
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(discordId)
+                    .then(showSuccess)
+                    .catch(() => legacyCopy(discordId));
+            } else {
+                legacyCopy(discordId);
+            }
+        }
+
+        function legacyCopy(text) {
+            let textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showSuccess();
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showSuccess() {
+            const successMsg = document.getElementById('copy-success');
+            successMsg.classList.remove('opacity-0');
+            setTimeout(() => {
+                successMsg.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        // Back to Top (Using Lenis for smooth scroll)
+        const backToTopBtn = document.getElementById("backToTop");
+
+        window.onscroll = function() {
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                backToTopBtn.classList.remove("translate-y-20");
+            } else {
+                backToTopBtn.classList.add("translate-y-20");
+            }
+        };
+
+        function scrollToTop() {
+            if (lenis) lenis.scrollTo(0);
+            else window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
