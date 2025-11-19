@@ -87,11 +87,23 @@
             transition: all 0.3s ease;
         }
 
-        .glass-card:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-            transform: translateY(-2px);
+        /* Only apply hover effects on devices that support hover (Desktop) */
+        @media (hover: hover) {
+            .glass-card:hover {
+                background: rgba(255, 255, 255, 0.07);
+                border-color: var(--neon-blue);
+                box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+                transform: translateY(-2px);
+            }
+
+            /* Specific Social Icon Colors on Card Hover */
+            .glass-card:hover .icon-twitter { color: white; }
+            .glass-card:hover .icon-tiktok { fill: #ec4899; color: #ec4899; } /* pink-500 */
+            .glass-card:hover .icon-youtube { color: #ef4444; } /* red-500 */
+            .glass-card:hover .icon-steam { color: #3b82f6; } /* blue-500 */
+            .glass-card:hover .icon-reddit { fill: #f97316; color: #f97316; } /* orange-500 */
+            .glass-card:hover .icon-mal { color: #93c5fd; } /* blue-300 */
+            .glass-card:hover .icon-discord { fill: #a5b4fc; color: #a5b4fc; } /* indigo-300 */
         }
 
         /* Animations */
@@ -114,31 +126,6 @@
             animation: pulse-glow 4s infinite;
         }
 
-        /* Bounce Effects for Scroll Limits */
-        @keyframes bounce-top {
-            0% { transform: translateY(0); }
-            30% { transform: translateY(20px); }
-            50% { transform: translateY(10px); }
-            70% { transform: translateY(15px); }
-            100% { transform: translateY(0); }
-        }
-
-        @keyframes bounce-bottom {
-            0% { transform: translateY(0); }
-            30% { transform: translateY(-20px); }
-            50% { transform: translateY(-10px); }
-            70% { transform: translateY(-15px); }
-            100% { transform: translateY(0); }
-        }
-
-        .animate-bounce-top {
-            animation: bounce-top 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-        }
-
-        .animate-bounce-bottom {
-            animation: bounce-bottom 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-        }
-
         /* Music Visualizer Bars */
         .music-bar {
             width: 4px;
@@ -154,6 +141,20 @@
         .music-bar:nth-child(2) { animation-delay: 0.3s; }
         .music-bar:nth-child(3) { animation-delay: 0.5s; }
         .music-bar:nth-child(4) { animation-delay: 0.2s; }
+
+        /* Loader & Entrance Animations */
+        #page-loader {
+            transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
+        }
+        .content-hidden {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .content-visible {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 1s ease-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1); /* Heavy ease out */
+        }
 
         /* Scrollbar */
         ::-webkit-scrollbar {
@@ -173,6 +174,17 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
+    <!-- Loading Screen -->
+    <div id="page-loader" class="fixed inset-0 z-[100] bg-[#0d1b2a] flex flex-col items-center justify-center">
+        <div class="relative">
+            <div class="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center font-bold text-white tech-font text-sm tracking-widest overflow-hidden p-3">
+                <img src="images/kazu small.png" class="w-full h-full object-cover rounded-full opacity-80" alt="Loading Logo">
+            </div>
+        </div>
+        <div class="mt-4 text-cyan-400/50 text-xs font-medium tracking-[0.3em] animate-pulse">INITIALIZING</div>
+    </div>
+
     <!-- Background Animations -->
     <canvas id="snow-canvas"></canvas>
     <canvas id="confetti-canvas"></canvas>
@@ -181,10 +193,9 @@
     <main class="flex-grow pt-12 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full space-y-12 z-10">
 
         <!-- Profile & Hero Section -->
-        <section class="text-center relative">
+        <section class="text-center relative content-hidden entrance-anim">
             <div class="inline-block relative group">
-                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-                
+                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur lg:group-hover:opacity-100 transition duration-1000 lg:group-hover:duration-200"></div>
                 <img 
                     src="images/Kazu Hani Pixelart.gif" 
                     alt="Kazu Hani Profile" 
@@ -195,14 +206,14 @@
             <h1 class="mt-6 text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-500 animate-float pb-2">
                 KAZU HANI
             </h1>
-            <p class="mt-2 text-xl text-cyan-300/80 tracking-[0.2em] uppercase">Noodle Derg</p>
+            <p class="mt-2 text-xl text-cyan-300/80 tracking-[0.2em] uppercase">noodle derg</p>
         </section>
 
         <!-- Status Dashboard (Grid) -->
-        <section id="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section id="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 content-hidden entrance-anim">
             <!-- UK Time -->
             <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-50 transition-opacity">
+                <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="clock" class="w-12 h-12 text-cyan-400"></i>
                 </div>
                 <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">United Kingdom Time</h3>
@@ -212,7 +223,7 @@
 
             <!-- Age Calculator -->
             <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-purple-500/50 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-50 transition-opacity">
+                <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="user" class="w-12 h-12 text-purple-400"></i>
                 </div>
                 <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">Current Age</h3>
@@ -222,7 +233,7 @@
 
             <!-- Birthday Countdown -->
             <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-pink-500/50 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-50 transition-opacity">
+                <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="cake" class="w-12 h-12 text-pink-400"></i>
                 </div>
                 <h3 id="birthday-label" class="text-gray-400 text-sm uppercase tracking-widest mb-2">Next Birthday (Nov 9)</h3>
@@ -232,46 +243,46 @@
         </section>
 
         <!-- Social Media Grid -->
-        <section id="socials">
+        <section id="socials" class="content-hidden entrance-anim">
             <h2 class="text-2xl text-white mb-6 flex items-center gap-2">
                 <i data-lucide="network" class="text-cyan-400"></i> Social Profiles
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 
                 <a href="https://x.com/Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <i data-lucide="twitter" class="w-8 h-8 text-gray-400 group-hover:text-white transition-colors"></i>
+                    <i data-lucide="twitter" class="icon-twitter w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">Twitter</span>
                 </a>
 
                 <a href="https://www.tiktok.com/@kazu_hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <svg class="w-8 h-8 text-gray-400 group-hover:text-pink-500 fill-current transition-colors" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                    <svg class="icon-tiktok w-8 h-8 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
                     <span class="text-sm font-medium">TikTok</span>
                 </a>
 
                 <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <i data-lucide="youtube" class="w-8 h-8 text-gray-400 group-hover:text-red-500 transition-colors"></i>
+                    <i data-lucide="youtube" class="icon-youtube w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">YouTube</span>
                 </a>
 
                 <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <i data-lucide="gamepad-2" class="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors"></i>
+                    <i data-lucide="gamepad-2" class="icon-steam w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">Steam</span>
                 </a>
 
                 <a href="https://www.reddit.com/user/Korat24/" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <svg class="w-8 h-8 text-gray-400 group-hover:text-orange-500 fill-current transition-colors" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.249-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+                    <svg class="icon-reddit w-8 h-8 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.249-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
                     <span class="text-sm font-medium">Reddit</span>
                 </a>
 
                 <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <i data-lucide="tv" class="w-8 h-8 text-gray-400 group-hover:text-blue-300 transition-colors"></i>
+                    <i data-lucide="tv" class="icon-mal w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">MyAnimeList</span>
                 </a>
 
                 <!-- Discord with Copy Function -->
                 <button onclick="copyDiscord()" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group col-span-2 md:col-span-2 relative">
                     <div class="flex items-center gap-2">
-                        <svg class="w-8 h-8 text-indigo-400 group-hover:text-indigo-300 fill-current" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"/></svg>
+                        <svg class="icon-discord w-8 h-8 text-indigo-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"/></svg>
                         <span class="font-bold text-lg">kazu_hani</span>
                     </div>
                     <span id="discord-tooltip" class="text-xs text-gray-400">Click to copy ID</span>
@@ -283,9 +294,9 @@
         </section>
 
         <!-- Music Section -->
-        <section id="music" class="relative group mt-8">
-            <!-- Glow Effect -->
-            <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+        <section id="music" class="relative group mt-8 content-hidden entrance-anim">
+            <!-- Glow Effect (Desktop Only) -->
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-20 lg:group-hover:opacity-40 transition duration-500"></div>
             
             <div class="glass-panel relative p-6 md:p-8 rounded-2xl flex flex-col md:flex-row items-center gap-8 overflow-hidden">
                 
@@ -293,8 +304,8 @@
                 <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
 
-                <!-- Playlist "Stack" Art -->
-                <div class="relative w-32 h-32 flex-shrink-0 transform transition-transform duration-500 group-hover:scale-105">
+                <!-- Playlist "Stack" Art - MADE BIGGER (w-56 h-56) -->
+                <div class="relative w-56 h-56 flex-shrink-0 transform transition-transform duration-500 lg:group-hover:scale-105">
                     <!-- Stacked cards effect -->
                     <div class="absolute top-0 left-4 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5"></div>
                     <div class="absolute top-0 left-2 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5"></div>
@@ -305,7 +316,7 @@
                         <img 
                             src="images/sisu.jpg" 
                             alt="Playlist Cover" 
-                            class="w-full h-full object-cover opacity-90 group-hover/cover:opacity-100 transition-opacity duration-500"
+                            class="w-full h-full object-cover opacity-90 lg:group-hover/cover:opacity-100 transition-opacity duration-500"
                             onerror="this.src='https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&auto=format&fit=crop'"
                         >
 
@@ -328,59 +339,37 @@
                             <p class="text-slate-400 text-sm mt-1">YouTube Music • Kazu Hani's Selection</p>
                         </div>
                         
-                        <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI" target="_blank" class="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-cyan-50 transition-all shadow-lg hover:shadow-cyan-500/20 hover:-translate-y-0.5 group/btn w-full md:w-auto">
-                            <div class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white group-hover/btn:scale-110 transition-transform">
+                        <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI" target="_blank" class="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold lg:hover:bg-cyan-50 transition-all shadow-lg lg:hover:shadow-cyan-500/20 lg:hover:-translate-y-0.5 group/btn w-full md:w-auto">
+                            <div class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white lg:group-hover/btn:scale-110 transition-transform">
                                 <i data-lucide="play" class="w-3 h-3 fill-current ml-0.5"></i>
                             </div>
                             <span>Listen</span>
                         </a>
-                    </div>
-                    
-                    <!-- Horizontal Waveform Decorative -->
-                    <div class="mt-6 flex items-end justify-between gap-1 h-6 opacity-30">
-                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-5 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-6 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-5 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-5 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-3 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-6 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-2 rounded-t-sm"></div>
-                        <div class="w-full bg-cyan-400 h-4 rounded-t-sm"></div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Writing/Stories Section -->
-        <section id="stories">
+        <section id="stories" class="content-hidden entrance-anim">
             <h2 class="text-2xl text-white mb-6 flex items-center gap-2">
                 <i data-lucide="book-open" class="text-cyan-400"></i> Stories & Writing
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 
                 <!-- Story 1 -->
-                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-cyan-500 hover:bg-white/5 transition-all group">
+                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-cyan-500 lg:hover:bg-white/5 transition-all group">
                     <div class="flex justify-end items-start mb-4">
-                        <i data-lucide="external-link" class="w-5 h-5 text-gray-500 group-hover:text-white"></i>
+                        <i data-lucide="external-link" class="w-5 h-5 text-gray-500 lg:group-hover:text-white"></i>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2 tech-font">The Legend That Bleeds</h3>
                     <p class="text-gray-400 text-sm line-clamp-3">Access the chronicles of this ongoing narrative. Click to read the preview on Google Docs.</p>
                 </a>
 
                 <!-- Story 2 (Unlocked) -->
-                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-purple-500 hover:bg-white/5 transition-all group">
+                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-purple-500 lg:hover:bg-white/5 transition-all group">
                     <div class="flex justify-end items-start mb-4">
-                        <i data-lucide="external-link" class="w-5 h-5 text-gray-500 group-hover:text-white"></i>
+                        <i data-lucide="external-link" class="w-5 h-5 text-gray-500 lg:group-hover:text-white"></i>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2 tech-font">The Naga and Human Kind</h3>
                     <p class="text-gray-400 text-sm">Read the latest draft of this story. Click to open the document.</p>
@@ -399,19 +388,46 @@
         // Initialize Lucide Icons
         lucide.createIcons();
 
-        /* --- SMOOTH SCROLLING (Heavy Feel) --- */
+        /* --- PAGE LOAD ANIMATION --- */
+        window.addEventListener('load', () => {
+            // Force scroll to top on refresh
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
+            window.scrollTo(0, 0);
+            if (lenis) lenis.scrollTo(0, { immediate: true });
+
+            const loader = document.getElementById('page-loader');
+            const animElements = document.querySelectorAll('.entrance-anim');
+
+            // Fade out loader
+            loader.style.opacity = '0';
+            loader.style.visibility = 'hidden';
+
+            // Staggered reveal of content
+            setTimeout(() => {
+                animElements.forEach((el, index) => {
+                    setTimeout(() => {
+                        el.classList.remove('content-hidden');
+                        el.classList.add('content-visible');
+                    }, index * 150); // 150ms delay between each section
+                });
+            }, 300); // Wait slightly after loader starts fading
+        });
+
+        /* --- SMOOTH SCROLLING (Lighter Feel) --- */
         // Wrapped in check to prevent crashing if script fails to load
         let lenis;
         if (typeof Lenis !== 'undefined') {
             lenis = new Lenis({
-                duration: 2.5, // Much heavier inertia (default is 1.2)
+                duration: 1.2, // Lighter duration (closer to default)
                 easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Exponential easing
                 direction: 'vertical',
                 gestureDirection: 'vertical',
                 smooth: true,
-                mouseMultiplier: 0.8, // Requires more wheel movement to scroll
+                mouseMultiplier: 1.0, // Standard multiplier for natural feel
                 smoothTouch: false, // Use native touch scrolling on mobile for better UX
-                touchMultiplier: 1.5, 
+                touchMultiplier: 2, 
             });
         }
 
@@ -563,39 +579,6 @@
             requestAnimationFrame(animate);
         }
         animate();
-
-        /* --- SCROLL BOUNCE EFFECT --- */
-        let isBouncing = false;
-        
-        window.addEventListener('scroll', () => {
-            if (isBouncing) return;
-
-            const mainContent = document.querySelector('main');
-            const scrollY = window.scrollY;
-            const innerHeight = window.innerHeight;
-            const bodyHeight = document.documentElement.scrollHeight;
-
-            // Check Top
-            if (scrollY === 0) {
-                triggerBounce(mainContent, 'animate-bounce-top');
-            } 
-            // Check Bottom (allow 1px buffer for subpixel rendering)
-            else if (Math.ceil(scrollY + innerHeight) >= bodyHeight) {
-                triggerBounce(mainContent, 'animate-bounce-bottom');
-            }
-        });
-
-        function triggerBounce(element, className) {
-            isBouncing = true;
-            element.classList.add(className);
-            
-            // Remove class after animation ends to allow re-triggering
-            setTimeout(() => {
-                element.classList.remove(className);
-                // Add a small cooldown to prevent rapid-fire bouncing while resting at edge
-                setTimeout(() => { isBouncing = false; }, 200);
-            }, 600); // Match CSS animation duration
-        }
 
         /* --- DATA LOGIC --- */
 
