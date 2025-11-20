@@ -183,6 +183,11 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
+    <!-- Ambient Sound Element (Hidden) -->
+    <audio id="ambient-sound" loop>
+        <source src="sound/wind.mp3" type="audio/mpeg">
+    </audio>
+
     <!-- Loading Screen -->
     <div id="page-loader" class="fixed inset-0 z-[100] bg-[#0d1b2a] flex flex-col items-center justify-center">
         <div class="relative">
@@ -349,9 +354,9 @@
                     <!-- Main Cover -->
                     <div class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10 group/cover">
                         
-                        <!-- Lazy load cover image -->
+                        <!-- Updated image path with version query string to bust cache -->
                         <img 
-                            src="./images/sisu.jpg" 
+                            src="images/sisu.jpg?v=2" 
                             alt="Playlist Cover" 
                             class="w-full h-full object-cover opacity-90 lg:group-hover/cover:opacity-100 transition-opacity duration-500"
                             loading="lazy"
@@ -425,10 +430,6 @@
         // Initialize Lucide Icons
         lucide.createIcons();
 
-        let lastScrollY = 0;
-        let isScrolling = false;
-        let lenis;
-
         /* --- PAGE LOAD ANIMATION --- */
         window.addEventListener('load', () => {
             // Force scroll to top on refresh
@@ -456,8 +457,36 @@
             }, 300); // Wait slightly after loader starts fading
         });
 
+        /* --- AMBIENT SOUND & INTERACTIONS --- */
+        const audio = document.getElementById('ambient-sound');
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 1024;
+
+        if (!isMobile) {
+            audio.volume = 0.4; // Ambient Volume
+            
+            // Try playing immediately
+            const playPromise = audio.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    // Auto-play was prevented. Play on first interaction.
+                    console.log("Audio autoplay blocked. Waiting for interaction.");
+                    const startAudio = () => {
+                        audio.play();
+                        document.removeEventListener('click', startAudio);
+                        document.removeEventListener('scroll', startAudio);
+                        document.removeEventListener('keydown', startAudio);
+                    };
+                    document.addEventListener('click', startAudio, { once: true });
+                    document.addEventListener('scroll', startAudio, { once: true });
+                    document.addEventListener('keydown', startAudio, { once: true });
+                });
+            }
+        }
+
         /* --- SMOOTH SCROLLING (Lighter Feel) --- */
         // Wrapped in check to prevent crashing if script fails to load
+        let lenis;
         if (typeof Lenis !== 'undefined') {
             lenis = new Lenis({
                 duration: 1.2, // Lighter duration (closer to default)
