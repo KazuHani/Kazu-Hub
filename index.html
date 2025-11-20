@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kazu Hani | Central Hub</title>
-    <!-- Favicon Added Here -->
-    <link rel="icon" type="image/png" href="images/12312321Fiverr_rhysd22_Art01.png">
+    <!-- Favicon: Added ./ and handled spaces/file extension strictly -->
+    <link rel="icon" type="image/png" href="./images/12312321Fiverr_rhysd22_Art01.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -182,9 +182,8 @@
         <div class="relative">
             <div class="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
             <div class="absolute inset-0 flex items-center justify-center font-bold text-white tech-font text-sm tracking-widest overflow-hidden p-3">
-                
-                <img src="images/kazu small.png" class="w-full h-full object-cover rounded-full opacity-80" alt="Loading Logo">
-                
+                <!-- UPDATED: Added ./ and encoded space as %20 -->
+                <img src="./images/kazu%20small.png" class="w-full h-full object-cover rounded-full opacity-80" alt="Loading Logo">
             </div>
         </div>
         <div class="mt-4 text-cyan-400/50 text-xs font-medium tracking-[0.3em] animate-pulse">INITIALIZING</div>
@@ -201,9 +200,9 @@
         <section class="text-center relative content-hidden entrance-anim">
             <div class="inline-block relative group">
                 <div class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur lg:group-hover:opacity-100 transition duration-1000 lg:group-hover:duration-200"></div>
-                
+                <!-- UPDATED: Added ./ and encoded spaces as %20 -->
                 <img 
-                    src="images/Kazu Hani Pixelart.gif" 
+                    src="./images/Kazu%20Hani%20Pixelart.gif" 
                     alt="Kazu Hani Profile" 
                     class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto"
                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'"
@@ -319,8 +318,9 @@
                     <!-- Main Cover -->
                     <div class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10 group/cover">
                         
+                        <!-- UPDATED: Added ./ -->
                         <img 
-                            src="images/sisu.jpg" 
+                            src="./images/sisu.jpg" 
                             alt="Playlist Cover" 
                             class="w-full h-full object-cover opacity-90 lg:group-hover/cover:opacity-100 transition-opacity duration-500"
                         >
