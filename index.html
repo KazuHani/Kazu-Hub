@@ -183,8 +183,9 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-    <!-- Ambient Sound Element (Hidden) -->
-    <audio id="ambient-sound" loop>
+    <!-- Ambient Sound Element (Preloaded) -->
+    <!-- Added preload="auto" to help buffering -->
+    <audio id="ambient-sound" loop preload="auto">
         <source src="sound/wind.mp3" type="audio/mpeg">
     </audio>
 
@@ -212,7 +213,6 @@
             <div class="inline-block relative group">
                 <div class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur lg:group-hover:opacity-100 transition duration-1000 lg:group-hover:duration-200"></div>
                 
-                <!-- Eager load main profile image -->
                 <img 
                     src="images/Kazu%20Hani%20Pixelart.gif" 
                     alt="Kazu Hani Profile" 
@@ -462,26 +462,61 @@
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 1024;
 
         if (!isMobile) {
-            audio.volume = 0.4; // Ambient Volume
+            audio.volume = 0; 
             
-            // Try playing immediately
-            const playPromise = audio.play();
+            // Define startAudio separately to remove listeners cleanly
+            const startAudio = () => {
+                // Remove listeners immediately to prevent double triggers
+                document.removeEventListener('click', startAudio);
+                document.removeEventListener('scroll', startAudio);
+                document.removeEventListener('keydown', startAudio);
+
+                // Delay play slightly to let the UI thread breathe (fixes freeze)
+                setTimeout(() => {
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            fadeInAudio(audio);
+                        }).catch(error => {
+                            console.log("Audio play failed:", error);
+                        });
+                    }
+                }, 100);
+            };
+
+            // Attempt auto-play first (rarely works but worth a shot)
+            const autoPlayPromise = audio.play();
             
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    // Auto-play was prevented. Play on first interaction.
+            if (autoPlayPromise !== undefined) {
+                autoPlayPromise.then(() => {
+                    // Autoplay started! Fade in.
+                    fadeInAudio(audio);
+                }).catch(error => {
+                    // Autoplay blocked. Wait for interaction.
                     console.log("Audio autoplay blocked. Waiting for interaction.");
-                    const startAudio = () => {
-                        audio.play();
-                        document.removeEventListener('click', startAudio);
-                        document.removeEventListener('scroll', startAudio);
-                        document.removeEventListener('keydown', startAudio);
-                    };
                     document.addEventListener('click', startAudio, { once: true });
                     document.addEventListener('scroll', startAudio, { once: true });
                     document.addEventListener('keydown', startAudio, { once: true });
                 });
             }
+        }
+
+        function fadeInAudio(audioElement) {
+            let vol = 0;
+            const targetVol = 0.4; // Target volume 40%
+            const interval = 50; // Update every 50ms
+            const duration = 2000; // 2 seconds fade
+            const step = (targetVol / duration) * interval;
+
+            const fadeInterval = setInterval(() => {
+                if (vol < targetVol) {
+                    vol += step;
+                    // Clamp volume to max 1.0 to avoid errors
+                    audioElement.volume = Math.min(vol, 1.0); 
+                } else {
+                    clearInterval(fadeInterval);
+                }
+            }, interval);
         }
 
         /* --- SMOOTH SCROLLING (Lighter Feel) --- */
