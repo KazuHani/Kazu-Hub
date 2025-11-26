@@ -500,6 +500,19 @@
                     document.addEventListener('keydown', startAudio, { once: true });
                 });
             }
+
+            // NEW: Handle Tab Switching
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    audio.pause();
+                } else {
+                    // Resume only if not mobile (already inside !isMobile check)
+                    // and if the audio isn't already playing (though play() handles that)
+                    // We use a catch block just in case the browser policy interferes, 
+                    // though usually resuming an already-authorized audio context is fine.
+                    audio.play().catch(e => console.log("Resume failed:", e));
+                }
+            });
         }
 
         function fadeInAudio(audioElement) {
