@@ -261,14 +261,20 @@
 
         .content-hidden {
             opacity: 0;
-            transform: translateY(30px);
-            will-change: opacity, transform;
+            transform: translateY(50px);
+            /* Increased travel for more drama */
+            filter: blur(5px);
+            /* Add blur for smoother entry */
+            will-change: opacity, transform, filter;
         }
 
+        /* Separate visible class isn't strictly needed if we remove hidden, 
+           but we keep it for specific transition control if needed */
         .content-visible {
             opacity: 1;
             transform: translateY(0);
-            transition: opacity 1s ease-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: blur(0);
+            transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease-out;
         }
 
         /* Scrollbar */
@@ -435,6 +441,58 @@
             background: var(--neon-purple);
             color: white;
             box-shadow: 0 0 10px var(--neon-purple);
+        }
+
+        /* --- GLOBAL PAUSE (Resource Saving) --- */
+        body.global-paused * {
+            animation-play-state: paused !important;
+            transition: none !important;
+        }
+
+        /* --- MUTE BUTTON --- */
+        #mute-btn {
+            position: fixed;
+            bottom: 6rem;
+            /* Above back to top */
+            right: 1.5rem;
+            z-index: 50;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #mute-btn:hover {
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.4);
+            transform: scale(1.1);
+            background: rgba(0, 243, 255, 0.1);
+        }
+
+        #mute-btn.muted {
+            border-color: #ef4444;
+            /* Red */
+            color: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+
+        #mute-btn.muted:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        @media (min-width: 640px) {
+            #mute-btn {
+                right: 1.5rem;
+                bottom: 6rem;
+                /* Adjust if needed */
+            }
         }
     </style>
 </head>
@@ -761,6 +819,11 @@
         <i data-lucide="arrow-up" class="w-6 h-6"></i>
     </button>
 
+    <!-- Mute Button -->
+    <button id="mute-btn" onclick="toggleMute()" aria-label="Toggle Sound">
+        <i data-lucide="volume-2" class="w-5 h-5"></i>
+    </button>
+
     <!-- GENERIC MODAL OVERLAY -->
     <div id="modal-overlay">
         <!-- Close Overlay on click outside -->
@@ -777,105 +840,253 @@
         </div>
     </div>
     <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
-        let isScrolling = false; // Added missing variable definition here
+        // Global variables
+        let isScrolling = false;
 
-        /* --- PAGE LOAD ANIMATION --- */
+        // Ensure loader hides even if something errors
+        const safeLoaderHide = setTimeout(() => {
+            const loader = document.getElementById('page-loader');
+            if (loader && getComputedStyle(loader).opacity !== '0') {
+                console.warn("Forcing loader hide via safety timeout");
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
+            }
+        }, 5000);
+
+        /* --- PAGE LOAD & DYNAMIC ANIMATION (IntersectionObserver) --- */
         window.addEventListener('load', () => {
+            // Clear safety timeout since we are handling it normally
+            clearTimeout(safeLoaderHide);
+
             // Force scroll to top on refresh
             if ('scrollRestoration' in history) {
                 history.scrollRestoration = 'manual';
             }
             window.scrollTo(0, 0);
-            if (lenis) lenis.scrollTo(0, { immediate: true });
+            if (typeof lenis !== 'undefined' && lenis) lenis.scrollTo(0, { immediate: true });
 
             const loader = document.getElementById('page-loader');
-            const animElements = document.querySelectorAll('.entrance-anim');
 
             // Fade out loader
             loader.style.opacity = '0';
             loader.style.visibility = 'hidden';
 
-            // Staggered reveal of content
-            setTimeout(() => {
-                animElements.forEach((el, index) => {
-                    setTimeout(() => {
-                        el.classList.remove('content-hidden');
-                        el.classList.add('content-visible');
-                    }, index * 150); // 150ms delay between each section
+            // Setup Intersection Observer for scroll animations
+            const observerOptions = {
+                root: null, // viewport
+                rootMargin: '0px',
+                threshold: 0.15 // Trigger when 15% visible
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.classList.remove('content-hidden');
+                            entry.target.classList.add('content-visible');
+                            observer.unobserve(entry.target);
+                        }, 100);
+                    }
                 });
-            }, 300); // Wait slightly after loader starts fading
+            }, observerOptions);
+
+            const animElements = document.querySelectorAll('.entrance-anim');
+            animElements.forEach(el => observer.observe(el));
+
+            // Init Icons safely after load
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         });
 
         /* --- AMBIENT SOUND & INTERACTIONS --- */
         const audio = document.getElementById('ambient-sound');
+        const muteBtn = document.getElementById('mute-btn');
+        const muteIcon = muteBtn.querySelector('i');
+
+        let isMuted = localStorage.getItem('site_muted') === 'true'; // Load preference
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 1024;
 
-        if (!isMobile) {
-            audio.volume = 0;
+        // Init Mute State
+        if (isMuted) {
+            audio.muted = true;
+            muteBtn.classList.add('muted');
+            muteIcon.setAttribute('data-lucide', 'volume-x');
+        } else {
+            muteIcon.setAttribute('data-lucide', 'volume-2');
+        }
 
-            // Define startAudio separately to remove listeners cleanly
+        // Initial icon create (safe check)
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            audio.muted = isMuted;
+            localStorage.setItem('site_muted', isMuted);
+
+            // Re-render icon specifically
+            // We clear and re-add the <i> tag because Lucide replaces it with an SVG, 
+            // so we can't just reuse the old reference easily.
+            if (isMuted) {
+                muteBtn.classList.add('muted');
+                muteBtn.innerHTML = '<i data-lucide="volume-x" class="w-5 h-5"></i>';
+            } else {
+                muteBtn.classList.remove('muted');
+                muteBtn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+
+                // If we were paused/never started, try starting now
+                if (audio.paused && !document.hidden && !isMobile) {
+                    audio.play().then(() => fadeInAudio(audio)).catch(e => console.log(e));
+                }
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        if (!isMobile) {
+            audio.volume = 0; // Start at 0 for fade in
+
+            // SYNC UI WITH REALITY
+            // Force Initial State to visually muted/stopped until we confirm playback
+            // (Unless user explicitly muted, in which case it stays properly muted)
+            if (!isMuted) {
+                // It's technically "on" but not playing yet, so show it as "off" visually
+                // until the autoplay succeeds or user clicks.
+                // Actually, let's make it a third state? No, standard is:
+                // If not playing -> Show "muted/off" style or a "play" style?
+                // User request: "shows as playing in the icon when in fact no audio is playing"
+                // Fix: Default to muted icon if paused, switch to volume icon on 'play' event.
+
+                muteBtn.classList.add('muted');
+                muteBtn.innerHTML = '<i data-lucide="volume-x" class="w-5 h-5"></i>';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+
+            // Hook into Audio Events for definitive state
+            audio.addEventListener('play', () => {
+                if (!isMuted) {
+                    muteBtn.classList.remove('muted');
+                    muteIconTag = '<i data-lucide="volume-2" class="w-5 h-5"></i>'; // Temp var
+                    muteBtn.innerHTML = '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            });
+
+            audio.addEventListener('pause', () => {
+                // If paused (tab switch or whatever), show muted state visually?
+                // User said: "change dynamically if / when there is audio"
+                // So if paused, show mute icon.
+                muteBtn.classList.add('muted');
+                muteBtn.innerHTML = '<i data-lucide="volume-x" class="w-5 h-5"></i>';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            });
+
             const startAudio = () => {
-                // Remove listeners immediately to prevent double triggers
                 document.removeEventListener('click', startAudio);
                 document.removeEventListener('scroll', startAudio);
                 document.removeEventListener('keydown', startAudio);
 
-                // Play immediately without delay
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(() => {
-                        fadeInAudio(audio);
-                    }).catch(error => {
-                        console.log("Audio play failed:", error);
-                    });
+                // Only play if not muted preference
+                if (!isMuted) {
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            fadeInAudio(audio);
+                        }).catch(error => {
+                            console.log("Audio play failed:", error);
+                        });
+                    }
                 }
             };
 
-            // Attempt auto-play first (rarely works but worth a shot)
-            const autoPlayPromise = audio.play();
-
-            if (autoPlayPromise !== undefined) {
-                autoPlayPromise.then(() => {
-                    // Autoplay started! Fade in.
-                    fadeInAudio(audio);
-                }).catch(error => {
-                    // Autoplay blocked. Wait for interaction.
-                    console.log("Audio autoplay blocked. Waiting for interaction.");
-                    document.addEventListener('click', startAudio, { once: true });
-                    document.addEventListener('scroll', startAudio, { once: true });
-                    document.addEventListener('keydown', startAudio, { once: true });
-                });
+            // Attempt auto-play
+            if (!isMuted) {
+                const autoPlayPromise = audio.play();
+                if (autoPlayPromise !== undefined) {
+                    autoPlayPromise.then(() => {
+                        fadeInAudio(audio);
+                    }).catch(error => {
+                        console.log("Audio autoplay blocked. Waiting for interaction.");
+                        // Icon remains in "muted" state because 'play' event didn't fire
+                        document.addEventListener('click', startAudio, { once: true });
+                        document.addEventListener('scroll', startAudio, { once: true });
+                        document.addEventListener('keydown', startAudio, { once: true });
+                    });
+                }
+            } else {
+                // Even if muted, prepare listener for when they unmute or first interact
+                document.addEventListener('click', startAudio, { once: true });
             }
 
-            // NEW: Handle Tab Switching
+            // NEW: Handle Tab Switching (Pause EVERYTHING)
             document.addEventListener('visibilitychange', () => {
+                const body = document.body;
+
                 if (document.hidden) {
-                    audio.pause();
+                    // 1. Pause Audio
+                    audio.pause(); // Triggers 'pause' event -> updates icon
+
+                    // 2. Add Global Pause Class (Stops CSS Animations)
+                    body.classList.add('global-paused');
+
                 } else {
-                    // Resume only if not mobile (already inside !isMobile check)
-                    // and if the audio isn't already playing (though play() handles that)
-                    // We use a catch block just in case the browser policy interferes,
-                    // though usually resuming an already-authorized audio context is fine.
-                    audio.play().catch(e => console.log("Resume failed:", e));
+                    // 1. Resume Audio (if not muted by user)
+                    if (!isMuted) {
+                        audio.play().catch(e => console.log("Resume failed:", e));
+                        // Triggers 'play' event -> updates icon
+                    }
+
+                    // 2. Remove Global Pause Class
+                    body.classList.remove('global-paused');
                 }
             });
         }
 
+        /* --- AUDIO UTILITIES --- */
+        let fadeInterval;
+
         function fadeInAudio(audioElement) {
-            let vol = 0;
-            const targetVol = 0.4; // Target volume 40%
-            const interval = 50; // Update every 50ms
-            const duration = 2000; // 2 seconds fade
+            if (isMuted) return;
+
+            // Clear any existing fade to prevent conflicts
+            if (fadeInterval) clearInterval(fadeInterval);
+
+            // Start from current volume or 0
+            let vol = audioElement.volume;
+            const targetVol = 0.4;
+
+            // If we are already near target, just set it
+            if (Math.abs(vol - targetVol) < 0.05) {
+                audioElement.volume = targetVol;
+                return;
+            }
+
+            const interval = 50;
+            const duration = 2000;
             const step = (targetVol / duration) * interval;
 
-            const fadeInterval = setInterval(() => {
+            // Reset to 0 if we are starting a fresh fade from silence
+            if (vol < 0.01) {
+                audioElement.volume = 0;
+                vol = 0;
+            }
+
+            fadeInterval = setInterval(() => {
+                // Check if user muted mid-fade
+                if (isMuted) {
+                    clearInterval(fadeInterval);
+                    return;
+                }
+
                 if (vol < targetVol) {
                     vol += step;
-                    // Clamp volume to max 1.0 to avoid errors
-                    audioElement.volume = Math.min(vol, 1.0);
+                    audioElement.volume = Math.min(vol, targetVol);
                 } else {
+                    audioElement.volume = targetVol;
                     clearInterval(fadeInterval);
                 }
             }, interval);
