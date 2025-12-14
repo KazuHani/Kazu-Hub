@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,7 @@
     <title>Kazu Hani | Central Hub</title>
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="images/12312321Fiverr_rhysd22_Art01.png">
-    
+
     <!-- Performance Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,19 +18,56 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Using stable Lenis version -->
-    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script> 
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+
     <style>
         :root {
             --neon-blue: #00f3ff;
             --neon-purple: #bc13fe;
             --glass-bg: rgba(15, 23, 42, 0.6);
             --glass-border: rgba(255, 255, 255, 0.1);
+
+            /* Dynamic Theme Variables */
+            --bg-primary: #0d1b2a;
+            /* Default Night */
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --glass-card-bg: rgba(255, 255, 255, 0.03);
+            --glass-card-border: rgba(255, 255, 255, 0.05);
+            --stat-border: rgba(6, 182, 212, 0.5);
+            /* Cyan */
+        }
+
+        body.day-mode {
+            --bg-primary: #1e293b;
+            /* Slate 800 - Lighter Dark Blue */
+            --text-primary: #f8fafc;
+            /* Keep Text Light */
+            --text-secondary: #cbd5e1;
+            /* Enhance glass for slightly lighter background */
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+
+        body.sunset-mode {
+            --bg-primary: #2d1b4e;
+            /* Deep Purple Twilight */
+            --text-primary: #f8fafc;
+        }
+
+        body.sunrise-mode {
+            --bg-primary: #fff7ed;
+            /* Warm Orange Tint */
+            --text-primary: #431407;
+            --glass-bg: rgba(255, 247, 237, 0.7);
         }
 
         /* Removed native smooth scroll to let Lenis handle the physics */
-        html.lenis, html.lenis body {
+        html.lenis,
+        html.lenis body {
             height: auto;
         }
 
@@ -51,12 +89,17 @@
 
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #0d1b2a; /* Arctic blue */
-            color: #e2e8f0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 3s ease, color 1s ease;
             overflow-x: hidden;
         }
 
-        h1, h2, h3, .tech-font {
+        h1,
+        h2,
+        h3,
+        .tech-font {
             font-family: 'Poppins', sans-serif;
         }
 
@@ -91,10 +134,11 @@
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--glass-card-bg);
             backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-card-border);
             transition: all 0.3s ease;
+            color: var(--text-primary);
         }
 
         /* HOVER EFFECTS: DESKTOP ONLY */
@@ -106,20 +150,51 @@
                 transform: translateY(-2px);
             }
 
-            .glass-card:hover .icon-twitter { color: white; }
-            .glass-card:hover .icon-tiktok { fill: #ec4899; color: #ec4899; }
-            .glass-card:hover .icon-youtube { color: #ef4444; }
-            .glass-card:hover .icon-steam { color: #3b82f6; }
-            .glass-card:hover .icon-reddit { fill: #f97316; color: #f97316; }
-            .glass-card:hover .icon-mal { color: #93c5fd; }
-            .glass-card:hover .icon-discord { fill: #a5b4fc; color: #a5b4fc; }
+            .glass-card:hover .icon-twitter {
+                color: white;
+            }
+
+            .glass-card:hover .icon-tiktok {
+                fill: #ec4899;
+                color: #ec4899;
+            }
+
+            .glass-card:hover .icon-youtube {
+                color: #ef4444;
+            }
+
+            .glass-card:hover .icon-steam {
+                color: #3b82f6;
+            }
+
+            .glass-card:hover .icon-reddit {
+                fill: #f97316;
+                color: #f97316;
+            }
+
+            .glass-card:hover .icon-mal {
+                color: #93c5fd;
+            }
+
+            .glass-card:hover .icon-discord {
+                fill: #a5b4fc;
+                color: #a5b4fc;
+            }
         }
 
         /* Animations */
         @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
         }
 
         .animate-float {
@@ -127,8 +202,15 @@
         }
 
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 5px var(--neon-blue); }
-            50% { box-shadow: 0 0 20px var(--neon-blue), 0 0 10px var(--neon-purple); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 5px var(--neon-blue);
+            }
+
+            50% {
+                box-shadow: 0 0 20px var(--neon-blue), 0 0 10px var(--neon-purple);
+            }
         }
 
         .profile-glow {
@@ -141,25 +223,48 @@
             background: var(--neon-purple);
             animation: equalize 1s infinite;
         }
+
         @keyframes equalize {
-            0% { height: 10px; }
-            50% { height: 30px; }
-            100% { height: 10px; }
+            0% {
+                height: 10px;
+            }
+
+            50% {
+                height: 30px;
+            }
+
+            100% {
+                height: 10px;
+            }
         }
-        .music-bar:nth-child(1) { animation-delay: 0.1s; }
-        .music-bar:nth-child(2) { animation-delay: 0.3s; }
-        .music-bar:nth-child(3) { animation-delay: 0.5s; }
-        .music-bar:nth-child(4) { animation-delay: 0.2s; }
+
+        .music-bar:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .music-bar:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+
+        .music-bar:nth-child(3) {
+            animation-delay: 0.5s;
+        }
+
+        .music-bar:nth-child(4) {
+            animation-delay: 0.2s;
+        }
 
         /* Loader & Entrance Animations */
         #page-loader {
             transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
         }
+
         .content-hidden {
             opacity: 0;
             transform: translateY(30px);
             will-change: opacity, transform;
         }
+
         .content-visible {
             opacity: 1;
             transform: translateY(0);
@@ -170,18 +275,170 @@
         ::-webkit-scrollbar {
             width: 8px;
         }
+
         ::-webkit-scrollbar-track {
             background: #020617;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #334155;
             border-radius: 4px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: var(--neon-blue);
         }
+
+        /* --- STORM WARNING UI --- */
+        #storm-warning {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            background: rgba(220, 38, 38, 0.2);
+            /* Red tint */
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            backdrop-filter: blur(8px);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+            display: none;
+            /* Hidden by default */
+            animation: pulse-red 2s infinite;
+            max-width: 300px;
+        }
+
+        #storm-warning.visible {
+            display: flex;
+            /* Or block, handled by JS normally, but CSS for safety */
+        }
+
+        @keyframes pulse-red {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(220, 38, 38, 0.2);
+                border-color: rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 25px rgba(220, 38, 38, 0.6);
+                border-color: rgba(239, 68, 68, 1);
+            }
+        }
+
+        /* Hide on mobile/tablet */
+        @media (max-width: 1024px) {
+            #storm-warning {
+                display: none !important;
+            }
+        }
+
+        /* --- MODAL SYSTEM --- */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 27, 42, 0.85);
+            /* Dark overlay */
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
+            border-radius: 20px;
+            /* More rounded */
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #modal-overlay.active .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+            background: red;
+        }
+
+        /* Clock Canvas */
+        #analog-clock-canvas {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 1.5rem auto;
+            display: block;
+        }
+
+        /* Birthday Calendar Grid */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            font-family: monospace;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .calendar-day {
+            padding: 6px;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        .calendar-header {
+            font-weight: bold;
+            color: var(--neon-blue);
+        }
+
+        .calendar-today {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .calendar-target {
+            background: var(--neon-purple);
+            color: white;
+            box-shadow: 0 0 10px var(--neon-purple);
+        }
     </style>
 </head>
+
 <body class="min-h-screen flex flex-col relative">
 
     <!-- Ambient Sound Element (Preloaded) -->
@@ -194,12 +451,26 @@
     <div id="page-loader" class="fixed inset-0 z-[100] bg-[#0d1b2a] flex flex-col items-center justify-center">
         <div class="relative">
             <div class="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
-            <div class="absolute inset-0 flex items-center justify-center font-bold text-white tech-font text-sm tracking-widest overflow-hidden p-3">
+            <div
+                class="absolute inset-0 flex items-center justify-center font-bold text-white tech-font text-sm tracking-widest overflow-hidden p-3">
                 <!-- Loading Logo -->
-                <img src="images/kazu%20small.png" class="w-full h-full object-cover rounded-full opacity-80" alt="Loading Logo">
+                <img src="images/kazu%20small.png" class="w-full h-full object-cover rounded-full opacity-80"
+                    alt="Loading Logo">
             </div>
         </div>
         <div class="mt-4 text-cyan-400/50 text-xs font-medium tracking-[0.3em] animate-pulse">INITIALIZING</div>
+    </div>
+
+    <!-- Storm Warning Banner -->
+    <div id="storm-warning" class="entrance-anim flex items-start gap-4">
+        <div class="bg-red-500/20 p-2 rounded-full border border-red-500/50 animate-pulse shrink-0">
+            <i data-lucide="cloud-lightning" class="w-6 h-6 text-red-400"></i>
+        </div>
+        <div>
+            <h3 class="text-red-400 font-bold uppercase tracking-widest text-xs mb-1">Severe Weather Alert</h3>
+            <p class="text-white text-sm leading-snug">Storm conditions detected in the UK. Local systems affecting
+                visual atmosphere.</p>
+        </div>
     </div>
 
     <!-- Background Animations -->
@@ -212,17 +483,17 @@
         <!-- Profile & Hero Section -->
         <section class="text-center relative content-hidden entrance-anim">
             <div class="inline-block relative group">
-                <div class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur lg:group-hover:opacity-100 transition duration-1000 lg:group-hover:duration-200"></div>
-                
-                <img 
-                    src="images/Kazu%20Hani%20Pixelart.gif" 
-                    alt="Kazu Hani Profile" 
-                    class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto"
+                <div
+                    class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur lg:group-hover:opacity-100 transition duration-1000 lg:group-hover:duration-200">
+                </div>
+
+                <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile"
+                    class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto cursor-pointer active:scale-95 transition-transform"
                     loading="eager"
-                    onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'"
-                >
+                    onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
             </div>
-            <h1 class="mt-6 text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-500 animate-float pb-2">
+            <h1
+                class="mt-6 text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-500 animate-float pb-2">
                 KAZU HANI
             </h1>
             <p class="mt-2 text-xl text-cyan-300/80 tracking-[0.2em] uppercase">noodle derg</p>
@@ -231,9 +502,14 @@
         <!-- Status Dashboard (Grid) -->
         <section id="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 content-hidden entrance-anim">
             <!-- UK Time -->
-            <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group">
+            <div onclick="openModal('time')"
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group cursor-pointer hover:bg-cyan-500/10 transition-colors">
                 <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="clock" class="w-12 h-12 text-cyan-400"></i>
+                </div>
+                <!-- Add Expand Icon -->
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i data-lucide="maximize-2" class="w-4 h-4 text-cyan-400"></i>
                 </div>
                 <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">United Kingdom Time</h3>
                 <div id="uk-time" class="text-4xl font-bold text-white tech-font tabular-nums">00:00:00 PM</div>
@@ -241,9 +517,13 @@
             </div>
 
             <!-- Age Calculator -->
-            <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-purple-500/50 relative overflow-hidden group">
+            <div onclick="openModal('age')"
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-purple-500/50 relative overflow-hidden group cursor-pointer hover:bg-purple-500/10 transition-colors">
                 <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="user" class="w-12 h-12 text-purple-400"></i>
+                </div>
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i data-lucide="maximize-2" class="w-4 h-4 text-purple-400"></i>
                 </div>
                 <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">Current Age</h3>
                 <div id="current-age" class="text-4xl font-bold text-white tech-font tabular-nums">--</div>
@@ -251,12 +531,18 @@
             </div>
 
             <!-- Birthday Countdown -->
-            <div class="glass-panel rounded-2xl p-6 text-center border-t-2 border-pink-500/50 relative overflow-hidden group">
+            <div onclick="openModal('birthday')"
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-pink-500/50 relative overflow-hidden group cursor-pointer hover:bg-pink-500/10 transition-colors">
                 <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="cake" class="w-12 h-12 text-pink-400"></i>
                 </div>
-                <h3 id="birthday-label" class="text-gray-400 text-sm uppercase tracking-widest mb-2">Next Birthday (Nov 9)</h3>
-                <div id="countdown" class="text-2xl md:text-3xl font-bold text-white tech-font tabular-nums">--d --h --m --s</div>
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i data-lucide="maximize-2" class="w-4 h-4 text-pink-400"></i>
+                </div>
+                <h3 id="birthday-label" class="text-gray-400 text-sm uppercase tracking-widest mb-2">Next Birthday (Nov
+                    9)</h3>
+                <div id="countdown" class="text-2xl md:text-3xl font-bold text-white tech-font tabular-nums">--d --h --m
+                    --s</div>
                 <div class="text-pink-400/80 text-sm mt-1">Until Birthday</div>
             </div>
         </section>
@@ -267,45 +553,63 @@
                 <i data-lucide="network" class="text-cyan-400"></i> Social Profiles
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                
-                <a href="https://x.com/Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+
+                <a href="https://x.com/Kazu_Hani" target="_blank"
+                    class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
                     <i data-lucide="twitter" class="icon-twitter w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">Twitter</span>
                 </a>
 
-                <a href="https://www.tiktok.com/@kazu_hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <svg class="icon-tiktok w-8 h-8 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                <a href="https://www.tiktok.com/@kazu_hani" target="_blank"
+                    class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <svg class="icon-tiktok w-8 h-8 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24">
+                        <path
+                            d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+                    </svg>
                     <span class="text-sm font-medium">TikTok</span>
                 </a>
 
-                <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                <a href="https://www.youtube.com/@Kazu_Hani" target="_blank"
+                    class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
                     <i data-lucide="youtube" class="icon-youtube w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">YouTube</span>
                 </a>
 
-                <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank"
+                    class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
                     <i data-lucide="gamepad-2" class="icon-steam w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">Steam</span>
                 </a>
 
-                <a href="https://www.reddit.com/user/Korat24/" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
-                    <svg class="icon-reddit w-8 h-8 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.249-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
+                <a href="https://www.reddit.com/user/Korat24/" target="_blank"
+                    class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                    <svg class="icon-reddit w-8 h-8 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24">
+                        <path
+                            d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.249-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" />
+                    </svg>
                     <span class="text-sm font-medium">Reddit</span>
                 </a>
 
-                <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
+                <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank"
+                    class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group">
                     <i data-lucide="tv" class="icon-mal w-8 h-8 text-gray-400 transition-colors"></i>
                     <span class="text-sm font-medium">MyAnimeList</span>
                 </a>
 
                 <!-- Discord with Copy Function -->
-                <button onclick="copyDiscord()" class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group col-span-2 md:col-span-2 relative">
+                <button onclick="copyDiscord()"
+                    class="glass-card p-4 rounded-xl flex flex-col items-center justify-center gap-3 group col-span-2 md:col-span-2 relative">
                     <div class="flex items-center gap-2">
-                        <svg class="icon-discord w-8 h-8 text-indigo-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"/></svg>
+                        <svg class="icon-discord w-8 h-8 text-indigo-400 fill-current transition-colors"
+                            viewBox="0 0 24 24">
+                            <path
+                                d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z" />
+                        </svg>
                         <span class="font-bold text-lg">kazu_hani</span>
                     </div>
                     <span id="discord-tooltip" class="text-xs text-gray-400">Click to copy ID</span>
-                    <div id="copy-success" class="absolute inset-0 bg-green-500/90 rounded-xl flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none">
+                    <div id="copy-success"
+                        class="absolute inset-0 bg-green-500/90 rounded-xl flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none">
                         <span class="font-bold text-white">Copied!</span>
                     </div>
                 </button>
@@ -314,21 +618,25 @@
 
         <!-- NEW OC INFO SECTION -->
         <section id="oc-kazu" class="content-hidden entrance-anim">
-            <div class="glass-panel p-8 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 border-t border-cyan-500/30">
+            <div
+                class="glass-panel p-8 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 border-t border-cyan-500/30">
                 <div class="flex items-center gap-4">
                     <!-- Updated to use an Image instead of SVG Symbol -->
-                    <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20 flex-shrink-0">
+                    <div
+                        class="w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20 flex-shrink-0">
                         <!-- Lazy load OC image -->
-                        <img src="images/kazu%20small.png" alt="Kazu Icon" class="w-full h-full object-cover" loading="lazy">
+                        <img src="images/kazu%20small.png" alt="Kazu Icon" class="w-full h-full object-cover"
+                            loading="lazy">
                     </div>
                     <div>
                         <h2 class="text-2xl font-bold text-white tech-font">Meet Kazu</h2>
                         <p class="text-slate-400 text-sm mt-1">Discover the lore and details behind the noodle derg.</p>
                     </div>
                 </div>
-                
+
                 <!-- UPDATED: Link to OC Site -->
-                <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank" class="group flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-500/20 transition-all transform lg:hover:-translate-y-1">
+                <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank"
+                    class="group flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-cyan-500/20 transition-all transform lg:hover:-translate-y-1">
                     <span>View Full Reference</span>
                     <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
                 </a>
@@ -338,37 +646,52 @@
         <!-- Music Section -->
         <section id="music" class="relative group mt-8 content-hidden entrance-anim">
             <!-- Glow Effect (Desktop Only) -->
-            <div class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-20 lg:group-hover:opacity-40 transition duration-500"></div>
-            
-            <div class="glass-panel relative p-6 md:p-8 rounded-2xl flex flex-col md:flex-row items-center gap-8 overflow-hidden">
-                
+            <div
+                class="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl blur opacity-20 lg:group-hover:opacity-40 transition duration-500">
+            </div>
+
+            <div
+                class="glass-panel relative p-6 md:p-8 rounded-2xl flex flex-col md:flex-row items-center gap-8 overflow-hidden">
+
                 <!-- Decorative BG Blurs -->
                 <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
-                <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+                <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl">
+                </div>
 
                 <!-- Playlist "Stack" Art - MADE BIGGER (w-56 h-56) -->
-                <div class="relative w-56 h-56 flex-shrink-0 transform transition-transform duration-500 lg:group-hover:scale-105">
+                <div
+                    class="relative w-56 h-56 flex-shrink-0 transform transition-transform duration-500 lg:group-hover:scale-105">
                     <!-- Stacked cards effect -->
-                    <div class="absolute top-0 left-4 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5"></div>
-                    <div class="absolute top-0 left-2 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5"></div>
-                    
+                    <div
+                        class="absolute top-0 left-4 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5">
+                    </div>
+                    <div
+                        class="absolute top-0 left-2 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5">
+                    </div>
+
                     <!-- Main Cover -->
-                    <div class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10 group/cover">
-                        
+                    <div
+                        class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10 group/cover">
+
                         <!-- Updated image path with version query string to bust cache -->
-                        <img 
-                            src="images/sisu.jpg?v=2" 
-                            alt="Playlist Cover" 
+                        <img src="images/sisu.jpg?v=2" alt="Playlist Cover"
                             class="w-full h-full object-cover opacity-90 lg:group-hover/cover:opacity-100 transition-opacity duration-500"
-                            loading="lazy"
-                        >
+                            loading="lazy">
 
                         <!-- Mini EQ -->
                         <div class="absolute bottom-2 left-2 flex gap-1 h-4 items-end z-20">
-                            <div class="w-1 bg-cyan-400/90 animate-[equalize_1s_infinite] h-2 rounded-full shadow-lg shadow-black/50"></div>
-                            <div class="w-1 bg-cyan-400/90 animate-[equalize_1.2s_infinite] h-3 rounded-full shadow-lg shadow-black/50"></div>
-                            <div class="w-1 bg-cyan-400/90 animate-[equalize_0.8s_infinite] h-1 rounded-full shadow-lg shadow-black/50"></div>
-                            <div class="w-1 bg-cyan-400/90 animate-[equalize_1.1s_infinite] h-2.5 rounded-full shadow-lg shadow-black/50"></div>
+                            <div
+                                class="w-1 bg-cyan-400/90 animate-[equalize_1s_infinite] h-2 rounded-full shadow-lg shadow-black/50">
+                            </div>
+                            <div
+                                class="w-1 bg-cyan-400/90 animate-[equalize_1.2s_infinite] h-3 rounded-full shadow-lg shadow-black/50">
+                            </div>
+                            <div
+                                class="w-1 bg-cyan-400/90 animate-[equalize_0.8s_infinite] h-1 rounded-full shadow-lg shadow-black/50">
+                            </div>
+                            <div
+                                class="w-1 bg-cyan-400/90 animate-[equalize_1.1s_infinite] h-2.5 rounded-full shadow-lg shadow-black/50">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -377,13 +700,17 @@
                 <div class="flex-grow text-center md:text-left z-10 w-full">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <span class="text-xs font-bold text-cyan-400 tracking-widest uppercase mb-2 block">Now Curating</span>
+                            <span class="text-xs font-bold text-cyan-400 tracking-widest uppercase mb-2 block">Now
+                                Curating</span>
                             <h2 class="text-2xl font-bold text-white tech-font tracking-tight">Songs that SLAP 🐉</h2>
                             <p class="text-slate-400 text-sm mt-1">YouTube Music • Kazu Hani's Selection</p>
                         </div>
-                        
-                        <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI" target="_blank" class="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold lg:hover:bg-cyan-50 transition-all shadow-lg lg:hover:shadow-cyan-500/20 lg:hover:-translate-y-0.5 group/btn w-full md:w-auto">
-                            <div class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white lg:group-hover/btn:scale-110 transition-transform">
+
+                        <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI"
+                            target="_blank"
+                            class="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold lg:hover:bg-cyan-50 transition-all shadow-lg lg:hover:shadow-cyan-500/20 lg:hover:-translate-y-0.5 group/btn w-full md:w-auto">
+                            <div
+                                class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white lg:group-hover/btn:scale-110 transition-transform">
                                 <i data-lucide="play" class="w-3 h-3 fill-current ml-0.5"></i>
                             </div>
                             <span>Listen</span>
@@ -399,23 +726,29 @@
                 <i data-lucide="book-open" class="text-cyan-400"></i> Stories & Writing
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 <!-- Story 1 -->
-                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-cyan-500 lg:hover:bg-white/5 transition-all group">
+                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub"
+                    target="_blank"
+                    class="glass-panel p-6 rounded-xl border-l-4 border-cyan-500 lg:hover:bg-white/5 transition-all group">
                     <div class="flex justify-end items-start mb-4">
                         <i data-lucide="external-link" class="w-5 h-5 text-gray-500 lg:group-hover:text-white"></i>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2 tech-font">The Legend That Bleeds</h3>
-                    <p class="text-gray-400 text-sm line-clamp-3">Access the chronicles of this ongoing narrative. Click to read the preview on Google Docs.</p>
+                    <p class="text-gray-400 text-sm line-clamp-3">Access the chronicles of this ongoing narrative. Click
+                        to read the preview on Google Docs.</p>
                 </a>
 
                 <!-- Story 2 (Unlocked) -->
-                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" class="glass-panel p-6 rounded-xl border-l-4 border-purple-500 lg:hover:bg-white/5 transition-all group">
+                <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub"
+                    target="_blank"
+                    class="glass-panel p-6 rounded-xl border-l-4 border-purple-500 lg:hover:bg-white/5 transition-all group">
                     <div class="flex justify-end items-start mb-4">
                         <i data-lucide="external-link" class="w-5 h-5 text-gray-500 lg:group-hover:text-white"></i>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2 tech-font">The Naga and Human Kind</h3>
-                    <p class="text-gray-400 text-sm">Read the latest draft of this story. Click to open the document.</p>
+                    <p class="text-gray-400 text-sm">Read the latest draft of this story. Click to open the document.
+                    </p>
                 </a>
             </div>
         </section>
@@ -423,10 +756,26 @@
     </main>
 
     <!-- Back to Top Button -->
-    <button id="backToTop" onclick="scrollToTop()" class="fixed bottom-6 right-6 bg-cyan-500 hover:bg-cyan-400 text-black p-3 rounded-full shadow-lg shadow-cyan-500/40 transition-all duration-300 transform translate-y-20 z-50">
+    <button id="backToTop" onclick="scrollToTop()"
+        class="fixed bottom-6 right-6 bg-cyan-500 hover:bg-cyan-400 text-black p-3 rounded-full shadow-lg shadow-cyan-500/40 transition-all duration-300 transform translate-y-20 z-50">
         <i data-lucide="arrow-up" class="w-6 h-6"></i>
     </button>
 
+    <!-- GENERIC MODAL OVERLAY -->
+    <div id="modal-overlay">
+        <!-- Close Overlay on click outside -->
+        <div class="absolute inset-0" onclick="closeModal()"></div>
+
+        <!-- Modal Content Container (Rotates content) -->
+        <div class="modal-content relative z-10 flex flex-col items-center text-center">
+            <button class="modal-close" onclick="closeModal()">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div id="modal-body-content" class="w-full">
+                <!-- Dynamic Content Injected Here -->
+            </div>
+        </div>
+    </div>
     <script>
         // Initialize Lucide Icons
         lucide.createIcons();
@@ -464,8 +813,8 @@
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 1024;
 
         if (!isMobile) {
-            audio.volume = 0; 
-            
+            audio.volume = 0;
+
             // Define startAudio separately to remove listeners cleanly
             const startAudio = () => {
                 // Remove listeners immediately to prevent double triggers
@@ -473,22 +822,20 @@
                 document.removeEventListener('scroll', startAudio);
                 document.removeEventListener('keydown', startAudio);
 
-                // Delay play slightly to let the UI thread breathe (fixes freeze)
-                setTimeout(() => {
-                    const playPromise = audio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            fadeInAudio(audio);
-                        }).catch(error => {
-                            console.log("Audio play failed:", error);
-                        });
-                    }
-                }, 100);
+                // Play immediately without delay
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        fadeInAudio(audio);
+                    }).catch(error => {
+                        console.log("Audio play failed:", error);
+                    });
+                }
             };
 
             // Attempt auto-play first (rarely works but worth a shot)
             const autoPlayPromise = audio.play();
-            
+
             if (autoPlayPromise !== undefined) {
                 autoPlayPromise.then(() => {
                     // Autoplay started! Fade in.
@@ -509,7 +856,7 @@
                 } else {
                     // Resume only if not mobile (already inside !isMobile check)
                     // and if the audio isn't already playing (though play() handles that)
-                    // We use a catch block just in case the browser policy interferes, 
+                    // We use a catch block just in case the browser policy interferes,
                     // though usually resuming an already-authorized audio context is fine.
                     audio.play().catch(e => console.log("Resume failed:", e));
                 }
@@ -527,7 +874,7 @@
                 if (vol < targetVol) {
                     vol += step;
                     // Clamp volume to max 1.0 to avoid errors
-                    audioElement.volume = Math.min(vol, 1.0); 
+                    audioElement.volume = Math.min(vol, 1.0);
                 } else {
                     clearInterval(fadeInterval);
                 }
@@ -546,14 +893,14 @@
                 smooth: true,
                 mouseMultiplier: 1.0, // Standard multiplier for natural feel
                 smoothTouch: false, // Use native touch scrolling on mobile for better UX
-                touchMultiplier: 2, 
+                touchMultiplier: 2,
             });
         }
 
         // Integrate Lenis into animation loop
         function raf(time) {
             if (lenis) lenis.raf(time);
-            
+
             // Only animate if the tab is visible
             if (!document.hidden) {
                 animate();
@@ -571,17 +918,20 @@
 
         let width, height;
         let particles = [];
+        let rainParticles = [];
         let confettiParticles = [];
+        let fireworkParticles = []; // NEW: Fireworks
         let isBirthday = false;
+        let isRaining = false;  // NEW: Rain State
 
         // Resize handling
         function resize() {
             width = window.innerWidth;
             height = window.innerHeight;
-            
+
             canvas.width = width;
             canvas.height = height;
-            
+
             confettiCanvas.width = width;
             confettiCanvas.height = height;
         }
@@ -592,21 +942,23 @@
         class Particle {
             constructor() {
                 this.reset();
-                this.y = Math.random() * height; 
+                this.y = Math.random() * height;
+                this.baseSpeed = Math.random() * 1 + 0.5;
             }
 
             reset() {
                 this.x = Math.random() * width;
                 this.y = -10;
                 this.size = Math.random() * 2 + 0.5;
-                this.speed = Math.random() * 1 + 0.5;
+                this.baseSpeed = Math.random() * 1 + 0.5;
                 this.windFactor = Math.random() * 0.5 + 0.1;
                 this.opacity = Math.random() * 0.5 + 0.3;
             }
 
-            update(wind) {
-                this.y += this.speed;
-                this.x += wind * this.windFactor;
+            update(wind, speedMult) {
+                this.y += this.baseSpeed * speedMult;
+                this.x += wind * this.windFactor * speedMult;
+                // ... rest unchanged
 
                 if (this.y > height) {
                     this.reset();
@@ -630,6 +982,101 @@
         for (let i = 0; i < 150; i++) {
             particles.push(new Particle());
         }
+
+        // --- Rain Logic ---
+        class RainDrop {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * height;
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = -20;
+                this.length = Math.random() * 20 + 10;
+                this.speed = Math.random() * 10 + 15; // Much faster than snow
+                this.opacity = Math.random() * 0.4 + 0.1;
+            }
+
+            update(wind) {
+                this.y += this.speed;
+                this.x += wind * 2; // Rain is affected by wind less erratically but more directly
+
+                if (this.y > height) {
+                    this.reset();
+                }
+                if (this.x > width) this.x = 0;
+                if (this.x < 0) this.x = width;
+            }
+
+            draw() {
+                ctx.strokeStyle = `rgba(135, 206, 235, ${this.opacity + 0.2})`; // Brighter Blue tint for visibility
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x - (currentWindSpeed * 0.1), this.y + this.length); // Tilt based on wind
+                ctx.stroke();
+            }
+        }
+
+        function initRain() {
+            if (rainParticles.length === 0) {
+                for (let i = 0; i < 200; i++) {
+                    rainParticles.push(new RainDrop());
+                }
+            }
+        }
+
+        // --- Firework Logic ---
+        class FireworkParticle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 4 + 2;
+                this.vx = Math.cos(angle) * velocity;
+                this.vy = Math.sin(angle) * velocity;
+                this.gravity = 0.1;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                this.size = Math.random() * 3 + 1;
+            }
+
+            update() {
+                this.vx *= 0.95; // Friction
+                this.vy *= 0.95;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.decay;
+            }
+
+            draw() {
+                confettiCtx.save();
+                confettiCtx.globalAlpha = this.alpha;
+                confettiCtx.fillStyle = this.color;
+                confettiCtx.beginPath();
+                confettiCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                confettiCtx.fill();
+                confettiCtx.restore();
+            }
+        }
+
+        function spawnFirework(x, y) {
+            for (let i = 0; i < 30; i++) {
+                fireworkParticles.push(new FireworkParticle(x, y));
+            }
+        }
+
+        // --- Interaction: Profile Click ---
+        document.getElementById('profile-pic').addEventListener('click', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            // Center of the image
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            spawnFirework(centerX, centerY);
+        });
 
         // --- Confetti Logic ---
         class Confetti {
@@ -682,21 +1129,45 @@
         function animate() {
             // Snow
             ctx.clearRect(0, 0, width, height);
+            confettiCtx.clearRect(0, 0, width, height);
             time += 0.01;
-            const wind = Math.sin(time) * 1.5 + 0.5;
+            const wind = Math.sin(time) * 1.5 + 0.5 + (currentWindSpeed * 0.1);
+
+            // Adjust snow speed based on weather
+            const speedMultiplier = 1 + (currentWindSpeed * 0.05);
 
             particles.forEach(p => {
-                p.update(wind);
+                p.update(wind, speedMultiplier);
                 p.draw();
             });
 
+            // Rain
+            if (isRaining) {
+                rainParticles.forEach(p => {
+                    p.update(wind); // Reuse wind for rain
+                    p.draw();
+                });
+            }
+
             // Confetti (only if birthday)
             if (isBirthday) {
-                confettiCtx.clearRect(0, 0, width, height);
                 confettiParticles.forEach(p => {
                     p.update();
                     p.draw();
                 });
+            }
+
+            // Fireworks (Always active if triggered)
+            if (fireworkParticles.length > 0) {
+
+                for (let i = fireworkParticles.length - 1; i >= 0; i--) {
+                    const p = fireworkParticles[i];
+                    p.update();
+                    p.draw();
+                    if (p.alpha <= 0) {
+                        fireworkParticles.splice(i, 1);
+                    }
+                }
             }
         }
 
@@ -706,17 +1177,17 @@
         function updateTime() {
             const timeElement = document.getElementById('uk-time');
             const dateElement = document.getElementById('uk-date');
-            
+
             const now = new Date();
-            
-            const timeOptions = { 
-                timeZone: 'Europe/London', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit', 
-                hour12: true 
+
+            const timeOptions = {
+                timeZone: 'Europe/London',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
             };
-            
+
             const dateOptions = {
                 timeZone: 'Europe/London',
                 weekday: 'long',
@@ -729,14 +1200,107 @@
             dateElement.textContent = new Intl.DateTimeFormat('en-GB', dateOptions).format(now);
         }
         setInterval(updateTime, 1000);
-        updateTime();
+        let currentWindSpeed = 0;
+
+        async function fetchWeather() {
+            try {
+                // Lat/Long for London, UK
+                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5074&longitude=-0.1278&current=weather_code,wind_speed_10m,is_day&daily=sunrise,sunset&timezone=Europe%2FLondon');
+                const data = await response.json();
+
+                // Update Wind
+                currentWindSpeed = data.current.wind_speed_10m;
+                const windMph = (currentWindSpeed * 0.621371).toFixed(1);
+                console.log(`Weather Fetched: Wind ${currentWindSpeed} km/h (${windMph} mph)`);
+
+                // Update Theme based on Time/Sun
+                updateTheme(data);
+
+                // Check Storm/Rain Conditions
+                checkStormAndRain(data);
+
+            } catch (error) {
+                console.error("Weather fetch failed:", error);
+            }
+        }
+
+        function updateTheme(data) {
+            if (!data || !data.daily) return;
+
+            const now = new Date();
+            const sunrise = new Date(data.daily.sunrise[0]);
+            const sunset = new Date(data.daily.sunset[0]);
+
+            const body = document.body;
+            body.classList.remove('day-mode', 'night-mode', 'sunrise-mode', 'sunset-mode');
+
+            // Add 30 min buffer for transition periods
+            const transitionBuffer = 30 * 60 * 1000;
+
+            if (now >= sunrise.getTime() - transitionBuffer && now <= sunrise.getTime() + transitionBuffer) {
+                body.classList.add('sunrise-mode');
+                // Could implement specific sunrise gradient here
+            }
+            else if (now >= sunset.getTime() - transitionBuffer && now <= sunset.getTime() + transitionBuffer) {
+                body.classList.add('sunset-mode');
+            }
+            else if (data.current.is_day === 1) {
+                body.classList.add('day-mode');
+                // Ensure text is dark for readability
+            }
+            else {
+                // Default Night
+                // body.classList.add('night-mode');
+            }
+        }
+
+        function checkStormAndRain(data) {
+            const code = data.current.weather_code;
+            const wind = data.current.wind_speed_10m;
+
+            // --- Rain Check ---
+            // WMO Codes: 51-67 (Drizzle/Rain), 80-82 (Showers), 95-99 (Thunderstorm)
+            const rainCodes = [
+                51, 53, 55, 56, 57,
+                61, 63, 65, 66, 67,
+                80, 81, 82,
+                95, 96, 99
+            ];
+
+            if (rainCodes.includes(code)) {
+                isRaining = true;
+                initRain();
+            } else {
+                isRaining = false;
+            }
+
+            // --- Storm Check ---
+            // High Wind (>15mph which is ~24.1km/h) OR Thunderstorm Codes
+            const stormWarning = document.getElementById('storm-warning');
+            const thunderstormCodes = [95, 96, 99];
+
+            // Updated threshold to 24.1 km/h (15 mph) per user request
+            // Added explicit debug log
+            // 24.1 km/h is NOT 15mph? Wait, 15 mph * 1.60934 = 24.14 km/h. Yes it is.
+            if (wind >= 24.1 || thunderstormCodes.includes(code)) {
+                stormWarning.style.display = "flex";
+            } else {
+                stormWarning.style.display = "none";
+            }
+        }
+
+        // Fetch immediately then every 15 mins
+        fetchWeather();
+        setInterval(fetchWeather, 15 * 60 * 1000);
+
+        // 1. UK Time (12-hour)
 
         // 2. Age Calculator & Birthday Countdown
         const birthDate = new Date('2001-11-09T00:00:00');
 
         function updateAgeAndCountdown() {
             const now = new Date();
-            
+
             // Age
             let age = now.getFullYear() - birthDate.getFullYear();
             const m = now.getMonth() - birthDate.getMonth();
@@ -765,12 +1329,12 @@
                 }
 
                 const diff = nextBirthday - now;
-                
+
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-                
+
                 document.getElementById('countdown').textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
             }
         }
@@ -782,7 +1346,7 @@
         // Discord Copy
         function copyDiscord() {
             const discordId = "kazu_hani";
-            
+
             // Use Clipboard API if available, fallback to textarea method
             // Added .catch() to handle permissions policy errors in iframes
             if (navigator.clipboard && window.isSecureContext) {
@@ -836,10 +1400,334 @@
             }
         }, { passive: true });
 
-        function scrollToTop() {
-            if (lenis) lenis.scrollTo(0);
-            else window.scrollTo({ top: 0, behavior: 'smooth' });
+        /* --- MODAL LOGIC --- */
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-body-content');
+        let clockInterval; // To stop clock when modal closes
+
+        function openModal(type) {
+            modalOverlay.classList.remove('hidden'); // Ensure it's not display:none if we used that
+            modalOverlay.style.display = 'flex'; // Explicitly set flex
+            // Force reflow
+            void modalOverlay.offsetWidth;
+            modalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling bg
+
+            if (type === 'time') {
+                renderTimeModal();
+            } else if (type === 'age') {
+                renderAgeModal();
+            } else if (type === 'birthday') {
+                renderBirthdayModal();
+            }
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            setTimeout(() => {
+                modalOverlay.style.display = 'none';
+                modalContent.innerHTML = ''; // Clear content
+                document.body.style.overflow = ''; // Restore scroll
+            }, 300);
+
+            // Cleanup Intervals
+            if (clockInterval) clearInterval(clockInterval);
+        }
+
+        /* --- 1. UK TIME EXPANSION --- */
+        function renderTimeModal() {
+            modalContent.innerHTML = `
+                <h2 class="text-3xl font-bold text-white mb-6 tech-font">Current Time & Comparison</h2>
+                
+                <canvas id="analog-clock-canvas" width="300" height="300"></canvas>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-center mt-6">
+                    <div class="p-4 bg-white/5 rounded-xl border border-cyan-500/30">
+                        <div class="text-cyan-400 text-sm uppercase tracking-widest mb-1">United Kingdom</div>
+                        <div id="modal-uk-time" class="text-3xl font-bold text-white tabular-nums">--:--:--</div>
+                        <div id="modal-uk-date" class="text-gray-400 text-xs">--</div>
+                    </div>
+                    <div class="p-4 bg-white/5 rounded-xl border border-purple-500/30">
+                        <div class="text-purple-400 text-sm uppercase tracking-widest mb-1">Your Local Time</div>
+                        <div id="modal-local-time" class="text-3xl font-bold text-white tabular-nums">--:--:--</div>
+                        <div id="modal-local-date" class="text-gray-400 text-xs">--</div>
+                    </div>
+                </div>
+            `;
+
+            // Start Canvas Clock
+            const canvas = document.getElementById('analog-clock-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function drawClock() {
+                const now = new Date();
+                // Convert to UK Time Object for the Analog Hands
+                // We need to get the UK time components explicitly
+                const ukTimeStr = now.toLocaleString("en-US", { timeZone: "Europe/London" });
+                const ukDate = new Date(ukTimeStr);
+
+                const radius = canvas.height / 2;
+                ctx.translate(radius, radius);
+                const r = radius * 0.90;
+
+                // Reset canvas
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.translate(radius, radius);
+
+                // Draw Face
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(13, 27, 42, 0.8)';
+                ctx.fill();
+                ctx.strokeStyle = '#00f3ff'; /* Neon Blue */
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // Draw Numbers
+                ctx.font = radius * 0.15 + "px arial";
+                ctx.textBaseline = "middle";
+                ctx.textAlign = "center";
+                ctx.fillStyle = '#fff';
+                for (let num = 1; num < 13; num++) {
+                    const ang = num * Math.PI / 6;
+                    ctx.rotate(ang);
+                    ctx.translate(0, -r * 0.85);
+                    ctx.rotate(-ang);
+                    ctx.fillText(num.toString(), 0, 0);
+                    ctx.rotate(ang);
+                    ctx.translate(0, r * 0.85);
+                    ctx.rotate(-ang);
+                }
+
+                // Hands Logic
+                const hour = ukDate.getHours();
+                const minute = ukDate.getMinutes();
+                const second = ukDate.getSeconds();
+
+                // Hour
+                let hPos = (hour % 12) * Math.PI / 6 + (minute * Math.PI / (6 * 60)) + (second * Math.PI / (360 * 60));
+                drawHand(ctx, hPos, r * 0.5, 6, '#00f3ff');
+
+                // Minute
+                let mPos = (minute * Math.PI / 30) + (second * Math.PI / (30 * 60));
+                drawHand(ctx, mPos, r * 0.8, 4, '#fff');
+
+                // Second
+                let sPos = (second * Math.PI / 30);
+                drawHand(ctx, sPos, r * 0.9, 2, '#bc13fe'); /* Purple Second Hand */
+
+                // Center Point
+                ctx.beginPath();
+                ctx.arc(0, 0, 10, 0, 2 * Math.PI);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+
+                // Reset Transform for next frame
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+                // Update Digital Text
+                const timeOpts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+                const dateOpts = { weekday: 'short', month: 'short', day: 'numeric' };
+
+                // UK
+                document.getElementById('modal-uk-time').textContent = ukDate.toLocaleTimeString('en-GB', timeOpts);
+                document.getElementById('modal-uk-date').textContent = ukDate.toLocaleDateString('en-GB', dateOpts);
+
+                // Local
+                document.getElementById('modal-local-time').textContent = now.toLocaleTimeString([], timeOpts);
+                document.getElementById('modal-local-date').textContent = now.toLocaleDateString([], dateOpts);
+            }
+
+            function drawHand(ctx, pos, length, width, color) {
+                ctx.beginPath();
+                ctx.lineWidth = width;
+                ctx.lineCap = "round";
+                ctx.strokeStyle = color;
+                ctx.moveTo(0, 0);
+                ctx.rotate(pos);
+                ctx.lineTo(0, -length);
+                ctx.stroke();
+                ctx.rotate(-pos);
+            }
+
+            clockInterval = setInterval(drawClock, 1000);
+            drawClock(); // Immediate call
+        }
+
+        /* --- 2. AGE MODAL (Creative Details) --- */
+        function renderAgeModal() {
+            const birthDate = new Date('2001-11-09T00:00:00');
+            const now = new Date();
+
+            // Precise Age (Years, Months, Days)
+            let years = now.getFullYear() - birthDate.getFullYear();
+            let months = now.getMonth() - birthDate.getMonth();
+            let days = now.getDate() - birthDate.getDate();
+
+            if (days < 0) {
+                months--;
+                // Get days in previous month
+                const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                days += prevMonth.getDate();
+            }
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            // Total Time Alive
+            const diffTime = Math.abs(now - birthDate);
+            const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const totalHours = Math.floor(diffTime / (1000 * 60 * 60));
+            // 1 Billion Seconds Milestone
+            // 10^9 seconds = 1,000,000,000 / 60 / 60 / 24 / 365.25 ≈ 31.69 years
+            const billionSecondsDate = new Date(birthDate.getTime() + 1000000000 * 1000);
+            const billionOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+
+            modalContent.innerHTML = `
+                <h2 class="text-3xl font-bold text-white mb-6 tech-font">Age Statistics</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                    <!-- Precise Age -->
+                    <div class="p-6 bg-white/5 rounded-2xl border border-purple-500/30 flex flex-col items-center justify-center">
+                        <i data-lucide="hourglass" class="w-10 h-10 text-purple-400 mb-2"></i>
+                        <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-2">Precise Age</h3>
+                        <div class="text-2xl font-bold text-white">
+                            <span class="text-purple-400">${years}</span>y 
+                            <span class="text-purple-400">${months}</span>m 
+                            <span class="text-purple-400">${days}</span>d
+                        </div>
+                    </div>
+
+                    <!-- Total Days -->
+                    <div class="p-6 bg-white/5 rounded-2xl border border-cyan-500/30 flex flex-col items-center justify-center">
+                        <i data-lucide="sun" class="w-10 h-10 text-cyan-400 mb-2"></i>
+                        <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-2">Total Days Alive</h3>
+                        <div class="text-3xl font-bold text-white tabular-nums">${totalDays.toLocaleString()}</div>
+                    </div>
+
+                    <!-- Milestone -->
+                    <div class="col-span-1 md:col-span-2 p-6 bg-gradient-to-r from-purple-900/40 to-cyan-900/40 rounded-2xl border border-white/10">
+                        <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-2">Next Galactic Milestone</h3>
+                        <div class="text-lg text-white">
+                            <span class="font-bold text-yellow-400">1 Billion Seconds</span> 
+                            will be reached on:
+                        </div>
+                        <div class="text-xl font-bold text-white mt-1">${billionSecondsDate.toLocaleDateString('en-GB', billionOptions)}</div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        /* --- 3. BIRTHDAY MODAL (Calendar & Tools) --- */
+        function renderBirthdayModal() {
+            const now = new Date();
+            let nextBirthdayYear = now.getFullYear();
+            if (now.getMonth() > 10 || (now.getMonth() === 10 && now.getDate() > 9)) {
+                nextBirthdayYear++;
+            }
+
+            // Calendar Logic for November of Next Birthday Year
+            const firstDay = new Date(nextBirthdayYear, 10, 1).getDay(); // Nov 1
+            const daysInMonth = 30; // Nov has 30 days
+
+            let calendarHTML = '<div class="calendar-grid">';
+            // Headers
+            ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => calendarHTML += `<div class="calendar-header">${d}</div>`);
+
+            // Empty Cells
+            for (let i = 0; i < firstDay; i++) calendarHTML += `<div></div>`;
+
+            // Days
+            for (let d = 1; d <= daysInMonth; d++) {
+                let classes = 'calendar-day';
+                if (d === 9) classes += ' calendar-target'; // Nov 9
+                calendarHTML += `<div class="${classes}">${d}</div>`;
+            }
+            calendarHTML += '</div>';
+
+            // Google Calendar Link
+            // Format YYYYMMDD
+            const dStart = `${nextBirthdayYear}1109`;
+            const dEnd = `${nextBirthdayYear}1110`;
+            const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Kazu+Hani+Birthday&dates=${dStart}/${dEnd}&details=Happy+Birthday+to+Kazu!&sf=true&output=xml`;
+
+            modalContent.innerHTML = `
+                 <h2 class="text-3xl font-bold text-white mb-2 tech-font">Birthday Countdown</h2>
+                 <p class="text-pink-400 text-sm mb-6">November 9th, ${nextBirthdayYear}</p>
+
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full items-start">
+                    <!-- Calendar -->
+                    <div class="p-6 bg-white/5 rounded-2xl border border-pink-500/30">
+                        <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-2">November ${nextBirthdayYear}</h3>
+                        ${calendarHTML}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-col gap-4">
+                        <div class="p-4 bg-white/5 rounded-2xl border border-white/10">
+                            <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-2">Countdown Progress</h3>
+                            <!-- Simple Progress Bar -->
+                             <div class="w-full bg-gray-700 rounded-full h-2.5 mb-1">
+                                <div class="bg-pink-500 h-2.5 rounded-full" style="width: ${calculateBirthdayProgress()}%"></div>
+                            </div>
+                            <div class="text-right text-xs text-gray-400">${Math.floor(calculateBirthdayProgress())}% of the way there</div>
+                        </div>
+
+                        <a href="${gCalUrl}" target="_blank"
+                            class="flex items-center justify-center gap-2 w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+                            <i data-lucide="calendar-plus" class="w-4 h-4"></i> Add to Google Calendar
+                        </a>
+                        
+                        <button onclick="downloadICS(${nextBirthdayYear})"
+                            class="flex items-center justify-center gap-2 w-full bg-pink-600 text-white font-bold py-3 rounded-xl hover:bg-pink-500 transition-colors">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download .ics File
+                        </button>
+                    </div>
+                 </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function calculateBirthdayProgress() {
+            const now = new Date();
+            let nextBirthday = new Date(now.getFullYear(), 10, 9); // Nov 9
+            if (now > nextBirthday) nextBirthday.setFullYear(now.getFullYear() + 1);
+
+            let lastBirthday = new Date(nextBirthday);
+            lastBirthday.setFullYear(nextBirthday.getFullYear() - 1);
+
+            const totalDuration = nextBirthday - lastBirthday;
+            const elapsed = now - lastBirthday;
+
+            return Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+        }
+
+        function downloadICS(year) {
+            const event = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "BEGIN:VEVENT",
+                `DTSTART:${year}1109`,
+                `DTEND:${year}1110`,
+                "SUMMARY:Kazu Hani Birthday",
+                "DESCRIPTION:Happy Birthday to Kazu!",
+                "End:VEVENT",
+                "END:VCALENDAR"
+            ].join("\\n");
+
+            const blob = new Blob([event], { type: "text/calendar;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'kazu_birthday.ics');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
+
 </html>
