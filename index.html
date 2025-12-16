@@ -452,8 +452,8 @@
         /* --- MUTE BUTTON --- */
         #mute-btn {
             position: fixed;
-            bottom: 6rem;
-            /* Above back to top */
+            bottom: 1.5rem;
+            /* Aligned with Back to Top default position */
             right: 1.5rem;
             z-index: 50;
             background: rgba(15, 23, 42, 0.8);
@@ -467,13 +467,25 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Smoother bounce */
         }
 
         #mute-btn:hover {
             box-shadow: 0 0 25px rgba(0, 243, 255, 0.4);
             transform: scale(1.1);
+            /* This might conflict with translateY, need to handle carefully or use nested element */
             background: rgba(0, 243, 255, 0.1);
+        }
+
+        /* When lifted by the Back To Top button */
+        #mute-btn.lifted {
+            transform: translateY(-4.5rem);
+        }
+
+        /* Combined hover + lifted fix */
+        #mute-btn.lifted:hover {
+            transform: translateY(-4.5rem) scale(1.1);
         }
 
         #mute-btn.muted {
@@ -490,8 +502,59 @@
         @media (min-width: 640px) {
             #mute-btn {
                 right: 1.5rem;
-                bottom: 6rem;
-                /* Adjust if needed */
+                /* bottom handled by base style */
+            }
+        }
+
+        /* --- WEATHER EFFECTS --- */
+        .sun-glow {
+            border-color: rgba(253, 224, 71, 1) !important;
+            box-shadow: 0 0 30px rgba(253, 224, 71, 0.6), 0 0 60px rgba(253, 224, 71, 0.4), inset 0 0 20px rgba(253, 224, 71, 0.5) !important;
+            animation: sun-pulse 3s infinite alternate !important;
+        }
+
+        @keyframes sun-pulse {
+            0% {
+                box-shadow: 0 0 30px rgba(253, 224, 71, 0.6), 0 0 10px rgba(253, 224, 71, 0.2);
+            }
+
+            100% {
+                box-shadow: 0 0 50px rgba(253, 224, 71, 0.9), 0 0 20px rgba(253, 224, 71, 0.5);
+            }
+        }
+
+        .cloud-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 2s ease;
+            background: transparent;
+        }
+
+        .cloud-bg.visible {
+            opacity: 1;
+        }
+
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            filter: blur(20px);
+            animation: floatCloud linear infinite;
+        }
+
+        @keyframes floatCloud {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(100vw);
             }
         }
     </style>
@@ -535,8 +598,11 @@
     <canvas id="snow-canvas"></canvas>
     <canvas id="confetti-canvas"></canvas>
 
+    <!-- Cloud Background -->
+    <div id="cloud-container" class="cloud-bg"></div>
+
     <!-- Main Content -->
-    <main class="flex-grow pt-12 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full space-y-12 z-10">
+    <main class="flex-grow pt-12 pb-12 px-2 sm:px-4 lg:px-6 max-w-[90rem] mx-auto w-full space-y-12 z-10">
 
         <!-- Profile & Hero Section -->
         <section class="text-center relative content-hidden entrance-anim">
@@ -558,7 +624,7 @@
         </section>
 
         <!-- Status Dashboard (Grid) -->
-        <section id="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 content-hidden entrance-anim">
+        <section id="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 content-hidden entrance-anim">
             <!-- UK Time -->
             <div onclick="openModal('time')"
                 class="glass-panel rounded-2xl p-6 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group cursor-pointer hover:bg-cyan-500/10 transition-colors">
@@ -572,6 +638,26 @@
                 <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">United Kingdom Time</h3>
                 <div id="uk-time" class="text-4xl font-bold text-white tech-font tabular-nums">00:00:00 PM</div>
                 <div id="uk-date" class="text-cyan-400/80 text-sm mt-1">Loading Date...</div>
+            </div>
+
+            <!-- Weather -->
+            <div onclick="openModal('weather')" id="weather-card"
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-yellow-500/50 relative overflow-hidden group cursor-pointer hover:bg-yellow-500/10 transition-colors">
+                <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
+                    <i id="weather-icon-bg" data-lucide="cloud-sun" class="w-12 h-12 text-yellow-400"></i>
+                </div>
+                <!-- Add Expand Icon -->
+                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <i data-lucide="maximize-2" class="w-4 h-4 text-yellow-400"></i>
+                </div>
+                <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-2">Weather</h3>
+                <div class="flex flex-col items-center justify-center gap-1">
+                    <div class="flex items-center gap-2">
+                        <i id="weather-icon-main" data-lucide="loader" class="w-6 h-6 text-yellow-400 animate-spin"></i>
+                        <div id="weather-temp" class="text-4xl font-bold text-white tech-font tabular-nums">--°C</div>
+                    </div>
+                    <div id="weather-desc" class="text-yellow-400/80 text-sm capitalize">Loading...</div>
+                </div>
             </div>
 
             <!-- Age Calculator -->
@@ -1412,26 +1498,167 @@
         }
         setInterval(updateTime, 1000);
         let currentWindSpeed = 0;
+        // WMO Code Map
+        const weatherMap = {
+            0: { desc: "Clear Sky", icon: "sun", group: "sunny" },
+            1: { desc: "Mainly Clear", icon: "sun", group: "sunny" },
+            2: { desc: "Partly Cloudy", icon: "cloud-sun", group: "cloudy" },
+            3: { desc: "Overcast", icon: "cloud", group: "cloudy" },
+            45: { desc: "Fog", icon: "cloud-fog", group: "cloudy" },
+            48: { desc: "Rime Fog", icon: "cloud-fog", group: "cloudy" },
+            51: { desc: "Light Drizzle", icon: "cloud-drizzle", group: "rain" },
+            53: { desc: "Drizzle", icon: "cloud-drizzle", group: "rain" },
+            55: { desc: "Heavy Drizzle", icon: "cloud-rain", group: "rain" },
+            56: { desc: "Light Freeze Drizz", icon: "cloud-rain", group: "rain" },
+            57: { desc: "Freeze Drizzle", icon: "cloud-rain", group: "rain" },
+            61: { desc: "Slight Rain", icon: "cloud-rain", group: "rain" },
+            63: { desc: "Rain", icon: "cloud-rain", group: "rain" },
+            65: { desc: "Heavy Rain", icon: "cloud-rain", group: "rain" },
+            66: { desc: "Light Freeze Rain", icon: "cloud-rain", group: "rain" },
+            67: { desc: "Heavy Freeze Rain", icon: "cloud-rain", group: "rain" },
+            71: { desc: "Slight Snow", icon: "snowflake", group: "snow" },
+            73: { desc: "Snow", icon: "snowflake", group: "snow" },
+            75: { desc: "Heavy Snow", icon: "snowflake", group: "snow" },
+            77: { desc: "Snow Grains", icon: "snowflake", group: "snow" },
+            80: { desc: "Showers", icon: "cloud-hail", group: "rain" },
+            81: { desc: "Showers", icon: "cloud-hail", group: "rain" },
+            82: { desc: "Heavy Showers", icon: "cloud-hail", group: "rain" },
+            85: { desc: "Snow Showers", icon: "snowflake", group: "snow" },
+            86: { desc: "Heavy Snow Showers", icon: "snowflake", group: "snow" },
+            95: { desc: "Thunderstorm", icon: "cloud-lightning", group: "storm" },
+            96: { desc: "Thunderstorm", icon: "cloud-lightning", group: "storm" },
+            99: { desc: "Thunderstorm", icon: "cloud-lightning", group: "storm" },
+        };
 
         async function fetchWeather() {
             try {
-                // Lat/Long for London, UK
-                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5074&longitude=-0.1278&current=weather_code,wind_speed_10m,is_day&daily=sunrise,sunset&timezone=Europe%2FLondon');
+                // Lat/Long for Cardiff, Wales (51.48, -3.18)
+                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=-3.18&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=sunrise,sunset&timezone=Europe%2FLondon');
                 const data = await response.json();
 
-                // Update Wind
-                currentWindSpeed = data.current.wind_speed_10m;
-                const windMph = (currentWindSpeed * 0.621371).toFixed(1);
-                console.log(`Weather Fetched: Wind ${currentWindSpeed} km/h (${windMph} mph)`);
+                if (data.current) {
+                    updateWeatherUI(data.current);
+                    applyWeatherEffects(data);
+                    // Update Wind Global
+                    currentWindSpeed = data.current.wind_speed_10m;
+                    const windMph = (currentWindSpeed * 0.621371).toFixed(1);
+                    console.log(`Weather Fetched: ${data.current.temperature_2m}C, Wind ${windMph} mph`);
+                }
 
-                // Update Theme based on Time/Sun
                 updateTheme(data);
-
-                // Check Storm/Rain Conditions
-                checkStormAndRain(data);
 
             } catch (error) {
                 console.error("Weather fetch failed:", error);
+                const descEl = document.getElementById('weather-desc');
+                if (descEl) descEl.textContent = "Offline";
+                const mainIcon = document.getElementById('weather-icon-main');
+                if (mainIcon) {
+                    mainIcon.classList.remove('animate-spin');
+                    mainIcon.setAttribute('data-lucide', 'wifi-off');
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+
+        function updateWeatherUI(current) {
+            const temp = Math.round(current.temperature_2m);
+            const code = current.weather_code;
+            const info = weatherMap[code] || { desc: "Unknown", icon: "cloud", group: "cloudy" };
+
+            // Update Text
+            const tempEl = document.getElementById('weather-temp');
+            if (tempEl) tempEl.textContent = `${temp}°C`;
+
+            const descEl = document.getElementById('weather-desc');
+            if (descEl) descEl.textContent = info.desc;
+
+            // Update Icons
+            const iconName = info.icon;
+            const bgIcon = document.getElementById('weather-icon-bg');
+            if (bgIcon) bgIcon.setAttribute('data-lucide', iconName);
+
+            // For the main spinner, replace it with static icon
+            const mainIcon = document.getElementById('weather-icon-main');
+            if (mainIcon) {
+                mainIcon.classList.remove('animate-spin');
+                mainIcon.setAttribute('data-lucide', iconName);
+            }
+
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function applyWeatherEffects(data) {
+            const code = data.current.weather_code;
+            const isDay = data.current.is_day === 1;
+            const info = weatherMap[code] || { group: "cloudy" };
+
+            const profilePic = document.getElementById('profile-pic');
+            const cloudContainer = document.getElementById('cloud-container');
+            const stormWarning = document.getElementById('storm-warning');
+
+            // Reset Effects
+            if (profilePic) profilePic.classList.remove('sun-glow');
+            if (cloudContainer) {
+                cloudContainer.classList.remove('visible');
+                cloudContainer.innerHTML = ''; // Clear clouds
+            }
+            isRaining = false;
+            if (stormWarning) stormWarning.style.display = "none";
+
+            // 1. SUNNY EFFECT
+            if (info.group === "sunny" && isDay) {
+                if (profilePic) profilePic.classList.add('sun-glow');
+            }
+
+            // 2. CLOUDY EFFECT
+            if (info.group === "cloudy" || info.group === "rain" || info.group === "storm" || info.group === "snow") {
+                // Add clouds
+                if (cloudContainer) {
+                    cloudContainer.classList.add('visible');
+                    spawnClouds(8); // Spawn 8 clouds
+                }
+            }
+
+            // 3. RAIN EFFECT (Canvas)
+            if (info.group === "rain" || info.group === "storm" || info.group === "snow") {
+                // Note: Snow is handled by snow particle loop if we want?
+                // current snow loop is just default snowflakes falling
+                // Let's assume rain turns on 'isRaining' which activates rain canvas
+                if (info.group !== "snow") {
+                    isRaining = true;
+                    initRain();
+                }
+            }
+
+            // 4. STORM WARNING
+            const wind = data.current.wind_speed_10m;
+            // 15mph ~ 24.1kph
+            if ((wind >= 24.1 || info.group === "storm") && stormWarning) {
+                stormWarning.style.display = "flex";
+            }
+        }
+
+        function spawnClouds(count) {
+            const container = document.getElementById('cloud-container');
+            if (!container || container.children.length > 0) return; // Already populated
+
+            for (let i = 0; i < count; i++) {
+                const cloud = document.createElement('div');
+                cloud.classList.add('cloud');
+
+                // Randomize
+                const size = Math.random() * 150 + 100; // 100-250px
+                const top = Math.random() * 60; // 0-60% height
+                const duration = Math.random() * 20 + 35; // 35-55s
+                const delay = Math.random() * -50;
+
+                cloud.style.width = `${size}px`;
+                cloud.style.height = `${size}px`;
+                cloud.style.top = `${top}%`;
+                cloud.style.animationDuration = `${duration}s`;
+                cloud.style.animationDelay = `${delay}s`;
+
+                container.appendChild(cloud);
             }
         }
 
@@ -1450,53 +1677,12 @@
 
             if (now >= sunrise.getTime() - transitionBuffer && now <= sunrise.getTime() + transitionBuffer) {
                 body.classList.add('sunrise-mode');
-                // Could implement specific sunrise gradient here
             }
             else if (now >= sunset.getTime() - transitionBuffer && now <= sunset.getTime() + transitionBuffer) {
                 body.classList.add('sunset-mode');
             }
             else if (data.current.is_day === 1) {
                 body.classList.add('day-mode');
-                // Ensure text is dark for readability
-            }
-            else {
-                // Default Night
-                // body.classList.add('night-mode');
-            }
-        }
-
-        function checkStormAndRain(data) {
-            const code = data.current.weather_code;
-            const wind = data.current.wind_speed_10m;
-
-            // --- Rain Check ---
-            // WMO Codes: 51-67 (Drizzle/Rain), 80-82 (Showers), 95-99 (Thunderstorm)
-            const rainCodes = [
-                51, 53, 55, 56, 57,
-                61, 63, 65, 66, 67,
-                80, 81, 82,
-                95, 96, 99
-            ];
-
-            if (rainCodes.includes(code)) {
-                isRaining = true;
-                initRain();
-            } else {
-                isRaining = false;
-            }
-
-            // --- Storm Check ---
-            // High Wind (>15mph which is ~24.1km/h) OR Thunderstorm Codes
-            const stormWarning = document.getElementById('storm-warning');
-            const thunderstormCodes = [95, 96, 99];
-
-            // Updated threshold to 24.1 km/h (15 mph) per user request
-            // Added explicit debug log
-            // 24.1 km/h is NOT 15mph? Wait, 15 mph * 1.60934 = 24.14 km/h. Yes it is.
-            if (wind >= 24.1 || thunderstormCodes.includes(code)) {
-                stormWarning.style.display = "flex";
-            } else {
-                stormWarning.style.display = "none";
             }
         }
 
@@ -1614,8 +1800,10 @@
                 window.requestAnimationFrame(() => {
                     if (window.scrollY > 300) {
                         backToTopBtn.classList.remove("translate-y-20");
+                        muteBtn.classList.add("lifted"); // Move mute btn up
                     } else {
                         backToTopBtn.classList.add("translate-y-20");
+                        muteBtn.classList.remove("lifted"); // Move mute btn down
                     }
                     isScrolling = false;
                 });
@@ -1642,6 +1830,8 @@
                 renderAgeModal();
             } else if (type === 'birthday') {
                 renderBirthdayModal();
+            } else if (type === 'weather') {
+                renderWeatherModal();
             }
         }
 
@@ -1776,6 +1966,45 @@
 
             clockInterval = setInterval(drawClock, 1000);
             drawClock(); // Immediate call
+        }
+
+        /* --- 4. WEATHER MODAL --- */
+        function renderWeatherModal() {
+            modalContent.innerHTML = `
+                <h2 class="text-3xl font-bold text-white mb-2 tech-font">Wales Weather Radar</h2>
+                <p class="text-yellow-400 text-sm mb-6">Real-time conditions via Windy.com</p>
+                
+                <div class="w-full h-[500px] rounded-2xl overflow-hidden border border-yellow-500/30 shadow-lg shadow-yellow-500/10">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src="https://embed.windy.com/embed2.html?lat=51.48&lon=-3.18&detailLat=51.48&detailLon=-3.18&width=650&height=450&zoom=8&level=surface&overlay=radar&product=radar&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" 
+                        frameborder="0">
+                    </iframe>
+                </div>
+                <!-- Data Summary -->
+                <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <div class="text-gray-400 text-xs">Wind</div>
+                        <div class="text-white font-bold">${(currentWindSpeed * 0.621371).toFixed(1)} mph</div>
+                    </div>
+                     <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <div class="text-gray-400 text-xs">Condition</div>
+                        <div class="text-yellow-400 font-bold capitalize" id="modal-weather-desc">See Map</div>
+                    </div>
+                     <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                        <div class="text-gray-400 text-xs">Location</div>
+                        <div class="text-white font-bold">Cardiff, UK</div>
+                    </div>
+                </div>
+            `;
+
+            // Try to sync desc if available in DOM
+            const mainDesc = document.getElementById('weather-desc');
+            const modalDesc = document.getElementById('modal-weather-desc');
+            if (mainDesc && modalDesc) {
+                modalDesc.textContent = mainDesc.textContent;
+            }
         }
 
         /* --- 2. AGE MODAL (Creative Details) --- */
