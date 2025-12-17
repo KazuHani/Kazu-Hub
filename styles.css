@@ -531,3 +531,10 @@ body.global-paused * {
         transform: translateX(100vw);
     }
 }
+
+/* Hide Mute Button on Mobile/Tablet (Matches JS 'isMobile' < 1024 logic) */
+@media (max-width: 1024px) {
+    #mute-btn {
+        display: none !important;
+    }
+}
