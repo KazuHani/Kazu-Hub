@@ -1,7 +1,7 @@
 :root {
     --neon-blue: #00f3ff;
     --neon-purple: #bc13fe;
-    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-bg: rgba(15, 23, 42, 0.85);
     --glass-border: rgba(255, 255, 255, 0.1);
 
     /* Dynamic Theme Variables */
@@ -9,8 +9,8 @@
     /* Default Night */
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
-    --glass-card-bg: rgba(255, 255, 255, 0.03);
-    --glass-card-border: rgba(255, 255, 255, 0.05);
+    --glass-card-bg: rgba(15, 23, 42, 0.6);
+    --glass-card-border: rgba(255, 255, 255, 0.1);
     --stat-border: rgba(6, 182, 212, 0.5);
     /* Cyan */
 }
@@ -101,25 +101,55 @@ h3,
 /* Glassmorphism Utilities */
 .glass-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     border: 1px solid var(--glass-border);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    position: relative;
+    /* Ensure positioning context */
+    transition: all 0.5s ease;
 }
 
 .glass-card {
     background: var(--glass-card-bg);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(16px);
     border: 1px solid var(--glass-card-border);
-    transition: all 0.3s ease;
+    transition: all 0.5s ease;
     color: var(--text-primary);
+    position: relative;
+    /* Ensure positioning context */
+}
+
+/* Spotlight / Light Effect */
+.glass-panel::after,
+.glass-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+            rgba(255, 255, 255, 0.1),
+            transparent 40%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.glass-panel:hover::after,
+.glass-card:hover::after {
+    opacity: 1;
 }
 
 /* HOVER EFFECTS: DESKTOP ONLY */
 @media (hover: hover) {
-    .glass-card:hover {
-        background: rgba(255, 255, 255, 0.07);
+
+    /* Apply to both cards AND panels now */
+    .glass-card:hover,
+    .glass-panel:hover {
+        background: rgba(30, 41, 59, 0.8);
         border-color: var(--neon-blue);
+        /* The blue thing on the edge */
         box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
         transform: translateY(-2px);
     }

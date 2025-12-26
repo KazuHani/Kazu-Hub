@@ -24,6 +24,7 @@
         rel="stylesheet">
 
     <link rel="stylesheet" href="styles.css">
+    <script src="tilt-effect.js" defer></script>
 </head>
 
 <body class="min-h-screen flex flex-col relative">
@@ -93,7 +94,7 @@
         <section id="stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 content-hidden entrance-anim">
             <!-- UK Time -->
             <div onclick="openModal('time')"
-                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group cursor-pointer hover:bg-cyan-500/10 transition-colors">
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group cursor-pointer transition-colors">
                 <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="clock" class="w-12 h-12 text-cyan-400"></i>
                 </div>
@@ -108,7 +109,7 @@
 
             <!-- Weather -->
             <div onclick="openModal('weather')" id="weather-card"
-                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-yellow-500/50 relative overflow-hidden group cursor-pointer hover:bg-yellow-500/10 transition-colors">
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-yellow-500/50 relative overflow-hidden group cursor-pointer transition-colors">
                 <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i id="weather-icon-bg" data-lucide="cloud-sun" class="w-12 h-12 text-yellow-400"></i>
                 </div>
@@ -128,7 +129,7 @@
 
             <!-- Age Calculator -->
             <div onclick="openModal('age')"
-                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-purple-500/50 relative overflow-hidden group cursor-pointer hover:bg-purple-500/10 transition-colors">
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-purple-500/50 relative overflow-hidden group cursor-pointer transition-colors">
                 <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="user" class="w-12 h-12 text-purple-400"></i>
                 </div>
@@ -142,7 +143,7 @@
 
             <!-- Birthday Countdown -->
             <div onclick="openModal('birthday')"
-                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-pink-500/50 relative overflow-hidden group cursor-pointer hover:bg-pink-500/10 transition-colors">
+                class="glass-panel rounded-2xl p-6 text-center border-t-2 border-pink-500/50 relative overflow-hidden group cursor-pointer transition-colors">
                 <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                     <i data-lucide="cake" class="w-12 h-12 text-pink-400"></i>
                 </div>
