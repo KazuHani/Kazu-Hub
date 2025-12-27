@@ -98,11 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let y = event.beta || 0;  // -180 to 180
 
         // Constrain for subtle effect
-        // Max tilt range to consider: -30 to 30 degrees off center
-        const MAX_TILT = 30;
+        // Max tilt range to consider: -60 to 60 degrees off center
+        const MAX_TILT = 60;
 
-        // Calibrate Y around 75 degrees (holding position - vertical is 90)
-        y = y - 75;
+        // Calibrate Y around 60 degrees (holding position)
+        y = y - 60;
 
         // Clamp
         if (x > MAX_TILT) x = MAX_TILT;
