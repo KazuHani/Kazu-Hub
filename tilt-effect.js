@@ -101,8 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Max tilt range to consider: -30 to 30 degrees off center
         const MAX_TILT = 30;
 
-        // Calibrate Y around 45 degrees (holding position)
-        y = y - 45;
+        // Calibrate Y around 75 degrees (holding position - vertical is 90)
+        y = y - 75;
 
         // Clamp
         if (x > MAX_TILT) x = MAX_TILT;
