@@ -479,6 +479,13 @@
             audio.muted = isMuted;
             localStorage.setItem('site_muted', isMuted);
 
+            // STRICT MOBILE CHECK: Do not play if mobile
+            if (isMobile) {
+                // Ensure paused state visually if logic tries to run
+                audio.pause();
+                return;
+            }
+
             // Re-render icon specifically
             // We clear and re-add the <i> tag because Lucide replaces it with an SVG, 
             // so we can't just reuse the old reference easily.
