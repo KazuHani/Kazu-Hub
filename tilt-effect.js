@@ -90,34 +90,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleMobileTilt(event) {
-        // Gamma: Left/Right tilt (-90 to 90). Neutral ~0.
-        // Beta: Front/Back tilt (-180 to 180). Neutral ~45 (holding phone).
+        // Vertical Zone Logic: Center around 90 degrees (Vertical)
+        // We want the effect to be active near 90, and fade to 0 intensity as you move away.
+        // This prevents "sticking" when holding at other angles.
 
-        // Clamp and normalize values
-        let x = event.gamma || 0; // -90 to 90
-        let y = event.beta || 0;  // -180 to 180
+        const centerBeta = 90;
+        const tiltRange = 30; // Degrees from center where effect is active
 
-        // Constrain for subtle effect
-        // Max tilt range to consider: -60 to 60 degrees off center
-        const MAX_TILT = 60;
+        // Calculate distance from vertical
+        const dist = Math.abs((event.beta || 0) - centerBeta);
 
-        // Calibrate Y around 60 degrees (holding position)
-        y = y - 60;
+        // Calculate Intensity (1.0 at center, 0.0 at edge of range)
+        let intensity = 1 - (dist / tiltRange);
+        if (intensity < 0) intensity = 0;
+        if (intensity > 1) intensity = 1;
 
-        // Clamp
-        if (x > MAX_TILT) x = MAX_TILT;
-        if (x < -MAX_TILT) x = -MAX_TILT;
-        if (y > MAX_TILT) y = MAX_TILT;
-        if (y < -MAX_TILT) y = -MAX_TILT;
+        // Raw tilt relative to vertical
+        // We use a wider clamp for the raw calculation so the movement inside the zone is linear
+        let rawY = (event.beta || 0) - centerBeta;
+        let rawX = event.gamma || 0;
 
-        // Map to output rotation (mirroring desktop max of ~10deg)
-        // Inverting signs to match "looking through window" effect usually desired
-        const xRotation = (y / MAX_TILT) * -10; // Up/Down tilt
-        const yRotation = (x / MAX_TILT) * 10;  // Left/Right tilt
+        // Apply clamping to raw values to keep them sane within the active window
+        if (rawY > tiltRange) rawY = tiltRange;
+        if (rawY < -tiltRange) rawY = -tiltRange;
+        if (rawX > tiltRange) rawX = tiltRange;
+        if (rawX < -tiltRange) rawX = -tiltRange;
+
+        // Calculate final rotation
+        // Invert signs for "looking through window" feel
+        // Apply INTENSITY to fade effect to 0 when not vertical
+        const xRotation = (rawY / tiltRange) * -15 * intensity;
+        const yRotation = (rawX / tiltRange) * 15 * intensity;
 
         tiltElements.forEach(element => {
-            // Apply similar transform but no specific "mouse position" spotlight 
-            // properly (unless we simulated it, but simple tilt is enough for now)
             element.style.transform = `perspective(1000px) rotateX(${xRotation}deg) rotateY(${yRotation}deg)`;
         });
     }
