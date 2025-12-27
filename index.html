@@ -1100,7 +1100,7 @@
             // 4. STORM WARNING
             const wind = data.current.wind_speed_10m;
             // 15mph ~ 24.1kph
-            if ((wind >= 24.1 || info.group === "storm") && stormWarning) {
+            if ((wind >= 65 || info.group === "storm") && stormWarning) {
                 stormWarning.style.display = "flex";
             }
         }
