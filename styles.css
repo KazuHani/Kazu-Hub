@@ -166,6 +166,14 @@ h3,
         color: #ec4899;
     }
 
+    .glass-card:hover .icon-instagram {
+        color: #E1306C;
+    }
+
+    .glass-card:hover .icon-threads {
+        color: #ffffff;
+    }
+
     .glass-card:hover .icon-youtube {
         color: #ef4444;
     }
@@ -184,7 +192,6 @@ h3,
     }
 
     .glass-card:hover .icon-discord {
-        fill: #a5b4fc;
         color: #a5b4fc;
     }
 }
@@ -446,62 +453,7 @@ body.global-paused * {
     transition: none !important;
 }
 
-/* --- MUTE BUTTON --- */
-#mute-btn {
-    position: fixed;
-    bottom: 1.5rem;
-    /* Aligned with Back to Top default position */
-    right: 1.5rem;
-    z-index: 50;
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid var(--neon-blue);
-    color: var(--neon-blue);
-    width: 3rem;
-    height: 3rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    /* Smoother bounce */
-}
 
-#mute-btn:hover {
-    box-shadow: 0 0 25px rgba(0, 243, 255, 0.4);
-    transform: scale(1.1);
-    /* This might conflict with translateY, need to handle carefully or use nested element */
-    background: rgba(0, 243, 255, 0.1);
-}
-
-/* When lifted by the Back To Top button */
-#mute-btn.lifted {
-    transform: translateY(-4.5rem);
-}
-
-/* Combined hover + lifted fix */
-#mute-btn.lifted:hover {
-    transform: translateY(-4.5rem) scale(1.1);
-}
-
-#mute-btn.muted {
-    border-color: #ef4444;
-    /* Red */
-    color: #ef4444;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
-}
-
-#mute-btn.muted:hover {
-    background: rgba(239, 68, 68, 0.1);
-}
-
-@media (min-width: 640px) {
-    #mute-btn {
-        right: 1.5rem;
-        /* bottom handled by base style */
-    }
-}
 
 /* --- WEATHER EFFECTS --- */
 @media (min-width: 1024px) {
@@ -557,9 +509,17 @@ body.global-paused * {
     }
 }
 
-/* Hide Mute Button on Mobile/Tablet (Matches JS 'isMobile' < 1024 logic) */
-@media (max-width: 1024px) {
-    #mute-btn {
+/* --- BACK TO TOP BUTTON --- */
+/* Hide on mobile (show only on tablet/desktop) */
+@media (max-width: 768px) {
+    #backToTop {
         display: none !important;
+    }
+}
+
+/* Desktop Only Hover Glow */
+@media (hover: hover) {
+    #backToTop:hover {
+        box-shadow: 0 0 25px rgba(6, 182, 212, 0.8), 0 0 50px rgba(6, 182, 212, 0.4);
     }
 }
