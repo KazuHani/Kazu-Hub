@@ -76,7 +76,7 @@
 
                 <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile"
                     class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto cursor-pointer active:scale-95 transition-transform"
-                    loading="eager"
+                    loading="eager" onclick="playPop()"
                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
             </div>
             <h1
@@ -490,6 +490,38 @@
                 body.classList.remove('global-paused');
             }
         });
+
+
+        /* --- POP SOUND LOGIC (Audio Pool Strategy) --- */
+        // We use a pool of Audio objects to:
+        // 1. Avoid 'fetch' CORS errors on local file:// execution (fixes "no sound").
+        // 2. Avoid creating new Audio() on click (fixes "stutter").
+        // 3. Allow rapid overlapping clicks.
+
+        const POOL_SIZE = 5;
+        const popPool = [];
+        let poolIndex = 0;
+
+        // Initialize Pool
+        for (let i = 0; i < POOL_SIZE; i++) {
+            const audio = new Audio('sound/bubble-pop.mp3');
+            audio.volume = 0.5;
+            audio.preload = 'auto';
+            popPool.push(audio);
+        }
+
+        function playPop() {
+            const sound = popPool[poolIndex];
+
+            // If already playing, reset it (or just let it finish if we want strict overlapped ring-buffer style)
+            // Ideally for overlap we just move to the next one. 
+            // If the next one is playing, we cut it short.
+            sound.currentTime = 0;
+            sound.play().catch(e => console.error("Audio play failed:", e));
+
+            // Cycle index
+            poolIndex = (poolIndex + 1) % POOL_SIZE;
+        }
 
         /* --- BACK TO TOP LOGIC --- */
         function scrollToTop() {
