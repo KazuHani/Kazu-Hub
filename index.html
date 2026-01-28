@@ -25,6 +25,57 @@
 
     <link rel="stylesheet" href="styles.css">
     <script src="tilt-effect.js" defer></script>
+
+    <!-- Resource Manager & Audio Preloader -->
+    <script>
+        /* --- RESOURCE MANAGER --- */
+        window.SiteResources = {
+            promises: [],
+            add: function (promise) { this.promises.push(promise); },
+            awaitAll: function () { return Promise.all(this.promises); }
+        };
+
+        /* --- POP SOUND PRELOADER --- */
+        const POOL_SIZE = 5;
+        const popPool = [];
+        let poolIndex = 0;
+
+        // Create audio objects immediately and track their loading
+        for (let i = 0; i < POOL_SIZE; i++) {
+            const audio = new Audio('sound/bubble-pop.mp3');
+            audio.volume = 0.5;
+            audio.preload = 'auto';
+            popPool.push(audio);
+
+            // Create a promise for this specific audio file loading
+            const audioLoadPromise = new Promise((resolve) => {
+                // If it plays through, we are good
+                audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+
+                // Fallback: If it Errors or takes too long, resolve anyway so site doesn't hang
+                audio.addEventListener('error', () => {
+                    console.warn("Audio file failed to load:", audio.src);
+                    resolve();
+                }, { once: true });
+
+                // Safety Timeout (2 seconds max wait for audio)
+                setTimeout(() => resolve(), 2000);
+            });
+
+            // Register this resource
+            window.SiteResources.add(audioLoadPromise);
+        }
+
+        // Global function to play sound
+        window.playPop = function () {
+            const sound = popPool[poolIndex];
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.error("Audio play failed:", e));
+                poolIndex = (poolIndex + 1) % POOL_SIZE;
+            }
+        };
+    </script>
 </head>
 
 <body class="min-h-screen flex flex-col relative">
@@ -33,10 +84,9 @@
 
     <!-- Loading Screen -->
     <div id="page-loader" class="fixed inset-0 z-[100] bg-[#0d1b2a] flex flex-col items-center justify-center">
-        <div class="relative">
-            <div class="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
+        <div class="relative w-16 h-16">
             <div
-                class="absolute inset-0 flex items-center justify-center font-bold text-white tech-font text-sm tracking-widest overflow-hidden p-3">
+                class="absolute inset-0 flex items-center justify-center font-bold text-white tech-font text-sm tracking-widest overflow-hidden">
                 <!-- Loading Logo -->
                 <img src="images/kazu%20small.png" class="w-full h-full object-cover rounded-full opacity-80"
                     alt="Loading Logo">
@@ -435,49 +485,61 @@
         }, 5000);
 
         /* --- PAGE LOAD & DYNAMIC ANIMATION (IntersectionObserver) --- */
+        /* --- PAGE LOAD & DYNAMIC ANIMATION (IntersectionObserver) --- */
         window.addEventListener('load', () => {
-            // Clear safety timeout since we are handling it normally
-            clearTimeout(safeLoaderHide);
+            // Create a promise for the window load itself
+            const windowLoadPromise = Promise.resolve();
 
-            // Force scroll to top on refresh
-            if ('scrollRestoration' in history) {
-                history.scrollRestoration = 'manual';
-            }
-            window.scrollTo(0, 0);
-            if (typeof lenis !== 'undefined' && lenis) lenis.scrollTo(0, { immediate: true });
+            // Wait for EVERYTHING: Window Load + Custom Resources (Audio)
+            const allReadyPromise = Promise.all([
+                windowLoadPromise,
+                window.SiteResources ? window.SiteResources.awaitAll() : Promise.resolve()
+            ]);
 
-            const loader = document.getElementById('page-loader');
+            allReadyPromise.then(() => {
+                // Clear safety timeout since we are handling it normally
+                clearTimeout(safeLoaderHide);
 
-            // Fade out loader
-            loader.style.opacity = '0';
-            loader.style.visibility = 'hidden';
+                // Force scroll to top on refresh
+                if ('scrollRestoration' in history) {
+                    history.scrollRestoration = 'manual';
+                }
+                window.scrollTo(0, 0);
+                if (typeof lenis !== 'undefined' && lenis) lenis.scrollTo(0, { immediate: true });
 
-            // Setup Intersection Observer for scroll animations
-            const observerOptions = {
-                root: null, // viewport
-                rootMargin: '0px',
-                threshold: 0.15 // Trigger when 15% visible
-            };
+                const loader = document.getElementById('page-loader');
 
-            const observer = new IntersectionObserver((entries, observer) => {
-                entries.forEach((entry, index) => {
-                    if (entry.isIntersecting) {
-                        setTimeout(() => {
-                            entry.target.classList.remove('content-hidden');
-                            entry.target.classList.add('content-visible');
-                            observer.unobserve(entry.target);
-                        }, 100);
-                    }
-                });
-            }, observerOptions);
+                // Fade out loader
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
 
-            const animElements = document.querySelectorAll('.entrance-anim');
-            animElements.forEach(el => observer.observe(el));
+                // Setup Intersection Observer for scroll animations
+                const observerOptions = {
+                    root: null, // viewport
+                    rootMargin: '0px',
+                    threshold: 0.15 // Trigger when 15% visible
+                };
 
-            // Init Icons safely after load
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+                const observer = new IntersectionObserver((entries, observer) => {
+                    entries.forEach((entry, index) => {
+                        if (entry.isIntersecting) {
+                            setTimeout(() => {
+                                entry.target.classList.remove('content-hidden');
+                                entry.target.classList.add('content-visible');
+                                observer.unobserve(entry.target);
+                            }, 100);
+                        }
+                    });
+                }, observerOptions);
+
+                const animElements = document.querySelectorAll('.entrance-anim');
+                animElements.forEach(el => observer.observe(el));
+
+                // Init Icons safely after load
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            });
         });
 
         /* --- PAGE VISIBILITY OPTIMIZATION --- */
@@ -491,37 +553,6 @@
             }
         });
 
-
-        /* --- POP SOUND LOGIC (Audio Pool Strategy) --- */
-        // We use a pool of Audio objects to:
-        // 1. Avoid 'fetch' CORS errors on local file:// execution (fixes "no sound").
-        // 2. Avoid creating new Audio() on click (fixes "stutter").
-        // 3. Allow rapid overlapping clicks.
-
-        const POOL_SIZE = 5;
-        const popPool = [];
-        let poolIndex = 0;
-
-        // Initialize Pool
-        for (let i = 0; i < POOL_SIZE; i++) {
-            const audio = new Audio('sound/bubble-pop.mp3');
-            audio.volume = 0.5;
-            audio.preload = 'auto';
-            popPool.push(audio);
-        }
-
-        function playPop() {
-            const sound = popPool[poolIndex];
-
-            // If already playing, reset it (or just let it finish if we want strict overlapped ring-buffer style)
-            // Ideally for overlap we just move to the next one. 
-            // If the next one is playing, we cut it short.
-            sound.currentTime = 0;
-            sound.play().catch(e => console.error("Audio play failed:", e));
-
-            // Cycle index
-            poolIndex = (poolIndex + 1) % POOL_SIZE;
-        }
 
         /* --- BACK TO TOP LOGIC --- */
         function scrollToTop() {
