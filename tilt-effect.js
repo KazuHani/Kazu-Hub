@@ -57,4 +57,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    /* --- MAIN TITLE 3D FOLLOW EFFECT --- */
+    const mainTitle = document.getElementById('kazu-title');
+    if (mainTitle && isHoverDevice) {
+        document.addEventListener('mousemove', (e) => {
+            // Get center of the title
+            const rect = mainTitle.getBoundingClientRect();
+
+            // Pivot around the title's own center for a "following eye" feel
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            // Distance from center
+            const deltaX = e.clientX - centerX;
+            const deltaY = e.clientY - centerY;
+
+            // Rotation Logic:
+            // Mouse Right (+x) means title should look Right -> RotateY(+deg) [Left side goes back]
+            // Mouse Down (+y) means title should look Down  -> RotateX(-deg) [Bottom goes back/Top comes forward? No wait]
+            // RotateX(positive) = element top tilts away (into screen). Bottom tilts towards.
+            // If I look down, my face tilts down. Top comes forward.
+            // So if mouse is down, we want RotateX to be negative.
+
+            // Dampening (Increased divisor = less movement)
+            const rotateY = deltaX / 45;
+            const rotateX = -deltaY / 45;
+
+            // Clamp max angles (Reduced from 30 to 10 for subtlety)
+            const clampedY = Math.max(-10, Math.min(10, rotateY));
+            const clampedX = Math.max(-10, Math.min(10, rotateX));
+
+            mainTitle.style.transform = `perspective(1000px) rotateX(${clampedX}deg) rotateY(${clampedY}deg)`;
+        });
+
+        // Reset when mouse leaves window
+        document.addEventListener('mouseleave', () => {
+            mainTitle.style.transition = 'transform 0.5s ease-out';
+            mainTitle.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+            setTimeout(() => { mainTitle.style.transition = ''; }, 500);
+        });
+    }
+
 });
