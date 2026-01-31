@@ -101,8 +101,8 @@ h3,
 /* Glassmorphism Utilities */
 .glass-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(100px);
+    -webkit-backdrop-filter: blur(100px);
     border: 1px solid var(--glass-border);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -112,7 +112,8 @@ h3,
 
 .glass-card {
     background: var(--glass-card-bg);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(100px);
+    -webkit-backdrop-filter: blur(100px);
     border: 1px solid var(--glass-card-border);
     transition: all 0.5s ease;
     color: var(--text-primary);
