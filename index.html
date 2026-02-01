@@ -95,24 +95,9 @@
         <div class="mt-4 text-cyan-400/50 text-xs font-medium tracking-[0.3em] animate-pulse">INITIALIZING</div>
     </div>
 
-    <!-- Storm Warning Banner -->
-    <div id="storm-warning" class="entrance-anim flex items-start gap-4">
-        <div class="bg-red-500/20 p-2 rounded-full border border-red-500/50 animate-pulse shrink-0">
-            <i data-lucide="cloud-lightning" class="w-6 h-6 text-red-400"></i>
-        </div>
-        <div>
-            <h3 class="text-red-400 font-bold uppercase tracking-widest text-xs mb-1">Severe Weather Alert</h3>
-            <p class="text-white text-sm leading-snug">Storm conditions detected in the UK. Local systems affecting
-                visual atmosphere.</p>
-        </div>
-    </div>
-
     <!-- Background Animations -->
     <canvas id="snow-canvas"></canvas>
     <canvas id="confetti-canvas"></canvas>
-
-    <!-- Cloud Background -->
-    <div id="cloud-container" class="cloud-bg"></div>
 
     <!-- Main Content -->
     <main class="flex-grow pt-12 pb-12 px-2 sm:px-4 lg:px-6 max-w-[90rem] mx-auto w-full space-y-12 z-10">
@@ -130,13 +115,16 @@
                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
             </div>
             <!-- Wrapper for Float Animation -->
-            <div class="mt-6 animate-float relative z-10">
-                <h1 id="kazu-title"
-                    class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-500 pb-2 transition-transform duration-100 ease-out will-change-transform inline-block">
-                    KAZU HANI
-                </h1>
+            <div class="mt-6 animate-float relative z-10 flex justify-center">
+                <!-- Wrapped in text-backdrop -->
+                <div class="text-backdrop flex-col !gap-2 !items-center !py-4 !px-8">
+                    <h1 id="kazu-title"
+                        class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-500 pb-2 transition-transform duration-100 ease-out will-change-transform inline-block">
+                        KAZU HANI
+                    </h1>
+                    <p class="text-xl text-cyan-300/80 tracking-[0.2em] uppercase">noodle derg</p>
+                </div>
             </div>
-            <p class="mt-2 text-xl text-cyan-300/80 tracking-[0.2em] uppercase">noodle derg</p>
         </section>
 
         <!-- Status Dashboard (Grid) -->
@@ -209,7 +197,7 @@
 
         <!-- Social Media Grid -->
         <section id="socials" class="content-hidden entrance-anim">
-            <h2 class="text-2xl text-white mb-6 flex items-center gap-2">
+            <h2 class="text-2xl text-white mb-6 text-backdrop">
                 <i data-lucide="network" class="text-cyan-400"></i> Social Profiles
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -417,7 +405,7 @@
 
         <!-- Writing/Stories Section -->
         <section id="stories" class="content-hidden entrance-anim">
-            <h2 class="text-2xl text-white mb-6 flex items-center gap-2">
+            <h2 class="text-2xl text-white mb-6 text-backdrop">
                 <i data-lucide="book-open" class="text-cyan-400"></i> Stories & Writing
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -622,11 +610,9 @@
 
         let width, height;
         let particles = [];
-        let rainParticles = [];
         let confettiParticles = [];
         let fireworkParticles = []; // NEW: Fireworks
         let isBirthday = false;
-        let isRaining = false;  // NEW: Rain State
 
         // Resize handling
         function resize() {
@@ -687,49 +673,7 @@
             particles.push(new Particle());
         }
 
-        // --- Rain Logic ---
-        class RainDrop {
-            constructor() {
-                this.reset();
-                this.y = Math.random() * height;
-            }
 
-            reset() {
-                this.x = Math.random() * width;
-                this.y = -20;
-                this.length = Math.random() * 20 + 10;
-                this.speed = Math.random() * 10 + 15; // Much faster than snow
-                this.opacity = Math.random() * 0.4 + 0.1;
-            }
-
-            update(wind) {
-                this.y += this.speed;
-                this.x += wind * 2; // Rain is affected by wind less erratically but more directly
-
-                if (this.y > height) {
-                    this.reset();
-                }
-                if (this.x > width) this.x = 0;
-                if (this.x < 0) this.x = width;
-            }
-
-            draw() {
-                ctx.strokeStyle = `rgba(135, 206, 235, ${this.opacity + 0.2})`; // Brighter Blue tint for visibility
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x - (currentWindSpeed * 0.1), this.y + this.length); // Tilt based on wind
-                ctx.stroke();
-            }
-        }
-
-        function initRain() {
-            if (rainParticles.length === 0) {
-                for (let i = 0; i < 200; i++) {
-                    rainParticles.push(new RainDrop());
-                }
-            }
-        }
 
         // --- Firework Logic ---
         class FireworkParticle {
@@ -845,13 +789,7 @@
                 p.draw();
             });
 
-            // Rain
-            if (isRaining) {
-                rainParticles.forEach(p => {
-                    p.update(wind); // Reuse wind for rain
-                    p.draw();
-                });
-            }
+
 
             // Confetti (only if birthday)
             if (isBirthday) {
@@ -952,7 +890,7 @@
                     // console.log(`Weather Fetched: ${data.current.temperature_2m}C, Wind ${windMph} mph`);
                 }
 
-                updateTheme(data);
+                // updateTheme(data); // Disabled to prevent bg flicker
 
             } catch (error) {
                 console.error("Weather fetch failed:", error);
@@ -1001,7 +939,6 @@
 
             const profilePic = document.getElementById('profile-pic');
             const cloudContainer = document.getElementById('cloud-container');
-            const stormWarning = document.getElementById('storm-warning');
 
             // Reset Effects
             if (profilePic) profilePic.classList.remove('sun-glow');
@@ -1009,67 +946,25 @@
                 cloudContainer.classList.remove('visible');
                 cloudContainer.innerHTML = ''; // Clear clouds
             }
-            isRaining = false;
-            if (stormWarning) stormWarning.style.display = "none";
 
             // 1. SUNNY EFFECT
             if (info.group === "sunny" && isDay) {
                 if (profilePic) profilePic.classList.add('sun-glow');
             }
 
-            // 2. CLOUDY EFFECT
-            if (info.group === "cloudy" || info.group === "rain" || info.group === "storm" || info.group === "snow") {
-                // Add clouds
-                if (cloudContainer) {
-                    cloudContainer.classList.add('visible');
-                    spawnClouds(8); // Spawn 8 clouds
-                }
-            }
 
-            // 3. RAIN EFFECT (Canvas)
-            if (info.group === "rain" || info.group === "storm" || info.group === "snow") {
-                // Note: Snow is handled by snow particle loop if we want?
-                // current snow loop is just default snowflakes falling
-                // Let's assume rain turns on 'isRaining' which activates rain canvas
-                if (info.group !== "snow") {
-                    isRaining = true;
-                    initRain();
-                }
-            }
 
-            // 4. STORM WARNING
-            const wind = data.current.wind_speed_10m;
-            // 15mph ~ 24.1kph
-            if ((wind >= 65 || info.group === "storm") && stormWarning) {
-                stormWarning.style.display = "flex";
-            }
+
+
+
         }
 
-        function spawnClouds(count) {
-            const container = document.getElementById('cloud-container');
-            if (!container || container.children.length > 0) return; // Already populated
 
-            for (let i = 0; i < count; i++) {
-                const cloud = document.createElement('div');
-                cloud.classList.add('cloud');
-
-                // Randomize
-                const size = Math.random() * 150 + 100; // 100-250px
-                const top = Math.random() * 60; // 0-60% height
-                const duration = Math.random() * 20 + 35; // 35-55s
-                const delay = Math.random() * -50;
-
-                cloud.style.width = `${size}px`;
-                cloud.style.height = `${size}px`;
-                cloud.style.top = `${top}%`;
-                cloud.style.animationDuration = `${duration}s`;
-                cloud.style.animationDelay = `${delay}s`;
-
-                container.appendChild(cloud);
-            }
-        }
 
         function updateTheme(data) {
+            // Theme logic disabled to enforce consistent background color
+            return;
+            /*
             if (!data || !data.daily) return;
 
             const now = new Date();
@@ -1091,6 +986,7 @@
             else if (data.current.is_day === 1) {
                 body.classList.add('day-mode');
             }
+            */
         }
 
         // Fetch immediately then every 15 mins

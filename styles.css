@@ -1,39 +1,39 @@
 :root {
     --neon-blue: #00f3ff;
     --neon-purple: #bc13fe;
-    --glass-bg: rgba(15, 23, 42, 0.85);
+    --glass-bg: rgba(15, 23, 42, 0.95);
     --glass-border: rgba(255, 255, 255, 0.1);
 
     /* Dynamic Theme Variables */
-    --bg-primary: #0d1b2a;
+    --bg-primary: #2d96cf;
     /* Default Night */
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
-    --glass-card-bg: rgba(15, 23, 42, 0.6);
+    --glass-card-bg: rgba(15, 23, 42, 0.9);
     --glass-card-border: rgba(255, 255, 255, 0.1);
     --stat-border: rgba(6, 182, 212, 0.5);
     /* Cyan */
 }
 
 body.day-mode {
-    --bg-primary: #1e293b;
+    /* --bg-primary override removed */
     /* Slate 800 - Lighter Dark Blue */
     --text-primary: #f8fafc;
     /* Keep Text Light */
     --text-secondary: #cbd5e1;
     /* Enhance glass for slightly lighter background */
-    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-bg: rgba(30, 41, 59, 0.85);
     --glass-border: rgba(255, 255, 255, 0.15);
 }
 
 body.sunset-mode {
-    --bg-primary: #2d1b4e;
+    /* --bg-primary override removed */
     /* Deep Purple Twilight */
     --text-primary: #f8fafc;
 }
 
 body.sunrise-mode {
-    --bg-primary: #fff7ed;
+    /* --bg-primary override removed */
     /* Warm Orange Tint */
     --text-primary: #431407;
     --glass-bg: rgba(255, 247, 237, 0.7);
@@ -101,8 +101,8 @@ h3,
 /* Glassmorphism Utilities */
 .glass-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(100px);
-    -webkit-backdrop-filter: blur(100px);
+    backdrop-filter: blur(400px);
+    -webkit-backdrop-filter: blur(400px);
     border: 1px solid var(--glass-border);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -112,8 +112,8 @@ h3,
 
 .glass-card {
     background: var(--glass-card-bg);
-    backdrop-filter: blur(100px);
-    -webkit-backdrop-filter: blur(100px);
+    backdrop-filter: blur(400px);
+    -webkit-backdrop-filter: blur(400px);
     border: 1px solid var(--glass-card-border);
     transition: all 0.5s ease;
     color: var(--text-primary);
@@ -144,6 +144,23 @@ h3,
         opacity: 1;
     }
 }
+
+/* Text Readability Backdrop */
+.text-backdrop {
+    background: var(--glass-card-bg);
+    /* Use the slightly lighter/cards bg (~0.9 opacity) */
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid var(--glass-card-border);
+    border-radius: 1rem;
+    padding: 0.75rem 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+
 
 /* HOVER EFFECTS: DESKTOP ONLY */
 @media (hover: hover) {
@@ -322,50 +339,7 @@ h3,
     background: var(--neon-blue);
 }
 
-/* --- STORM WARNING UI --- */
-#storm-warning {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 200;
-    background: rgba(220, 38, 38, 0.2);
-    /* Red tint */
-    border: 1px solid rgba(239, 68, 68, 0.5);
-    backdrop-filter: blur(8px);
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
-    display: none;
-    /* Hidden by default */
-    animation: pulse-red 2s infinite;
-    max-width: 300px;
-}
 
-#storm-warning.visible {
-    display: flex;
-    /* Or block, handled by JS normally, but CSS for safety */
-}
-
-@keyframes pulse-red {
-
-    0%,
-    100% {
-        box-shadow: 0 0 10px rgba(220, 38, 38, 0.2);
-        border-color: rgba(239, 68, 68, 0.4);
-    }
-
-    50% {
-        box-shadow: 0 0 25px rgba(220, 38, 38, 0.6);
-        border-color: rgba(239, 68, 68, 1);
-    }
-}
-
-/* Hide on mobile/tablet */
-@media (max-width: 1024px) {
-    #storm-warning {
-        display: none !important;
-    }
-}
 
 /* --- MODAL SYSTEM --- */
 #modal-overlay {
@@ -376,7 +350,8 @@ h3,
     height: 100%;
     background: rgba(13, 27, 42, 0.85);
     /* Dark overlay */
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(400px);
+    -webkit-backdrop-filter: blur(400px);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -497,40 +472,7 @@ body.global-paused * {
     }
 }
 
-.cloud-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: -1;
-    opacity: 0;
-    transition: opacity 2s ease;
-    background: transparent;
-}
 
-.cloud-bg.visible {
-    opacity: 1;
-}
-
-.cloud {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 50%;
-    filter: blur(20px);
-    animation: floatCloud linear infinite;
-}
-
-@keyframes floatCloud {
-    from {
-        transform: translateX(-100%);
-    }
-
-    to {
-        transform: translateX(100vw);
-    }
-}
 
 /* --- BACK TO TOP BUTTON --- */
 /* Hide on mobile (show only on tablet/desktop) */
