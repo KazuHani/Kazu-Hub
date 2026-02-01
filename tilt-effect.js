@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const xPct = x / rect.width;
                 const yPct = y / rect.height;
 
-                // Calculate rotation (max 10 degrees)
+                // Calculate rotation (Bare minimum 2 degree range)
                 // Invert signs if needed for "looking at" feel vs "tipping" feel
-                const xRotation = (yPct - 0.5) * -10;
-                const yRotation = (xPct - 0.5) * 10;
+                const xRotation = (yPct - 0.5) * -2;
+                const yRotation = (xPct - 0.5) * 2;
 
                 // Set CSS variables for spotlight effect
                 element.style.setProperty('--mouse-x', `${x}px`);
@@ -80,12 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // So if mouse is down, we want RotateX to be negative.
 
             // Dampening (Increased divisor = less movement)
-            const rotateY = deltaX / 45;
-            const rotateX = -deltaY / 45;
+            const rotateY = deltaX / 100; // Even more dampening
+            const rotateX = -deltaY / 100; // Even more dampening
 
-            // Clamp max angles (Reduced from 30 to 10 for subtlety)
-            const clampedY = Math.max(-10, Math.min(10, rotateY));
-            const clampedX = Math.max(-10, Math.min(10, rotateX));
+            // Clamp max angles (Bare minimum 2 degree range)
+            const clampedY = Math.max(-2, Math.min(2, rotateY));
+            const clampedX = Math.max(-2, Math.min(2, rotateX));
 
             mainTitle.style.transform = `perspective(1000px) rotateX(${clampedX}deg) rotateY(${clampedY}deg)`;
         });
