@@ -474,7 +474,7 @@ h3,
 }
 
 .modal-content {
-    background: var(--bg-primary);
+    background: var(--glass-bg);
     border: 1px solid var(--neon-blue);
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
     border-radius: 20px;
@@ -547,9 +547,9 @@ h3,
 }
 
 .calendar-target {
-    background: var(--neon-purple);
+    background: #ec4899;
     color: white;
-    box-shadow: 0 0 10px var(--neon-purple);
+    box-shadow: 0 0 10px #ec4899;
 }
 
 /* --- GLOBAL PAUSE (Resource Saving) --- */
