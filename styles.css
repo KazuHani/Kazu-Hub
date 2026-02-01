@@ -410,23 +410,33 @@ h3,
     transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
 }
 
+/* --- MODERN ENTRANCE ANIMATION --- */
 .content-hidden {
-    opacity: 0;
-    transform: translateY(50px);
-    /* Increased travel for more drama */
-    filter: blur(5px);
-    /* Add blur for smoother entry */
-    will-change: opacity, transform, filter;
+    opacity: 0 !important;
+    transform: perspective(1000px) translateY(40px) scale(0.8);
+    /* Scale down + Move down */
+    filter: blur(10px);
+    pointer-events: none;
+    transition:
+        opacity 0.6s ease-out,
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+        /* Springy pop */
+        filter 0.6s ease-out;
 }
 
-/* Separate visible class isn't strictly needed if we remove hidden, 
-   but we keep it for specific transition control if needed */
 .content-visible {
-    opacity: 1;
-    transform: translateY(0);
+    opacity: 1 !important;
+    transform: perspective(1000px) translateY(0) scale(1);
     filter: blur(0);
-    transition: opacity 0.8s ease-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), filter 0.8s ease-out;
+    pointer-events: auto;
+    /* Ensure transitions don't get stuck */
+    transition:
+        opacity 0.8s ease-out,
+        transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+        /* Springy pop */
+        filter 0.8s ease-out;
 }
+
 
 /* Scrollbar */
 ::-webkit-scrollbar {

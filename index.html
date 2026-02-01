@@ -539,11 +539,15 @@
                 const observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach((entry, index) => {
                         if (entry.isIntersecting) {
+                            // Element enters viewport
                             setTimeout(() => {
                                 entry.target.classList.remove('content-hidden');
                                 entry.target.classList.add('content-visible');
-                                observer.unobserve(entry.target);
                             }, 100);
+                        } else {
+                            // Element leaves viewport
+                            entry.target.classList.remove('content-visible');
+                            entry.target.classList.add('content-hidden');
                         }
                     });
                 }, observerOptions);
