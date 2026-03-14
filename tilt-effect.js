@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tiltElements.forEach(element => {
         // Add necessary styles for 3D preservation
         element.style.transformStyle = 'preserve-3d';
+        element.style.willChange = 'transform';
         // Initialize transition property to handle smooth resets
         element.style.transition = 'transform 0.1s ease-out';
 
