@@ -76,6 +76,34 @@
                 poolIndex = (poolIndex + 1) % POOL_SIZE;
             }
         };
+
+        /* --- CLICK SOUND PRELOADER --- */
+        const CLICK_POOL_SIZE = 5;
+        const clickPool = [];
+        let clickPoolIndex = 0;
+
+        for (let i = 0; i < CLICK_POOL_SIZE; i++) {
+            const audio = new Audio('sound/mouseclick.mp3');
+            audio.volume = 0.4;
+            audio.preload = 'auto';
+            clickPool.push(audio);
+
+            const audioLoadPromise = new Promise((resolve) => {
+                audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+                audio.addEventListener('error', () => resolve(), { once: true });
+                setTimeout(() => resolve(), 2000);
+            });
+            window.SiteResources.add(audioLoadPromise);
+        }
+
+        window.playClick = function () {
+            const sound = clickPool[clickPoolIndex];
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.error("Click Audio play failed:", e));
+                clickPoolIndex = (clickPoolIndex + 1) % CLICK_POOL_SIZE;
+            }
+        };
     </script>
 </head>
 
@@ -97,7 +125,8 @@
                     alt="Loading Logo">
             </div>
         </div>
-        <div class="mt-5 text-cyan-400/40 text-[0.65rem] font-medium tracking-[0.35em] animate-pulse uppercase">Loading</div>
+        <div class="mt-5 text-cyan-400/40 text-[0.65rem] font-medium tracking-[0.35em] animate-pulse uppercase">Loading
+        </div>
     </div>
 
     <!-- Background Animations -->
@@ -113,32 +142,32 @@
             <!-- BENTO GRID -->
             <div class="bento-grid">
 
-            <!-- Profile & Hero Section — Full Width -->
-            <section class="bento-full text-center relative content-hidden entrance-anim py-6">
-                <div class="inline-block relative group animate-float-avatar">
-                    <div
-                        class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur lg:group-hover:opacity-100 transition duration-1000 lg:group-hover:duration-200">
-                    </div>
+                <!-- Profile & Hero Section — Full Width -->
+                <section class="bento-full text-center relative content-hidden entrance-anim py-6">
+                    <div class="inline-block relative group animate-float-avatar">
+                        <div
+                            class="absolute -inset-1 bg-gradient-to-r from-cyan-400 to-purple-600 rounded-full opacity-75 blur lg:group-hover:opacity-100 transition duration-1000 lg:group-hover:duration-200">
+                        </div>
 
-                    <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile"
-                        class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto cursor-pointer active:scale-95 transition-transform"
-                        loading="eager" onclick="playPop()"
-                        onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
-                </div>
-                <!-- Wrapper for Float Animation -->
-                <div class="mt-6 animate-float relative z-10 flex justify-center">
-                    <!-- Wrapped in text-backdrop -->
-                    <div class="text-backdrop flex-col !gap-2 !items-center !py-4 !px-8">
-                        <h1 id="kazu-title"
-                            class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-400 pb-2 transition-transform duration-100 ease-out will-change-transform inline-block title-shimmer">
-                            KAZU HANI
-                        </h1>
-                        <p class="text-xl text-cyan-300/80 tracking-[0.2em] uppercase">noodle derg</p>
+                        <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile"
+                            class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto cursor-pointer active:scale-95 transition-transform"
+                            loading="eager" onclick="playPop()"
+                            onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
                     </div>
-                </div>
-            </section>
+                    <!-- Wrapper for Float Animation -->
+                    <div class="mt-6 animate-float relative z-10 flex justify-center">
+                        <!-- Wrapped in text-backdrop -->
+                        <div class="text-backdrop flex-col !gap-2 !items-center !py-4 !px-8">
+                            <h1 id="kazu-title"
+                                class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-400 pb-2 transition-transform duration-100 ease-out will-change-transform inline-block title-shimmer">
+                                KAZU HANI
+                            </h1>
+                            <p class="text-xl text-cyan-300/80 tracking-[0.2em] uppercase">noodle derg</p>
+                        </div>
+                    </div>
+                </section>
 
-            <!-- Status Dashboard — Individual Bento Items -->
+                <!-- Status Dashboard — Individual Bento Items -->
                 <!-- UK Time -->
                 <div onclick="openModal('time')"
                     class="glass-panel rounded-2xl p-4 text-center border-t-2 border-cyan-500/50 relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
@@ -161,7 +190,8 @@
                         <div class="flex items-center gap-2">
                             <i id="weather-icon-main" data-lucide="loader"
                                 class="w-4 h-4 text-yellow-400 animate-spin"></i>
-                            <div id="weather-temp" class="text-2xl md:text-2xl font-bold text-white tech-font tabular-nums">--°C
+                            <div id="weather-temp"
+                                class="text-2xl md:text-2xl font-bold text-white tech-font tabular-nums">--°C
                             </div>
                         </div>
                         <div id="weather-desc" class="text-yellow-400/80 text-sm md:text-xs capitalize">Loading...</div>
@@ -185,7 +215,8 @@
                     <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                         <i data-lucide="cake" class="w-8 h-8 text-pink-400"></i>
                     </div>
-                    <h3 id="birthday-label" class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">Next Birthday
+                    <h3 id="birthday-label" class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">Next
+                        Birthday
                         (Nov
                         9)</h3>
                     <div id="countdown" class="text-xl md:text-2xl font-bold text-white tech-font tabular-nums">--d --h
@@ -194,171 +225,213 @@
                     <div class="text-pink-400/80 text-sm md:text-xs mt-1">Until Birthday</div>
                 </div>
 
-            <!-- Discord Status + Steam Activity — Side by Side -->
-            <section id="discord-status" class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center">
-                <!-- Decorative glow -->
-                <div class="absolute -top-8 -right-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
-                <div class="flex items-center gap-4 relative z-10 w-full">
-                    <div class="relative flex-shrink-0">
-                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
-                            <svg class="w-6 h-6 text-indigo-400 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399Z"/></svg>
-                        </div>
-                        <span id="discord-status-dot" class="status-dot offline" style="position:absolute;bottom:-2px;right:-2px;"></span>
-                    </div>
-                    <div class="flex-grow">
-                        <h3 class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase">Discord</h3>
-                        <div id="discord-status-text" class="text-base md:text-lg font-semibold text-white mt-0.5">Offline</div>
-                        <div id="discord-activity" class="text-xs md:text-sm text-gray-400 mt-0.5">No activity</div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="steam-activity" class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center">
-                <!-- Decorative glow -->
-                <div class="absolute -top-8 -left-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
-                <div class="flex items-center gap-4 relative z-10 w-full">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <svg class="w-6 h-6 text-blue-400 fill-current" viewBox="0 0 256 259"><path d="M127.779 0C60.42 0 5.24 52.412 0 119.014l68.724 28.674a35.812 35.812 0 0 1 20.426-6.366c.682 0 1.356.019 2.02.056l30.566-44.71v-.626c0-26.903 21.69-48.796 48.353-48.796 26.662 0 48.352 21.893 48.352 48.796 0 26.902-21.69 48.804-48.352 48.804-.37 0-.73-.009-1.098-.018l-43.593 31.377c.028.582.046 1.163.046 1.735 0 20.204-16.283 36.636-36.294 36.636-17.566 0-32.263-12.658-35.584-29.412L4.41 164.654c15.223 54.313 64.673 94.132 123.369 94.132 70.818 0 128.221-57.938 128.221-129.393C256 57.93 198.597 0 127.779 0z"/></svg>
-                    </div>
-                    <div class="flex-grow">
-                        <h3 class="text-xs md:text-sm font-bold text-blue-400 tracking-widest uppercase">Steam</h3>
-                        <div id="steam-widget" class="mt-0.5"><span class="text-sm md:text-base text-gray-400">Loading...</span></div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Social Profiles — Bento Full -->
-            <section id="socials" class="bento-full glass-panel p-5 rounded-2xl content-hidden entrance-anim">
-                <div class="section-header">
-                    <i data-lucide="network"></i>
-                    <h2>Social Profiles</h2>
-                </div>
-                <div class="grid grid-cols-4 md:grid-cols-8 gap-3 md:gap-2">
-                    <a href="https://x.com/Kazu_Hani" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <i data-lucide="twitter" class="icon-twitter w-6 h-6 md:w-5 md:h-5 text-gray-400 transition-colors"></i>
-                        <span class="text-[0.65rem] md:text-xs font-medium">Twitter</span>
-                    </a>
-                    <a href="https://www.tiktok.com/@kazu_hani" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <svg class="icon-tiktok w-6 h-6 md:w-5 md:h-5 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
-                        <span class="text-[0.65rem] md:text-xs font-medium">TikTok</span>
-                    </a>
-                    <a href="https://www.instagram.com/kazu_hani/" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <i data-lucide="instagram" class="icon-instagram w-6 h-6 md:w-5 md:h-5 text-gray-400 transition-colors"></i>
-                        <span class="text-[0.65rem] md:text-xs font-medium">Instagram</span>
-                    </a>
-                    <a href="https://www.threads.com/@kazu_hani" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <svg class="icon-threads w-6 h-6 md:w-5 md:h-5 text-gray-400 fill-current transition-colors" viewBox="0 0 960 960"><path d="M404.63 392.13c-11.92-7.93-51.53-35.49-51.53-35.49 33.4-47.88 77.46-66.52 138.36-66.52 43.07 0 79.64 14.52 105.75 42 26.12 27.49 41.02 66.8 44.41 117.07 14.48 6.07 27.85 13.22 39.99 21.4 48.96 33 75.92 82.34 75.92 138.91 0 120.23-98.34 224.67-276.35 224.67-152.84 0-311.63-89.11-311.63-354.45 0-263.83 153.81-353.92 311.2-353.92 72.68 0 243.16 10.76 307.27 222.94l-60.12 15.63C678.33 213.2 574.4 189.14 479.11 189.14c-157.52 0-246.62 96.13-246.62 300.65 0 183.38 99.59 280.8 248.71 280.8 122.68 0 214.15-63.9 214.15-157.44 0-63.66-53.37-94.14-56.1-94.14-10.42 54.62-38.36 146.5-161.01 146.5-71.46 0-133.07-49.47-133.07-114.29 0-92.56 87.61-126.06 156.8-126.06 25.91 0 57.18 1.75 73.46 5.07 0-28.21-23.81-76.49-83.96-76.49-55.15-.01-69.14 17.92-86.84 38.39zm105.8 96.25c-90.13 0-101.79 38.51-101.79 62.7 0 38.86 46.07 51.74 70.65 51.74 45.06 0 91.35-12.52 98.63-107.31-22.85-5.14-39.88-7.13-67.49-7.13z"/></svg>
-                        <span class="text-[0.65rem] md:text-xs font-medium">Threads</span>
-                    </a>
-                    <a href="https://www.youtube.com/@Kazu_Hani" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <svg class="icon-youtube w-6 h-6 md:w-5 md:h-5 text-gray-400 stroke-current transition-colors" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5245 6.00694C20.3025 5.81544 20.0333 5.70603 19.836 5.63863C19.6156 5.56337 19.3637 5.50148 19.0989 5.44892C18.5677 5.34348 17.9037 5.26005 17.1675 5.19491C15.6904 5.06419 13.8392 5 12 5C10.1608 5 8.30956 5.06419 6.83246 5.1949C6.09632 5.26005 5.43231 5.34348 4.9011 5.44891C4.63628 5.50147 4.38443 5.56337 4.16403 5.63863C3.96667 5.70603 3.69746 5.81544 3.47552 6.00694C3.26514 6.18846 3.14612 6.41237 3.07941 6.55976C3.00507 6.724 2.94831 6.90201 2.90314 7.07448C2.81255 7.42043 2.74448 7.83867 2.69272 8.28448C2.58852 9.18195 2.53846 10.299 2.53846 11.409C2.53846 12.5198 2.58859 13.6529 2.69218 14.5835C2.74378 15.047 2.81086 15.4809 2.89786 15.8453C2.97306 16.1603 3.09841 16.5895 3.35221 16.9023C3.58757 17.1925 3.92217 17.324 4.08755 17.3836C4.30223 17.461 4.55045 17.5218 4.80667 17.572C5.32337 17.6733 5.98609 17.7527 6.72664 17.8146C8.2145 17.9389 10.1134 18 12 18C13.8865 18 15.7855 17.9389 17.2733 17.8146C18.0139 17.7527 18.6766 17.6733 19.1933 17.572C19.4495 17.5218 19.6978 17.461 19.9124 17.3836C20.0778 17.324 20.4124 17.1925 20.6478 16.9023C20.9016 16.5895 21.0269 16.1603 21.1021 15.8453C21.1891 15.4809 21.2562 15.047 21.3078 14.5835C21.4114 13.6529 21.4615 12.5198 21.4615 11.409C21.4615 10.299 21.4115 9.18195 21.3073 8.28448C21.2555 7.83868 21.1874 7.42043 21.0969 7.07448C21.0517 6.90201 20.9949 6.72401 20.9206 6.55976C20.8539 6.41236 20.7349 6.18846 20.5245 6.00694Z"/><path d="M14.5385 11.5L10.0962 14.3578L10.0962 8.64207L14.5385 11.5Z"/></svg>
-                        <span class="text-[0.65rem] md:text-xs font-medium">YouTube</span>
-                    </a>
-                    <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <svg class="icon-steam w-6 h-6 md:w-5 md:h-5 text-gray-400 fill-current transition-colors" viewBox="0 0 256 259"><path d="M127.779 0C60.42 0 5.24 52.412 0 119.014l68.724 28.674a35.812 35.812 0 0 1 20.426-6.366c.682 0 1.356.019 2.02.056l30.566-44.71v-.626c0-26.903 21.69-48.796 48.353-48.796 26.662 0 48.352 21.893 48.352 48.796 0 26.902-21.69 48.804-48.352 48.804-.37 0-.73-.009-1.098-.018l-43.593 31.377c.028.582.046 1.163.046 1.735 0 20.204-16.283 36.636-36.294 36.636-17.566 0-32.263-12.658-35.584-29.412L4.41 164.654c15.223 54.313 64.673 94.132 123.369 94.132 70.818 0 128.221-57.938 128.221-129.393C256 57.93 198.597 0 127.779 0zM80.352 196.332l-15.749-6.568c2.787 5.867 7.621 10.775 14.033 13.47 13.857 5.83 29.836-.803 35.612-14.799a27.555 27.555 0 0 0 .046-21.035c-2.768-6.79-7.999-12.086-14.706-14.909-6.67-2.795-13.811-2.694-20.085-.304l16.275 6.79c10.222 4.3 15.056 16.145 10.794 26.46-4.253 10.314-15.998 15.195-26.22 10.895zm121.957-100.29c0-17.925-14.457-32.52-32.217-32.52-17.769 0-32.226 14.595-32.226 32.52 0 17.926 14.457 32.512 32.226 32.512 17.76 0 32.217-14.586 32.217-32.512zm-56.37-.055c0-13.488 10.84-24.42 24.2-24.42 13.368 0 24.208 10.932 24.208 24.42 0 13.488-10.84 24.421-24.209 24.421-13.359 0-24.2-10.933-24.2-24.42z"/></svg>
-                        <span class="text-[0.65rem] md:text-xs font-medium">Steam</span>
-                    </a>
-                    <a href="https://www.reddit.com/user/Korat24/" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <svg class="icon-reddit w-6 h-6 md:w-5 md:h-5 text-gray-400 fill-current transition-colors" viewBox="0 0 24 24"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.249-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>
-                        <span class="text-[0.65rem] md:text-xs font-medium">Reddit</span>
-                    </a>
-                    <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" class="glass-card p-4 md:p-3 rounded-xl flex flex-col items-center justify-center gap-2 group min-h-[5rem] md:min-h-0">
-                        <svg class="icon-mal w-6 h-6 md:w-5 md:h-5 text-gray-400 stroke-current transition-colors" viewBox="0 0 48 48" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M38.4999,42.4999H9.4999c-2.2,0-4-1.8-4-4V9.4999c0-2.2,1.8-4,4-4h29c2.2,0,4,1.8,4,4v29c0,2.2-1.8,4-4,4Z"/><polyline points="32.0403 19.3035 32.0403 28.6965 36.7368 28.6965"/><polyline points="11.2632 28.6862 11.2632 19.3035 15.9597 28.6965 20.6562 19.3178 20.6562 28.6965"/><line x1="28.3958" y1="25.5544" x2="24.3007" y2="25.5544"/><polyline points="23.2368 28.6965 26.3485 19.3035 29.4597 28.6965"/></svg>
-                        <span class="text-[0.65rem] md:text-xs font-medium">MAL</span>
-                    </a>
-                </div>
-                <!-- Discord Copy -->
-                <button onclick="copyDiscord()" class="mt-3 md:mt-2 w-full glass-card p-4 md:p-3 rounded-xl flex items-center justify-center gap-3 group relative min-h-[4rem] md:min-h-0">
-                    <svg class="icon-discord w-6 h-6 text-indigo-400 stroke-current transition-colors" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399ZM8.05593 13.9013C7.01058 13.9013 6.15725 12.952 6.15725 11.7893C6.15725 10.6267 6.98925 9.67731 8.05593 9.67731C9.11191 9.67731 9.97588 10.6267 9.95454 11.7893C9.95454 12.952 9.11191 13.9013 8.05593 13.9013ZM15.065 13.9013C14.0196 13.9013 13.1652 12.952 13.1652 11.7893C13.1652 10.6267 13.9983 9.67731 15.065 9.67731C16.121 9.67731 16.985 10.6267 16.9636 11.7893C16.9636 12.952 16.1317 13.9013 15.065 13.9013Z"/></svg>
-                    <span class="font-bold text-base md:text-sm">kazu_hani</span>
-                    <span id="discord-tooltip" class="text-xs md:text-xs text-gray-400">• Click to copy</span>
-                    <div id="copy-success" class="absolute inset-0 bg-green-500/90 rounded-xl flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none">
-                        <span class="font-bold text-white">Copied!</span>
-                    </div>
-                </button>
-            </section>
-
-            <!-- OC Info — Bento Wide -->
-            <section id="oc-kazu" class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim border-t border-cyan-500/30 flex flex-col justify-center">
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20 flex-shrink-0">
-                            <img src="images/kazu%20small.png" alt="Kazu Icon" class="w-full h-full object-cover" loading="lazy">
-                        </div>
-                        <div>
-                            <h2 class="text-xl md:text-2xl font-bold text-white tech-font">Meet Kazu</h2>
-                            <p class="text-slate-400 text-sm md:text-base mt-1">Discover the lore behind the noodle derg.</p>
-                        </div>
-                    </div>
-                    <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank"
-                        class="cta-btn group flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold transition-all transform w-full md:w-auto min-h-[44px]">
-                        <span class="text-sm md:text-base">View Reference</span>
-                        <i data-lucide="arrow-right" class="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform"></i>
-                    </a>
-                </div>
-            </section>
-
-            <!-- Music Section — Bento Wide -->
-            <section id="music" class="bento-wide glass-panel p-5 rounded-2xl relative group content-hidden entrance-anim overflow-hidden flex flex-col justify-center">
-                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
-                <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
-                <div class="flex flex-col md:flex-row items-center gap-6 relative z-10 w-full h-full">
-                    <!-- Playlist Cover -->
-                    <div class="relative w-40 h-40 flex-shrink-0 transform transition-transform duration-500 lg:group-hover:scale-105 mx-auto md:mx-0">
-                        <div class="absolute top-0 left-3 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5"></div>
-                        <div class="absolute top-0 left-1.5 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5"></div>
-                        <div class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10">
-                            <img src="images/sisu.jpg?v=2" alt="Playlist Cover" class="w-full h-full object-cover opacity-90" loading="lazy">
-                        </div>
-                    </div>
-                    <!-- Content -->
-                    <div class="flex-grow text-center md:text-left w-full flex flex-col justify-center h-full space-y-2">
-                        <div>
-                            <span class="text-xs md:text-sm font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Now Curating</span>
-                            <h2 class="text-2xl md:text-3xl font-bold text-white tech-font tracking-tight">Songs that SLAP 🐉</h2>
-                            <p class="text-slate-400 text-sm md:text-base mt-1">YouTube Music • Kazu Hani's Selection</p>
-                        </div>
-                        <!-- Audio Visualizer -->
-                        <div class="visualizer-container mt-2 opacity-80 justify-center md:justify-start" id="audio-visualizer"></div>
-                        <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI"
-                            target="_blank"
-                            class="cta-btn mt-4 w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold transition-all shadow-lg group/btn min-h-[44px]">
-                            <div class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white">
-                                <i data-lucide="play" class="w-3.5 h-3.5 fill-current ml-0.5"></i>
+                <!-- Discord Status + Steam Activity — Side by Side -->
+                <section id="discord-status" title="Click to copy Kazu's user ID?" onclick="copyDiscord(); playClick();"
+                    class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center cursor-pointer hover:bg-white/5 transition-colors group">
+                    <!-- Decorative glow -->
+                    <div class="absolute -top-8 -right-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+                    <div class="flex items-center gap-4 relative z-10 w-full">
+                        <div class="relative flex-shrink-0">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
+                                <svg class="w-6 h-6 text-indigo-400 stroke-current" viewBox="0 0 24 24" fill="none"
+                                    stroke-width="2">
+                                    <path
+                                        d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399Z" />
+                                </svg>
                             </div>
-                            <span class="text-sm md:text-base">Listen</span>
+                            <span id="discord-status-dot" class="status-dot offline"
+                                style="position:absolute;bottom:-2px;right:-2px;"></span>
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase">Discord
+                            </h3>
+                            <div id="discord-status-text" class="text-base md:text-lg font-semibold text-white mt-0.5">
+                                Offline</div>
+                            <div id="discord-activity" class="text-xs md:text-sm text-gray-400 mt-0.5">No activity</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="steam-activity"
+                    class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center">
+                    <!-- Decorative glow -->
+                    <div class="absolute -top-8 -left-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
+                    <div class="flex items-center gap-4 relative z-10 w-full">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-blue-400 fill-current" viewBox="0 0 256 259">
+                                <path
+                                    d="M127.779 0C60.42 0 5.24 52.412 0 119.014l68.724 28.674a35.812 35.812 0 0 1 20.426-6.366c.682 0 1.356.019 2.02.056l30.566-44.71v-.626c0-26.903 21.69-48.796 48.353-48.796 26.662 0 48.352 21.893 48.352 48.796 0 26.902-21.69 48.804-48.352 48.804-.37 0-.73-.009-1.098-.018l-43.593 31.377c.028.582.046 1.163.046 1.735 0 20.204-16.283 36.636-36.294 36.636-17.566 0-32.263-12.658-35.584-29.412L4.41 164.654c15.223 54.313 64.673 94.132 123.369 94.132 70.818 0 128.221-57.938 128.221-129.393C256 57.93 198.597 0 127.779 0z" />
+                            </svg>
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="text-xs md:text-sm font-bold text-blue-400 tracking-widest uppercase">Steam</h3>
+                            <div id="steam-widget" class="mt-0.5"><span
+                                    class="text-sm md:text-base text-gray-400">Loading...</span></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Social Profiles — Bento Full -->
+                <section id="socials" class="bento-full glass-panel p-5 rounded-2xl content-hidden entrance-anim">
+                    <div class="section-header">
+                        <i data-lucide="network"></i>
+                        <h2>Social Profiles</h2>
+                    </div>
+                    <div class="flex flex-wrap gap-3 md:gap-2 justify-center">
+                        <a href="https://x.com/Kazu_Hani" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/twitter.svg" alt="Twitter"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Twitter</span>
+                        </a>
+
+                        <a href="https://www.instagram.com/kazu_hani/" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/insta.svg" alt="Instagram"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Instagram</span>
+                        </a>
+
+                        <a href="https://www.youtube.com/@Kazu_Hani" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/youtube.png" alt="YouTube" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">YouTube</span>
+                        </a>
+                        <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/steam.png" alt="Steam" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Steam</span>
+                        </a>
+                        <a href="https://www.reddit.com/user/Korat24/" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/reddit.png" alt="Reddit" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Reddit</span>
+                        </a>
+                        <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/mal.png" alt="MyAnimeList" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">MAL</span>
                         </a>
                     </div>
-                </div>
-            </section>
+                </section>
 
-
-
-            <!-- Stories — Bento Full -->
-            <section id="stories" class="bento-full glass-panel p-5 rounded-2xl content-hidden entrance-anim">
-                <div class="section-header">
-                    <i data-lucide="book-open"></i>
-                    <h2>Stories & Writing</h2>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub"
-                        target="_blank" class="glass-card p-4 rounded-xl border-l-4 border-cyan-500 lg:hover:bg-white/5 transition-all group">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-base font-bold text-white tech-font">The Legend That Bleeds</h3>
-                            <i data-lucide="external-link" class="w-4 h-4 text-gray-500 lg:group-hover:text-white flex-shrink-0"></i>
+                <!-- OC Info — Bento Wide -->
+                <section id="oc-kazu"
+                    class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim border-t border-cyan-500/30 flex flex-col justify-center">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/20 flex-shrink-0">
+                                <img src="images/kazu%20small.png" alt="Kazu Icon" class="w-full h-full object-cover"
+                                    loading="lazy">
+                            </div>
+                            <div>
+                                <h2 class="text-xl md:text-2xl font-bold text-white tech-font">Meet Kazu</h2>
+                                <p class="text-slate-400 text-sm md:text-base mt-1">Discover the lore behind the noodle
+                                    derg.</p>
+                            </div>
                         </div>
-                        <p class="text-gray-400 text-xs line-clamp-2">Access the chronicles of this ongoing narrative.</p>
-                    </a>
-                    <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub"
-                        target="_blank" class="glass-card p-4 rounded-xl border-l-4 border-purple-500 lg:hover:bg-white/5 transition-all group">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-base font-bold text-white tech-font">The Naga and Human Kind</h3>
-                            <i data-lucide="external-link" class="w-4 h-4 text-gray-500 lg:group-hover:text-white flex-shrink-0"></i>
+                        <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank"
+                            onclick="playClick()"
+                            class="cta-btn group flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold transition-all transform w-full md:w-auto min-h-[44px]">
+                            <span class="text-sm md:text-base">View Reference</span>
+                            <i data-lucide="arrow-right"
+                                class="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Music Section — Bento Wide -->
+                <section id="music"
+                    class="bento-wide glass-panel p-5 rounded-2xl relative group content-hidden entrance-anim overflow-hidden flex flex-col justify-center">
+                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl">
+                    </div>
+                    <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl">
+                    </div>
+                    <div class="flex flex-col md:flex-row items-center gap-6 relative z-10 w-full h-full">
+                        <!-- Playlist Cover -->
+                        <div
+                            class="relative w-40 h-40 flex-shrink-0 transform transition-transform duration-500 lg:group-hover:scale-105 mx-auto md:mx-0">
+                            <div
+                                class="absolute top-0 left-3 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5">
+                            </div>
+                            <div
+                                class="absolute top-0 left-1.5 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5">
+                            </div>
+                            <div
+                                class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10">
+                                <img src="images/sisu.jpg?v=2" alt="Playlist Cover"
+                                    class="w-full h-full object-cover opacity-90" loading="lazy">
+                            </div>
                         </div>
-                        <p class="text-gray-400 text-xs line-clamp-2">Read the latest draft of this story.</p>
-                    </a>
-                </div>
-            </section>
+                        <!-- Content -->
+                        <div
+                            class="flex-grow text-center md:text-left w-full flex flex-col justify-center h-full space-y-2">
+                            <div>
+                                <span
+                                    class="text-xs md:text-sm font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Now
+                                    Curating</span>
+                                <h2 class="text-2xl md:text-3xl font-bold text-white tech-font tracking-tight">Songs
+                                    that SLAP 🐉</h2>
+                                <p class="text-slate-400 text-sm md:text-base mt-1">YouTube Music • Kazu Hani's
+                                    Selection</p>
+                            </div>
+                            <!-- Audio Visualizer -->
+                            <div class="visualizer-container mt-2 opacity-80 justify-center md:justify-start"
+                                id="audio-visualizer"></div>
+                            <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI"
+                                target="_blank" onclick="playClick()"
+                                class="cta-btn mt-4 w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold transition-all shadow-lg group/btn min-h-[44px]">
+                                <div
+                                    class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white">
+                                    <i data-lucide="play" class="w-3.5 h-3.5 fill-current ml-0.5"></i>
+                                </div>
+                                <span class="text-sm md:text-base">Listen</span>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+
+
+                <!-- Stories — Bento Full -->
+                <section id="stories" class="bento-full glass-panel p-5 rounded-2xl content-hidden entrance-anim">
+                    <div class="section-header">
+                        <i data-lucide="book-open"></i>
+                        <h2>Stories & Writing</h2>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub"
+                            target="_blank" onclick="playClick()"
+                            class="glass-card p-4 rounded-xl border-l-4 border-cyan-500 lg:hover:bg-white/5 transition-all group">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-base font-bold text-white tech-font">The Legend That Bleeds</h3>
+                                <i data-lucide="external-link"
+                                    class="w-4 h-4 text-gray-500 lg:group-hover:text-white flex-shrink-0"></i>
+                            </div>
+                            <p class="text-gray-400 text-xs line-clamp-2">Access the chronicles of this ongoing
+                                narrative.</p>
+                        </a>
+                        <a href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub"
+                            target="_blank" onclick="playClick()"
+                            class="glass-card p-4 rounded-xl border-l-4 border-purple-500 lg:hover:bg-white/5 transition-all group">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-base font-bold text-white tech-font">The Naga and Human Kind</h3>
+                                <i data-lucide="external-link"
+                                    class="w-4 h-4 text-gray-500 lg:group-hover:text-white flex-shrink-0"></i>
+                            </div>
+                            <p class="text-gray-400 text-xs line-clamp-2">Read the latest draft of this story.</p>
+                        </a>
+                    </div>
+                </section>
 
             </div> <!-- End Bento Grid -->
         </div> <!-- End Dashboard Wrapper -->
@@ -377,10 +450,14 @@
             <i data-lucide="palette" class="w-5 h-5"></i>
         </button>
         <div class="accent-popover" id="accent-popover">
-            <button class="accent-swatch active" data-color="blue" onclick="setAccent('blue')" aria-label="Blue accent"></button>
-            <button class="accent-swatch" data-color="purple" onclick="setAccent('purple')" aria-label="Purple accent"></button>
-            <button class="accent-swatch" data-color="green" onclick="setAccent('green')" aria-label="Green accent"></button>
-            <button class="accent-swatch" data-color="pink" onclick="setAccent('pink')" aria-label="Pink accent"></button>
+            <button class="accent-swatch active" data-color="blue" onclick="setAccent('blue')"
+                aria-label="Blue accent"></button>
+            <button class="accent-swatch" data-color="purple" onclick="setAccent('purple')"
+                aria-label="Purple accent"></button>
+            <button class="accent-swatch" data-color="green" onclick="setAccent('green')"
+                aria-label="Green accent"></button>
+            <button class="accent-swatch" data-color="pink" onclick="setAccent('pink')"
+                aria-label="Pink accent"></button>
         </div>
     </div>
 
@@ -399,6 +476,14 @@
             </div>
         </div>
     </div>
+
+    <!-- DISCORD COPY OVERLAY -->
+    <div id="discord-copy-overlay" class="fixed inset-0 z-[9999] bg-black/30 backdrop-blur-md flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <h2 class="text-4xl md:text-6xl font-bold text-white tracking-widest text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] translate-y-4 transition-transform duration-300 pointer-events-none" id="discord-copy-text" style="text-shadow: 0 0 20px rgba(0, 200, 255, 0.4);">
+            Discord ID Copied
+        </h2>
+    </div>
+
     <script>
         // Global variables
         let isScrolling = false;
@@ -992,11 +1077,16 @@
         }
 
         function showSuccess() {
-            const successMsg = document.getElementById('copy-success');
-            successMsg.classList.remove('opacity-0');
-            setTimeout(() => {
-                successMsg.classList.add('opacity-0');
-            }, 2000);
+            const overlay = document.getElementById('discord-copy-overlay');
+            const text = document.getElementById('discord-copy-text');
+            if (overlay && text) {
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                text.classList.remove('translate-y-4');
+                setTimeout(() => {
+                    overlay.classList.add('opacity-0', 'pointer-events-none');
+                    text.classList.add('translate-y-4');
+                }, 1300);
+            }
         }
 
 
