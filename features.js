@@ -158,29 +158,53 @@ document.addEventListener('DOMContentLoaded', initVisualizer);
 /* --- DISCORD LIVE STATUS (Lanyard API — REST + WebSocket) --- */
 const DISCORD_ID = '346360416827473921';
 
-function updateDiscordUI(status, activityText) {
+function updateDiscordUI(status, activityText, imageUrl = null) {
     const dot = document.getElementById('discord-status-dot');
     const text = document.getElementById('discord-status-text');
     const activity = document.getElementById('discord-activity');
+    const defaultIcon = document.getElementById('discord-default-icon');
+    const activityImg = document.getElementById('discord-activity-img');
+    
     if (!dot || !text || !activity) return;
 
     dot.className = 'status-dot ' + status;
     text.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     activity.textContent = activityText;
+
+    if (imageUrl && activityImg && defaultIcon) {
+        activityImg.src = imageUrl;
+        activityImg.classList.remove('hidden');
+        defaultIcon.classList.add('hidden');
+    } else if (activityImg && defaultIcon) {
+        activityImg.classList.add('hidden');
+        defaultIcon.classList.remove('hidden');
+    }
 }
 
 function parseDiscordData(d) {
     const status = d.discord_status || 'offline';
     let activityText = status === 'offline' ? 'No activity' : 'Chilling';
-    if (d.activities && d.activities.length > 0) {
+    let imageUrl = null;
+
+    if (d.spotify) {
+        activityText = `Listening to ${d.spotify.song}`;
+        imageUrl = d.spotify.album_art_url;
+    } else if (d.activities && d.activities.length > 0) {
         const act = d.activities.find(a => a.type !== 4) || d.activities[0]; // Skip custom status
         if (act.type === 4 && act.state) {
             activityText = act.state;
         } else if (act.name) {
             activityText = `Playing ${act.name}`;
+            if (act.assets && act.assets.large_image) {
+                if (act.assets.large_image.startsWith("mp:")) {
+                    imageUrl = "https://media.discordapp.net/" + act.assets.large_image.substring(3);
+                } else {
+                    imageUrl = `https://cdn.discordapp.com/app-assets/${act.application_id}/${act.assets.large_image}.png`;
+                }
+            }
         }
     }
-    updateDiscordUI(status, activityText);
+    updateDiscordUI(status, activityText, imageUrl);
 }
 
 // Try REST first, then fall back to WebSocket
@@ -306,20 +330,27 @@ async function fetchSteamActivity() {
                 statusText = statusText.replace(/<[^>]+>/g, '').trim();
 
                 let gameHtml = '';
+                const gameIcon = xml.querySelector('inGameInfo gameIcon')?.textContent;
+                const displayImg = currentGame && gameIcon ? gameIcon : avatarIcon;
+
                 if (currentGame) {
-                    gameHtml = `<div class="text-xs text-cyan-300 mt-1">🎮 ${currentGame}</div>`;
+                    gameHtml = `<div class="text-xs text-cyan-300 mt-1 truncate">🎮 ${currentGame}</div>`;
                 }
 
                 widget.innerHTML = `
-                    <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group">
-                        ${avatarIcon ? `<img src="${avatarIcon}" alt="${profileName}" class="steam-game-img">` : ''}
-                        <div>
-                            <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors">${profileName}</div>
-                            <div class="text-xs text-gray-400">${statusText}</div>
+                    <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
+                        ${displayImg ? `<img src="${displayImg}" alt="${currentGame || profileName}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0">` : ''}
+                        <div class="overflow-hidden w-full">
+                            <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${profileName}</div>
+                            <div class="text-xs text-gray-400 truncate">${statusText}</div>
                             ${gameHtml}
                         </div>
                     </a>
                 `;
+                
+                const defaultLogo = document.getElementById('steam-default-logo');
+                if (defaultLogo) defaultLogo.classList.add('hidden');
+                
                 return;
             }
 
@@ -332,14 +363,18 @@ async function fetchSteamActivity() {
                 const link = game.querySelector('storeLink')?.textContent || '#';
 
                 widget.innerHTML = `
-                    <a href="${link}" target="_blank" class="steam-game-card group">
-                        ${logo ? `<img src="${logo}" alt="${name}" class="steam-game-img">` : ''}
-                        <div>
-                            <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors">${name}</div>
-                            <div class="text-xs text-gray-400">${hours}h last 2 weeks</div>
+                    <a href="${link}" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
+                        ${logo ? `<img src="${logo}" alt="${name}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0">` : ''}
+                        <div class="overflow-hidden w-full">
+                            <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${name}</div>
+                            <div class="text-xs text-gray-400 truncate">${hours}h last 2 weeks</div>
                         </div>
                     </a>
                 `;
+                
+                const defaultLogo = document.getElementById('steam-default-logo');
+                if (defaultLogo) defaultLogo.classList.add('hidden');
+                
                 return;
             }
         } catch (e) {

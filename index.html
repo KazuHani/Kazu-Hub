@@ -158,6 +158,7 @@
                     <div class="mt-6 animate-float relative z-10 flex justify-center">
                         <!-- Wrapped in text-backdrop -->
                         <div class="text-backdrop flex-col !gap-2 !items-center !py-4 !px-8">
+                            <h2 id="greeting-text" class="text-sm md:text-base text-cyan-400/80 font-medium tracking-widest uppercase mb-[-10px] mt-1 transition-opacity duration-500 ease-in-out">Hey there</h2>
                             <h1 id="kazu-title"
                                 class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-400 pb-2 transition-transform duration-100 ease-out will-change-transform inline-block title-shimmer">
                                 KAZU HANI
@@ -182,11 +183,12 @@
                 <!-- Weather -->
                 <div onclick="openModal('weather')" id="weather-card"
                     class="glass-panel rounded-2xl p-4 text-center border-t-2 border-yellow-500/50 relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
-                    <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
+                    <div id="weather-rain" class="weather-rain-container"></div>
+                    <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity z-10">
                         <i id="weather-icon-bg" data-lucide="cloud-sun" class="w-8 h-8 text-yellow-400"></i>
                     </div>
-                    <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-1">Weather</h3>
-                    <div class="flex flex-col items-center justify-center gap-1">
+                    <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-1 relative z-10">Weather</h3>
+                    <div class="flex flex-col items-center justify-center gap-1 relative z-10">
                         <div class="flex items-center gap-2">
                             <i id="weather-icon-main" data-lucide="loader"
                                 class="w-4 h-4 text-yellow-400 animate-spin"></i>
@@ -231,8 +233,8 @@
                     <!-- Decorative glow -->
                     <div class="absolute -top-8 -right-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
                     <div class="flex items-center gap-4 relative z-10 w-full">
-                        <div class="relative flex-shrink-0">
-                            <div
+                        <div class="relative flex-shrink-0" id="discord-img-container">
+                            <div id="discord-default-icon"
                                 class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
                                 <svg class="w-6 h-6 text-indigo-400 stroke-current" viewBox="0 0 24 24" fill="none"
                                     stroke-width="2">
@@ -240,15 +242,16 @@
                                         d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399Z" />
                                 </svg>
                             </div>
+                            <img id="discord-activity-img" src="" class="hidden w-12 h-12 rounded-xl object-cover border border-indigo-500/20 shadow-md">
                             <span id="discord-status-dot" class="status-dot offline"
-                                style="position:absolute;bottom:-2px;right:-2px;"></span>
+                                style="position:absolute;bottom:-2px;right:-2px;z-index:10;"></span>
                         </div>
-                        <div class="flex-grow">
-                            <h3 class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase">Discord
+                        <div class="flex-grow overflow-hidden w-full">
+                            <h3 class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase truncate">Discord
                             </h3>
-                            <div id="discord-status-text" class="text-base md:text-lg font-semibold text-white mt-0.5">
+                            <div id="discord-status-text" class="text-base md:text-lg font-semibold text-white mt-0.5 truncate">
                                 Offline</div>
-                            <div id="discord-activity" class="text-xs md:text-sm text-gray-400 mt-0.5">No activity</div>
+                            <div id="discord-activity" class="text-xs md:text-sm text-gray-400 mt-0.5 truncate">No activity</div>
                         </div>
                     </div>
                 </section>
@@ -258,7 +261,7 @@
                     <!-- Decorative glow -->
                     <div class="absolute -top-8 -left-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
                     <div class="flex items-center gap-4 relative z-10 w-full">
-                        <div
+                        <div id="steam-default-logo"
                             class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
                             <svg class="w-6 h-6 text-blue-400 fill-current" viewBox="0 0 256 259">
                                 <path
@@ -343,12 +346,12 @@
                                     derg.</p>
                             </div>
                         </div>
-                        <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank" onclick="playClick()"
+                        <button onclick="playClick(); openModal('lore')"
                             class="cta-btn group flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold transition-all transform w-full md:w-auto min-h-[44px]">
                             <span class="text-sm md:text-base">View Reference</span>
                             <i data-lucide="arrow-right"
                                 class="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform"></i>
-                        </a>
+                        </button>
                     </div>
                 </section>
 
@@ -808,6 +811,7 @@
         function updateTime() {
             const timeElement = document.getElementById('uk-time');
             const dateElement = document.getElementById('uk-date');
+            const greetingElement = document.getElementById('greeting-text');
 
             const now = new Date();
 
@@ -829,6 +833,21 @@
 
             timeElement.textContent = new Intl.DateTimeFormat('en-GB', timeOptions).format(now);
             dateElement.textContent = new Intl.DateTimeFormat('en-GB', dateOptions).format(now);
+
+            if (greetingElement) {
+                const localHour = now.getHours();
+                
+                let greeting = "Good Evening";
+                if (localHour >= 5 && localHour < 12) {
+                    greeting = "Good Morning";
+                } else if (localHour >= 12 && localHour < 18) {
+                    greeting = "Good Afternoon";
+                }
+                
+                if (greetingElement.textContent !== greeting) {
+                    greetingElement.textContent = greeting;
+                }
+            }
         }
         setInterval(updateTime, 1000);
         let currentWindSpeed = 0;
@@ -927,25 +946,32 @@
             const info = weatherMap[code] || { group: "cloudy" };
 
             const profilePic = document.getElementById('profile-pic');
-            const cloudContainer = document.getElementById('cloud-container');
+            const weatherCard = document.getElementById('weather-card');
+            const rainContainer = document.getElementById('weather-rain');
 
             // Reset Effects
             if (profilePic) profilePic.classList.remove('sun-glow');
-            if (cloudContainer) {
-                cloudContainer.classList.remove('visible');
-                cloudContainer.innerHTML = ''; // Clear clouds
-            }
+            if (weatherCard) weatherCard.classList.remove('is-raining');
 
             // 1. SUNNY EFFECT
             if (info.group === "sunny" && isDay) {
                 if (profilePic) profilePic.classList.add('sun-glow');
             }
 
-
-
-
-
-
+            // 2. RAIN EFFECT
+            if (info.group === "rain" || info.group === "storm") {
+                if (weatherCard) weatherCard.classList.add('is-raining');
+                if (rainContainer && rainContainer.children.length === 0) {
+                    for (let i = 0; i < 20; i++) {
+                        const drop = document.createElement('div');
+                        drop.className = 'raindrop';
+                        drop.style.left = `${Math.random() * 100}%`;
+                        drop.style.animationDelay = `${Math.random() * 1}s`;
+                        drop.style.animationDuration = `${0.5 + Math.random() * 0.3}s`;
+                        rainContainer.appendChild(drop);
+                    }
+                }
+            }
         }
 
 
@@ -1100,6 +1126,8 @@
                 renderBirthdayModal();
             } else if (type === 'weather') {
                 renderWeatherModal();
+            } else if (type === 'lore') {
+                renderLoreModal();
             }
         }
 
@@ -1109,6 +1137,9 @@
                 modalOverlay.style.display = 'none';
                 modalContent.innerHTML = ''; // Clear content
                 document.body.style.overflow = ''; // Restore scroll
+                // Reset styles
+                modalContent.style.maxWidth = '';
+                modalContent.style.width = '';
             }, 300);
 
             // Cleanup Intervals
@@ -1273,6 +1304,35 @@
             if (mainDesc && modalDesc) {
                 modalDesc.textContent = mainDesc.textContent;
             }
+        }
+
+        /* --- 5. LORE MODAL --- */
+        function renderLoreModal() {
+            modalContent.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-3xl font-bold text-white tech-font">Kazu Reference</h2>
+                </div>
+                <div class="w-full h-[65vh] rounded-2xl overflow-hidden border border-cyan-500/30 shadow-lg shadow-cyan-500/10">
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src="https://kazuhani.github.io/KazuOC/#home" 
+                        frameborder="0"
+                        class="bg-slate-900">
+                    </iframe>
+                </div>
+                <div class="mt-4 flex justify-between items-center text-sm text-gray-400">
+                    <span>Lore Hub</span>
+                    <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors">
+                        Open in New Tab <i data-lucide="external-link" class="w-4 h-4"></i>
+                    </a>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+            // Adjust modal width temporarily for this specific modal
+            modalContent.style.maxWidth = '1000px';
+            modalContent.style.width = '95%';
         }
 
         /* --- 2. AGE MODAL (Creative Details) --- */
