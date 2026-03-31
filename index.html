@@ -299,25 +299,29 @@
                         <a href="https://www.youtube.com/@Kazu_Hani" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/youtube.png" alt="YouTube" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <img src="images/youtube.png" alt="YouTube"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">YouTube</span>
                         </a>
                         <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/steam.png" alt="Steam" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <img src="images/steam.png" alt="Steam"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Steam</span>
                         </a>
                         <a href="https://www.reddit.com/user/Korat24/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/reddit.png" alt="Reddit" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <img src="images/reddit.png" alt="Reddit"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Reddit</span>
                         </a>
                         <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/mal.png" alt="MyAnimeList" class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <img src="images/mal.png" alt="MyAnimeList"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">MAL</span>
                         </a>
                     </div>
@@ -339,8 +343,7 @@
                                     derg.</p>
                             </div>
                         </div>
-                        <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank"
-                            onclick="playClick()"
+                        <a href="https://kazuhani.github.io/KazuOC/#home" target="_blank" onclick="playClick()"
                             class="cta-btn group flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold transition-all transform w-full md:w-auto min-h-[44px]">
                             <span class="text-sm md:text-base">View Reference</span>
                             <i data-lucide="arrow-right"
@@ -444,23 +447,6 @@
         <i data-lucide="arrow-up" class="w-6 h-6"></i>
     </button>
 
-    <!-- Accent Colour Toggle -->
-    <div class="accent-toggle" id="accent-toggle">
-        <button class="accent-toggle-btn" onclick="toggleAccentPopover()" aria-label="Change accent colour">
-            <i data-lucide="palette" class="w-5 h-5"></i>
-        </button>
-        <div class="accent-popover" id="accent-popover">
-            <button class="accent-swatch active" data-color="blue" onclick="setAccent('blue')"
-                aria-label="Blue accent"></button>
-            <button class="accent-swatch" data-color="purple" onclick="setAccent('purple')"
-                aria-label="Purple accent"></button>
-            <button class="accent-swatch" data-color="green" onclick="setAccent('green')"
-                aria-label="Green accent"></button>
-            <button class="accent-swatch" data-color="pink" onclick="setAccent('pink')"
-                aria-label="Pink accent"></button>
-        </div>
-    </div>
-
     <!-- GENERIC MODAL OVERLAY -->
     <div id="modal-overlay">
         <!-- Close Overlay on click outside -->
@@ -478,8 +464,10 @@
     </div>
 
     <!-- DISCORD COPY OVERLAY -->
-    <div id="discord-copy-overlay" class="fixed inset-0 z-[9999] bg-black/30 backdrop-blur-md flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <h2 class="text-4xl md:text-6xl font-bold text-white tracking-widest text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] translate-y-4 transition-transform duration-300 pointer-events-none" id="discord-copy-text" style="text-shadow: 0 0 20px rgba(0, 200, 255, 0.4);">
+    <div id="discord-copy-overlay"
+        class="fixed inset-0 z-[9999] bg-black/30 backdrop-blur-md flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <h2 class="text-4xl md:text-6xl font-bold text-white tracking-widest text-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] translate-y-4 transition-transform duration-300 pointer-events-none"
+            id="discord-copy-text" style="text-shadow: 0 0 20px rgba(0, 200, 255, 0.4);">
             Discord ID Copied
         </h2>
     </div>

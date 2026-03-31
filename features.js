@@ -58,7 +58,7 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Get accent color from CSS
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00e5ff';
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
@@ -361,49 +361,4 @@ async function fetchSteamActivity() {
 document.addEventListener('DOMContentLoaded', fetchSteamActivity);
 
 
-/* --- ACCENT COLOUR TOGGLE --- */
-function toggleAccentPopover() {
-    const popover = document.getElementById('accent-popover');
-    if (popover) popover.classList.toggle('visible');
-}
 
-function setAccent(color) {
-    const html = document.documentElement;
-    if (color === 'blue') {
-        html.removeAttribute('data-accent');
-    } else {
-        html.setAttribute('data-accent', color);
-    }
-    // Update active swatch
-    document.querySelectorAll('.accent-swatch').forEach(s => {
-        s.classList.toggle('active', s.dataset.color === color);
-    });
-    // Save to localStorage
-    localStorage.setItem('kazu-accent', color);
-    // Close popover
-    const popover = document.getElementById('accent-popover');
-    if (popover) popover.classList.remove('visible');
-}
-
-// Restore saved accent on load
-(function restoreAccent() {
-    const saved = localStorage.getItem('kazu-accent');
-    if (saved && saved !== 'blue') {
-        document.documentElement.setAttribute('data-accent', saved);
-        // Defer swatch update to after DOM ready
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.accent-swatch').forEach(s => {
-                s.classList.toggle('active', s.dataset.color === saved);
-            });
-        });
-    }
-})();
-
-// Close popover if clicking outside
-document.addEventListener('click', (e) => {
-    const toggle = document.getElementById('accent-toggle');
-    const popover = document.getElementById('accent-popover');
-    if (toggle && popover && !toggle.contains(e.target)) {
-        popover.classList.remove('visible');
-    }
-});

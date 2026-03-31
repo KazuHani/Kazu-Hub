@@ -39,27 +39,7 @@
     --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* --- ACCENT COLOUR VARIANTS --- */
-[data-accent="purple"] {
-    --accent: #b44aff;
-    --accent-glow: rgba(180, 74, 255, 0.4);
-    --accent-subtle: rgba(180, 74, 255, 0.12);
-    --neon-blue: #b44aff;
-}
 
-[data-accent="green"] {
-    --accent: #00ff88;
-    --accent-glow: rgba(0, 255, 136, 0.4);
-    --accent-subtle: rgba(0, 255, 136, 0.12);
-    --neon-blue: #00ff88;
-}
-
-[data-accent="pink"] {
-    --accent: #ff6eb4;
-    --accent-glow: rgba(255, 110, 180, 0.4);
-    --accent-subtle: rgba(255, 110, 180, 0.12);
-    --neon-blue: #ff6eb4;
-}
 
 /* --- LENIS SMOOTH SCROLL --- */
 html.lenis,
@@ -664,86 +644,7 @@ h1, h2, h3, .tech-font {
     transform: scale(1.2);
 }
 
-/* ===================================================
-   ACCENT COLOUR TOGGLE
-   =================================================== */
-.accent-toggle {
-    position: fixed;
-    bottom: 1.5rem;
-    left: 1.5rem;
-    z-index: 50;
-}
 
-.accent-toggle-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all var(--transition-smooth);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-.accent-toggle-btn:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 20px var(--accent-glow);
-    transform: rotate(45deg) scale(1.05);
-}
-
-.accent-popover {
-    position: absolute;
-    bottom: 54px;
-    left: 0;
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-md);
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(8px) scale(0.95);
-    transition: all var(--transition-spring);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-}
-
-.accent-popover.visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-}
-
-.accent-swatch {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    position: relative;
-}
-
-.accent-swatch:hover {
-    transform: scale(1.2);
-}
-
-.accent-swatch.active {
-    border-color: white;
-    box-shadow: 0 0 12px currentColor;
-}
-
-.accent-swatch[data-color="blue"]   { background: #00e5ff; }
-.accent-swatch[data-color="purple"] { background: #b44aff; }
-.accent-swatch[data-color="green"]  { background: #00ff88; }
-.accent-swatch[data-color="pink"]   { background: #ff6eb4; }
 
 /* ===================================================
    MODAL SYSTEM
