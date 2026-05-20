@@ -851,6 +851,17 @@
         }
         setInterval(updateTime, 1000);
         let currentWindSpeed = 0;
+        let weatherForecastData = null;
+
+        function isWebGLSupported() {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+            } catch (e) {
+                return false;
+            }
+        }
+
         // WMO Code Map
         const weatherMap = {
             0: { desc: "Clear Sky", icon: "sun", group: "sunny" },
@@ -886,10 +897,11 @@
         async function fetchWeather() {
             try {
                 // Lat/Long for Cardiff, Wales (51.48, -3.18)
-                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=-3.18&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=sunrise,sunset&timezone=Europe%2FLondon');
+                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=-3.18&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,weather_code&timezone=Europe%2FLondon');
                 const data = await response.json();
 
                 if (data.current) {
+                    weatherForecastData = data;
                     updateWeatherUI(data.current);
                     applyWeatherEffects(data);
                     // Update Wind Global
@@ -1269,40 +1281,152 @@
 
         /* --- 4. WEATHER MODAL --- */
         function renderWeatherModal() {
-            modalContent.innerHTML = `
-                <h2 class="text-3xl font-bold text-white mb-2 tech-font">Wales Weather Radar</h2>
-                <p class="text-yellow-400 text-sm mb-6">Real-time conditions via Windy.com</p>
-                
-                <div class="w-full h-[500px] rounded-2xl overflow-hidden border border-yellow-500/30 shadow-lg shadow-yellow-500/10">
-                    <iframe 
-                        width="100%" 
-                        height="100%" 
-                        src="https://embed.windy.com/embed2.html?lat=51.48&lon=-3.18&detailLat=51.48&detailLon=-3.18&width=650&height=450&zoom=8&level=surface&overlay=radar&product=radar&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" 
-                        frameborder="0">
-                    </iframe>
-                </div>
-                <!-- Data Summary -->
-                <div class="mt-4 grid grid-cols-3 gap-4 text-center">
-                    <div class="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <div class="text-gray-400 text-xs">Wind</div>
-                        <div class="text-white font-bold">${(currentWindSpeed * 0.621371).toFixed(1)} mph</div>
+            const hasWebGL = isWebGLSupported();
+            
+            if (hasWebGL) {
+                modalContent.innerHTML = `
+                    <h2 class="text-3xl font-bold text-white mb-2 tech-font">Wales Weather Radar</h2>
+                    <p class="text-yellow-400 text-sm mb-6">Real-time conditions via Windy.com</p>
+                    
+                    <div class="w-full h-[500px] rounded-2xl overflow-hidden border border-yellow-500/30 shadow-lg shadow-yellow-500/10">
+                        <iframe 
+                            width="100%" 
+                            height="100%" 
+                            src="https://embed.windy.com/embed2.html?lat=51.48&lon=-3.18&detailLat=51.48&detailLon=-3.18&width=650&height=450&zoom=8&level=surface&overlay=radar&product=radar&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" 
+                            frameborder="0">
+                        </iframe>
                     </div>
-                     <div class="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <div class="text-gray-400 text-xs">Condition</div>
-                        <div class="text-yellow-400 font-bold capitalize" id="modal-weather-desc">See Map</div>
+                    <!-- Data Summary -->
+                    <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                        <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="text-gray-400 text-xs">Wind</div>
+                            <div class="text-white font-bold">${(currentWindSpeed * 0.621371).toFixed(1)} mph</div>
+                        </div>
+                         <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="text-gray-400 text-xs">Condition</div>
+                            <div class="text-yellow-400 font-bold capitalize" id="modal-weather-desc">See Map</div>
+                        </div>
+                         <div class="bg-white/5 p-3 rounded-xl border border-white/10">
+                            <div class="text-gray-400 text-xs">Location</div>
+                            <div class="text-white font-bold">Cardiff, UK</div>
+                        </div>
                     </div>
-                     <div class="bg-white/5 p-3 rounded-xl border border-white/10">
-                        <div class="text-gray-400 text-xs">Location</div>
-                        <div class="text-white font-bold">Cardiff, UK</div>
-                    </div>
-                </div>
-            `;
+                `;
 
-            // Try to sync desc if available in DOM
-            const mainDesc = document.getElementById('weather-desc');
-            const modalDesc = document.getElementById('modal-weather-desc');
-            if (mainDesc && modalDesc) {
-                modalDesc.textContent = mainDesc.textContent;
+                // Try to sync desc if available in DOM
+                const mainDesc = document.getElementById('weather-desc');
+                const modalDesc = document.getElementById('modal-weather-desc');
+                if (mainDesc && modalDesc) {
+                    modalDesc.textContent = mainDesc.textContent;
+                }
+            } else {
+                // Fallback rendering
+                let forecastHTML = '';
+                
+                if (weatherForecastData && weatherForecastData.daily) {
+                    const daily = weatherForecastData.daily;
+                    forecastHTML = `
+                        <div class="grid grid-cols-1 gap-3 mt-4">
+                            <h3 class="text-white font-bold text-lg mb-1 self-start">7-Day Forecast</h3>
+                            <div class="flex flex-col gap-2">
+                    `;
+                    
+                    for (let i = 0; i < daily.time.length; i++) {
+                        const date = new Date(daily.time[i]);
+                        const dayName = date.toLocaleDateString('en-GB', { weekday: 'long' });
+                        const maxTemp = Math.round(daily.temperature_2m_max[i]);
+                        const minTemp = Math.round(daily.temperature_2m_min[i]);
+                        const code = daily.weather_code[i];
+                        const info = weatherMap[code] || { desc: "Unknown", icon: "cloud" };
+                        
+                        const isToday = i === 0;
+                        const rowBg = isToday ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-white/5 border-white/10';
+                        const labelText = isToday ? 'Today' : dayName;
+                        
+                        forecastHTML += `
+                            <div class="flex items-center justify-between p-3 rounded-xl border ${rowBg} transition-all duration-300">
+                                <div class="w-1/3 text-left font-medium text-white">${labelText}</div>
+                                <div class="w-1/3 flex items-center justify-center gap-2">
+                                    <i data-lucide="${info.icon}" class="w-5 h-5 text-yellow-400"></i>
+                                    <span class="text-gray-300 text-sm hidden sm:inline capitalize">${info.desc}</span>
+                                </div>
+                                <div class="w-1/3 text-right font-bold text-white">
+                                    <span class="text-yellow-400">${maxTemp}°</span>
+                                    <span class="text-gray-500 text-sm ml-2">${minTemp}°</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    forecastHTML += `
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    forecastHTML = `
+                        <div class="p-6 bg-white/5 rounded-xl border border-white/10 text-center text-gray-400 mt-4">
+                            <i data-lucide="loader" class="w-8 h-8 text-yellow-400 animate-spin mx-auto mb-2"></i>
+                            Loading forecast data...
+                        </div>
+                    `;
+                }
+
+                const currentTemp = weatherForecastData ? Math.round(weatherForecastData.current.temperature_2m) : '--';
+                const currentCode = weatherForecastData ? weatherForecastData.current.weather_code : null;
+                const currentInfo = currentCode !== null ? (weatherMap[currentCode] || { desc: "Unknown", icon: "cloud" }) : { desc: "Loading...", icon: "loader" };
+                const currentWind = weatherForecastData ? (weatherForecastData.current.wind_speed_10m * 0.621371).toFixed(1) : '--';
+                
+                let sunriseStr = '--:--';
+                let sunsetStr = '--:--';
+                if (weatherForecastData && weatherForecastData.daily) {
+                    const sr = new Date(weatherForecastData.daily.sunrise[0]);
+                    const ss = new Date(weatherForecastData.daily.sunset[0]);
+                    sunriseStr = sr.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    sunsetStr = ss.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+                }
+
+                modalContent.innerHTML = `
+                    <h2 class="text-3xl font-bold text-white mb-2 tech-font">Cardiff Weather</h2>
+                    <p class="text-yellow-400 text-sm mb-6">Live conditions & 7-day forecast (Fallback Mode)</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-start">
+                        <!-- Current Details Panel -->
+                        <div class="p-6 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-2xl border border-yellow-500/20 shadow-lg flex flex-col items-center text-center">
+                            <div class="relative mb-4">
+                                <div class="absolute inset-0 bg-yellow-500/20 blur-xl rounded-full"></div>
+                                <i data-lucide="${currentInfo.icon}" class="relative w-20 h-20 text-yellow-400 animate-pulse"></i>
+                            </div>
+                            <div class="text-5xl font-black text-white mb-1 tracking-tight">${currentTemp}°C</div>
+                            <div class="text-lg text-yellow-400 font-semibold capitalize mb-4">${currentInfo.desc}</div>
+                            
+                            <div class="w-full border-t border-white/10 pt-4 mt-2 grid grid-cols-3 gap-2">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-gray-400 text-xs mb-1">Wind</span>
+                                    <span class="text-white font-bold text-sm">${currentWind} mph</span>
+                                </div>
+                                <div class="flex flex-col items-center border-x border-white/10">
+                                    <span class="text-gray-400 text-xs mb-1">Sunrise</span>
+                                    <span class="text-white font-bold text-sm whitespace-nowrap">${sunriseStr}</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-gray-400 text-xs mb-1">Sunset</span>
+                                    <span class="text-white font-bold text-sm whitespace-nowrap">${sunsetStr}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 text-xs text-gray-500 max-w-[280px]">
+                                Interactive radar is disabled because WebGL is not supported on this browser/device.
+                            </div>
+                        </div>
+                        
+                        <!-- Forecast Panel -->
+                        <div class="w-full">
+                            ${forecastHTML}
+                        </div>
+                    </div>
+                `;
+                
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         }
 
