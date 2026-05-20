@@ -45,15 +45,3 @@ Welcome to the central repository for the **Kazu Hani Personal Hub Website**. Th
 * **Layout Structure:** Border-mapped grid interfaces featuring uniform `border-radius` micro-containers
 
 ---
-
-### 🛠️ Architecture & Deployment
-
-```bash
-# Clone the repository
-git clone [https://github.com/kazuhani/personal-hub.git](https://github.com/kazuhani/personal-hub.git)
-
-# Install local dependencies
-npm install
-
-# Run the local development server with HMR
-npm run dev
