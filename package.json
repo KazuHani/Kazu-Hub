@@ -1,0 +1,12 @@
+{
+  "name": "kazu-hub-website",
+  "version": "2.0.0",
+  "description": "Optimized Central Hub Website for Kazu Hani",
+  "main": "index.html",
+  "scripts": {
+    "build": "tailwindcss -i tailwind-input.css -o styles.css --content ./index.html --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.15"
+  }
+}

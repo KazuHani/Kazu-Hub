@@ -10,8 +10,9 @@
     const ctx = canvas.getContext('2d');
     let mouseX = -1000, mouseY = -1000;
     let particles = [];
-    const PARTICLE_COUNT = 60;
-    const CONNECT_DIST = 120;
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const PARTICLE_COUNT = isMobile ? 25 : 60;
+    const CONNECT_DIST = isMobile ? 80 : 120;
 
     function resize() {
         canvas.width = window.innerWidth;

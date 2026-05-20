@@ -7,18 +7,16 @@
     <meta name="google-site-verification" content="-Hlu9Ebiaz6Oxr6qYPBHv7lNOQkxNU1hH0Q-CBkdiW4" />
     <title>Kazu Hani | Central Hub</title>
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="images/12312321Fiverr_rhysd22_Art01.png">
+    <link rel="icon" type="image/png" href="images/favicon.png">
 
     <!-- Performance Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <link rel="preconnect" href="https://unpkg.com">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="js/lucide.min.js"></script>
     <!-- Using stable Lenis version -->
-    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <script src="js/lenis.min.js"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;700&display=swap"
         rel="stylesheet">
@@ -306,6 +304,7 @@
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">YouTube</span>
                         </a>
+
                         <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
@@ -313,6 +312,7 @@
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Steam</span>
                         </a>
+
                         <a href="https://www.reddit.com/user/Korat24/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
@@ -320,6 +320,7 @@
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Reddit</span>
                         </a>
+
                         <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
@@ -661,7 +662,9 @@
         }
 
         // Create snow particles
-        for (let i = 0; i < 150; i++) {
+        const isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
+        const maxSnowParticles = isMobileDevice ? 50 : 150;
+        for (let i = 0; i < maxSnowParticles; i++) {
             particles.push(new Particle());
         }
 
