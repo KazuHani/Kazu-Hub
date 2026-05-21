@@ -205,58 +205,147 @@ function parseDiscordData(d) {
             }
         }
     }
+
+    // Save to cache to optimize subsequent page load speeds
+    try {
+        const discordData = {
+            status,
+            activityText,
+            imageUrl,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('discord_status_cache', JSON.stringify(discordData));
+    } catch (e) {}
+
     updateDiscordUI(status, activityText, imageUrl);
 }
 
-// Try REST first, then fall back to WebSocket
+// WebSocket-first approach with instant caching and REST fallback
 async function initDiscordStatus() {
-    try {
-        const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
-        if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.data) {
-                parseDiscordData(data.data);
-                // Set up polling since REST works
-                setInterval(async () => {
-                    try {
-                        const r = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
-                        if (r.ok) {
-                            const d = await r.json();
-                            if (d.success && d.data) parseDiscordData(d.data);
-                        }
-                    } catch (e) { /* silent */ }
-                }, 30000);
-                return;
-            }
+    // 1. Try to load and display from cache immediately to optimize speed
+    const cachedDataStr = localStorage.getItem('discord_status_cache');
+    if (cachedDataStr) {
+        try {
+            const cached = JSON.parse(cachedDataStr);
+            updateDiscordUI(cached.status, cached.activityText, cached.imageUrl);
+        } catch (e) {
+            localStorage.removeItem('discord_status_cache');
         }
-    } catch (e) { /* fall through to WebSocket */ }
+    }
 
-    // WebSocket approach (works even without REST)
+    let wsConnected = false;
+    let wsTimeout = null;
+    let heartbeatInterval = null;
+    let ws = null;
+
+    // Helper to transition to REST fallback
+    function handleWsFailure() {
+        if (wsConnected) return; // If we already got live data, ignore
+        cleanupWs();
+        initDiscordStatusREST();
+    }
+
+    function cleanupWs() {
+        if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+        }
+        if (wsTimeout) {
+            clearTimeout(wsTimeout);
+            wsTimeout = null;
+        }
+        if (ws) {
+            try {
+                ws.close();
+            } catch (e) {}
+            ws = null;
+        }
+    }
+
+    // Try WebSocket first
     try {
-        const ws = new WebSocket('wss://api.lanyard.rest/socket');
+        ws = new WebSocket('wss://api.lanyard.rest/socket');
+        
+        // Timeout if WebSocket doesn't connect/respond in 3 seconds
+        wsTimeout = setTimeout(() => {
+            if (!wsConnected) {
+                console.warn("Discord WebSocket timed out. Falling back to REST.");
+                handleWsFailure();
+            }
+        }, 3000);
+
         ws.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            if (msg.op === 1) {
-                // Hello — send init
-                ws.send(JSON.stringify({
-                    op: 2,
-                    d: { subscribe_to_id: DISCORD_ID }
-                }));
-                // Heartbeat
-                setInterval(() => {
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ op: 3 }));
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.op === 1) {
+                    // Hello — send init
+                    ws.send(JSON.stringify({
+                        op: 2,
+                        d: { subscribe_to_id: DISCORD_ID }
+                    }));
+                    // Heartbeat
+                    heartbeatInterval = setInterval(() => {
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ op: 3 }));
+                        }
+                    }, msg.d.heartbeat_interval);
+                } else if (msg.op === 0 && msg.d) {
+                    wsConnected = true;
+                    if (wsTimeout) {
+                        clearTimeout(wsTimeout);
+                        wsTimeout = null;
                     }
-                }, msg.d.heartbeat_interval);
-            } else if (msg.op === 0 && msg.d) {
-                parseDiscordData(msg.d);
+                    parseDiscordData(msg.d);
+                }
+            } catch (e) {
+                console.error("Error parsing WebSocket message:", e);
             }
         };
+
         ws.onerror = () => {
-            updateDiscordUI('offline', 'Join Lanyard Discord to enable');
+            handleWsFailure();
+        };
+
+        ws.onclose = () => {
+            if (!wsConnected) {
+                handleWsFailure();
+            } else {
+                // Attempt WebSocket reconnect in 5s if it closed post-connection
+                cleanupWs();
+                setTimeout(initDiscordStatus, 5000);
+            }
         };
     } catch (e) {
-        updateDiscordUI('offline', 'Status unavailable');
+        handleWsFailure();
+    }
+
+    // REST fallback function
+    async function initDiscordStatusREST() {
+        try {
+            const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.data) {
+                    parseDiscordData(data.data);
+                    // Set up polling since REST works
+                    setInterval(async () => {
+                        try {
+                            const r = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
+                            if (r.ok) {
+                                const d = await r.json();
+                                if (d.success && d.data) parseDiscordData(d.data);
+                            }
+                        } catch (e) { /* silent */ }
+                    }, 30000);
+                    return;
+                }
+            }
+        } catch (e) {
+            // If cache not present, fallback to Offline
+            if (!localStorage.getItem('discord_status_cache')) {
+                updateDiscordUI('offline', 'Status unavailable');
+            }
+        }
     }
 }
 
@@ -264,9 +353,80 @@ document.addEventListener('DOMContentLoaded', initDiscordStatus);
 
 
 /* --- STEAM ACTIVITY WIDGET --- */
+function renderSteamFallback() {
+    const widget = document.getElementById('steam-widget');
+    const defaultLogo = document.getElementById('steam-default-logo');
+    if (!widget) return;
+    
+    // Hide default logo so we only have one avatar/logo
+    if (defaultLogo) defaultLogo.classList.add('hidden');
+    
+    const avatarUrl = 'https://avatars.akamai.steamstatic.com/ed2c7926fdb6d4680d3a57847cf06afe690418ba_full.jpg';
+    widget.innerHTML = `
+        <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
+            <img src="${avatarUrl}" alt="Kazu | カズ" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">
+            <div class="overflow-hidden w-full">
+                <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">Kazu | カズ</div>
+                <div class="text-xs text-gray-400 truncate">View Steam Profile →</div>
+            </div>
+        </a>
+    `;
+}
+
+function renderSteamWidget(data) {
+    const widget = document.getElementById('steam-widget');
+    const defaultLogo = document.getElementById('steam-default-logo');
+    if (!widget) return;
+
+    if (defaultLogo) defaultLogo.classList.add('hidden');
+
+    if (data.type === 'profile') {
+        widget.innerHTML = `
+            <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
+                ${data.displayImg ? `<img src="${data.displayImg}" alt="${data.profileName}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
+                <div class="overflow-hidden w-full">
+                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${data.profileName}</div>
+                    <div class="text-xs text-gray-400 truncate">${data.statusText}</div>
+                    ${data.gameHtml || ''}
+                </div>
+            </a>
+        `;
+    } else if (data.type === 'game') {
+        widget.innerHTML = `
+            <a href="${data.link}" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
+                ${data.logo ? `<img src="${data.logo}" alt="${data.name}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
+                <div class="overflow-hidden w-full">
+                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${data.name}</div>
+                    <div class="text-xs text-gray-400 truncate">${data.hours}h last 2 weeks</div>
+                </div>
+            </a>
+        `;
+    }
+}
+
 async function fetchSteamActivity() {
     const widget = document.getElementById('steam-widget');
     if (!widget) return;
+
+    // Check localStorage cache first
+    const cachedDataStr = localStorage.getItem('steam_activity_cache');
+    if (cachedDataStr) {
+        try {
+            const cachedData = JSON.parse(cachedDataStr);
+            // Render cached data immediately
+            renderSteamWidget(cachedData);
+            
+            // If cache is less than 5 minutes old, skip network fetch to optimize speed
+            if (Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
+                return;
+            }
+        } catch (e) {
+            localStorage.removeItem('steam_activity_cache');
+        }
+    } else {
+        // Render fallback immediately so there's no layout shift or blank states
+        renderSteamFallback();
+    }
 
     // Try multiple CORS proxy approaches
     const STEAM_URL = 'https://steamcommunity.com/id/Kazu-Hani/?xml=1';
@@ -279,7 +439,11 @@ async function fetchSteamActivity() {
 
     for (const proxyUrl of proxies) {
         try {
-            const res = await fetch(proxyUrl);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            const res = await fetch(proxyUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
             if (!res.ok) continue;
             const data = await res.json().catch(() => null);
             if (data && data.contents) {
@@ -301,7 +465,10 @@ async function fetchSteamActivity() {
     if (!xmlText) {
         try {
             const gamesUrl = 'https://steamcommunity.com/id/Kazu-Hani/games/?tab=recent&xml=1';
-            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(gamesUrl)}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(gamesUrl)}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
             if (res.ok) {
                 const data = await res.json();
                 if (data && data.contents) xmlText = data.contents;
@@ -338,20 +505,17 @@ async function fetchSteamActivity() {
                     gameHtml = `<div class="text-xs text-cyan-300 mt-1 truncate">🎮 ${currentGame}</div>`;
                 }
 
-                widget.innerHTML = `
-                    <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                        ${displayImg ? `<img src="${displayImg}" alt="${currentGame || profileName}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0">` : ''}
-                        <div class="overflow-hidden w-full">
-                            <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${profileName}</div>
-                            <div class="text-xs text-gray-400 truncate">${statusText}</div>
-                            ${gameHtml}
-                        </div>
-                    </a>
-                `;
-                
-                const defaultLogo = document.getElementById('steam-default-logo');
-                if (defaultLogo) defaultLogo.classList.add('hidden');
-                
+                const steamData = {
+                    type: 'profile',
+                    profileName,
+                    statusText,
+                    displayImg,
+                    gameHtml,
+                    timestamp: Date.now()
+                };
+
+                localStorage.setItem('steam_activity_cache', JSON.stringify(steamData));
+                renderSteamWidget(steamData);
                 return;
             }
 
@@ -363,19 +527,17 @@ async function fetchSteamActivity() {
                 const hours = game.querySelector('hoursLast2Weeks')?.textContent || '0';
                 const link = game.querySelector('storeLink')?.textContent || '#';
 
-                widget.innerHTML = `
-                    <a href="${link}" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                        ${logo ? `<img src="${logo}" alt="${name}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0">` : ''}
-                        <div class="overflow-hidden w-full">
-                            <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${name}</div>
-                            <div class="text-xs text-gray-400 truncate">${hours}h last 2 weeks</div>
-                        </div>
-                    </a>
-                `;
-                
-                const defaultLogo = document.getElementById('steam-default-logo');
-                if (defaultLogo) defaultLogo.classList.add('hidden');
-                
+                const steamData = {
+                    type: 'game',
+                    name,
+                    logo,
+                    hours,
+                    link,
+                    timestamp: Date.now()
+                };
+
+                localStorage.setItem('steam_activity_cache', JSON.stringify(steamData));
+                renderSteamWidget(steamData);
                 return;
             }
         } catch (e) {
@@ -383,16 +545,10 @@ async function fetchSteamActivity() {
         }
     }
 
-    // Fallback: show a direct link to their Steam profile
-    widget.innerHTML = `
-        <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group">
-            <svg class="w-8 h-8 text-blue-400 fill-current flex-shrink-0" viewBox="0 0 256 259"><path d="M127.779 0C60.42 0 5.24 52.412 0 119.014l68.724 28.674a35.812 35.812 0 0 1 20.426-6.366c.682 0 1.356.019 2.02.056l30.566-44.71v-.626c0-26.903 21.69-48.796 48.353-48.796 26.662 0 48.352 21.893 48.352 48.796 0 26.902-21.69 48.804-48.352 48.804-.37 0-.73-.009-1.098-.018l-43.593 31.377c.028.582.046 1.163.046 1.735 0 20.204-16.283 36.636-36.294 36.636-17.566 0-32.263-12.658-35.584-29.412L4.41 164.654c15.223 54.313 64.673 94.132 123.369 94.132 70.818 0 128.221-57.938 128.221-129.393C256 57.93 198.597 0 127.779 0z"/></svg>
-            <div>
-                <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors">Kazu Hani</div>
-                <div class="text-xs text-gray-400">View Steam Profile →</div>
-            </div>
-        </a>
-    `;
+    // If fetch failed and we don't have cached data, ensure fallback is rendered
+    if (!localStorage.getItem('steam_activity_cache')) {
+        renderSteamFallback();
+    }
 }
 document.addEventListener('DOMContentLoaded', fetchSteamActivity);
 
