@@ -213,6 +213,28 @@ document.addEventListener('DOMContentLoaded', initVisualizer);
 /* --- DISCORD LIVE STATUS (Lanyard API — REST + WebSocket) --- */
 const DISCORD_ID = '346360416827473921';
 
+/* --- SECURITY SANITIZATION HELPERS --- */
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function sanitizeUrl(url) {
+    if (!url) return '';
+    try {
+        const parsed = new URL(url, window.location.href);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+            return parsed.href;
+        }
+    } catch (e) {}
+    return '';
+}
+
 function updateDiscordUI(status, activityText, imageUrl = null) {
     const dot = document.getElementById('discord-status-dot');
     const text = document.getElementById('discord-status-text');
@@ -226,8 +248,9 @@ function updateDiscordUI(status, activityText, imageUrl = null) {
     text.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     activity.textContent = activityText;
 
-    if (imageUrl && activityImg && defaultIcon) {
-        activityImg.src = imageUrl;
+    const sanitizedImgUrl = sanitizeUrl(imageUrl);
+    if (sanitizedImgUrl && activityImg && defaultIcon) {
+        activityImg.src = sanitizedImgUrl;
         activityImg.classList.remove('hidden');
         defaultIcon.classList.add('hidden');
     } else if (activityImg && defaultIcon) {
@@ -338,11 +361,15 @@ async function initDiscordStatus() {
                         d: { subscribe_to_id: DISCORD_ID }
                     }));
                     // Heartbeat
+                    // Ensure the heartbeat interval is a valid number and clamped to prevent resource exhaustion (DoS)
+                    const rawInterval = parseInt(msg.d.heartbeat_interval, 10);
+                    const interval = (!isNaN(rawInterval) && rawInterval >= 5000 && rawInterval <= 300000) ? rawInterval : 30000;
+
                     heartbeatInterval = setInterval(() => {
                         if (ws && ws.readyState === WebSocket.OPEN) {
                             ws.send(JSON.stringify({ op: 3 }));
                         }
-                    }, msg.d.heartbeat_interval);
+                    }, interval);
                 } else if (msg.op === 0 && msg.d) {
                     wsConnected = true;
                     if (wsTimeout) {
@@ -435,23 +462,30 @@ function renderSteamWidget(data) {
     if (defaultLogo) defaultLogo.classList.add('hidden');
 
     if (data.type === 'profile') {
+        const displayImg = sanitizeUrl(data.displayImg);
+        const profileName = escapeHtml(data.profileName);
+        const statusText = escapeHtml(data.statusText);
         widget.innerHTML = `
             <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                ${data.displayImg ? `<img src="${data.displayImg}" alt="${data.profileName}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
+                ${displayImg ? `<img src="${displayImg}" alt="${profileName}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
                 <div class="overflow-hidden w-full">
-                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${data.profileName}</div>
-                    <div class="text-xs text-gray-400 truncate">${data.statusText}</div>
+                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${profileName}</div>
+                    <div class="text-xs text-gray-400 truncate">${statusText}</div>
                     ${data.gameHtml || ''}
                 </div>
             </a>
         `;
     } else if (data.type === 'game') {
+        const link = sanitizeUrl(data.link);
+        const logo = sanitizeUrl(data.logo);
+        const name = escapeHtml(data.name);
+        const hours = escapeHtml(data.hours);
         widget.innerHTML = `
-            <a href="${data.link}" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                ${data.logo ? `<img src="${data.logo}" alt="${data.name}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
+            <a href="${link}" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
+                ${logo ? `<img src="${logo}" alt="${name}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
                 <div class="overflow-hidden w-full">
-                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${data.name}</div>
-                    <div class="text-xs text-gray-400 truncate">${data.hours}h last 2 weeks</div>
+                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${name}</div>
+                    <div class="text-xs text-gray-400 truncate">${hours}h last 2 weeks</div>
                 </div>
             </a>
         `;
@@ -548,15 +582,21 @@ async function fetchSteamActivity() {
             if (profileName) {
                 // Profile XML found
                 let statusText = stateMessage || onlineState || 'Offline';
-                // Clean HTML entities from stateMessage
-                statusText = statusText.replace(/<[^>]+>/g, '').trim();
+                // Clean HTML entities safely using DOMParser (immune to XSS and flags)
+                if (statusText) {
+                    try {
+                        const doc = new DOMParser().parseFromString(statusText, 'text/html');
+                        statusText = doc.body.textContent || statusText;
+                    } catch (e) {}
+                }
+                statusText = statusText.trim();
 
                 let gameHtml = '';
                 const gameIcon = xml.querySelector('inGameInfo gameIcon')?.textContent;
                 const displayImg = currentGame && gameIcon ? gameIcon : avatarIcon;
 
                 if (currentGame) {
-                    gameHtml = `<div class="text-xs text-cyan-300 mt-1 truncate">🎮 ${currentGame}</div>`;
+                    gameHtml = `<div class="text-xs text-cyan-300 mt-1 truncate">🎮 ${escapeHtml(currentGame)}</div>`;
                 }
 
                 const steamData = {
