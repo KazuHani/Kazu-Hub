@@ -657,7 +657,7 @@ function openPlaylistSidebar(event) {
     if (!sidebar || !iframe) return;
 
     // Load iframe content dynamically only when opened
-    if (iframe.src === "" || iframe.src === window.location.href) {
+    if (!iframe.src || !iframe.src.includes('youtube-nocookie.com')) {
         // Standard YouTube embed format for playlists with no-cookie domain
         iframe.src = "https://www.youtube-nocookie.com/embed/videoseries?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m";
     }
