@@ -10,67 +10,122 @@
     const ctx = canvas.getContext('2d');
     let mouseX = -1000, mouseY = -1000;
     let particles = [];
+    
+    // Performance: Adapt particle count to device specs & user settings
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    const PARTICLE_COUNT = isMobile ? 25 : 60;
-    const CONNECT_DIST = isMobile ? 80 : 120;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    const PARTICLE_COUNT = prefersReducedMotion ? 0 : (isMobile ? 18 : 45);
+    const CONNECT_DIST = isMobile ? 70 : 110;
+
+    if (PARTICLE_COUNT === 0) return;
 
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', resize, { passive: true });
     resize();
 
     document.addEventListener('mousemove', e => {
         mouseX = e.clientX;
         mouseY = e.clientY;
-    });
+    }, { passive: true });
 
-    class Dot {
+    class CrystalShard {
         constructor() {
-            this.x = Math.random() * canvas.width;
-            this.y = Math.random() * canvas.height;
-            this.vx = (Math.random() - 0.5) * 0.4;
-            this.vy = (Math.random() - 0.5) * 0.4;
-            this.r = Math.random() * 1.5 + 0.5;
+            this.reset(true);
         }
+
+        reset(init = false) {
+            this.x = Math.random() * canvas.width;
+            this.y = init ? Math.random() * canvas.height : -20;
+            this.size = Math.random() * 5 + 2.5;
+            this.vx = (Math.random() - 0.5) * 0.3;
+            // Drifts downwards like ice dust
+            this.vy = Math.random() * 0.3 + 0.15;
+            this.rotation = Math.random() * Math.PI * 2;
+            this.rotationSpeed = (Math.random() - 0.5) * 0.015;
+            // Shape: 3=Triangle, 4=Diamond, 6=Hexagon
+            const r = Math.random();
+            this.sides = r < 0.35 ? 3 : (r < 0.75 ? 4 : 6);
+        }
+
         update() {
-            // Gentle mouse attraction
+            // Deflect from mouse (like wind around a solid object)
             const dx = mouseX - this.x;
             const dy = mouseY - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 200 && dist > 0) {
-                this.vx += (dx / dist) * 0.015;
-                this.vy += (dy / dist) * 0.015;
+            
+            if (dist < 150 && dist > 0) {
+                // Stronger repulsion when closer
+                const force = (150 - dist) / 150;
+                this.vx -= (dx / dist) * force * 0.08;
+                this.vy -= (dy / dist) * force * 0.08;
+            } else {
+                // Return to normal drift speed
+                this.vx *= 0.98;
+                this.vy = this.vy * 0.95 + (Math.random() * 0.1 + 0.2) * 0.05;
             }
-            this.vx *= 0.99;
-            this.vy *= 0.99;
+
             this.x += this.vx;
             this.y += this.vy;
-            if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-            if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            this.rotation += this.rotationSpeed;
+
+            // Boundary wrapping
+            if (this.y > canvas.height + 20) {
+                this.reset(false);
+            }
+            if (this.x < -20) {
+                this.x = canvas.width + 20;
+            } else if (this.x > canvas.width + 20) {
+                this.x = -20;
+            }
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.beginPath();
+            
+            // Draw regular polygon for crystal structure
+            const angleStep = (Math.PI * 2) / this.sides;
+            for (let i = 0; i < this.sides; i++) {
+                const angle = i * angleStep;
+                const px = Math.cos(angle) * this.size;
+                const py = Math.sin(angle) * this.size;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            
+            ctx.closePath();
+            
+            // Crystal style gradient stroke/fill
+            ctx.strokeStyle = 'rgba(0, 242, 254, 0.4)';
+            ctx.fillStyle = 'rgba(165, 243, 252, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
         }
     }
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Dot());
+    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new CrystalShard());
 
     function drawParticles() {
         if (document.hidden) { requestAnimationFrame(drawParticles); return; }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Get accent color from CSS
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        // Get accent colors dynamically
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00f2fe';
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
             p.update();
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            ctx.fillStyle = accent;
-            ctx.globalAlpha = 0.3;
-            ctx.fill();
+            p.draw();
 
-            // Connect nearby particles
+            // Connect nearby crystals to show molecular grid/lattice
             for (let j = i + 1; j < particles.length; j++) {
                 const q = particles[j];
                 const d = Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2);
@@ -79,13 +134,12 @@
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(q.x, q.y);
                     ctx.strokeStyle = accent;
-                    ctx.globalAlpha = 0.08 * (1 - d / CONNECT_DIST);
+                    ctx.globalAlpha = 0.045 * (1 - d / CONNECT_DIST);
                     ctx.lineWidth = 0.5;
                     ctx.stroke();
                 }
             }
         }
-        ctx.globalAlpha = 1;
         requestAnimationFrame(drawParticles);
     }
     requestAnimationFrame(drawParticles);
@@ -364,7 +418,7 @@ function renderSteamFallback() {
     const avatarUrl = 'https://avatars.akamai.steamstatic.com/ed2c7926fdb6d4680d3a57847cf06afe690418ba_full.jpg';
     widget.innerHTML = `
         <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-            <img src="${avatarUrl}" alt="Kazu | カズ" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">
+            <img src="${avatarUrl}" alt="Kazu | カズ" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">
             <div class="overflow-hidden w-full">
                 <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">Kazu | カズ</div>
                 <div class="text-xs text-gray-400 truncate">View Steam Profile →</div>
@@ -383,7 +437,7 @@ function renderSteamWidget(data) {
     if (data.type === 'profile') {
         widget.innerHTML = `
             <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                ${data.displayImg ? `<img src="${data.displayImg}" alt="${data.profileName}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
+                ${data.displayImg ? `<img src="${data.displayImg}" alt="${data.profileName}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
                 <div class="overflow-hidden w-full">
                     <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${data.profileName}</div>
                     <div class="text-xs text-gray-400 truncate">${data.statusText}</div>
@@ -394,7 +448,7 @@ function renderSteamWidget(data) {
     } else if (data.type === 'game') {
         widget.innerHTML = `
             <a href="${data.link}" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                ${data.logo ? `<img src="${data.logo}" alt="${data.name}" class="w-12 h-12 rounded-xl object-cover border border-blue-500/20 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
+                ${data.logo ? `<img src="${data.logo}" alt="${data.name}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
                 <div class="overflow-hidden w-full">
                     <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${data.name}</div>
                     <div class="text-xs text-gray-400 truncate">${data.hours}h last 2 weeks</div>
@@ -551,6 +605,41 @@ async function fetchSteamActivity() {
     }
 }
 document.addEventListener('DOMContentLoaded', fetchSteamActivity);
+
+/* --- PLAYLIST SIDEBAR CONTROLS --- */
+function openPlaylistSidebar(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const sidebar = document.getElementById('playlist-sidebar');
+    const iframe = document.getElementById('playlist-iframe');
+    if (!sidebar || !iframe) return;
+
+    // Load iframe content dynamically only when opened
+    if (iframe.src === "" || iframe.src === window.location.href) {
+        // Standard YouTube embed format for playlists with no-cookie domain
+        iframe.src = "https://www.youtube-nocookie.com/embed/videoseries?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m";
+    }
+
+    sidebar.classList.add('active');
+    document.body.classList.add('sidebar-active');
+    
+    // Play sound click
+    if (window.playClick) window.playClick();
+}
+
+function closePlaylistSidebar() {
+    const sidebar = document.getElementById('playlist-sidebar');
+    if (sidebar) {
+        sidebar.classList.remove('active');
+    }
+    document.body.classList.remove('sidebar-active');
+    if (window.playClick) window.playClick();
+}
+
+window.openPlaylistSidebar = openPlaylistSidebar;
+window.closePlaylistSidebar = closePlaylistSidebar;
 
 
 

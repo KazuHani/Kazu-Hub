@@ -18,7 +18,7 @@
     <!-- Using stable Lenis version -->
     <script src="js/lenis.min.js"></script>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     <link rel="stylesheet" href="styles.css">
@@ -394,8 +394,8 @@
                             <!-- Audio Visualizer -->
                             <div class="visualizer-container mt-2 opacity-80 justify-center md:justify-start"
                                 id="audio-visualizer"></div>
-                            <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=wi8t5XC0NWztChpI"
-                                target="_blank" onclick="playClick()"
+                            <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m"
+                                target="_blank" onclick="openPlaylistSidebar(event); playClick();"
                                 class="cta-btn mt-4 w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold transition-all shadow-lg group/btn min-h-[44px]">
                                 <div
                                     class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white">
@@ -463,6 +463,49 @@
             </button>
             <div id="modal-body-content" class="w-full">
                 <!-- Dynamic Content Injected Here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAYLIST SIDEBAR -->
+    <div id="playlist-sidebar" class="fixed top-0 right-0 h-full w-[450px] max-w-full z-[1000] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex flex-col">
+        <!-- Sidebar Backdrop Area (does not intercept pointer clicks outside sidebar) -->
+        <div class="absolute inset-0 bg-transparent pointer-events-none"></div>
+        
+        <!-- Sidebar Content -->
+        <div class="relative w-full h-full bg-[#0a1526]/95 backdrop-blur-[24px] border-l border-white/10 flex flex-col shadow-[-10px_0_40px_rgba(0,0,0,0.5)]">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="music" class="w-5 h-5 text-cyan-400 animate-pulse"></i>
+                    <h3 class="text-lg font-bold text-white tracking-wide">Songs that SLAP</h3>
+                </div>
+                <div class="flex items-center gap-1">
+                    <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" title="Open in YouTube Music" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-cyan-400 transition-colors flex items-center justify-center">
+                        <i data-lucide="external-link" class="w-5 h-5"></i>
+                    </a>
+                    <button onclick="closePlaylistSidebar()" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Sidebar Body (Embedded playlist) -->
+            <div class="flex-grow p-4 overflow-hidden relative">
+                <!-- Loading Spinner behind iframe -->
+                <div class="absolute inset-0 flex items-center justify-center -z-10">
+                    <div class="loader-ring"></div>
+                </div>
+                <iframe 
+                    id="playlist-iframe"
+                    width="100%" 
+                    height="100%" 
+                    src="" 
+                    frameborder="0" 
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    class="rounded-xl border border-white/5 bg-[#030812]">
+                </iframe>
             </div>
         </div>
     </div>
@@ -670,56 +713,85 @@
 
 
 
-        // --- Firework Logic ---
-        class FireworkParticle {
+        // --- Crystalline Ice Shatter Explosion Logic ---
+        class IceShardParticle {
             constructor(x, y) {
                 this.x = x;
                 this.y = y;
                 const angle = Math.random() * Math.PI * 2;
-                const velocity = Math.random() * 4 + 2;
+                const velocity = Math.random() * 4.5 + 1.5;
                 this.vx = Math.cos(angle) * velocity;
                 this.vy = Math.sin(angle) * velocity;
-                this.gravity = 0.1;
+                this.gravity = 0.12;
                 this.alpha = 1;
-                this.decay = Math.random() * 0.02 + 0.01;
-                this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
-                this.size = Math.random() * 3 + 1;
+                this.decay = Math.random() * 0.025 + 0.012;
+                
+                this.size = Math.random() * 5 + 1.5;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.25;
+                
+                // Construct diamond/triangular shard shape
+                this.points = [];
+                const numPoints = 3 + Math.floor(Math.random() * 2);
+                for (let i = 0; i < numPoints; i++) {
+                    const a = (i * Math.PI * 2) / numPoints + (Math.random() - 0.5) * 0.4;
+                    const r = this.size * (0.6 + Math.random() * 0.6);
+                    this.points.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+                }
             }
 
             update() {
-                this.vx *= 0.95; // Friction
+                this.vx *= 0.95;
                 this.vy *= 0.95;
                 this.vy += this.gravity;
                 this.x += this.vx;
                 this.y += this.vy;
+                this.rotation += this.rotationSpeed;
                 this.alpha -= this.decay;
             }
 
             draw() {
                 confettiCtx.save();
-                confettiCtx.globalAlpha = this.alpha;
-                confettiCtx.fillStyle = this.color;
+                confettiCtx.globalAlpha = Math.max(0, this.alpha);
+                confettiCtx.translate(this.x, this.y);
+                confettiCtx.rotate(this.rotation);
+                
                 confettiCtx.beginPath();
-                confettiCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                confettiCtx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    confettiCtx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                confettiCtx.closePath();
+                
+                confettiCtx.fillStyle = `rgba(180, 245, 255, ${this.alpha})`;
+                confettiCtx.strokeStyle = `rgba(255, 255, 255, ${this.alpha * 0.8})`;
+                confettiCtx.lineWidth = 0.5;
                 confettiCtx.fill();
+                confettiCtx.stroke();
                 confettiCtx.restore();
             }
         }
 
-        function spawnFirework(x, y) {
-            for (let i = 0; i < 30; i++) {
-                fireworkParticles.push(new FireworkParticle(x, y));
+        window.spawnIceShatter = function(x, y, count = 35) {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const cappedCount = isMobileDevice ? Math.min(15, count) : count;
+            for (let i = 0; i < cappedCount; i++) {
+                fireworkParticles.push(new IceShardParticle(x, y));
             }
-        }
+        };
 
-        // --- Interaction: Profile Click ---
+        // --- Interaction: Profile & Global Crystalline Spark Click Listener ---
         document.getElementById('profile-pic').addEventListener('click', (e) => {
             const rect = e.target.getBoundingClientRect();
-            // Center of the image
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            spawnFirework(centerX, centerY);
+            window.spawnIceShatter(centerX, centerY, 45);
         });
+
+        document.addEventListener('click', (e) => {
+            // Click visual sparkles everywhere!
+            window.spawnIceShatter(e.clientX, e.clientY, 10);
+        }, { passive: true });
 
         // --- Confetti Logic ---
         class Confetti {
