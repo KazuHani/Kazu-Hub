@@ -657,7 +657,18 @@ function openPlaylistSidebar(event) {
     if (!sidebar || !iframe) return;
 
     // Load iframe content dynamically only when opened
-    if (!iframe.src || !iframe.src.includes('youtube-nocookie.com')) {
+    let isYoutube = false;
+    if (iframe.src) {
+        try {
+            const url = new URL(iframe.src);
+            if (url.hostname === 'www.youtube-nocookie.com' || url.hostname === 'youtube-nocookie.com') {
+                isYoutube = true;
+            }
+        } catch (e) {
+            // Invalid URL
+        }
+    }
+    if (!isYoutube) {
         // Standard YouTube embed format for playlists with no-cookie domain
         iframe.src = "https://www.youtube-nocookie.com/embed/videoseries?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m";
     }
