@@ -982,6 +982,12 @@ body.sunrise-mode {
     }
 }
 
+@media (min-width: 769px) {
+    body.sidebar-active #backToTop {
+        right: 474px;
+    }
+}
+
 @media (min-width: 1025px) {
     body.sidebar-active {
         padding-right: 450px;
