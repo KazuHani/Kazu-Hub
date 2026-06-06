@@ -372,6 +372,7 @@ h1, h2, h3, .tech-font {
     .glass-card:hover .icon-reddit { fill: #f97316; color: #f97316; }
     .glass-card:hover .icon-mal { color: #60a5fa; }
     .glass-card:hover .icon-discord { color: #818cf8; }
+    .glass-card:hover .icon-letterboxd { color: #ff8000; }
 
     /* Icon scale on card hover */
     .glass-card:hover svg,
