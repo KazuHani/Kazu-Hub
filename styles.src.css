@@ -1091,3 +1091,164 @@ body.christmas-mode .mesh-gradient {
 .tree-ornament:hover {
     filter: brightness(1.3) drop-shadow(0 0 4px currentColor);
 }
+
+/* ===================================================
+   MOBILE PERFORMANCE OPTIMISATIONS (≤768px)
+   Disable heavy visual effects that are non-essential
+   on mobile to dramatically improve performance and
+   reduce GPU/CPU load.
+   =================================================== */
+@media (max-width: 768px) {
+
+    /* 1. Stop animated mesh gradient — use a fast static version instead */
+    .mesh-gradient {
+        animation: none !important;
+        background:
+            radial-gradient(ellipse 80% 60% at 20% 20%, rgba(0, 242, 254, 0.14) 0%, transparent 60%),
+            radial-gradient(ellipse 65% 55% at 75% 35%, rgba(8, 247, 197, 0.09) 0%, transparent 50%),
+            radial-gradient(ellipse 75% 50% at 45% 75%, rgba(139, 92, 246, 0.09) 0%, transparent 65%),
+            var(--bg-deep) !important;
+        background-size: 100% 100% !important;
+    }
+
+    /* 2. Christmas mode: also static mesh */
+    body.christmas-mode .mesh-gradient {
+        animation: none !important;
+        background:
+            radial-gradient(ellipse 80% 60% at 20% 20%, rgba(255, 46, 76, 0.12) 0%, transparent 60%),
+            radial-gradient(ellipse 65% 55% at 75% 35%, rgba(22, 163, 74, 0.09) 0%, transparent 50%),
+            #060e0a !important;
+        background-size: 100% 100% !important;
+    }
+
+    /* 3. Freeze title shimmer — keep gradient appearance but pause animation */
+    .title-shimmer {
+        animation: none !important;
+        background: linear-gradient(90deg, #ffffff 0%, #e0f7fa 40%, #00f2fe 60%, #ffffff 100%);
+        background-size: 100% auto !important;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    /* 4. Disable floating avatar animation */
+    .animate-float-avatar {
+        animation: none !important;
+    }
+
+    /* 5. Remove backdrop-filter blur from glass panels — it is the single most
+       expensive GPU effect on mobile. Replace with a solid tinted background. */
+    .glass-panel,
+    .glass-card {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(10, 22, 43, 0.85) !important;
+    }
+
+    /* Keep specific panel colour overrides working without blur */
+    #discord-status {
+        background: rgba(14, 25, 48, 0.9) !important;
+    }
+    #steam-activity {
+        background: rgba(10, 21, 40, 0.9) !important;
+    }
+    #profile-links .glass-card {
+        background: rgba(22, 38, 64, 0.85) !important;
+    }
+    #oc-kazu {
+        background: rgba(11, 26, 51, 0.9) !important;
+    }
+    #music {
+        background: rgba(8, 20, 41, 0.9) !important;
+    }
+    #stories .glass-card {
+        background: rgba(9, 18, 33, 0.9) !important;
+    }
+
+    /* 6. Remove backdrop-filter from dashboard wrapper */
+    .dashboard-wrapper {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(8, 16, 32, 0.7) !important;
+        /* Simplify shadow too */
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    /* 7. Disable audio visualizer bar bounce animations — bars become static */
+    .vis-bar {
+        animation: none !important;
+        height: var(--bar-max, 24px) !important;
+        opacity: 0.6 !important;
+    }
+
+    /* 8. Disable Discord status pulse animation */
+    .status-dot.online {
+        animation: none !important;
+        box-shadow: 0 0 6px rgba(67, 181, 129, 0.5) !important;
+    }
+
+    /* 9. Disable weather rain/snow card animations (still show if raining/snowing,
+       but freeze element animations to reduce per-frame work) */
+    .raindrop {
+        animation-duration: 0.8s !important;
+        animation-timing-function: linear !important;
+    }
+    .weather-snowflake {
+        animation-duration: 1.2s !important;
+        animation-timing-function: linear !important;
+    }
+
+    /* 10. Disable glass panel/card transform transitions on mobile to prevent
+        janky layout reflows during scroll */
+    .glass-panel,
+    .glass-card {
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease !important;
+        transform: none !important;
+        will-change: auto !important;
+    }
+
+    /* 11. Disable spotlight ::after pseudo-element content/opacity on mobile
+        (already behind hover:hover but belt-and-suspenders) */
+    .glass-panel::after,
+    .glass-card::after {
+        display: none !important;
+    }
+
+    /* 12. Disable modal overlay blur on mobile */
+    #modal-overlay {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: rgba(5, 11, 20, 0.92) !important;
+    }
+
+    /* 13. Reduce particle canvas visibility — the JS already limits count,
+        but add an opacity cap so it's truly non-distracting */
+    #particle-canvas {
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+}
+
+/* ===================================================
+   REDUCED MOTION — Respect system preference globally
+   =================================================== */
+@media (prefers-reduced-motion: reduce) {
+    .mesh-gradient,
+    .animate-float-avatar,
+    .animate-float,
+    .title-shimmer,
+    .vis-bar,
+    .status-dot.online,
+    .raindrop,
+    .weather-snowflake,
+    .loader-ring {
+        animation: none !important;
+    }
+
+    .glass-panel,
+    .glass-card {
+        transition: none !important;
+    }
+}

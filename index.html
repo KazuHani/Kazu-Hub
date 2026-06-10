@@ -34,39 +34,53 @@
             awaitAll: function () { return Promise.all(this.promises); }
         };
 
+        /* --- MOBILE DETECTION (shared across scripts) --- */
+        // Using window. so this is accessible from ALL inline script blocks
+        window._isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
+
         /* --- POP SOUND PRELOADER --- */
+        // On mobile, audio requires a user-gesture to play and eager preloading
+        // wastes memory and blocks load. We create pools lazily on first play.
         const POOL_SIZE = 5;
         const popPool = [];
         let poolIndex = 0;
+        let popPoolReady = false;
 
-        // Create audio objects immediately and track their loading
-        for (let i = 0; i < POOL_SIZE; i++) {
-            const audio = new Audio('sound/bubble-pop.mp3');
-            audio.volume = 0.5;
-            audio.preload = 'auto';
-            popPool.push(audio);
+        function ensurePopPool() {
+            if (popPoolReady) return;
+            popPoolReady = true;
+            for (let i = 0; i < POOL_SIZE; i++) {
+                const audio = new Audio('sound/bubble-pop.mp3');
+                audio.volume = 0.5;
+                audio.preload = 'auto';
+                popPool.push(audio);
+            }
+        }
 
-            // Create a promise for this specific audio file loading
-            const audioLoadPromise = new Promise((resolve) => {
-                // If it plays through, we are good
-                audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+        if (!window._isMobileDevice) {
+            // Desktop: preload eagerly and register with resource manager
+            for (let i = 0; i < POOL_SIZE; i++) {
+                const audio = new Audio('sound/bubble-pop.mp3');
+                audio.volume = 0.5;
+                audio.preload = 'auto';
+                popPool.push(audio);
 
-                // Fallback: If it Errors or takes too long, resolve anyway so site doesn't hang
-                audio.addEventListener('error', () => {
-                    console.warn("Audio file failed to load:", audio.src);
-                    resolve();
-                }, { once: true });
-
-                // Safety Timeout (2 seconds max wait for audio)
-                setTimeout(() => resolve(), 2000);
-            });
-
-            // Register this resource
-            window.SiteResources.add(audioLoadPromise);
+                const audioLoadPromise = new Promise((resolve) => {
+                    audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+                    audio.addEventListener('error', () => {
+                        console.warn("Audio file failed to load:", audio.src);
+                        resolve();
+                    }, { once: true });
+                    setTimeout(() => resolve(), 2000);
+                });
+                window.SiteResources.add(audioLoadPromise);
+            }
+            popPoolReady = true;
         }
 
         // Global function to play sound
         window.playPop = function () {
+            if (window._isMobileDevice) ensurePopPool();
             const sound = popPool[poolIndex];
             if (sound) {
                 sound.currentTime = 0;
@@ -79,22 +93,39 @@
         const CLICK_POOL_SIZE = 5;
         const clickPool = [];
         let clickPoolIndex = 0;
+        let clickPoolReady = false;
 
-        for (let i = 0; i < CLICK_POOL_SIZE; i++) {
-            const audio = new Audio('sound/mouseclick.mp3');
-            audio.volume = 0.4;
-            audio.preload = 'auto';
-            clickPool.push(audio);
+        function ensureClickPool() {
+            if (clickPoolReady) return;
+            clickPoolReady = true;
+            for (let i = 0; i < CLICK_POOL_SIZE; i++) {
+                const audio = new Audio('sound/mouseclick.mp3');
+                audio.volume = 0.4;
+                audio.preload = 'auto';
+                clickPool.push(audio);
+            }
+        }
 
-            const audioLoadPromise = new Promise((resolve) => {
-                audio.addEventListener('canplaythrough', () => resolve(), { once: true });
-                audio.addEventListener('error', () => resolve(), { once: true });
-                setTimeout(() => resolve(), 2000);
-            });
-            window.SiteResources.add(audioLoadPromise);
+        if (!window._isMobileDevice) {
+            // Desktop: preload eagerly
+            for (let i = 0; i < CLICK_POOL_SIZE; i++) {
+                const audio = new Audio('sound/mouseclick.mp3');
+                audio.volume = 0.4;
+                audio.preload = 'auto';
+                clickPool.push(audio);
+
+                const audioLoadPromise = new Promise((resolve) => {
+                    audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+                    audio.addEventListener('error', () => resolve(), { once: true });
+                    setTimeout(() => resolve(), 2000);
+                });
+                window.SiteResources.add(audioLoadPromise);
+            }
+            clickPoolReady = true;
         }
 
         window.playClick = function () {
+            if (window._isMobileDevice) ensureClickPool();
             const sound = clickPool[clickPoolIndex];
             if (sound) {
                 sound.currentTime = 0;
@@ -611,6 +642,8 @@
         // Global variables
         let isScrolling = false;
 
+        // Local alias for mobile detection (set as window._isMobileDevice in <head>)
+
         // Ensure loader hides even if something errors
         const safeLoaderHide = setTimeout(() => {
             const loader = document.getElementById('page-loader');
@@ -698,9 +731,10 @@
         }, { passive: true });
 
         /* --- SMOOTH SCROLLING (Lighter Feel) --- */
-        // Wrapped in check to prevent crashing if script fails to load
+        // On mobile: skip Lenis entirely — native scroll is already smooth
+        // and Lenis adds a continuous RAF loop overhead that harms mobile perf.
         let lenis;
-        if (typeof Lenis !== 'undefined') {
+        if (typeof Lenis !== 'undefined' && !window._isMobileDevice) {
             lenis = new Lenis({
                 duration: 1.2, // Lighter duration (closer to default)
                 easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Exponential easing
@@ -874,15 +908,20 @@
         }
 
         // Create snow particles
-        const isMobileDevice = window.matchMedia('(max-width: 768px)').matches;
-        const maxSnowParticles = isMobileDevice ? 50 : 150;
+        // On mobile: skip snow particles entirely when not in Christmas mode
+        // (they're subtle, use CPU per frame, and aren't visible on small screens)
+        const isMobileDevice = window._isMobileDevice; // reuse the already-computed value
+        const maxSnowParticles = isMobileDevice ? 0 : 150;
         for (let i = 0; i < maxSnowParticles; i++) {
             particles.push(new Particle());
         }
 
         function adjustSnowParticleDensity() {
-            const isMobile = window.matchMedia('(max-width: 768px)').matches;
-            const targetCount = (typeof isChristmas !== 'undefined' && isChristmas) ? (isMobile ? 100 : 300) : (isMobile ? 50 : 150);
+            const isMobile = window._isMobileDevice;
+            // On mobile: no snow outside Christmas. On Christmas mobile: small count for festivity.
+            const targetCount = (typeof isChristmas !== 'undefined' && isChristmas)
+                ? (isMobile ? 30 : 300)
+                : (isMobile ? 0 : 150);
             
             while (particles.length < targetCount) {
                 particles.push(new Particle());
@@ -1020,10 +1059,14 @@
             }
         });
 
-        document.addEventListener('click', (e) => {
-            // Click visual sparkles everywhere!
-            window.spawnIceShatter(e.clientX, e.clientY, 10);
-        }, { passive: true });
+        // On mobile: skip global click sparkle listener — spawning canvas particles
+        // on every tap is expensive and the effect is barely visible on mobile screens.
+        if (!window._isMobileDevice) {
+            document.addEventListener('click', (e) => {
+                // Click visual sparkles everywhere!
+                window.spawnIceShatter(e.clientX, e.clientY, 10);
+            }, { passive: true });
+        }
 
         // --- Confetti Logic ---
         class Confetti {
@@ -1078,6 +1121,16 @@
 
         let time = 0;
         function animate() {
+            // On mobile: skip canvas work if there's nothing visible to draw.
+            // Confetti and fireworks may still be triggered by user action, so we
+            // only skip when all particle arrays are empty.
+            if (window._isMobileDevice &&
+                particles.length === 0 &&
+                confettiParticles.length === 0 &&
+                fireworkParticles.length === 0) {
+                return;
+            }
+
             // Snow
             ctx.clearRect(0, 0, width, height);
             confettiCtx.clearRect(0, 0, width, height);

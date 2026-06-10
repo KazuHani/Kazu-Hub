@@ -15,10 +15,14 @@
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     
-    const PARTICLE_COUNT = prefersReducedMotion ? 0 : (isMobile ? 18 : 45);
-    const CONNECT_DIST = isMobile ? 70 : 110;
+    // On mobile, the particle canvas is fully disabled for performance.
+    // CSS already sets opacity:0 on #particle-canvas for mobile.
+    // We return here to prevent the RAF loop from running at all.
+    if (isMobile || prefersReducedMotion) return;
+    
+    const PARTICLE_COUNT = 45;
+    const CONNECT_DIST = 110;
 
-    if (PARTICLE_COUNT === 0) return;
 
     function resize() {
         canvas.width = window.innerWidth;
