@@ -115,14 +115,24 @@
         }
     }
 
+    // Cache accent color dynamically
+    let cachedAccent = '#00f2fe';
+    function updateAccentColor() {
+        cachedAccent = getComputedStyle(document.body).getPropertyValue('--accent').trim() ||
+                       getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() ||
+                       '#00f2fe';
+    }
+    updateAccentColor();
+
+    const accentObserver = new MutationObserver(updateAccentColor);
+    accentObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
+    accentObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] });
+
     for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new CrystalShard());
 
     function drawParticles() {
         if (document.hidden) { requestAnimationFrame(drawParticles); return; }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Get accent colors dynamically
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00f2fe';
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
@@ -137,7 +147,7 @@
                     ctx.beginPath();
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(q.x, q.y);
-                    ctx.strokeStyle = accent;
+                    ctx.strokeStyle = cachedAccent;
                     ctx.globalAlpha = 0.045 * (1 - d / CONNECT_DIST);
                     ctx.lineWidth = 0.5;
                     ctx.stroke();

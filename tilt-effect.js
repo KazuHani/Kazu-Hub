@@ -15,10 +15,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize transition property to handle smooth resets
         element.style.transition = 'transform 0.1s ease-out';
 
+        let rect = null;
+
         // Only attach mouse listeners if it's a hover device
         if (isHoverDevice) {
+            element.addEventListener('mouseenter', () => {
+                // Ensure snap transition is ready for movement
+                element.style.transition = 'transform 0.1s ease-out';
+                // Cache the bounding rect on mouseenter to prevent layout thrashing on mousemove
+                rect = element.getBoundingClientRect();
+            });
+
             element.addEventListener('mousemove', (e) => {
-                const rect = element.getBoundingClientRect();
+                if (!rect) {
+                    rect = element.getBoundingClientRect();
+                }
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
 
@@ -49,11 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                     element.style.transition = 'transform 0.1s ease-out';
                 }, 500);
-            });
 
-            element.addEventListener('mouseenter', () => {
-                // Ensure snap transition is ready for movement
-                element.style.transition = 'transform 0.1s ease-out';
+                rect = null; // Clear cached rect
             });
         }
     });
@@ -61,17 +69,28 @@ document.addEventListener('DOMContentLoaded', () => {
     /* --- MAIN TITLE 3D FOLLOW EFFECT --- */
     const mainTitle = document.getElementById('kazu-title');
     if (mainTitle && isHoverDevice) {
-        document.addEventListener('mousemove', (e) => {
-            // Get center of the title
+        let titleCenter = { x: 0, y: 0 };
+        function updateTitleCenter() {
             const rect = mainTitle.getBoundingClientRect();
+            titleCenter.x = rect.left + rect.width / 2 + window.scrollX;
+            titleCenter.y = rect.top + rect.height / 2 + window.scrollY;
+        }
 
+        // Initialize center
+        updateTitleCenter();
+
+        // Update center on resize/scroll
+        window.addEventListener('resize', updateTitleCenter, { passive: true });
+        window.addEventListener('scroll', updateTitleCenter, { passive: true });
+
+        document.addEventListener('mousemove', (e) => {
             // Pivot around the title's own center for a "following eye" feel
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+            const viewportX = titleCenter.x - window.scrollX;
+            const viewportY = titleCenter.y - window.scrollY;
 
             // Distance from center
-            const deltaX = e.clientX - centerX;
-            const deltaY = e.clientY - centerY;
+            const deltaX = e.clientX - viewportX;
+            const deltaY = e.clientY - viewportY;
 
             // Rotation Logic:
             // Mouse Right (+x) means title should look Right -> RotateY(+deg) [Left side goes back]

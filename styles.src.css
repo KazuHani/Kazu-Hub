@@ -522,6 +522,7 @@ h1, h2, h3, .tech-font {
 }
 
 .entrance-anim {
+    opacity: 0;
     transform: translateY(30px) scale(0.97);
     filter: blur(8px);
     transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1728,7 +1729,7 @@ body.night-mode #profile-pic-sleep {
 /* ===================================================
    AROACE PRIDE GLOW (June only)
    Colours: orange #E28C00, yellow #EDCE00,
-            white #FFFFFF, light blue #62AEDC, navy #1A3555
+            white #FFFFFF, light blue #62AEDC, dark blue #203C56
    =================================================== */
 #pride-ring {
     position: absolute;
@@ -1739,7 +1740,7 @@ body.night-mode #profile-pic-sleep {
         #EDCE00 20%  40%,
         #FFFFFF 40%  60%,
         #62AEDC 60%  80%,
-        #1A3555 80% 100%
+        #203C56 80% 100%
     );
     filter: blur(14px);
     z-index: 0;
