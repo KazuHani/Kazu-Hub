@@ -239,51 +239,249 @@ function sanitizeUrl(url) {
     return '';
 }
 
-function updateDiscordUI(status, activityText, imageUrl = null) {
+let musicProgressInterval = null;
+
+function resolveActivityImageUrl(act) {
+    if (!act || !act.assets || !act.assets.large_image) {
+        if (act && act.name === 'YouTube Music') {
+            return 'images/youtube.png';
+        }
+        return null;
+    }
+    const img = act.assets.large_image;
+    if (img.startsWith('mp:')) {
+        return 'https://media.discordapp.net/' + img.substring(3);
+    }
+    if (img.startsWith('http://') || img.startsWith('https://')) {
+        return img;
+    }
+    return `https://cdn.discordapp.com/app-assets/${act.application_id}/${img}.png`;
+}
+
+function updateDiscordUI(status, activityText, imageUrl = null, state = null, musicData = null, voiceData = null) {
     const dot = document.getElementById('discord-status-dot');
     const text = document.getElementById('discord-status-text');
     const activity = document.getElementById('discord-activity');
-    const defaultIcon = document.getElementById('discord-default-icon');
-    const activityImg = document.getElementById('discord-activity-img');
+    const card = document.getElementById('discord-status');
     
-    if (!dot || !text || !activity) return;
+    if (!dot || !text || !activity || !card) return;
 
     dot.className = 'status-dot ' + status;
-    text.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    
+    let resolvedStatusText = 'Offline';
+    if (status === 'online') resolvedStatusText = 'Online';
+    else if (status === 'idle') resolvedStatusText = 'Idle';
+    else if (status === 'dnd') resolvedStatusText = 'Do Not Disturb';
+    
+    text.textContent = resolvedStatusText;
     activity.textContent = activityText;
 
-    const sanitizedImgUrl = sanitizeUrl(imageUrl);
-    if (sanitizedImgUrl && activityImg && defaultIcon) {
-        activityImg.src = sanitizedImgUrl;
-        activityImg.classList.remove('hidden');
-        defaultIcon.classList.add('hidden');
-    } else if (activityImg && defaultIcon) {
-        activityImg.classList.add('hidden');
-        defaultIcon.classList.remove('hidden');
+    // Resolve card state styling
+    const resolvedState = state || (status === 'offline' ? 'offline' : 'chilling');
+    card.classList.remove('discord-state-offline', 'discord-state-chilling', 'discord-state-spotify', 'discord-state-youtube-music', 'discord-state-gaming', 'discord-state-streaming');
+    card.classList.add('discord-state-' + resolvedState);
+
+    // --- MUSIC SECTION ---
+    const musicContainer = document.getElementById('discord-music-container');
+    if (musicContainer) {
+        if (musicData && musicData.active) {
+            musicContainer.classList.remove('hidden');
+            
+            const trackArt = document.getElementById('music-album-art');
+            const trackTitle = document.getElementById('music-track-title');
+            const trackArtist = document.getElementById('music-track-artist');
+            const platformLogo = document.getElementById('music-platform-logo');
+            const progressBar = document.getElementById('music-progress-bar');
+            const timeElapsed = document.getElementById('music-time-elapsed');
+            const timeTotal = document.getElementById('music-time-total');
+
+            if (trackArt) trackArt.src = sanitizeUrl(musicData.albumArt) || 'images/kazu small.png';
+            if (trackTitle) trackTitle.textContent = musicData.title || 'Unknown Track';
+            if (trackArtist) trackArtist.textContent = musicData.artist || 'Unknown Artist';
+
+            if (progressBar) {
+                if (musicData.platform === 'spotify') {
+                    progressBar.classList.remove('bg-red-500');
+                    progressBar.classList.add('bg-[#1ed760]'); // Premium Spotify Green
+                } else if (musicData.platform === 'youtube_music') {
+                    progressBar.classList.remove('bg-emerald-500', 'bg-[#1ed760]');
+                    progressBar.classList.add('bg-red-500');
+                }
+            }
+
+            if (platformLogo) {
+                if (musicData.platform === 'spotify') {
+                    platformLogo.innerHTML = `
+                        <svg class="w-3.5 h-3.5 text-[#1ed760] fill-current" viewBox="0 0 24 24">
+                            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.586 14.424c-.18.295-.565.387-.86.207-2.377-1.454-5.37-1.782-8.892-.977-.336.075-.668-.135-.745-.47-.077-.337.135-.668.47-.746 3.854-.882 7.15-.506 9.822 1.13.295.178.387.563.205.856zm1.225-2.72c-.227.367-.707.487-1.074.26-2.72-1.672-6.87-2.157-10.08-1.182-.413.125-.845-.107-.97-.52-.125-.413.107-.847.52-.973 3.67-1.114 8.24-.57 11.35 1.344.366.226.486.707.26 1.073zm.106-2.833C14.384 8.54 8.56 8.347 5.176 9.373a1.002 1.002 0 0 1-1.21-.715 1 1 0 0 1 .714-1.212c3.886-1.18 10.32-.953 14.39 1.464a1 1 0 0 1-.722 1.876 1 1 0 0 1-.362-.057z"/>
+                        </svg>`;
+                } else if (musicData.platform === 'youtube_music') {
+                    platformLogo.innerHTML = `
+                        <svg class="w-3.5 h-3.5 text-[#ff0000] fill-current" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/>
+                        </svg>`;
+                } else {
+                    platformLogo.innerHTML = '';
+                }
+            }
+
+            if (musicProgressInterval) {
+                clearInterval(musicProgressInterval);
+                musicProgressInterval = null;
+            }
+
+            const updateProgress = () => {
+                const now = Date.now();
+                const startTime = musicData.startTime;
+                const endTime = musicData.endTime;
+
+                if (startTime) {
+                    const elapsed = now - startTime;
+                    if (endTime) {
+                        const duration = endTime - startTime;
+                        const percent = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+                        if (progressBar) progressBar.style.width = percent + '%';
+                        if (timeElapsed) timeElapsed.textContent = formatTime(elapsed);
+                        if (timeTotal) timeTotal.textContent = formatTime(duration);
+                    } else {
+                        if (progressBar) progressBar.style.width = '100%';
+                        if (timeElapsed) timeElapsed.textContent = formatTime(elapsed);
+                        if (timeTotal) timeTotal.textContent = '--:--';
+                    }
+                } else {
+                    if (progressBar) progressBar.style.width = '0%';
+                    if (timeElapsed) timeElapsed.textContent = '0:00';
+                    if (timeTotal) timeTotal.textContent = '0:00';
+                }
+            };
+
+            updateProgress();
+            musicProgressInterval = setInterval(updateProgress, 1000);
+        } else {
+            musicContainer.classList.add('hidden');
+            if (musicProgressInterval) {
+                clearInterval(musicProgressInterval);
+                musicProgressInterval = null;
+            }
+        }
     }
+
+    // --- VOICE SECTION ---
+    const voiceContainer = document.getElementById('discord-voice-container');
+    if (voiceContainer) {
+        if (voiceData && voiceData.active) {
+            voiceContainer.classList.remove('hidden');
+            
+            const voiceMute = document.getElementById('voice-icon-mute');
+            const voiceDeaf = document.getElementById('voice-icon-deaf');
+
+            if (voiceMute) {
+                if (voiceData.selfMute) voiceMute.classList.remove('hidden');
+                else voiceMute.classList.add('hidden');
+            }
+            if (voiceDeaf) {
+                if (voiceData.selfDeaf) voiceDeaf.classList.remove('hidden');
+                else voiceDeaf.classList.add('hidden');
+            }
+        } else {
+            voiceContainer.classList.add('hidden');
+        }
+    }
+
+    // Toggle idle status placeholder
+    const idlePlaceholder = document.getElementById('discord-idle-placeholder');
+    if (idlePlaceholder) {
+        const hasMusic = musicData && musicData.active;
+        const hasVoice = voiceData && voiceData.active;
+        if (hasMusic || hasVoice) {
+            idlePlaceholder.classList.add('hidden');
+        } else {
+            idlePlaceholder.classList.remove('hidden');
+        }
+    }
+
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+}
+
+function formatTime(ms) {
+    if (isNaN(ms) || ms < 0) return '0:00';
+    const totalSecs = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
 function parseDiscordData(d) {
     const status = d.discord_status || 'offline';
     let activityText = status === 'offline' ? 'No activity' : 'Chilling';
     let imageUrl = null;
+    let state = status === 'offline' ? 'offline' : 'chilling';
+    
+    let musicData = { active: false };
+    let voiceData = { active: false };
 
+    // 1. Parse Voice State
+    if (d.voice && d.voice.channel_id) {
+        voiceData = {
+            active: true,
+            selfMute: !!d.voice.self_mute,
+            selfDeaf: !!d.voice.self_deaf
+        };
+    }
+
+    // 2. Parse Spotify
     if (d.spotify) {
+        musicData = {
+            active: true,
+            title: d.spotify.song,
+            artist: d.spotify.artist,
+            albumArt: d.spotify.album_art_url,
+            startTime: d.spotify.timestamps ? d.spotify.timestamps.start : null,
+            endTime: d.spotify.timestamps ? d.spotify.timestamps.end : null,
+            platform: 'spotify'
+        };
         activityText = `Listening to ${d.spotify.song}`;
         imageUrl = d.spotify.album_art_url;
-    } else if (d.activities && d.activities.length > 0) {
-        const act = d.activities.find(a => a.type !== 4) || d.activities[0]; // Skip custom status
-        if (act.type === 4 && act.state) {
-            activityText = act.state;
-        } else if (act.name) {
-            activityText = `Playing ${act.name}`;
-            if (act.assets && act.assets.large_image) {
-                if (act.assets.large_image.startsWith("mp:")) {
-                    imageUrl = "https://media.discordapp.net/" + act.assets.large_image.substring(3);
+        state = 'spotify';
+    } 
+    // 3. Else Parse YouTube Music from activities
+    else if (d.activities && d.activities.length > 0) {
+        const ytActivity = d.activities.find(act => act.name === 'YouTube Music');
+        if (ytActivity) {
+            musicData = {
+                active: true,
+                title: ytActivity.details || 'Unknown Track',
+                artist: ytActivity.state || 'Unknown Artist',
+                albumArt: resolveActivityImageUrl(ytActivity),
+                startTime: ytActivity.timestamps ? ytActivity.timestamps.start : null,
+                endTime: ytActivity.timestamps ? ytActivity.timestamps.end : null,
+                platform: 'youtube_music'
+            };
+            activityText = `Listening to ${musicData.title}`;
+            imageUrl = musicData.albumArt;
+            state = 'youtube-music';
+        }
+    }
+
+    // 4. Parse Other Activities if not Spotify / YouTube Music
+    if (d.activities && d.activities.length > 0) {
+        const customAct = d.activities.find(act => act.type === 4);
+        const gameAct = d.activities.find(act => act.type !== 4 && act.name !== 'YouTube Music' && act.name !== 'Spotify');
+        
+        if (gameAct) {
+            if (!musicData.active) {
+                activityText = `Playing ${gameAct.name}`;
+                imageUrl = resolveActivityImageUrl(gameAct);
+                if (gameAct.type === 1) {
+                    state = 'streaming';
                 } else {
-                    imageUrl = `https://cdn.discordapp.com/app-assets/${act.application_id}/${act.assets.large_image}.png`;
+                    state = 'gaming';
                 }
             }
+        } else if (customAct && customAct.state && !musicData.active) {
+            activityText = customAct.state;
         }
     }
 
@@ -293,22 +491,81 @@ function parseDiscordData(d) {
             status,
             activityText,
             imageUrl,
+            state,
+            musicData,
+            voiceData,
             timestamp: Date.now()
         };
         localStorage.setItem('discord_status_cache', JSON.stringify(discordData));
     } catch (e) {}
 
-    updateDiscordUI(status, activityText, imageUrl);
+    updateDiscordUI(status, activityText, imageUrl, state, musicData, voiceData);
 }
 
 // WebSocket-first approach with instant caching and REST fallback
 async function initDiscordStatus() {
+    // Testing override for developers
+    const urlParams = new URLSearchParams(window.location.search);
+    const testDiscord = urlParams.get('test_discord');
+    if (testDiscord) {
+        let mockData = {};
+        if (testDiscord.includes('offline')) {
+            mockData = { discord_status: 'offline' };
+        } else {
+            mockData = { discord_status: 'online', activities: [] };
+            if (testDiscord.includes('dnd')) mockData.discord_status = 'dnd';
+            if (testDiscord.includes('idle')) mockData.discord_status = 'idle';
+
+            // Check for spotify
+            if (testDiscord.includes('spotify')) {
+                mockData.spotify = {
+                    song: 'Chill Vibes',
+                    artist: 'Kazu & Hani',
+                    album_art_url: 'images/kazu small.png',
+                    timestamps: { start: Date.now() - 45000, end: Date.now() + 180000 }
+                };
+            }
+            // Check for youtube_music
+            else if (testDiscord.includes('youtube_music')) {
+                mockData.activities = [{
+                    type: 0,
+                    name: 'YouTube Music',
+                    details: 'Midnight City',
+                    state: 'M83',
+                    timestamps: { start: Date.now() - 60000, end: Date.now() + 240000 },
+                    assets: { large_image: 'mp:external/youtube_art' }
+                }];
+            }
+
+            // Check for gaming
+            if (testDiscord.includes('gaming')) {
+                mockData.activities = mockData.activities || [];
+                mockData.activities.push({
+                    type: 0,
+                    name: 'Minecraft',
+                    state: 'Exploring caves'
+                });
+            }
+
+            // Check for voice
+            if (testDiscord.includes('voice')) {
+                mockData.voice = {
+                    channel_id: '12345',
+                    self_mute: testDiscord.includes('mute'),
+                    self_deaf: testDiscord.includes('deaf') || testDiscord.includes('muted')
+                };
+            }
+        }
+        parseDiscordData(mockData);
+        return; // Skip real API connection
+    }
+
     // 1. Try to load and display from cache immediately to optimize speed
     const cachedDataStr = localStorage.getItem('discord_status_cache');
     if (cachedDataStr) {
         try {
             const cached = JSON.parse(cachedDataStr);
-            updateDiscordUI(cached.status, cached.activityText, cached.imageUrl);
+            updateDiscordUI(cached.status, cached.activityText, cached.imageUrl, cached.state, cached.musicData, cached.voiceData);
         } catch (e) {
             localStorage.removeItem('discord_status_cache');
         }
@@ -438,62 +695,106 @@ document.addEventListener('DOMContentLoaded', initDiscordStatus);
 
 
 /* --- STEAM ACTIVITY WIDGET --- */
+const FALLBACK_STEAM_GAMES = [
+    {
+        name: "s&box",
+        logo: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/590830/7cc1dedaa1eb9a36b9a7eb204a79800ae1a328fa/capsule_184x69.jpg",
+        hours: "2.4",
+        link: "https://store.steampowered.com/app/590830/sbox/"
+    },
+    {
+        name: "Satisfactory",
+        logo: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/fe7cbb345c177f83f829a61f0e0ab951b42c7ab1/capsule_184x69.jpg",
+        hours: "2.2",
+        link: "https://store.steampowered.com/app/526870/Satisfactory/"
+    },
+    {
+        name: "VRChat",
+        logo: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/438100/capsule_184x69.jpg",
+        hours: "1.7",
+        link: "https://store.steampowered.com/app/438100/VRChat/"
+    }
+];
+
 function renderSteamFallback() {
-    const widget = document.getElementById('steam-widget');
-    const defaultLogo = document.getElementById('steam-default-logo');
-    if (!widget) return;
-    
-    // Hide default logo so we only have one avatar/logo
-    if (defaultLogo) defaultLogo.classList.add('hidden');
-    
-    const avatarUrl = 'https://avatars.akamai.steamstatic.com/ed2c7926fdb6d4680d3a57847cf06afe690418ba_full.jpg';
-    widget.innerHTML = `
-        <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-            <img src="${avatarUrl}" alt="Kazu | カズ" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">
-            <div class="overflow-hidden w-full">
-                <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">Kazu | カズ</div>
-                <div class="text-xs text-gray-400 truncate">View Steam Profile →</div>
-            </div>
-        </a>
-    `;
+    renderSteamWidget({
+        type: 'profile',
+        profileName: 'Kazu | カズ',
+        statusText: 'Online',
+        displayImg: 'https://avatars.akamai.steamstatic.com/ed2c7926fdb6d4680d3a57847cf06afe690418ba_full.jpg',
+        recentGames: FALLBACK_STEAM_GAMES
+    });
 }
 
 function renderSteamWidget(data) {
     const widget = document.getElementById('steam-widget');
-    const defaultLogo = document.getElementById('steam-default-logo');
     if (!widget) return;
 
-    if (defaultLogo) defaultLogo.classList.add('hidden');
+    const displayImg = sanitizeUrl(data.displayImg || 'https://avatars.akamai.steamstatic.com/ed2c7926fdb6d4680d3a57847cf06afe690418ba_full.jpg');
+    const profileName = escapeHtml(data.profileName || 'Kazu | カズ');
+    const statusText = escapeHtml(data.statusText || 'Online');
+    const inGame = data.currentGame || null;
+    const games = data.recentGames || FALLBACK_STEAM_GAMES;
 
-    if (data.type === 'profile') {
-        const displayImg = sanitizeUrl(data.displayImg);
-        const profileName = escapeHtml(data.profileName);
-        const statusText = escapeHtml(data.statusText);
-        widget.innerHTML = `
-            <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                ${displayImg ? `<img src="${displayImg}" alt="${profileName}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
-                <div class="overflow-hidden w-full">
-                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${profileName}</div>
-                    <div class="text-xs text-gray-400 truncate">${statusText}</div>
-                    ${data.gameHtml || ''}
-                </div>
-            </a>
-        `;
-    } else if (data.type === 'game') {
-        const link = sanitizeUrl(data.link);
-        const logo = sanitizeUrl(data.logo);
-        const name = escapeHtml(data.name);
-        const hours = escapeHtml(data.hours);
-        widget.innerHTML = `
-            <a href="${link}" target="_blank" class="steam-game-card group flex items-start gap-3 w-full">
-                ${logo ? `<img src="${logo}" alt="${name}" class="w-12 h-12 rounded-md object-cover border border-cyan-500/10 shadow-md flex-shrink-0" onerror="this.onerror=null; this.src='images/kazu small.png';">` : ''}
-                <div class="overflow-hidden w-full">
-                    <div class="text-sm font-medium text-white group-hover:text-cyan-300 transition-colors truncate">${name}</div>
-                    <div class="text-xs text-gray-400 truncate">${hours}h last 2 weeks</div>
-                </div>
-            </a>
-        `;
+    // Apply glow effect classes dynamically depending on status
+    const card = document.getElementById('steam-activity');
+    if (card) {
+        card.classList.remove('steam-state-offline', 'steam-state-online', 'steam-state-ingame');
+        if (inGame) {
+            card.classList.add('steam-state-ingame');
+        } else if (statusText.toLowerCase().includes('offline')) {
+            card.classList.add('steam-state-offline');
+        } else {
+            card.classList.add('steam-state-online');
+        }
     }
+
+    const isOffline = statusText.toLowerCase().includes('offline');
+    const statusDotClass = (inGame || !isOffline) ? 'online' : 'offline';
+    const badgeClass = inGame ? 'steam-badge-ingame' : (isOffline ? 'steam-badge-offline' : 'steam-badge-online');
+    const badgeLabel = inGame ? '&#127918; IN-GAME' : (isOffline ? 'OFFLINE' : 'ONLINE');
+
+    const displayedGames = (games || []).slice(0, 3);
+    const maxHours = Math.max(0.1, ...displayedGames.map(g => parseFloat(g.hours) || 0));
+
+    let gamesHtml = '';
+    if (displayedGames.length > 0) {
+        gamesHtml = '<div class="md:col-span-7 flex flex-col gap-1 w-full mt-4 md:mt-0 md:pl-5 md:border-l md:border-white/10">' +
+            '<div class="flex items-center justify-between mb-2">' +
+            '<span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Recent Activity</span>' +
+            '<a href="https://steamcommunity.com/id/Kazu-Hani/games/?tab=recent" target="_blank" class="steam-view-all text-[10px] text-gray-500 transition-colors flex items-center gap-1 font-medium">View all</a>' +
+            '</div>' +
+            '<div class="flex flex-col gap-0.5">' +
+            displayedGames.map(function(g) {
+                var pct = Math.max(6, Math.round((parseFloat(g.hours) / maxHours) * 100));
+                return '<a href="' + escapeHtml(sanitizeUrl(g.link)) + '" target="_blank" class="steam-game-row flex items-center gap-3 w-full p-1.5 rounded-xl transition-all duration-200">' +
+                    '<img src="' + escapeHtml(sanitizeUrl(g.logo)) + '" alt="' + escapeHtml(g.name) + '" class="steam-capsule w-[88px] h-[33px] rounded-md object-cover border border-white/5 transition-all duration-300 flex-shrink-0" onerror="this.onerror=null;this.src=\'images/youtube.png\';">' +
+                    '<div class="overflow-hidden flex-grow min-w-0">' +
+                    '<div class="steam-game-name text-xs font-bold text-white transition-colors truncate">' + escapeHtml(g.name) + '</div>' +
+                    '<div class="text-[10px] text-gray-500 truncate mt-0.5">' + escapeHtml(g.hours) + ' hrs past 2 wks</div>' +
+                    '<div class="w-full h-[3px] rounded-full bg-white/[0.06] mt-1.5 overflow-hidden">' +
+                    '<div class="steam-progress-bar h-full rounded-full" style="width:' + pct + '%"></div>' +
+                    '</div></div></a>';
+            }).join('') +
+            '</div></div>';
+    }
+
+    widget.innerHTML =
+        '<div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center w-full z-10 relative">' +
+        '<div class="md:col-span-5 flex flex-col items-center text-center gap-2 w-full">' +
+        '<a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="flex flex-col items-center gap-2 w-full group/profile">' +
+        '<div class="relative flex-shrink-0">' +
+        '<img src="' + displayImg + '" alt="' + profileName + '" class="steam-avatar w-24 h-24 md:w-[72px] md:h-[72px] rounded-xl object-cover border-2 border-white/10 shadow-lg transition-all duration-300" onerror="this.onerror=null;this.src=\'images/kazu small.png\';">'+
+        '<span class="status-dot ' + statusDotClass + '" style="position:absolute;bottom:-3px;right:-3px;z-index:10;"></span>' +
+        '</div>' +
+        '<div class="steam-profile-name text-sm font-bold text-white transition-colors truncate w-full leading-tight">' + profileName + '</div>' +
+        '</a>' +
+        '<div class="steam-badge ' + badgeClass + '">' + badgeLabel + '</div>' +
+        (inGame ? '<div class="text-[10px] text-white/50 truncate max-w-[150px] leading-tight">' + escapeHtml(inGame) + '</div>' : '') +
+        '<a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="glass-btn flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold w-full max-w-[120px] mt-1">' +
+        'View Profile</a></div>' +
+        gamesHtml +
+        '</div>';
 }
 
 async function fetchSteamActivity() {
@@ -505,6 +806,9 @@ async function fetchSteamActivity() {
     if (cachedDataStr) {
         try {
             const cachedData = JSON.parse(cachedDataStr);
+            if (cachedData && cachedData.displayImg && !cachedData.displayImg.includes('_full')) {
+                throw new Error('Upgrade cache to high-res');
+            }
             // Render cached data immediately
             renderSteamWidget(cachedData);
             
@@ -578,6 +882,8 @@ async function fetchSteamActivity() {
             const onlineState = xml.querySelector('onlineState')?.textContent;
             const stateMessage = xml.querySelector('stateMessage')?.textContent;
             const avatarIcon = xml.querySelector('avatarIcon')?.textContent;
+            const avatarMedium = xml.querySelector('avatarMedium')?.textContent;
+            const avatarFull = xml.querySelector('avatarFull')?.textContent;
             const currentGame = xml.querySelector('inGameInfo gameName')?.textContent;
 
             // Check for games list XML
@@ -595,20 +901,34 @@ async function fetchSteamActivity() {
                 }
                 statusText = statusText.trim();
 
-                let gameHtml = '';
-                const gameIcon = xml.querySelector('inGameInfo gameIcon')?.textContent;
-                const displayImg = currentGame && gameIcon ? gameIcon : avatarIcon;
+                const displayImg = avatarFull || avatarMedium || avatarIcon || 'https://avatars.akamai.steamstatic.com/ed2c7926fdb6d4680d3a57847cf06afe690418ba_full.jpg';
 
-                if (currentGame) {
-                    gameHtml = `<div class="text-xs text-cyan-300 mt-1 truncate">🎮 ${escapeHtml(currentGame)}</div>`;
-                }
+                // Parse recently played games
+                const mostPlayedGamesElements = xml.querySelectorAll('mostPlayedGames mostPlayedGame');
+                const recentGames = [];
+                mostPlayedGamesElements.forEach(g => {
+                    const name = g.querySelector('gameName')?.textContent;
+                    const logo = g.querySelector('gameLogo')?.textContent || g.querySelector('gameIcon')?.textContent;
+                    const hours = g.querySelector('hoursPlayed')?.textContent || '0';
+                    const link = g.querySelector('gameLink')?.textContent || '#';
+                    if (name) {
+                        // Clean HTML entities safely
+                        let cleanName = name;
+                        try {
+                            const doc = new DOMParser().parseFromString(name, 'text/html');
+                            cleanName = doc.body.textContent || name;
+                        } catch(e) {}
+                        recentGames.push({ name: cleanName, logo, hours, link });
+                    }
+                });
 
                 const steamData = {
                     type: 'profile',
                     profileName,
                     statusText,
                     displayImg,
-                    gameHtml,
+                    currentGame: currentGame || null,
+                    recentGames: recentGames.length > 0 ? recentGames : FALLBACK_STEAM_GAMES,
                     timestamp: Date.now()
                 };
 
@@ -618,19 +938,23 @@ async function fetchSteamActivity() {
             }
 
             if (games.length > 0) {
-                // Games list XML
-                const game = games[0];
-                const name = game.querySelector('name')?.textContent || 'Unknown';
-                const logo = game.querySelector('logo')?.textContent || '';
-                const hours = game.querySelector('hoursLast2Weeks')?.textContent || '0';
-                const link = game.querySelector('storeLink')?.textContent || '#';
+                // Games list XML fallback
+                const recentGames = [];
+                games.forEach((g, index) => {
+                    if (index >= 3) return;
+                    const name = g.querySelector('name')?.textContent || 'Unknown';
+                    const logo = g.querySelector('logo')?.textContent || '';
+                    const hours = g.querySelector('hoursLast2Weeks')?.textContent || '0';
+                    const link = g.querySelector('storeLink')?.textContent || '#';
+                    recentGames.push({ name, logo, hours, link });
+                });
 
                 const steamData = {
-                    type: 'game',
-                    name,
-                    logo,
-                    hours,
-                    link,
+                    type: 'profile',
+                    profileName: 'Kazu | カズ',
+                    statusText: 'Online',
+                    displayImg: 'https://avatars.akamai.steamstatic.com/ed2c7926fdb6d4680d3a57847cf06afe690418ba_full.jpg',
+                    recentGames,
                     timestamp: Date.now()
                 };
 
@@ -695,6 +1019,3 @@ function closePlaylistSidebar() {
 
 window.openPlaylistSidebar = openPlaylistSidebar;
 window.closePlaylistSidebar = closePlaylistSidebar;
-
-
-

@@ -15,7 +15,7 @@
     --neon-cyan: #38bdf8; /* Sky Ice */
     --aurora-green: #08f7c5; /* Aurora Teal */
 
-    --bg-deep: #050b14; /* Arctic Deep Dark Navy */
+    --bg-deep: #90D5FF; /* Light Blue Background */
     --bg-primary: #0a1526;
     --bg-surface: rgba(8, 16, 32, 0.35); /* Translucent wrap */
     --bg-elevated: rgba(12, 28, 54, 0.4);
@@ -165,7 +165,7 @@ h1, h2, h3, .tech-font {
    DASHBOARD WRAPPER — BENTO GRID
    =================================================== */
 .dashboard-wrapper {
-    background: var(--bg-surface);
+    background: rgba(4, 8, 16, 0.70);
     backdrop-filter: blur(var(--glass-blur)) saturate(120%);
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
     border: 1px solid var(--glass-border);
@@ -233,14 +233,23 @@ h1, h2, h3, .tech-font {
 /* ===================================================
    GLASS PANELS & CARDS — BENTO TILES
    =================================================== */
-.glass-panel {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur)) saturate(145%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(145%);
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    border-radius: var(--radius-lg);
+.glass-panel,
+.glass-card {
     position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(28px) saturate(130%);
+    -webkit-backdrop-filter: blur(28px) saturate(130%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04);
+    
+    /* Hardware acceleration promotion */
+    will-change: transform, backdrop-filter;
+    transform: translateZ(0);
+    
     transition:
         background var(--transition-smooth),
         border-color var(--transition-smooth),
@@ -249,52 +258,42 @@ h1, h2, h3, .tech-font {
 }
 
 .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur)) saturate(145%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(145%);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-md);
-    transition:
-        background var(--transition-smooth),
-        border-color var(--transition-smooth),
-        box-shadow var(--transition-smooth),
-        transform var(--transition-spring);
     color: var(--text-primary);
+}
+/* Glass Buttons */
+.glass-btn {
     position: relative;
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(12px) saturate(120%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.10) !important;
+    color: #ffffff !important;
+    transition: 
+        background 0.3s ease, 
+        border-color 0.3s ease, 
+        box-shadow 0.3s ease, 
+        transform 0.2s ease !important;
 }
 
-/* Custom gradients for crystalline borders removed to keep borders clean */
+.glass-btn:hover {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border-color: rgba(255, 255, 255, 0.24) !important;
+    box-shadow: 
+        0 6px 16px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
+}
 
-/* Custom arctic shade overrides to prevent uniform blue appearance */
-#discord-status {
-    background: rgba(14, 25, 48, 0.6) !important; /* Deep Frosted Blue-Grey */
+.glass-btn:active {
+    background: rgba(255, 255, 255, 0.04) !important;
+    transform: scale(0.97) !important;
 }
-#steam-activity {
-    background: rgba(10, 21, 40, 0.58) !important; /* Glacial Shadow Navy */
-}
-#profile-links .glass-card {
-    background: rgba(22, 38, 64, 0.5) !important; /* Steel-Blue Frost Tint */
-    border-color: rgba(255, 255, 255, 0.12) !important;
-}
-#profile-links .glass-card:hover {
-    background: rgba(30, 52, 87, 0.75) !important;
-    border-color: rgba(255, 255, 255, 0.28) !important;
-}
-#oc-kazu {
-    background: rgba(11, 26, 51, 0.6) !important; /* Aurora Glacial Green-Teal */
-}
-#music {
-    background: rgba(8, 20, 41, 0.65) !important; /* Deep Arctic Oceanic Navy */
-}
-#stories .glass-card {
-    background: rgba(9, 18, 33, 0.65) !important; /* Cold Midnight Shadow Slate */
-    border-color: rgba(255, 255, 255, 0.08) !important;
-}
-#stories .glass-card:hover {
-    background: rgba(16, 32, 59, 0.8) !important;
-    border-color: rgba(255, 255, 255, 0.22) !important;
-}
+
+
+/* Custom overrides removed to maintain unified glass theme */
 
 /* --- SPOTLIGHT EFFECT --- */
 .glass-panel::after,
@@ -304,9 +303,9 @@ h1, h2, h3, .tech-font {
     inset: 0;
     border-radius: inherit;
     background: radial-gradient(
-        500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        var(--accent-subtle),
-        transparent 40%
+        600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(255, 255, 255, 0.04),
+        transparent 50%
     );
     opacity: 0;
     transition: opacity var(--transition-smooth);
@@ -348,18 +347,24 @@ h1, h2, h3, .tech-font {
    HOVER EFFECTS — ENHANCED MICRO-INTERACTIONS
    =================================================== */
 @media (hover: hover) {
-    .glass-card:hover {
-        background: rgba(14, 33, 64, 0.65);
-        border-color: var(--glass-hover-border);
-        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
-        transform: translateY(-4px) scale(1.02);
+    .glass-panel:hover {
+        background: rgba(255, 255, 255, 0.10);
+        border-color: rgba(255, 255, 255, 0.20);
+        box-shadow:
+            0 24px 60px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+            inset 0 -1px 0 0 rgba(255, 255, 255, 0.06);
+        transform: translateY(-3px);
     }
 
-    .glass-panel:hover {
-        background: rgba(14, 33, 64, 0.6);
-        border-color: var(--glass-hover-border);
-        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
-        transform: translateY(-3px);
+    .glass-card:hover {
+        background: rgba(255, 255, 255, 0.10);
+        border-color: rgba(255, 255, 255, 0.20);
+        box-shadow:
+            0 24px 60px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+            inset 0 -1px 0 0 rgba(255, 255, 255, 0.06);
+        transform: translateY(-4px) scale(1.02);
     }
 
     /* Social icon brand colors on hover */
@@ -387,15 +392,21 @@ h1, h2, h3, .tech-font {
     #oc-kazu a:active,
     #music a:active,
     #backToTop:active {
-        transform: scale(0.97) translateY(1px);
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
-        transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
+        transform: scale(0.97) translateY(1px) translateZ(0);
+        background: rgba(255, 255, 255, 0.02);
+        box-shadow:
+            0 8px 20px rgba(0, 0, 0, 0.30),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
+        transition: transform 0.06s ease-out, box-shadow 0.06s ease-out, background-color 0.06s ease-out;
     }
 
     .glass-card:active {
-        transform: scale(0.96) translateY(2px);
-        box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.5);
-        transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
+        transform: scale(0.96) translateY(2px) translateZ(0);
+        background: rgba(255, 255, 255, 0.02);
+        box-shadow:
+            0 8px 20px rgba(0, 0, 0, 0.30),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
+        transition: transform 0.06s ease-out, box-shadow 0.06s ease-out, background-color 0.06s ease-out;
     }
 
     /* CTA button hover glow */
@@ -1136,40 +1147,23 @@ body.christmas-mode .mesh-gradient {
         animation: none !important;
     }
 
-    /* 5. Remove backdrop-filter blur from glass panels — it is the single most
-       expensive GPU effect on mobile. Replace with a solid tinted background. */
+    /* 5. Support mobile viewports with optimized blur and shadows */
     .glass-panel,
     .glass-card {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        background: rgba(10, 22, 43, 0.85) !important;
-    }
-
-    /* Keep specific panel colour overrides working without blur */
-    #discord-status {
-        background: rgba(14, 25, 48, 0.9) !important;
-    }
-    #steam-activity {
-        background: rgba(10, 21, 40, 0.9) !important;
-    }
-    #profile-links .glass-card {
-        background: rgba(22, 38, 64, 0.85) !important;
-    }
-    #oc-kazu {
-        background: rgba(11, 26, 51, 0.9) !important;
-    }
-    #music {
-        background: rgba(8, 20, 41, 0.9) !important;
-    }
-    #stories .glass-card {
-        background: rgba(9, 18, 33, 0.9) !important;
+        backdrop-filter: blur(20px) saturate(120%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(120%) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        box-shadow:
+            0 12px 30px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+            inset 0 -1px 0 0 rgba(255, 255, 255, 0.04) !important;
     }
 
     /* 6. Remove backdrop-filter from dashboard wrapper */
     .dashboard-wrapper {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        background: rgba(8, 16, 32, 0.7) !important;
+        background: rgba(4, 8, 16, 0.85) !important;
         /* Simplify shadow too */
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
     }
@@ -1250,5 +1244,488 @@ body.christmas-mode .mesh-gradient {
     .glass-panel,
     .glass-card {
         transition: none !important;
+        transform: none !important;
     }
+    .glass-panel:hover,
+    .glass-card:hover {
+        transform: none !important;
+    }
+}
+
+/* LIQUID GLASS SHADER SYSTEM REMOVED */
+
+/* --- DYNAMIC DISCORD STATUS GLASS EFFECTS --- */
+
+/* Base transitions on the discord card and its children */
+#discord-status,
+#discord-status h3,
+#discord-status #discord-glow {
+    transition: 
+        background var(--transition-smooth), 
+        border-color var(--transition-smooth), 
+        box-shadow var(--transition-smooth), 
+        color var(--transition-smooth),
+        transform var(--transition-spring) !important;
+}
+
+/* Offline State */
+.discord-state-offline {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+.discord-state-offline h3 {
+    color: #64748b !important; /* Muted Slate Title */
+}
+.discord-state-offline #discord-glow {
+    background: rgba(100, 116, 139, 0.05) !important; /* Muted Slate Glow */
+}
+
+/* Online/Chilling State */
+.discord-state-chilling {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(67, 181, 129, 0.12) !important; /* Subtle Green Border */
+}
+.discord-state-chilling:hover {
+    border-color: rgba(67, 181, 129, 0.25) !important;
+}
+.discord-state-chilling h3 {
+    color: #43b581 !important; /* Emerald Title */
+}
+.discord-state-chilling #discord-glow {
+    background: rgba(67, 181, 129, 0.12) !important; /* Emerald Glow */
+}
+
+/* Spotify State */
+.discord-state-spotify {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(30, 215, 96, 0.15) !important; /* Spotify Green Border */
+    box-shadow: 
+        0 16px 40px rgba(30, 215, 96, 0.05),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04) !important;
+}
+.discord-state-spotify:hover {
+    border-color: rgba(30, 215, 96, 0.35) !important;
+    box-shadow: 
+        0 24px 60px rgba(30, 215, 96, 0.10),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.06) !important;
+}
+.discord-state-spotify h3 {
+    color: #1ed760 !important; /* Spotify Green Title */
+    text-shadow: 0 0 10px rgba(30, 215, 96, 0.3);
+}
+.discord-state-spotify #discord-glow {
+    background: rgba(30, 215, 96, 0.15) !important; /* Spotify Green Glow */
+    animation: spotify-pulse-glow 3s infinite ease-in-out;
+}
+
+/* YouTube Music State */
+.discord-state-youtube-music {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(239, 68, 68, 0.15) !important; /* YouTube Music Red Border */
+    box-shadow: 
+        0 16px 40px rgba(239, 68, 68, 0.05),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04) !important;
+}
+.discord-state-youtube-music:hover {
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    box-shadow: 
+        0 24px 60px rgba(239, 68, 68, 0.10),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.06) !important;
+}
+.discord-state-youtube-music h3 {
+    color: #ef4444 !important; /* YouTube Red Title */
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+.discord-state-youtube-music #discord-glow {
+    background: rgba(239, 68, 68, 0.15) !important; /* YouTube Red Glow */
+    animation: youtube-pulse-glow 3s infinite ease-in-out;
+}
+
+/* Gaming State */
+.discord-state-gaming {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(168, 85, 247, 0.15) !important; /* Purple Border */
+    box-shadow: 
+        0 16px 40px rgba(168, 85, 247, 0.05),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04) !important;
+}
+.discord-state-gaming:hover {
+    border-color: rgba(168, 85, 247, 0.35) !important;
+    box-shadow: 
+        0 24px 60px rgba(168, 85, 247, 0.10),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.06) !important;
+}
+.discord-state-gaming h3 {
+    color: #a855f7 !important; /* Gaming Purple Title */
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+.discord-state-gaming #discord-glow {
+    background: rgba(168, 85, 247, 0.15) !important; /* Purple Glow */
+    animation: gaming-pulse-glow 3s infinite ease-in-out;
+}
+
+/* Streaming State */
+.discord-state-streaming {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(236, 72, 153, 0.18) !important; /* Streaming Pink/Magenta Border */
+    box-shadow: 
+        0 16px 40px rgba(236, 72, 153, 0.08),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04) !important;
+}
+.discord-state-streaming:hover {
+    border-color: rgba(236, 72, 153, 0.40) !important;
+    box-shadow: 
+        0 24px 60px rgba(236, 72, 153, 0.15),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.06) !important;
+}
+.discord-state-streaming h3 {
+    color: #ec4899 !important; /* Streaming Pink Title */
+    text-shadow: 0 0 10px rgba(236, 72, 153, 0.4);
+}
+.discord-state-streaming #discord-glow {
+    background: rgba(236, 72, 153, 0.18) !important; /* Streaming Pink Glow */
+    animation: streaming-pulse-glow 2.5s infinite ease-in-out;
+}
+
+/* Animations for active status card back-glows */
+@keyframes spotify-pulse-glow {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+    50% { transform: scale(1.15) translate(-4px, -4px); opacity: 1; }
+}
+
+@keyframes youtube-pulse-glow {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+    50% { transform: scale(1.15) translate(-4px, -4px); opacity: 1; }
+}
+
+@keyframes gaming-pulse-glow {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+    50% { transform: scale(1.20) translate(-3px, -3px); opacity: 1; }
+}
+
+@keyframes streaming-pulse-glow {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.9; }
+    50% { transform: scale(1.25) translate(-5px, -5px); opacity: 1; }
+}
+
+/* --- DYNAMIC STEAM STATUS GLASS EFFECTS --- */
+
+/* Base transitions on the steam card and its children */
+#steam-activity,
+#steam-activity h3,
+#steam-activity #steam-glow {
+    transition: 
+        background var(--transition-smooth), 
+        border-color var(--transition-smooth), 
+        box-shadow var(--transition-smooth), 
+        color var(--transition-smooth),
+        transform var(--transition-spring) !important;
+}
+
+/* Offline State */
+.steam-state-offline {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+.steam-state-offline h3 {
+    color: #64748b !important; /* Muted Slate Title */
+}
+.steam-state-offline #steam-glow {
+    background: rgba(100, 116, 139, 0.05) !important; /* Muted Slate Glow */
+}
+
+/* Online State */
+.steam-state-online {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(56, 189, 248, 0.12) !important; /* Subtle Steam Blue Border */
+}
+.steam-state-online:hover {
+    border-color: rgba(56, 189, 248, 0.25) !important;
+}
+.steam-state-online h3 {
+    color: #38bdf8 !important; /* Steam Blue Title */
+}
+.steam-state-online #steam-glow {
+    background: rgba(56, 189, 248, 0.12) !important; /* Steam Blue Glow */
+}
+
+/* In-Game State */
+.steam-state-ingame {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(144, 255, 120, 0.18) !important; /* In-Game Green Border */
+    box-shadow: 
+        0 16px 40px rgba(144, 255, 120, 0.05),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.04) !important;
+}
+.steam-state-ingame:hover {
+    border-color: rgba(144, 255, 120, 0.35) !important;
+    box-shadow: 
+        0 24px 60px rgba(144, 255, 120, 0.10),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.06) !important;
+}
+.steam-state-ingame h3 {
+    color: #90ff78 !important; /* In-Game Green Title */
+    text-shadow: 0 0 10px rgba(144, 255, 120, 0.3);
+}
+.steam-state-ingame #steam-glow {
+    background: rgba(144, 255, 120, 0.15) !important; /* In-Game Green Glow */
+    animation: ingame-pulse-glow 3s infinite ease-in-out;
+}
+
+
+@keyframes ingame-pulse-glow {
+    0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+    50% { transform: scale(1.18) translate(3px, 3px); opacity: 1; }
+}
+
+/* =====================================================
+   STEAM WIDGET — COMPONENT STYLES
+   All colour theming is driven by the parent state class
+   (.steam-state-online / .steam-state-ingame / .steam-state-offline)
+   so no dynamic Tailwind class strings are needed in JS.
+   ===================================================== */
+
+/* Status badge base */
+.steam-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    border: 1px solid transparent;
+}
+
+/* Badge variants */
+.steam-badge-online {
+    background: rgba(56, 189, 248, 0.10);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.22);
+}
+.steam-badge-online::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #38bdf8;
+    animation: steam-dot-pulse 2s ease-in-out infinite;
+}
+.steam-badge-ingame {
+    background: rgba(144, 255, 120, 0.10);
+    color: #90ff78;
+    border-color: rgba(144, 255, 120, 0.22);
+}
+.steam-badge-ingame::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #90ff78;
+    animation: steam-dot-pulse 1.4s ease-in-out infinite;
+}
+.steam-badge-offline {
+    background: rgba(100, 116, 139, 0.08);
+    color: #64748b;
+    border-color: rgba(100, 116, 139, 0.18);
+}
+
+@keyframes steam-dot-pulse {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50%       { opacity: 1;    transform: scale(1.2); }
+}
+
+/* Avatar border — matches state accent */
+.steam-state-online  .steam-avatar { border-color: rgba(56,  189, 248, 0.32) !important; }
+.steam-state-ingame  .steam-avatar { border-color: rgba(144, 255, 120, 0.32) !important; }
+.steam-state-offline .steam-avatar { border-color: rgba(255, 255, 255, 0.08) !important; }
+
+/* Profile name hover colour */
+.steam-state-online  .group\/profile:hover .steam-profile-name { color: #38bdf8; }
+.steam-state-ingame  .group\/profile:hover .steam-profile-name { color: #90ff78; }
+.steam-state-offline .group\/profile:hover .steam-profile-name { color: #94a3b8; }
+
+/* "View all" hover */
+.steam-state-online  .steam-view-all:hover { color: #38bdf8; }
+.steam-state-ingame  .steam-view-all:hover { color: #90ff78; }
+.steam-state-offline .steam-view-all:hover { color: #94a3b8; }
+
+/* Game row hover background */
+.steam-state-online  .steam-game-row:hover { background: rgba(56,  189, 248, 0.04); }
+.steam-state-ingame  .steam-game-row:hover { background: rgba(144, 255, 120, 0.04); }
+.steam-state-offline .steam-game-row:hover { background: rgba(255, 255, 255, 0.03); }
+
+/* Capsule border on game row hover */
+.steam-state-online  .steam-game-row:hover .steam-capsule { border-color: rgba(56,  189, 248, 0.28); }
+.steam-state-ingame  .steam-game-row:hover .steam-capsule { border-color: rgba(144, 255, 120, 0.28); }
+.steam-state-offline .steam-game-row:hover .steam-capsule { border-color: rgba(255, 255, 255, 0.10); }
+
+/* Game name colour on hover */
+.steam-state-online  .steam-game-row:hover .steam-game-name { color: #38bdf8; }
+.steam-state-ingame  .steam-game-row:hover .steam-game-name { color: #90ff78; }
+.steam-state-offline .steam-game-row:hover .steam-game-name { color: #94a3b8; }
+
+/* Progress bar fill colours */
+.steam-state-online  .steam-progress-bar { background: rgba(56,  189, 248, 0.65); }
+.steam-state-ingame  .steam-progress-bar { background: rgba(144, 255, 120, 0.65); }
+.steam-state-offline .steam-progress-bar { background: rgba(100, 116, 139, 0.45); }
+
+
+/* ===================================================
+   NIGHT MODE — Sunset → Sunrise Background Transition
+   =================================================== */
+
+/* The body background colour transitions smoothly via CSS */
+body {
+    transition: background-color 3s linear, padding-right 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Night background — overrides --bg-deep to near-black */
+body.night-mode {
+    background-color: #050810 !important;
+}
+
+/* Night mesh overlay darkens the radial gradients */
+body.night-mode .mesh-gradient {
+    background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(100, 150, 255, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 65% 55% at 75% 35%, rgba(80, 100, 200, 0.05) 0%, transparent 50%),
+        radial-gradient(ellipse 75% 50% at 45% 75%, rgba(80, 60, 160, 0.06) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 50% at 15% 80%, rgba(100, 120, 220, 0.03) 0%, transparent 55%),
+        #050810 !important;
+    transition: background 3s linear;
+}
+
+/* Sunset transition — halfway colours */
+body.sunset-transition .mesh-gradient {
+    background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(255, 120, 50, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 65% 55% at 75% 35%, rgba(200, 80, 60, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 75% 50% at 45% 75%, rgba(100, 60, 160, 0.10) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 50% at 15% 80%, rgba(255, 100, 80, 0.05) 0%, transparent 55%),
+        var(--bg-deep) !important;
+    transition: background 3s linear;
+}
+
+/* Sunrise transition — warm glow phase */
+body.sunrise-transition .mesh-gradient {
+    background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(255, 200, 80, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 65% 55% at 75% 35%, rgba(255, 150, 60, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 75% 50% at 45% 75%, rgba(100, 80, 200, 0.08) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 50% at 15% 80%, rgba(255, 180, 60, 0.05) 0%, transparent 55%),
+        var(--bg-deep) !important;
+    transition: background 3s linear;
+}
+
+/* ===================================================
+   MOON ICON OVERLAY
+   =================================================== */
+#moon-overlay {
+    position: fixed;
+    top: 2rem;
+    right: 2.5rem;
+    z-index: 15;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+    transition: opacity 4s ease, transform 4s ease;
+}
+
+#moon-overlay.moon-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+#moon-overlay svg {
+    width: 72px;
+    height: 72px;
+    filter:
+        drop-shadow(0 0 16px rgba(224, 235, 255, 0.95))
+        drop-shadow(0 0 36px rgba(180, 210, 255, 0.6))
+        drop-shadow(0 0 60px rgba(140, 180, 255, 0.4));
+    animation: moon-float 8s ease-in-out infinite;
+}
+
+@keyframes moon-float {
+    0%   { transform: translateY(0px) rotate(-2deg); }
+    33%  { transform: translateY(-6px) rotate(1deg); }
+    66%  { transform: translateY(-3px) rotate(-1deg); }
+    100% { transform: translateY(0px) rotate(-2deg); }
+}
+
+/* Stars that appear around the moon at night */
+.night-star {
+    position: fixed;
+    border-radius: 50%;
+    background: rgba(200, 220, 255, 0.8);
+    pointer-events: none;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 6s ease;
+    animation: star-twinkle var(--star-speed, 3s) ease-in-out infinite var(--star-delay, 0s);
+}
+
+.night-star.star-visible {
+    opacity: var(--star-opacity, 0.6);
+}
+
+@keyframes star-twinkle {
+    0%, 100% { opacity: var(--star-opacity, 0.6); transform: scale(1); }
+    50%       { opacity: calc(var(--star-opacity, 0.6) * 0.3); transform: scale(0.7); }
+}
+
+/* Profile picture crossfade between day/night */
+body.night-mode #profile-pic {
+    opacity: 0;
+    pointer-events: none;
+}
+body.night-mode #profile-pic-sleep {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+    #moon-overlay {
+        top: 1rem;
+        right: 1rem;
+    }
+
+    #moon-overlay svg {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+/* ===================================================
+   AROACE PRIDE GLOW (June only)
+   Colours: orange #E28C00, yellow #EDCE00,
+            white #FFFFFF, light blue #62AEDC, navy #1A3555
+   =================================================== */
+#pride-ring {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: conic-gradient(
+        #E28C00 0%   20%,
+        #EDCE00 20%  40%,
+        #FFFFFF 40%  60%,
+        #62AEDC 60%  80%,
+        #1A3555 80% 100%
+    );
+    filter: blur(14px);
+    z-index: 0;
 }

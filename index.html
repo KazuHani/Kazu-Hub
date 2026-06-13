@@ -137,6 +137,41 @@
 </head>
 
 <body class="min-h-screen flex flex-col relative">
+    <script>
+        (function() {
+            let isNight = false;
+            try {
+                const cachedSunrise = localStorage.getItem('kazu_sunrise');
+                const cachedSunset = localStorage.getItem('kazu_sunset');
+                if (cachedSunrise && cachedSunset) {
+                    const now = Date.now();
+                    const sunrise = new Date(cachedSunrise).getTime();
+                    const sunset = new Date(cachedSunset).getTime();
+                    const buffer = 20 * 60 * 1000;
+                    isNight = now > (sunset + buffer) || now < (sunrise - buffer);
+                } else {
+                    const ukTimeStr = new Date().toLocaleString("en-US", {timeZone: "Europe/London"});
+                    const ukHour = new Date(ukTimeStr).getHours();
+                    isNight = ukHour >= 20 || ukHour < 6;
+                }
+            } catch(e) {}
+            if (isNight) {
+                document.body.classList.add('night-mode');
+                const style = document.createElement('style');
+                style.id = 'init-night-styles';
+                style.innerHTML = `
+                    body { transition: none !important; }
+                    #moon-overlay { opacity: 1 !important; transform: translateY(0) scale(1) !important; transition: none !important; }
+                    #profile-pic { opacity: 0 !important; transition: none !important; }
+                    #profile-pic-sleep { opacity: 1 !important; pointer-events: auto !important; transition: none !important; }
+                `;
+                document.head.appendChild(style);
+            }
+        })();
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+ 
 
     <!-- Animated Mesh Gradient Background -->
     <div class="mesh-gradient"></div>
@@ -161,6 +196,32 @@
     <!-- Background Animations -->
     <canvas id="snow-canvas"></canvas>
     <canvas id="confetti-canvas"></canvas>
+
+    <!-- Night Sky — Moon & Stars (shown at sunset, hidden at sunrise) -->
+    <div id="moon-overlay" aria-hidden="true">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <defs>
+                <radialGradient id="moonGrad" cx="40%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="55%" stop-color="#e2ecff"/>
+                    <stop offset="100%" stop-color="#bacde5"/>
+                </radialGradient>
+                <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="rgba(224, 235, 255, 0.45)"/>
+                    <stop offset="100%" stop-color="rgba(160,190,255,0)"/>
+                </radialGradient>
+            </defs>
+            <!-- Outer glow halo -->
+            <circle cx="32" cy="32" r="30" fill="url(#moonGlow)"/>
+            <!-- Crescent shape: full circle minus offset circle for the shadow -->
+            <path d="M32 6 A26 26 0 1 1 32 58 A18 18 0 1 0 32 6 Z" fill="url(#moonGrad)"/>
+            <!-- Subtle crater details -->
+            <circle cx="24" cy="28" r="3" fill="rgba(160,180,230,0.35)"/>
+            <circle cx="36" cy="38" r="2" fill="rgba(160,180,230,0.28)"/>
+            <circle cx="20" cy="40" r="1.5" fill="rgba(160,180,230,0.22)"/>
+        </svg>
+    </div>
+    <div id="night-stars-container" aria-hidden="true"></div>
 
     <!-- Main Content -->
     <main class="flex-grow pt-4 pb-4 px-2 sm:px-4 lg:px-6 max-w-[95rem] mx-auto w-full z-10">
@@ -240,10 +301,19 @@
                             </svg>
                         </div>
 
-                        <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile"
-                            class="relative w-40 h-40 rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow mx-auto cursor-pointer active:scale-95 transition-transform"
-                            loading="eager" onclick="playPop()"
-                            onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
+                        <div id="pride-ring-wrapper" class="relative mx-auto" style="width:176px;height:176px;padding:4px;">
+                            <div id="pride-ring" class="absolute rounded-full opacity-0 transition-opacity duration-[3000ms]"></div>
+                            <div class="relative w-40 h-40 mx-auto cursor-pointer active:scale-95 transition-transform" style="top:4px;">
+                                <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile"
+                                    class="absolute inset-0 w-full h-full rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow transition-opacity duration-[3000ms]"
+                                    loading="eager" onclick="playPop()"
+                                    onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
+                                <img id="profile-pic-sleep" src="images/Kazusleep.png" alt="Kazu Hani Profile Sleeping"
+                                    class="absolute inset-0 w-full h-full rounded-full border-4 border-slate-900 shadow-2xl object-contain bg-slate-950 p-2 profile-glow transition-opacity duration-[3000ms] opacity-0 pointer-events-none"
+                                    loading="eager" onclick="playPop()"
+                                    onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Birthday Message -->
@@ -291,18 +361,18 @@
                     <div id="weather-rain" class="weather-rain-container"></div>
                     <div id="weather-snow" class="weather-snow-container"></div>
                     <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity z-10">
-                        <i id="weather-icon-bg" data-lucide="cloud-sun" class="w-8 h-8 text-yellow-400"></i>
+                        <i id="weather-icon-bg" data-lucide="cloud-sun" class="w-8 h-8 text-sky-400"></i>
                     </div>
                     <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-1 relative z-10">Weather</h3>
                     <div class="flex flex-col items-center justify-center gap-1 relative z-10">
                         <div class="flex items-center gap-2">
                             <i id="weather-icon-main" data-lucide="loader"
-                                class="w-4 h-4 text-yellow-400 animate-spin"></i>
+                                class="w-4 h-4 text-sky-400 animate-spin"></i>
                             <div id="weather-temp"
                                 class="text-2xl md:text-2xl font-bold text-white tech-font tabular-nums">--°C
                             </div>
                         </div>
-                        <div id="weather-desc" class="text-yellow-400/80 text-sm md:text-xs capitalize">Loading...</div>
+                        <div id="weather-desc" class="text-sky-400/80 text-sm md:text-xs capitalize">Loading...</div>
                     </div>
                 </div>
 
@@ -328,37 +398,93 @@
                         Birthday
                         (Nov
                         9)</h3>
-                    <div id="countdown" class="text-xl md:text-2xl font-bold text-white tech-font tabular-nums">--d --h
+                    <div id="countdown" class="text-xl md:text-2xl font-bold text-white tech-font tabular-nums">--mo --d --h
                         --m
                         --s</div>
                     <div id="until-birthday-label" class="text-pink-400/80 text-sm md:text-xs mt-1">Until Birthday</div>
                 </div>
-
-                <!-- Discord Status + Steam Activity — Side by Side -->
+                           <!-- Discord Status + Steam Activity — Side by Side -->
                 <section id="discord-status" title="Click to copy Kazu's user ID?" onclick="copyDiscord(); playClick();"
-                    class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center cursor-pointer hover:bg-white/5 transition-colors group">
+                    class="discord-state-offline bento-wide glass-panel p-6 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center cursor-pointer hover:bg-white/5 transition-all duration-300 group min-h-[160px]">
                     <!-- Decorative glow -->
-                    <div class="absolute -top-8 -right-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
-                    <div class="flex items-center gap-4 relative z-10 w-full">
-                        <div class="relative flex-shrink-0" id="discord-img-container">
-                            <div id="discord-default-icon"
-                                class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-white/10 flex items-center justify-center">
-                                <svg class="w-6 h-6 text-indigo-400 stroke-current" viewBox="0 0 24 24" fill="none"
-                                    stroke-width="2">
-                                    <path
-                                        d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399Z" />
-                                </svg>
+                    <div id="discord-glow" class="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl transition-all duration-500"></div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 w-full items-center">
+                        <!-- Left side: User profile & status -->
+                        <div class="flex items-center gap-4 w-full">
+                            <div class="relative flex-shrink-0" id="discord-img-container">
+                                <img id="discord-avatar" src="images/Kazuwhite.jpg" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md">
+                                <span id="discord-status-dot" class="status-dot offline w-4 h-4 border-[3px]"
+                                    style="position:absolute;bottom:-2px;right:-2px;z-index:10;"></span>
                             </div>
-                            <img id="discord-activity-img" src="" class="hidden w-12 h-12 rounded-xl object-cover border border-white/10 shadow-md">
-                            <span id="discord-status-dot" class="status-dot offline"
-                                style="position:absolute;bottom:-2px;right:-2px;z-index:10;"></span>
+                            <div class="flex-grow overflow-hidden min-w-0">
+                                <h3 class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase truncate flex items-center gap-1.5 mb-1">
+                                    <svg class="w-3.5 h-3.5 text-indigo-400 stroke-current fill-current" viewBox="0 0 24 24">
+                                        <path d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399Z" />
+                                    </svg>
+                                    Discord
+                                </h3>
+                                <div class="flex items-baseline gap-1.5 mt-0.5">
+                                    <span class="text-lg md:text-xl font-extrabold text-white leading-tight">Kazu Hani</span>
+                                    <span class="text-xs text-gray-400 font-normal">@kazu_hani</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-1">
+                                    <div id="discord-status-text" class="text-xs md:text-sm font-semibold text-gray-300">Offline</div>
+                                    <span class="text-gray-500 text-[10px]">•</span>
+                                    <div id="discord-activity" class="text-xs text-gray-400 truncate max-w-[200px]">No activity</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex-grow overflow-hidden w-full">
-                            <h3 class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase truncate">Discord
-                            </h3>
-                            <div id="discord-status-text" class="text-base md:text-lg font-semibold text-white mt-0.5 truncate">
-                                Offline</div>
-                            <div id="discord-activity" class="text-xs md:text-sm text-gray-400 mt-0.5 truncate">No activity</div>
+
+                        <!-- Right side: Dynamic details -->
+                        <div class="flex flex-col gap-3 w-full border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 min-h-[90px] justify-center">
+                            <!-- Spotify / YouTube Music Section -->
+                            <div id="discord-music-container" class="hidden flex flex-col gap-2 w-full">
+                                <div class="flex items-center gap-3">
+                                    <div class="relative w-11 h-11 flex-shrink-0">
+                                        <img id="music-album-art" src="" class="w-full h-full rounded-lg object-cover border border-white/10 shadow-md">
+                                        <div id="music-app-icon" class="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black/60 flex items-center justify-center p-0.5">
+                                            <div id="music-platform-logo" class="w-full h-full flex items-center justify-center"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow overflow-hidden min-w-0">
+                                        <div id="music-track-title" class="text-xs md:text-sm font-semibold text-white truncate">Track Title</div>
+                                        <div id="music-track-artist" class="text-[10px] md:text-xs text-gray-400 truncate">Artist Name</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Live Progress Bar -->
+                                <div class="w-full flex flex-col gap-1">
+                                    <div class="relative w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                        <div id="music-progress-bar" class="absolute top-0 left-0 h-full bg-emerald-500 rounded-full transition-all duration-300 ease-out" style="width: 0%;"></div>
+                                    </div>
+                                    <div class="flex justify-between text-[10px] text-gray-500 tabular-nums">
+                                        <span id="music-time-elapsed">0:00</span>
+                                        <span id="music-time-total">0:00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Voice Channel Section -->
+                            <div id="discord-voice-container" class="hidden flex items-center gap-2.5 text-xs text-gray-300 w-full">
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
+                                <div class="flex items-center gap-1.5 flex-grow min-w-0">
+                                    <i data-lucide="volume-2" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+                                    <span class="font-medium truncate text-sm">Connected to Voice</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-gray-400">
+                                    <i id="voice-icon-mute" data-lucide="mic-off" class="w-4 h-4 hidden"></i>
+                                    <i id="voice-icon-deaf" data-lucide="headphones" class="w-4 h-4 hidden"></i>
+                                </div>
+                            </div>
+
+                            <!-- Idle Status Placeholder -->
+                            <div id="discord-idle-placeholder" class="text-xs md:text-sm text-gray-500/80 italic flex items-center gap-2">
+                                <svg class="w-3.5 h-3.5 text-gray-600 animate-pulse fill-current" viewBox="0 0 24 24">
+                                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                Quiet on music & voice
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -366,20 +492,101 @@
                 <section id="steam-activity"
                     class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center">
                     <!-- Decorative glow -->
-                    <div class="absolute -top-8 -left-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
-                    <div class="flex items-center gap-4 relative z-10 w-full">
-                        <div id="steam-default-logo"
-                            class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-white/10 flex items-center justify-center flex-shrink-0">
-                            <svg class="w-6 h-6 text-blue-400 fill-current" viewBox="0 0 256 259">
-                                <path
-                                    d="M127.779 0C60.42 0 5.24 52.412 0 119.014l68.724 28.674a35.812 35.812 0 0 1 20.426-6.366c.682 0 1.356.019 2.02.056l30.566-44.71v-.626c0-26.903 21.69-48.796 48.353-48.796 26.662 0 48.352 21.893 48.352 48.796 0 26.902-21.69 48.804-48.352 48.804-.37 0-.73-.009-1.098-.018l-43.593 31.377c.028.582.046 1.163.046 1.735 0 20.204-16.283 36.636-36.294 36.636-17.566 0-32.263-12.658-35.584-29.412L4.41 164.654c15.223 54.313 64.673 94.132 123.369 94.132 70.818 0 128.221-57.938 128.221-129.393C256 57.93 198.597 0 127.779 0z" />
-                            </svg>
+                    <div id="steam-glow" class="absolute -top-8 -left-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl transition-all duration-500"></div>
+                    <div class="relative z-10 w-full flex flex-col">
+                        <h3 class="text-xs md:text-sm font-bold text-blue-400 tracking-widest uppercase mb-3 text-left">Steam</h3>
+                        <div id="steam-widget" class="w-full">
+                            <!-- Loading / Fallback structure -->
+                            <div class="flex items-center gap-3 text-left">
+                                <div id="steam-default-logo"
+                                    class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-white/10 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-6 h-6 text-blue-400 fill-current" viewBox="0 0 256 259">
+                                        <path
+                                            d="M127.779 0C60.42 0 5.24 52.412 0 119.014l68.724 28.674a35.812 35.812 0 0 1 20.426-6.366c.682 0 1.356.019 2.02.056l30.566-44.71v-.626c0-26.903 21.69-48.796 48.353-48.796 26.662 0 48.352 21.893 48.352 48.796 0 26.902-21.69 48.804-48.352 48.804-.37 0-.73-.009-1.098-.018l-43.593 31.377c.028.582.046 1.163.046 1.735 0 20.204-16.283 36.636-36.294 36.636-17.566 0-32.263-12.658-35.584-29.412L4.41 164.654c15.223 54.313 64.673 94.132 123.369 94.132 70.818 0 128.221-57.938 128.221-129.393C256 57.93 198.597 0 127.779 0z" />
+                                    </svg>
+                                </div>
+                                <div class="overflow-hidden flex-grow min-w-0">
+                                    <div class="text-sm font-medium text-white">Kazu | カズ</div>
+                                    <div class="text-xs text-gray-400">Loading Steam activity...</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex-grow">
-                            <h3 class="text-xs md:text-sm font-bold text-blue-400 tracking-widest uppercase">Steam</h3>
-                            <div id="steam-widget" class="mt-0.5"><span
-                                    class="text-sm md:text-base text-gray-400">Loading...</span></div>
+                    </div>
+                </section>
+
+                <!-- Music Section — Bento Wide -->
+                <section id="music"
+                    class="bento-wide glass-panel p-5 rounded-2xl relative group content-hidden entrance-anim overflow-hidden flex flex-col justify-center">
+                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl">
+                    </div>
+                    <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl">
+                    </div>
+                    <div class="flex flex-col md:flex-row items-center gap-6 relative z-10 w-full h-full">
+                        <!-- Playlist Cover -->
+                        <div
+                            class="relative w-40 h-40 flex-shrink-0 transform transition-transform duration-500 lg:group-hover:scale-105 mx-auto md:mx-0">
+                            <div
+                                class="absolute top-0 left-3 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5">
+                            </div>
+                            <div
+                                class="absolute top-0 left-1.5 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5">
+                            </div>
+                            <div
+                                class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10">
+                                <img src="images/sisu.jpg?v=2" alt="Playlist Cover"
+                                    class="w-full h-full object-cover opacity-90" loading="lazy">
+                            </div>
                         </div>
+                        <!-- Content -->
+                        <div
+                            class="flex-grow text-center md:text-left w-full flex flex-col justify-center h-full space-y-2">
+                            <div>
+                                <span
+                                    class="text-xs md:text-sm font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Now
+                                    Curating</span>
+                                <h2 class="text-2xl md:text-3xl font-bold text-white tech-font tracking-tight">Songs
+                                    that SLAP 🐉</h2>
+                                <p class="text-slate-400 text-sm md:text-base mt-1">YouTube Music • Kazu Hani's
+                                    Selection</p>
+                            </div>
+                            <!-- Audio Visualizer -->
+                            <div class="visualizer-container mt-2 opacity-80 justify-center md:justify-start"
+                                id="audio-visualizer"></div>
+                            <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m"
+                                target="_blank" onclick="openPlaylistSidebar(event); playClick();"
+                                class="cta-btn glass-btn mt-4 w-full md:w-auto inline-flex items-center justify-center gap-3 px-6 py-3 rounded-xl font-bold transition-all shadow-lg group/btn min-h-[44px]">
+                                <div
+                                    class="w-6 h-6 bg-white/15 rounded-full flex items-center justify-center text-white">
+                                    <i data-lucide="play" class="w-3.5 h-3.5 fill-current ml-0.5"></i>
+                                </div>
+                                <span class="text-sm md:text-base">Listen</span>
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- OC Info — Bento Wide -->
+                <section id="oc-kazu"
+                    class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim flex flex-col justify-center">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white/10 shadow-lg flex-shrink-0">
+                                <img src="images/kazu%20small.png" alt="Kazu Icon" class="w-full h-full object-cover"
+                                    loading="lazy">
+                            </div>
+                            <div>
+                                <h2 class="text-xl md:text-2xl font-bold text-white tech-font">Meet Kazu</h2>
+                                <p class="text-slate-400 text-sm md:text-base mt-1">Discover the lore behind the noodle
+                                    derg.</p>
+                            </div>
+                        </div>
+                        <button onclick="playClick(); openModal('lore')"
+                            class="cta-btn glass-btn group flex items-center justify-center gap-2 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold w-full md:w-auto min-h-[44px]">
+                            <span class="text-sm md:text-base">View Reference</span>
+                            <i data-lucide="arrow-right"
+                                class="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform"></i>
+                        </button>
                     </div>
                 </section>
 
@@ -448,82 +655,6 @@
                     </div>
                 </section>
 
-                <!-- OC Info — Bento Wide -->
-                <section id="oc-kazu"
-                    class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim flex flex-col justify-center">
-                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white/10 shadow-lg flex-shrink-0">
-                                <img src="images/kazu%20small.png" alt="Kazu Icon" class="w-full h-full object-cover"
-                                    loading="lazy">
-                            </div>
-                            <div>
-                                <h2 class="text-xl md:text-2xl font-bold text-white tech-font">Meet Kazu</h2>
-                                <p class="text-slate-400 text-sm md:text-base mt-1">Discover the lore behind the noodle
-                                    derg.</p>
-                            </div>
-                        </div>
-                        <button onclick="playClick(); openModal('lore')"
-                            class="cta-btn group flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-6 py-3 md:py-2.5 rounded-xl font-bold transition-all transform w-full md:w-auto min-h-[44px]">
-                            <span class="text-sm md:text-base">View Reference</span>
-                            <i data-lucide="arrow-right"
-                                class="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform"></i>
-                        </button>
-                    </div>
-                </section>
-
-                <!-- Music Section — Bento Wide -->
-                <section id="music"
-                    class="bento-wide glass-panel p-5 rounded-2xl relative group content-hidden entrance-anim overflow-hidden flex flex-col justify-center">
-                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl">
-                    </div>
-                    <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl">
-                    </div>
-                    <div class="flex flex-col md:flex-row items-center gap-6 relative z-10 w-full h-full">
-                        <!-- Playlist Cover -->
-                        <div
-                            class="relative w-40 h-40 flex-shrink-0 transform transition-transform duration-500 lg:group-hover:scale-105 mx-auto md:mx-0">
-                            <div
-                                class="absolute top-0 left-3 w-full h-full bg-slate-700/50 rounded-xl transform rotate-6 scale-90 border border-white/5">
-                            </div>
-                            <div
-                                class="absolute top-0 left-1.5 w-full h-full bg-slate-600/60 rounded-xl transform rotate-3 scale-95 border border-white/5">
-                            </div>
-                            <div
-                                class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10">
-                                <img src="images/sisu.jpg?v=2" alt="Playlist Cover"
-                                    class="w-full h-full object-cover opacity-90" loading="lazy">
-                            </div>
-                        </div>
-                        <!-- Content -->
-                        <div
-                            class="flex-grow text-center md:text-left w-full flex flex-col justify-center h-full space-y-2">
-                            <div>
-                                <span
-                                    class="text-xs md:text-sm font-bold text-cyan-400 tracking-widest uppercase mb-1 block">Now
-                                    Curating</span>
-                                <h2 class="text-2xl md:text-3xl font-bold text-white tech-font tracking-tight">Songs
-                                    that SLAP 🐉</h2>
-                                <p class="text-slate-400 text-sm md:text-base mt-1">YouTube Music • Kazu Hani's
-                                    Selection</p>
-                            </div>
-                            <!-- Audio Visualizer -->
-                            <div class="visualizer-container mt-2 opacity-80 justify-center md:justify-start"
-                                id="audio-visualizer"></div>
-                            <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m"
-                                target="_blank" onclick="openPlaylistSidebar(event); playClick();"
-                                class="cta-btn mt-4 w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold transition-all shadow-lg group/btn min-h-[44px]">
-                                <div
-                                    class="w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center text-white">
-                                    <i data-lucide="play" class="w-3.5 h-3.5 fill-current ml-0.5"></i>
-                                </div>
-                                <span class="text-sm md:text-base">Listen</span>
-                            </a>
-                        </div>
-                    </div>
-                </section>
-
 
 
                 <!-- Stories — Bento Full -->
@@ -564,7 +695,7 @@
 
     <!-- Back to Top Button -->
     <button id="backToTop" onclick="scrollToTop()"
-        class="fixed bottom-6 right-6 bg-cyan-500 hover:bg-cyan-400 text-black p-3 rounded-full shadow-lg transition-all duration-300 transform translate-y-20 z-50">
+        class="fixed bottom-6 right-6 glass-btn p-3 rounded-full shadow-lg transition-all duration-300 transform translate-y-20 z-50">
         <i data-lucide="arrow-up" class="w-6 h-6"></i>
     </button>
 
@@ -682,6 +813,14 @@
                 // Fade out loader
                 loader.style.opacity = '0';
                 loader.style.visibility = 'hidden';
+
+                // Remove temporary initialization transition override block
+                const initStyles = document.getElementById('init-night-styles');
+                if (initStyles) {
+                    setTimeout(() => {
+                        initStyles.remove();
+                    }, 100);
+                }
 
                 // Init Icons safely after load
                 if (typeof lucide !== 'undefined') {
@@ -1049,7 +1188,7 @@
         };
 
         // --- Interaction: Profile & Global Crystalline Spark Click Listener ---
-        document.getElementById('profile-pic').addEventListener('click', (e) => {
+        const handleProfileClick = (e) => {
             const rect = e.target.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
@@ -1057,7 +1196,11 @@
             if (isBirthday) {
                 startConfettiShow(8000);
             }
-        });
+        };
+        const p1 = document.getElementById('profile-pic');
+        const p2 = document.getElementById('profile-pic-sleep');
+        if (p1) p1.addEventListener('click', handleProfileClick);
+        if (p2) p2.addEventListener('click', handleProfileClick);
 
         // On mobile: skip global click sparkle listener — spawning canvas particles
         // on every tap is expensive and the effect is barely visible on mobile screens.
@@ -1286,9 +1429,8 @@
                 if (data.current) {
                     weatherForecastData = data;
                     refreshWeatherUI();
+                    updateTheme(data);
                 }
-
-                // updateTheme(data); // Disabled to prevent bg flicker
 
             } catch (error) {
                 console.error("Weather fetch failed:", error);
@@ -1389,37 +1531,159 @@
 
 
 
-        function updateTheme(data) {
-            // Theme logic disabled to enforce consistent background color
-            return;
-            /*
-            if (!data || !data.daily) return;
+        /* --- DAY / NIGHT CYCLE --- */
+        // Stores sunrise/sunset Date objects updated whenever weather is fetched
+        let _sunriseTime = null;
+        let _sunsetTime  = null;
+        let _nightStarsSpawned = false;
+        let _nightCycleInterval = null;
 
-            const now = new Date();
-            const sunrise = new Date(data.daily.sunrise[0]);
-            const sunset = new Date(data.daily.sunset[0]);
+        function spawnNightStars() {
+            if (_nightStarsSpawned) return;
+            _nightStarsSpawned = true;
+            const container = document.getElementById('night-stars-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const count = window._isMobileDevice ? 30 : 70;
+            for (let i = 0; i < count; i++) {
+                const star = document.createElement('div');
+                star.className = 'night-star';
+                const size = (Math.random() * 2.5 + 0.8).toFixed(1);
+                const opacity = (Math.random() * 0.4 + 0.3).toFixed(2);
+                const speed = (Math.random() * 4 + 2).toFixed(1);
+                const delay = (Math.random() * speed).toFixed(1);
+                star.style.cssText = [
+                    `width:${size}px`, `height:${size}px`,
+                    `top:${Math.random() * 70}%`,
+                    `left:${Math.random() * 100}%`,
+                    `--star-opacity:${opacity}`,
+                    `--star-speed:${speed}s`,
+                    `--star-delay:${delay}s`
+                ].join(';');
+                container.appendChild(star);
+                // Stagger visibility for a gentle fade-in
+                setTimeout(() => star.classList.add('star-visible'), i * 40);
+            }
+        }
 
+        function removeNightStars() {
+            const container = document.getElementById('night-stars-container');
+            if (!container) return;
+            Array.from(container.children).forEach(s => s.classList.remove('star-visible'));
+            // Clear after CSS transition finishes
+            setTimeout(() => {
+                if (container) container.innerHTML = '';
+                _nightStarsSpawned = false;
+            }, 7000);
+        }
+
+        function applyNightMode(instantly) {
             const body = document.body;
-            body.classList.remove('day-mode', 'night-mode', 'sunrise-mode', 'sunset-mode');
+            const moon = document.getElementById('moon-overlay');
+            body.classList.remove('sunrise-transition', 'sunset-transition');
+            body.classList.add('night-mode');
+            if (moon) {
+                if (instantly) {
+                    moon.style.transition = 'none';
+                    moon.classList.add('moon-visible');
+                    requestAnimationFrame(() => { moon.style.transition = ''; });
+                } else {
+                    moon.classList.add('moon-visible');
+                }
+            }
+            spawnNightStars();
+        }
 
-            // Add 30 min buffer for transition periods
-            const transitionBuffer = 30 * 60 * 1000;
+        function applyDayMode(instantly) {
+            const body = document.body;
+            const moon = document.getElementById('moon-overlay');
+            body.classList.remove('night-mode', 'sunset-transition', 'sunrise-transition');
+            if (moon) {
+                if (instantly) {
+                    moon.style.transition = 'none';
+                    moon.classList.remove('moon-visible');
+                    requestAnimationFrame(() => { moon.style.transition = ''; });
+                } else {
+                    moon.classList.remove('moon-visible');
+                }
+            }
+            removeNightStars();
+        }
 
-            if (now >= sunrise.getTime() - transitionBuffer && now <= sunrise.getTime() + transitionBuffer) {
-                body.classList.add('sunrise-mode');
+        function applySunsetTransition() {
+            const body = document.body;
+            body.classList.remove('night-mode', 'sunrise-transition');
+            body.classList.add('sunset-transition');
+            // After the transition window, commit to full night
+            setTimeout(() => {
+                if (body.classList.contains('sunset-transition')) {
+                    body.classList.remove('sunset-transition');
+                    applyNightMode(false);
+                }
+            }, 45 * 60 * 1000); // 45 min transition window
+        }
+
+        function applySunriseTransition() {
+            const body = document.body;
+            const moon = document.getElementById('moon-overlay');
+            body.classList.remove('night-mode', 'sunset-transition');
+            body.classList.add('sunrise-transition');
+            if (moon) moon.classList.remove('moon-visible');
+            removeNightStars();
+            setTimeout(() => {
+                if (body.classList.contains('sunrise-transition')) {
+                    body.classList.remove('sunrise-transition');
+                }
+            }, 45 * 60 * 1000);
+        }
+
+        function evaluateDayNightCycle() {
+            if (!_sunriseTime || !_sunsetTime) return;
+
+            const now = Date.now();
+            const sunrise = _sunriseTime.getTime();
+            const sunset  = _sunsetTime.getTime();
+            // 20-minute transition buffer
+            const buffer = 20 * 60 * 1000;
+            const body = document.body;
+
+            const inSunsetWindow  = now >= (sunset - buffer)  && now <= (sunset + buffer);
+            const inSunriseWindow = now >= (sunrise - buffer) && now <= (sunrise + buffer);
+            const isNight         = now > (sunset + buffer) || now < (sunrise - buffer);
+            const isDay           = now >= (sunrise + buffer) && now < (sunset - buffer);
+
+            if (inSunsetWindow && !body.classList.contains('night-mode') && !body.classList.contains('sunset-transition')) {
+                applySunsetTransition();
+            } else if (inSunriseWindow && (body.classList.contains('night-mode') || !body.classList.contains('sunrise-transition')) && body.classList.contains('night-mode')) {
+                applySunriseTransition();
+            } else if (isNight && (!body.classList.contains('night-mode') || !_nightStarsSpawned)) {
+                applyNightMode(true);
+            } else if (isDay && (body.classList.contains('night-mode') || body.classList.contains('sunset-transition') || body.classList.contains('sunrise-transition'))) {
+                applyDayMode(true);
             }
-            else if (now >= sunset.getTime() - transitionBuffer && now <= sunset.getTime() + transitionBuffer) {
-                body.classList.add('sunset-mode');
+        }
+
+        function updateTheme(data) {
+            if (!data || !data.daily || !data.daily.sunrise || !data.daily.sunset) return;
+            _sunriseTime = new Date(data.daily.sunrise[0]);
+            _sunsetTime  = new Date(data.daily.sunset[0]);
+            try {
+                localStorage.setItem('kazu_sunrise', data.daily.sunrise[0]);
+                localStorage.setItem('kazu_sunset', data.daily.sunset[0]);
+            } catch(e) {}
+            // Run immediately on new data
+            evaluateDayNightCycle();
+            // Start the per-minute polling loop if not already running
+            if (!_nightCycleInterval) {
+                _nightCycleInterval = setInterval(evaluateDayNightCycle, 60 * 1000);
             }
-            else if (data.current.is_day === 1) {
-                body.classList.add('day-mode');
-            }
-            */
         }
 
         // Fetch immediately then every 15 mins
         fetchWeather();
         setInterval(fetchWeather, 15 * 60 * 1000);
+
+
 
         // 1. UK Time (12-hour)
 
@@ -1436,6 +1700,16 @@
                 age--;
             }
             document.getElementById('current-age').textContent = age;
+
+            // Aroace pride ring — June only
+            const prideRing = document.getElementById('pride-ring');
+            if (prideRing) {
+                if (now.getMonth() === 5) {
+                    prideRing.style.opacity = '1';
+                } else {
+                    prideRing.style.opacity = '0';
+                }
+            }
 
             // Christmas & Birthday Logic
             const urlParams = new URLSearchParams(window.location.search);
@@ -1570,14 +1844,25 @@
                         nextBirthday.setFullYear(now.getFullYear() + 1);
                     }
 
-                    const diff = nextBirthday - now;
+                    let tempDate = new Date(now.getTime());
+                    let months = 0;
+                    while (true) {
+                        let nextMonthDate = new Date(tempDate.getFullYear(), tempDate.getMonth() + 1, tempDate.getDate(), tempDate.getHours(), tempDate.getMinutes(), tempDate.getSeconds(), tempDate.getMilliseconds());
+                        if (nextMonthDate > nextBirthday) {
+                            break;
+                        }
+                        tempDate = nextMonthDate;
+                        months++;
+                    }
+
+                    const diff = nextBirthday - tempDate;
 
                     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-                    countdownEl.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                    countdownEl.textContent = `${months}mo ${days}d ${hours}h ${minutes}m ${seconds}s`;
                 }
             }
         }
@@ -1806,7 +2091,7 @@
             if (hasWebGL) {
                 modalContent.innerHTML = `
                     <h2 class="text-3xl font-bold text-white mb-2 tech-font">Wales Weather Radar</h2>
-                    <p class="text-yellow-400 text-sm mb-6">Real-time conditions via Windy.com</p>
+                    <p class="text-sky-400 text-sm mb-6">Real-time conditions via Windy.com</p>
                     
                     <div class="w-full h-[500px] rounded-2xl overflow-hidden border border-white/10 shadow-lg">
                         <iframe 
@@ -1824,7 +2109,7 @@
                         </div>
                          <div class="bg-white/5 p-3 rounded-xl border border-white/10">
                             <div class="text-gray-400 text-xs">Condition</div>
-                            <div class="text-yellow-400 font-bold capitalize" id="modal-weather-desc">See Map</div>
+                            <div class="text-sky-400 font-bold capitalize" id="modal-weather-desc">See Map</div>
                         </div>
                          <div class="bg-white/5 p-3 rounded-xl border border-white/10">
                             <div class="text-gray-400 text-xs">Location</div>
@@ -1867,11 +2152,11 @@
                             <div class="flex items-center justify-between p-3 rounded-xl border ${rowBg} transition-all duration-300">
                                 <div class="w-1/3 text-left font-medium text-white">${labelText}</div>
                                 <div class="w-1/3 flex items-center justify-center gap-2">
-                                    <i data-lucide="${info.icon}" class="w-5 h-5 text-yellow-400"></i>
+                                    <i data-lucide="${info.icon}" class="w-5 h-5 text-sky-400"></i>
                                     <span class="text-gray-300 text-sm hidden sm:inline capitalize">${info.desc}</span>
                                 </div>
                                 <div class="w-1/3 text-right font-bold text-white">
-                                    <span class="text-yellow-400">${maxTemp}°</span>
+                                    <span class="text-sky-400">${maxTemp}°</span>
                                     <span class="text-gray-500 text-sm ml-2">${minTemp}°</span>
                                 </div>
                             </div>
@@ -1885,7 +2170,7 @@
                 } else {
                     forecastHTML = `
                         <div class="p-6 bg-white/5 rounded-xl border border-white/10 text-center text-gray-400 mt-4">
-                            <i data-lucide="loader" class="w-8 h-8 text-yellow-400 animate-spin mx-auto mb-2"></i>
+                            <i data-lucide="loader" class="w-8 h-8 text-sky-400 animate-spin mx-auto mb-2"></i>
                             Loading forecast data...
                         </div>
                     `;
@@ -1907,16 +2192,16 @@
 
                 modalContent.innerHTML = `
                     <h2 class="text-3xl font-bold text-white mb-2 tech-font">Cardiff Weather</h2>
-                    <p class="text-yellow-400 text-sm mb-6">Live conditions & 7-day forecast (Fallback Mode)</p>
+                    <p class="text-sky-400 text-sm mb-6">Live conditions & 7-day forecast (Fallback Mode)</p>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-start">
                         <!-- Current Details Panel -->
-                        <div class="p-6 bg-gradient-to-br from-yellow-500/10 to-transparent rounded-2xl border border-white/10 shadow-lg flex flex-col items-center text-center">
+                        <div class="p-6 bg-gradient-to-br from-sky-500/10 to-transparent rounded-2xl border border-white/10 shadow-lg flex flex-col items-center text-center">
                             <div class="relative mb-4">
-                                <i data-lucide="${currentInfo.icon}" class="relative w-20 h-20 text-yellow-400 animate-pulse"></i>
+                                <i data-lucide="${currentInfo.icon}" class="relative w-20 h-20 text-sky-400 animate-pulse"></i>
                             </div>
                             <div class="text-5xl font-black text-white mb-1 tracking-tight">${currentTemp}°C</div>
-                            <div class="text-lg text-yellow-400 font-semibold capitalize mb-4">${currentInfo.desc}</div>
+                            <div class="text-lg text-sky-400 font-semibold capitalize mb-4">${currentInfo.desc}</div>
                             
                             <div class="w-full border-t border-white/10 pt-4 mt-2 grid grid-cols-3 gap-2">
                                 <div class="flex flex-col items-center">
@@ -2034,7 +2319,7 @@
                     <div class="col-span-1 md:col-span-2 p-6 bg-gradient-to-r from-purple-900/40 to-cyan-900/40 rounded-2xl border border-white/10">
                         <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-2">Next Galactic Milestone</h3>
                         <div class="text-lg text-white">
-                            <span class="font-bold text-yellow-400">1 Billion Seconds</span> 
+                            <span class="font-bold text-cyan-400">1 Billion Seconds</span> 
                             will be reached on:
                         </div>
                         <div class="text-xl font-bold text-white mt-1">${billionSecondsDate.toLocaleDateString('en-GB', billionOptions)}</div>
@@ -2101,12 +2386,12 @@
                         </div>
 
                         <a href="${gCalUrl}" target="_blank"
-                            class="flex items-center justify-center gap-2 w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+                            class="glass-btn flex items-center justify-center gap-2 w-full text-white font-bold py-3 rounded-xl">
                             <i data-lucide="calendar-plus" class="w-4 h-4"></i> Add to Google Calendar
                         </a>
                         
                         <button onclick="downloadICS(${nextBirthdayYear})"
-                            class="flex items-center justify-center gap-2 w-full bg-pink-600 text-white font-bold py-3 rounded-xl hover:bg-pink-500 transition-colors">
+                            class="glass-btn flex items-center justify-center gap-2 w-full text-white font-bold py-3 rounded-xl">
                             <i data-lucide="download" class="w-4 h-4"></i> Download .ics File
                         </button>
                     </div>
@@ -2156,7 +2441,7 @@
                         </div>
                         
                         <button onclick="startChristmasFireworks(); playClick();"
-                            class="flex items-center justify-center gap-2 w-full bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-500 transition-colors">
+                            class="glass-btn flex items-center justify-center gap-2 w-full text-white font-bold py-3 rounded-xl">
                             <i data-lucide="sparkles" class="w-4 h-4"></i> Launch Festive Fireworks
                         </button>
                     </div>
