@@ -1051,17 +1051,24 @@
         // On mobile: skip snow particles entirely when not in Christmas mode
         // (they're subtle, use CPU per frame, and aren't visible on small screens)
         const isMobileDevice = window._isMobileDevice; // reuse the already-computed value
-        const maxSnowParticles = isMobileDevice ? 0 : 150;
+        const maxSnowParticles = 0; // Start with 0 snow particles
         for (let i = 0; i < maxSnowParticles; i++) {
             particles.push(new Particle());
         }
 
         function adjustSnowParticleDensity() {
             const isMobile = window._isMobileDevice;
-            // On mobile: no snow outside Christmas. On Christmas mobile: small count for festivity.
-            const targetCount = (typeof isChristmas !== 'undefined' && isChristmas)
-                ? (isMobile ? 30 : 300)
-                : (isMobile ? 0 : 150);
+            const hasSnowWeather = weatherForecastData && 
+                weatherForecastData.current && 
+                weatherMap[weatherForecastData.current.weather_code] && 
+                weatherMap[weatherForecastData.current.weather_code].group === 'snow';
+            
+            const snowActive = (typeof isChristmas !== 'undefined' && isChristmas) || hasSnowWeather;
+            
+            // Only snow if Christmas or active snow weather
+            const targetCount = snowActive
+                ? ((typeof isChristmas !== 'undefined' && isChristmas) ? (isMobile ? 30 : 300) : (isMobile ? 15 : 150))
+                : 0;
             
             while (particles.length < targetCount) {
                 particles.push(new Particle());
@@ -1264,16 +1271,23 @@
         }
 
         let time = 0;
+        let lastCanvasActive = true;
         function animate() {
-            // On mobile: skip canvas work if there's nothing visible to draw.
+            // Skip canvas work if there's nothing visible to draw.
             // Confetti and fireworks may still be triggered by user action, so we
             // only skip when all particle arrays are empty.
-            if (window._isMobileDevice &&
-                particles.length === 0 &&
+            if (particles.length === 0 &&
                 confettiParticles.length === 0 &&
                 fireworkParticles.length === 0) {
+                if (lastCanvasActive) {
+                    ctx.clearRect(0, 0, width, height);
+                    confettiCtx.clearRect(0, 0, width, height);
+                    lastCanvasActive = false;
+                }
                 return;
             }
+
+            lastCanvasActive = true;
 
             // Snow
             ctx.clearRect(0, 0, width, height);
@@ -1286,10 +1300,27 @@
 
             particles.forEach(p => {
                 p.update(wind, speedMultiplier);
-                p.draw();
             });
 
+            // Group snow particles by opacity to batch draw calls
+            const opacityGroups = {};
+            particles.forEach(p => {
+                const roundedOpacity = Math.round(p.opacity * 10) / 10;
+                if (!opacityGroups[roundedOpacity]) {
+                    opacityGroups[roundedOpacity] = [];
+                }
+                opacityGroups[roundedOpacity].push(p);
+            });
 
+            for (const opacity in opacityGroups) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.beginPath();
+                opacityGroups[opacity].forEach(p => {
+                    ctx.moveTo(p.x + p.size, p.y);
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                });
+                ctx.fill();
+            }
 
             // Confetti (only if birthday and active/visible)
             if (isBirthday && (showConfettiActive || confettiParticles.some(p => p.y < height))) {
@@ -1301,7 +1332,6 @@
 
             // Fireworks (Always active if triggered)
             if (fireworkParticles.length > 0) {
-
                 for (let i = fireworkParticles.length - 1; i >= 0; i--) {
                     const p = fireworkParticles[i];
                     p.update();
@@ -1418,6 +1448,9 @@
                 updateWeatherUI(weatherForecastData.current);
                 applyWeatherEffects(weatherForecastData);
                 currentWindSpeed = weatherForecastData.current.wind_speed_10m;
+            }
+            if (typeof adjustSnowParticleDensity !== 'undefined') {
+                adjustSnowParticleDensity();
             }
         }
 
@@ -1865,6 +1898,9 @@
 
                     countdownEl.textContent = `${months}mo ${days}d ${hours}h ${minutes}m ${seconds}s`;
                 }
+            }
+            if (typeof adjustSnowParticleDensity !== 'undefined') {
+                adjustSnowParticleDensity();
             }
         }
         setInterval(updateAgeAndCountdown, 1000); // Update every second now

@@ -134,6 +134,8 @@
         if (document.hidden) { requestAnimationFrame(drawParticles); return; }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        const connectionGroups = {};
+
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
             p.update();
@@ -142,18 +144,40 @@
             // Connect nearby crystals to show molecular grid/lattice
             for (let j = i + 1; j < particles.length; j++) {
                 const q = particles[j];
-                const d = Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2);
-                if (d < CONNECT_DIST) {
-                    ctx.beginPath();
-                    ctx.moveTo(p.x, p.y);
-                    ctx.lineTo(q.x, q.y);
-                    ctx.strokeStyle = cachedAccent;
-                    ctx.globalAlpha = 0.045 * (1 - d / CONNECT_DIST);
-                    ctx.lineWidth = 0.5;
-                    ctx.stroke();
+                const dx = p.x - q.x;
+                const dy = p.y - q.y;
+                // Performance: use squared distance check first to avoid Math.sqrt
+                const distSq = dx * dx + dy * dy;
+                const connectDistSq = CONNECT_DIST * CONNECT_DIST;
+                if (distSq < connectDistSq) {
+                    const d = Math.sqrt(distSq);
+                    const alpha = 0.045 * (1 - d / CONNECT_DIST);
+                    const roundedAlpha = Math.round(alpha * 100) / 100;
+                    if (roundedAlpha > 0) {
+                        if (!connectionGroups[roundedAlpha]) {
+                            connectionGroups[roundedAlpha] = [];
+                        }
+                        connectionGroups[roundedAlpha].push(p.x, p.y, q.x, q.y);
+                    }
                 }
             }
         }
+
+        // Batch draw connection lines
+        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = cachedAccent;
+        for (const alpha in connectionGroups) {
+            ctx.globalAlpha = parseFloat(alpha);
+            ctx.beginPath();
+            const lines = connectionGroups[alpha];
+            for (let i = 0; i < lines.length; i += 4) {
+                ctx.moveTo(lines[i], lines[i+1]);
+                ctx.lineTo(lines[i+2], lines[i+3]);
+            }
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1.0; // Reset
+
         requestAnimationFrame(drawParticles);
     }
     requestAnimationFrame(drawParticles);
