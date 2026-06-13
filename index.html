@@ -169,30 +169,11 @@
             }
         })();
     </script>
-
-    <!-- ═══════════════════════════════════════════════════════════════
- 
-
     <!-- Animated Mesh Gradient Background -->
     <div class="mesh-gradient"></div>
 
     <!-- Interactive Particle Canvas -->
     <canvas id="particle-canvas"></canvas>
-
-    <!-- Loading Screen -->
-    <div id="page-loader" class="fixed inset-0 z-[100] bg-[#070e1a] flex flex-col items-center justify-center">
-        <div class="relative w-16 h-16">
-            <div class="loader-ring"></div>
-            <div
-                class="absolute inset-0 flex items-center justify-center font-bold text-white tech-font text-sm tracking-widest overflow-hidden">
-                <img src="images/kazu%20small.png" class="w-full h-full object-cover rounded-full opacity-90"
-                    alt="Loading Logo">
-            </div>
-        </div>
-        <div class="mt-5 text-cyan-400/40 text-[0.65rem] font-medium tracking-[0.35em] animate-pulse uppercase">Loading
-        </div>
-    </div>
-
     <!-- Background Animations -->
     <canvas id="snow-canvas"></canvas>
     <canvas id="confetti-canvas"></canvas>
@@ -775,15 +756,6 @@
 
         // Local alias for mobile detection (set as window._isMobileDevice in <head>)
 
-        // Ensure loader hides even if something errors
-        const safeLoaderHide = setTimeout(() => {
-            const loader = document.getElementById('page-loader');
-            if (loader && getComputedStyle(loader).opacity !== '0') {
-                console.warn("Forcing loader hide via safety timeout");
-                loader.style.opacity = '0';
-                loader.style.visibility = 'hidden';
-            }
-        }, 5000);
 
         /* --- PAGE LOAD & DYNAMIC ANIMATION (IntersectionObserver) --- */
         /* --- PAGE LOAD & DYNAMIC ANIMATION (IntersectionObserver) --- */
@@ -798,21 +770,12 @@
             ]);
 
             allReadyPromise.then(() => {
-                // Clear safety timeout since we are handling it normally
-                clearTimeout(safeLoaderHide);
-
                 // Force scroll to top on refresh
                 if ('scrollRestoration' in history) {
                     history.scrollRestoration = 'manual';
                 }
                 window.scrollTo(0, 0);
                 if (typeof lenis !== 'undefined' && lenis) lenis.scrollTo(0, { immediate: true });
-
-                const loader = document.getElementById('page-loader');
-
-                // Fade out loader
-                loader.style.opacity = '0';
-                loader.style.visibility = 'hidden';
 
                 // Remove temporary initialization transition override block
                 const initStyles = document.getElementById('init-night-styles');
@@ -825,6 +788,44 @@
                 // Init Icons safely after load
                 if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
+                }
+
+                // Trigger staggered entrance animation (Intersection Observer for scroll-driven entrance)
+                const animatedElements = document.querySelectorAll('.entrance-anim');
+                if ('IntersectionObserver' in window) {
+                    let revealQueue = [];
+                    const observer = new IntersectionObserver((entries, obs) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const el = entry.target;
+                                obs.unobserve(el);
+                                revealQueue.push(el);
+                            }
+                        });
+                        if (revealQueue.length > 0) {
+                            const elementsToAnimate = [...revealQueue];
+                            revealQueue = [];
+                            elementsToAnimate.forEach((el, index) => {
+                                setTimeout(() => {
+                                    el.classList.remove('content-hidden');
+                                    el.classList.add('visible');
+                                }, index * 60); // 60ms stagger for elements entering simultaneously
+                            });
+                        }
+                    }, {
+                        root: null,
+                        rootMargin: '0px 0px -50px 0px', // Trigger slightly before element is fully visible
+                        threshold: 0.05
+                    });
+                    animatedElements.forEach(el => observer.observe(el));
+                } else {
+                    // Fallback for older browsers
+                    animatedElements.forEach((el, index) => {
+                        setTimeout(() => {
+                            el.classList.remove('content-hidden');
+                            el.classList.add('visible');
+                        }, index * 50);
+                    });
                 }
             });
         });

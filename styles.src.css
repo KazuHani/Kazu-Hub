@@ -515,22 +515,27 @@ h1, h2, h3, .tech-font {
     50%      { height: var(--bar-max, 40px); }
 }
 
-/* --- ENTRANCE ANIMATIONS REMOVED --- */
-/* Staggered entrance delays for social grid */
-.anim-delay-1 { transition-delay: 0.05s !important; }
-.anim-delay-2 { transition-delay: 0.10s !important; }
-.anim-delay-3 { transition-delay: 0.15s !important; }
-.anim-delay-4 { transition-delay: 0.20s !important; }
-.anim-delay-5 { transition-delay: 0.25s !important; }
-.anim-delay-6 { transition-delay: 0.30s !important; }
-.anim-delay-7 { transition-delay: 0.35s !important; }
-.anim-delay-8 { transition-delay: 0.40s !important; }
-.anim-delay-9 { transition-delay: 0.45s !important; }
-
-/* --- LOADER --- */
-#page-loader {
-    transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
+/* --- ENTRANCE ANIMATIONS --- */
+.content-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
+
+.entrance-anim {
+    transform: translateY(30px) scale(0.97);
+    filter: blur(8px);
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform, filter;
+}
+
+.entrance-anim.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+}
+
 
 @keyframes loader-ring {
     0%   { transform: rotate(0deg) scale(0.95); }
@@ -1249,6 +1254,16 @@ body.christmas-mode .mesh-gradient {
     .glass-panel:hover,
     .glass-card:hover {
         transform: none !important;
+    }
+    .entrance-anim {
+        transition: none !important;
+        transform: none !important;
+        filter: none !important;
+        opacity: 1 !important;
+    }
+    .content-hidden {
+        opacity: 1 !important;
+        pointer-events: auto !important;
     }
 }
 
