@@ -5,10 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="-Hlu9Ebiaz6Oxr6qYPBHv7lNOQkxNU1hH0Q-CBkdiW4" />
-    
+
     <title>Kazu Hani | Central Personal Hub &amp; Writing Portfolio</title>
-    <meta name="description" content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects including 'The Legend That Bleeds', and custom dashboards.">
-    <meta name="keywords" content="Kazu Hani, noodle derg, portfolio, personal hub, Cardiff, Wales, creative writing, digital status, Korat24">
+    <meta name="description"
+        content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects including 'The Legend That Bleeds', and custom dashboards.">
+    <meta name="keywords"
+        content="Kazu Hani, noodle derg, portfolio, personal hub, Cardiff, Wales, creative writing, digital status, Korat24">
     <meta name="author" content="Kazu Hani">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://kazuhani.github.io/Kazu-Hub/">
@@ -17,15 +19,17 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://kazuhani.github.io/Kazu-Hub/">
     <meta property="og:title" content="Kazu Hani | Central Personal Hub &amp; Writing Portfolio">
-    <meta property="og:description" content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects, and custom dashboards.">
-    <meta property="og:image" content="https://kazuhani.github.io/Kazu-Hub/images/Kazu%20Hani%20Pixelart.gif">
+    <meta property="og:description"
+        content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects, and custom dashboards.">
+    <meta property="og:image" content="https://kazuhani.github.io/Kazu-Hub/images/Noice_x16_drawing.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://kazuhani.github.io/Kazu-Hub/">
     <meta property="twitter:title" content="Kazu Hani | Central Personal Hub &amp; Writing Portfolio">
-    <meta property="twitter:description" content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects, and custom dashboards.">
-    <meta property="twitter:image" content="https://kazuhani.github.io/Kazu-Hub/images/Kazu%20Hani%20Pixelart.gif">
+    <meta property="twitter:description"
+        content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects, and custom dashboards.">
+    <meta property="twitter:image" content="https://kazuhani.github.io/Kazu-Hub/images/Noice_x16_drawing.png">
 
     <!-- JSON-LD Structured Data for AEO / Search Engine indexing -->
     <script type="application/ld+json">
@@ -44,7 +48,7 @@
         "addressCountry": "United Kingdom"
       },
       "url": "https://kazuhani.github.io/Kazu-Hub/",
-      "image": "https://kazuhani.github.io/Kazu-Hub/images/Kazu%20Hani%20Pixelart.gif",
+      "image": "https://kazuhani.github.io/Kazu-Hub/images/Noice_x16_drawing.png",
       "sameAs": [
         "https://x.com/Kazu_Hani",
         "https://www.instagram.com/kazu_hani/",
@@ -73,7 +77,7 @@
     <link rel="icon" type="image/png" href="images/favicon.png">
 
     <!-- Preload LCP Image -->
-    <link rel="preload" href="images/Kazu%20Hani%20Pixelart.gif" as="image" type="image/gif">
+    <link rel="preload" href="images/Noice_x16_drawing.png" as="image" type="image/png">
 
     <!-- Performance Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,14 +87,17 @@
     <script src="js/lucide.min.js" defer></script>
     <!-- Using stable Lenis version -->
     <script src="js/lenis.min.js" defer></script>
-    
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+    <link rel="preload"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link
+            href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet">
     </noscript>
 
     <link rel="stylesheet" href="styles.css">
-    <script src="tilt-effect.js" defer></script>
     <script src="features.js" defer></script>
 
     <!-- Resource Manager & Audio Preloader -->
@@ -206,7 +213,7 @@
 
 <body class="min-h-screen flex flex-col relative">
     <script>
-        (function() {
+        (function () {
             let isNight = false;
             try {
                 const cachedSunrise = localStorage.getItem('kazu_sunrise');
@@ -218,11 +225,19 @@
                     const buffer = 20 * 60 * 1000;
                     isNight = now > (sunset + buffer) || now < (sunrise - buffer);
                 } else {
-                    const ukTimeStr = new Date().toLocaleString("en-US", {timeZone: "Europe/London"});
+                    const ukTimeStr = new Date().toLocaleString("en-US", { timeZone: "Europe/London" });
                     const ukHour = new Date(ukTimeStr).getHours();
                     isNight = ukHour >= 20 || ukHour < 6;
                 }
-            } catch(e) {}
+            } catch (e) { }
+            try {
+                const theme = localStorage.getItem('kazu_dashboard_theme') || 'black';
+                if (theme === 'white') {
+                    document.body.classList.add('dashboard-theme-white');
+                } else {
+                    document.body.classList.add('dashboard-theme-black');
+                }
+            } catch (e) { }
             if (isNight) {
                 document.body.classList.add('night-mode');
                 const style = document.createElement('style');
@@ -251,23 +266,23 @@
         <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none">
             <defs>
                 <radialGradient id="moonGrad" cx="40%" cy="35%" r="65%">
-                    <stop offset="0%" stop-color="#ffffff"/>
-                    <stop offset="55%" stop-color="#e2ecff"/>
-                    <stop offset="100%" stop-color="#bacde5"/>
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="55%" stop-color="#e2ecff" />
+                    <stop offset="100%" stop-color="#bacde5" />
                 </radialGradient>
                 <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="rgba(224, 235, 255, 0.45)"/>
-                    <stop offset="100%" stop-color="rgba(160,190,255,0)"/>
+                    <stop offset="0%" stop-color="rgba(224, 235, 255, 0.45)" />
+                    <stop offset="100%" stop-color="rgba(160,190,255,0)" />
                 </radialGradient>
             </defs>
             <!-- Outer glow halo -->
-            <circle cx="32" cy="32" r="30" fill="url(#moonGlow)"/>
+            <circle cx="32" cy="32" r="30" fill="url(#moonGlow)" />
             <!-- Crescent shape: full circle minus offset circle for the shadow -->
-            <path d="M32 6 A26 26 0 1 1 32 58 A18 18 0 1 0 32 6 Z" fill="url(#moonGrad)"/>
+            <path d="M32 6 A26 26 0 1 1 32 58 A18 18 0 1 0 32 6 Z" fill="url(#moonGrad)" />
             <!-- Subtle crater details -->
-            <circle cx="24" cy="28" r="3" fill="rgba(160,180,230,0.35)"/>
-            <circle cx="36" cy="38" r="2" fill="rgba(160,180,230,0.28)"/>
-            <circle cx="20" cy="40" r="1.5" fill="rgba(160,180,230,0.22)"/>
+            <circle cx="24" cy="28" r="3" fill="rgba(160,180,230,0.35)" />
+            <circle cx="36" cy="38" r="2" fill="rgba(160,180,230,0.28)" />
+            <circle cx="20" cy="40" r="1.5" fill="rgba(160,180,230,0.22)" />
         </svg>
     </div>
     <div id="night-stars-container" aria-hidden="true"></div>
@@ -277,13 +292,19 @@
 
         <!-- GRAND DASHBOARD WRAPPER -->
         <div class="dashboard-wrapper">
+            <!-- Dashboard Settings Button -->
+            <button id="dashboard-settings-btn" onclick="openModal('settings'); playClick();"
+                class="absolute top-4 right-4 z-50 p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                aria-label="Dashboard Settings">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
 
             <!-- BENTO GRID -->
             <div class="bento-grid">
 
                 <!-- Profile & Hero Section — Full Width -->
                 <section class="bento-full text-center relative content-hidden entrance-anim py-6">
-                    <div class="inline-block relative group animate-float-avatar">
+                    <div class="inline-block relative group">
 
                         <!-- Birthday Hat -->
                         <div id="birthday-hat" class="hidden">
@@ -304,7 +325,9 @@
                                 <path d="M47,32 L51,24 L56,26 L50,35 Z" fill="url(#stripeGrad)" />
                                 <path d="M49,55 L58,42 L65,47 L53,61 Z" fill="url(#stripeGrad)" />
                                 <path d="M60,70 L70,55 L75,59 L63,73 Z" fill="url(#stripeGrad)" />
-                                <path d="M18,74 C18,70 25,68 50,68 C75,68 82,70 82,74 C82,78 75,80 50,80 C25,80 18,78 18,74 Z" fill="#e0f7fa" />
+                                <path
+                                    d="M18,74 C18,70 25,68 50,68 C75,68 82,70 82,74 C82,78 75,80 50,80 C25,80 18,78 18,74 Z"
+                                    fill="#e0f7fa" />
                                 <circle cx="20" cy="74" r="5" fill="#e0f7fa" />
                                 <circle cx="30" cy="74" r="5" fill="#e0f7fa" />
                                 <circle cx="40" cy="74" r="5" fill="#e0f7fa" />
@@ -330,13 +353,17 @@
                                         <stop offset="100%" stop-color="#e0e0e0" />
                                     </linearGradient>
                                     <filter id="fluffShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+                                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.15" />
                                     </filter>
                                 </defs>
                                 <!-- Hat Body (Red) -->
-                                <path d="M 25,65 C 28,30 50,15 75,25 C 80,27 82,32 78,35 C 72,40 68,48 70,55 C 71,60 65,65 60,65 Z" fill="url(#santaRed)" />
+                                <path
+                                    d="M 25,65 C 28,30 50,15 75,25 C 80,27 82,32 78,35 C 72,40 68,48 70,55 C 71,60 65,65 60,65 Z"
+                                    fill="url(#santaRed)" />
                                 <!-- White Fluffy Trim -->
-                                <path d="M 20,60 C 20,55 30,53 50,53 C 70,53 80,55 80,60 C 80,65 70,68 50,68 C 30,68 20,65 20,60 Z" fill="url(#santaWhite)" filter="url(#fluffShadow)" />
+                                <path
+                                    d="M 20,60 C 20,55 30,53 50,53 C 70,53 80,55 80,60 C 80,65 70,68 50,68 C 30,68 20,65 20,60 Z"
+                                    fill="url(#santaWhite)" filter="url(#fluffShadow)" />
                                 <circle cx="23" cy="60" r="6" fill="url(#santaWhite)" />
                                 <circle cx="32" cy="58" r="6" fill="url(#santaWhite)" />
                                 <circle cx="41" cy="57" r="6" fill="url(#santaWhite)" />
@@ -350,18 +377,36 @@
                             </svg>
                         </div>
 
-                        <div id="pride-ring-wrapper" class="relative mx-auto" style="width:176px;height:176px;padding:4px;">
-                            <div id="pride-ring" class="absolute rounded-full opacity-0 transition-opacity duration-[3000ms]"></div>
-                            <div class="relative w-40 h-40 mx-auto cursor-pointer active:scale-95 transition-transform" style="top:4px;">
-                                <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile" width="160" height="160"
+                        <div id="pride-ring-wrapper" class="relative mx-auto"
+                            style="width:176px;height:176px;padding:4px;">
+                            <div id="pride-ring"
+                                class="absolute rounded-full opacity-0 transition-opacity duration-[3000ms]"></div>
+                            <div class="relative w-40 h-40 mx-auto cursor-pointer active:scale-95 transition-transform"
+                                style="top:4px;">
+                                <img id="profile-pic" src="images/Noice_x16_drawing.png" alt="Kazu Hani Profile"
+                                    width="160" height="160"
                                     class="absolute inset-0 w-full h-full rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow transition-opacity duration-[3000ms]"
                                     loading="eager" onclick="playPop()"
                                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
-                                <img id="profile-pic-sleep" src="images/Kazusleep.png" alt="Kazu Hani Profile Sleeping" width="160" height="160"
+                                <img id="profile-pic-sleep" src="images/Kazusleep.png" alt="Kazu Hani Profile Sleeping"
+                                    width="160" height="160"
                                     class="absolute inset-0 w-full h-full rounded-full border-4 border-slate-900 shadow-2xl object-contain bg-slate-950 p-2 profile-glow transition-opacity duration-[3000ms] opacity-0 pointer-events-none"
                                     loading="eager" onclick="playPop()"
                                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Sundown Popup -->
+                    <div id="sundown-popup"
+                        class="flex justify-center opacity-0 max-h-0 overflow-hidden pointer-events-none transition-all duration-1000 ease-out mt-0 mb-0">
+                        <div class="flex items-center gap-2">
+                            <span id="sundown-icon-container" class="flex items-center">
+                                <i data-lucide="sunset" class="w-3.5 h-3.5 text-yellow-400"></i>
+                            </span>
+                            <span id="sundown-text"
+                                class="text-xs font-semibold tracking-wider text-slate-300 uppercase">Calculating UK
+                                sundown...</span>
                         </div>
                     </div>
 
@@ -380,38 +425,35 @@
                     </div>
 
                     <!-- Wrapper for Float Animation -->
-                    <div class="mt-6 animate-float relative z-10 flex justify-center">
+                    <div class="mt-6 relative z-10 flex justify-center">
                         <!-- Wrapped in text-backdrop -->
                         <div class="text-backdrop flex-col !gap-2 !items-center !py-4 !px-8">
-                            <h2 id="greeting-text" class="text-sm md:text-base text-cyan-400/80 font-medium tracking-widest uppercase mb-[-10px] mt-1 transition-opacity duration-500 ease-in-out">Hey there</h2>
+                            <h2 id="greeting-text"
+                                class="text-sm md:text-base text-slate-400 font-medium tracking-widest uppercase mb-[-10px] mt-1 transition-opacity duration-500 ease-in-out">
+                                Hey there</h2>
                             <h1 id="kazu-title"
-                                class="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-400 pb-2 transition-transform duration-100 ease-out will-change-transform inline-block title-shimmer">
+                                class="text-5xl md:text-7xl font-bold text-white pb-2 transition-transform duration-100 ease-out will-change-transform inline-block">
                                 KAZU HANI
                             </h1>
-                            <p class="text-xl text-cyan-300/80 tracking-[0.2em] uppercase">noodle derg</p>
                         </div>
                     </div>
                 </section>
 
                 <!-- Status Dashboard — Individual Bento Items -->
-                <div onclick="openModal('time')" tabindex="0" role="button" aria-haspopup="dialog" aria-label="United Kingdom Time"
+                <div onclick="openModal('time')" tabindex="0" role="button" aria-haspopup="dialog"
+                    aria-label="United Kingdom Time"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
-                    <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
-                        <i data-lucide="clock" class="w-8 h-8 text-cyan-400"></i>
-                    </div>
                     <h3 class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">United Kingdom Time</h3>
                     <div id="uk-time" class="text-2xl font-bold text-white tech-font tabular-nums">00:00:00 PM</div>
                     <div id="uk-date" class="text-cyan-400/80 text-sm md:text-xs mt-1">Loading Date...</div>
                 </div>
 
                 <!-- Weather -->
-                <div onclick="openModal('weather')" id="weather-card" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Current Weather"
+                <div onclick="openModal('weather')" id="weather-card" tabindex="0" role="button" aria-haspopup="dialog"
+                    aria-label="Current Weather"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <div id="weather-rain" class="weather-rain-container"></div>
                     <div id="weather-snow" class="weather-snow-container"></div>
-                    <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity z-10">
-                        <i id="weather-icon-bg" data-lucide="cloud-sun" class="w-8 h-8 text-sky-400"></i>
-                    </div>
                     <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-1 relative z-10">Weather</h3>
                     <div class="flex flex-col items-center justify-center gap-1 relative z-10">
                         <div class="flex items-center gap-2">
@@ -426,39 +468,103 @@
                 </div>
 
                 <!-- Age Calculator -->
-                <div onclick="openModal('age')" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Current Age Statistics"
+                <div onclick="openModal('age')" tabindex="0" role="button" aria-haspopup="dialog"
+                    aria-label="Current Age Statistics"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
-                    <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
-                        <i data-lucide="user" class="w-8 h-8 text-purple-400"></i>
-                    </div>
                     <h3 class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">Current Age</h3>
                     <div id="current-age" class="text-2xl font-bold text-white tech-font tabular-nums">--</div>
                     <div class="text-purple-400/80 text-sm md:text-xs mt-1">Years Old</div>
                 </div>
 
                 <!-- Birthday Countdown -->
-                <div onclick="openModal('birthday')" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Birthday Countdown"
+                <div onclick="openModal('birthday')" tabindex="0" role="button" aria-haspopup="dialog"
+                    aria-label="Birthday Countdown"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
-                    <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
-                        <i id="birthday-icon-cake" data-lucide="cake" class="w-8 h-8 text-pink-400"></i>
-                        <i id="birthday-icon-christmas" data-lucide="gift" class="w-8 h-8 text-red-400 hidden"></i>
-                    </div>
                     <h3 id="birthday-label" class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">Next
                         Birthday
                         (Nov
                         9)</h3>
-                    <div id="countdown" class="text-xl md:text-2xl font-bold text-white tech-font tabular-nums">--mo --d --h
+                    <div id="countdown" class="text-xl md:text-2xl font-bold text-white tech-font tabular-nums">--mo --d
+                        --h
                         --m
                         --s</div>
                     <div id="until-birthday-label" class="text-pink-400/80 text-sm md:text-xs mt-1">Until Birthday</div>
                 </div>
-                           <!-- Discord Status + Steam Activity — Side by Side -->
+
+                <!-- Social Profiles — Bento Full -->
+                <section id="profile-links" class="bento-full glass-panel p-5 rounded-2xl content-hidden entrance-anim">
+                    <div class="section-header">
+                        <i data-lucide="network"></i>
+                        <h2>Social Profiles</h2>
+                    </div>
+                    <div class="flex flex-wrap gap-3 md:gap-2 justify-center">
+                        <a href="https://x.com/Kazu_Hani" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/twitter.svg" alt="Twitter" width="40" height="40" loading="lazy"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Twitter</span>
+                        </a>
+
+                        <a href="https://www.instagram.com/kazu_hani/" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/insta.svg" alt="Instagram" width="40" height="40" loading="lazy"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Instagram</span>
+                        </a>
+
+                        <a href="https://www.youtube.com/@Kazu_Hani" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/youtube.png" alt="YouTube" width="40" height="40" loading="lazy"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">YouTube</span>
+                        </a>
+
+                        <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/steam.png" alt="Steam" width="40" height="40" loading="lazy"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Steam</span>
+                        </a>
+
+                        <a href="https://www.reddit.com/user/Korat24/" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/reddit.png" alt="Reddit" width="40" height="40" loading="lazy"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Reddit</span>
+                        </a>
+
+                        <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/mal.png" alt="MyAnimeList" width="40" height="40" loading="lazy"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">MyAnimeList</span>
+                        </a>
+
+                        <a href="https://letterboxd.com/KazuHani/" target="_blank"
+                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
+                            onclick="playClick()">
+                            <img src="images/letterboxd.svg" alt="Letterboxd" width="40" height="40" loading="lazy"
+                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
+                            <span class="text-sm md:text-sm font-medium">Letterboxd</span>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Discord Status + Steam Activity — Side by Side -->
                 <section id="discord-status" title="Click to copy Kazu's user ID?" onclick="copyDiscord(); playClick();"
                     tabindex="0" role="button" aria-label="Kazu's Discord Status. Click to copy user ID."
                     class="discord-state-offline bento-wide glass-panel p-6 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center cursor-pointer hover:bg-white/5 transition-all duration-300 group min-h-[160px]">
                     <!-- Decorative glow -->
-                    <div id="discord-glow" class="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl transition-all duration-500"></div>
-                    
+                    <div id="discord-glow"
+                        class="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl transition-all duration-500">
+                    </div>
+
                     <!-- Copy ID Badge (CRO) -->
                     <span class="discord-copy-badge"><i data-lucide="copy" class="w-3 h-3"></i> Copy ID</span>
 
@@ -466,50 +572,67 @@
                         <!-- Left side: User profile & status -->
                         <div class="flex items-center gap-4 w-full">
                             <div class="relative flex-shrink-0" id="discord-img-container">
-                                <img id="discord-avatar" src="images/Kazuwhite.jpg" width="64" height="64" loading="lazy" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md">
+                                <img id="discord-avatar" src="images/Kazuwhite.jpg" width="64" height="64"
+                                    loading="lazy"
+                                    class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md">
                                 <span id="discord-status-dot" class="status-dot offline w-4 h-4 border-[3px]"
                                     style="position:absolute;bottom:-2px;right:-2px;z-index:10;"></span>
                             </div>
                             <div class="flex-grow overflow-hidden min-w-0">
-                                <h3 class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase truncate flex items-center gap-1.5 mb-1">
-                                    <svg class="w-3.5 h-3.5 text-indigo-400 stroke-current fill-current" viewBox="0 0 24 24">
-                                        <path d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399Z" />
+                                <h3
+                                    class="text-xs md:text-sm font-bold text-indigo-400 tracking-widest uppercase truncate flex items-center gap-1.5 mb-1">
+                                    <svg class="w-3.5 h-3.5 text-indigo-400 stroke-current fill-current"
+                                        viewBox="0 0 24 24">
+                                        <path
+                                            d="M18.8943 4.34399C17.5183 3.71467 16.057 3.256 14.5317 3C14.3396 3.33067 14.1263 3.77866 13.977 4.13067C12.3546 3.89599 10.7439 3.89599 9.14391 4.13067C8.99457 3.77866 8.77056 3.33067 8.58922 3C7.05325 3.256 5.59191 3.71467 4.22552 4.34399C1.46286 8.41865 0.716188 12.3973 1.08952 16.3226C2.92418 17.6559 4.69486 18.4666 6.4346 19C6.86126 18.424 7.24527 17.8053 7.57594 17.1546C6.9466 16.92 6.34927 16.632 5.77327 16.2906C5.9226 16.184 6.07194 16.0667 6.21061 15.9493C9.68793 17.5387 13.4543 17.5387 16.889 15.9493C17.0383 16.0667 17.177 16.184 17.3263 16.2906C16.7503 16.632 16.153 16.92 15.5236 17.1546C15.8543 17.8053 16.2383 18.424 16.665 19C18.4036 18.4666 20.185 17.6559 22.01 16.3226C22.4687 11.7787 21.2836 7.83202 18.8943 4.34399Z" />
                                     </svg>
                                     Discord
                                 </h3>
                                 <div class="flex items-baseline gap-1.5 mt-0.5">
-                                    <span class="text-lg md:text-xl font-extrabold text-white leading-tight">Kazu Hani</span>
+                                    <span class="text-lg md:text-xl font-extrabold text-white leading-tight">Kazu
+                                        Hani</span>
                                     <span class="text-xs text-gray-400 font-normal">@kazu_hani</span>
                                 </div>
                                 <div class="flex items-center gap-1.5 mt-1">
-                                    <div id="discord-status-text" class="text-xs md:text-sm font-semibold text-gray-300">Offline</div>
+                                    <div id="discord-status-text"
+                                        class="text-xs md:text-sm font-semibold text-gray-300">Offline</div>
                                     <span class="text-gray-500 text-[10px]">•</span>
-                                    <div id="discord-activity" class="text-xs text-gray-400 truncate max-w-[200px]">No activity</div>
+                                    <div id="discord-activity" class="text-xs text-gray-400 truncate max-w-[200px]">No
+                                        activity</div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Right side: Dynamic details -->
-                        <div class="flex flex-col gap-3 w-full border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 min-h-[90px] justify-center">
+                        <div
+                            class="flex flex-col gap-3 w-full border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 min-h-[90px] justify-center">
                             <!-- Spotify / YouTube Music Section -->
                             <div id="discord-music-container" class="hidden flex flex-col gap-2 w-full">
                                 <div class="flex items-center gap-3">
                                     <div class="relative w-11 h-11 flex-shrink-0">
-                                        <img id="music-album-art" src="" width="44" height="44" loading="lazy" class="w-full h-full rounded-lg object-cover border border-white/10 shadow-md">
-                                        <div id="music-app-icon" class="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black/60 flex items-center justify-center p-0.5">
-                                            <div id="music-platform-logo" class="w-full h-full flex items-center justify-center"></div>
+                                        <img id="music-album-art" src="" width="44" height="44" loading="lazy"
+                                            class="w-full h-full rounded-lg object-cover border border-white/10 shadow-md">
+                                        <div id="music-app-icon"
+                                            class="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black/60 flex items-center justify-center p-0.5">
+                                            <div id="music-platform-logo"
+                                                class="w-full h-full flex items-center justify-center"></div>
                                         </div>
                                     </div>
                                     <div class="flex-grow overflow-hidden min-w-0">
-                                        <div id="music-track-title" class="text-xs md:text-sm font-semibold text-white truncate">Track Title</div>
-                                        <div id="music-track-artist" class="text-[10px] md:text-xs text-gray-400 truncate">Artist Name</div>
+                                        <div id="music-track-title"
+                                            class="text-xs md:text-sm font-semibold text-white truncate">Track Title
+                                        </div>
+                                        <div id="music-track-artist"
+                                            class="text-[10px] md:text-xs text-gray-400 truncate">Artist Name</div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Live Progress Bar -->
                                 <div class="w-full flex flex-col gap-1">
                                     <div class="relative w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                                        <div id="music-progress-bar" class="absolute top-0 left-0 h-full bg-emerald-500 rounded-full transition-all duration-300 ease-out" style="width: 0%;"></div>
+                                        <div id="music-progress-bar"
+                                            class="absolute top-0 left-0 h-full bg-emerald-500 rounded-full transition-all duration-300 ease-out"
+                                            style="width: 0%;"></div>
                                     </div>
                                     <div class="flex justify-between text-[10px] text-gray-500 tabular-nums">
                                         <span id="music-time-elapsed">0:00</span>
@@ -519,7 +642,8 @@
                             </div>
 
                             <!-- Voice Channel Section -->
-                            <div id="discord-voice-container" class="hidden flex items-center gap-2.5 text-xs text-gray-300 w-full">
+                            <div id="discord-voice-container"
+                                class="hidden flex items-center gap-2.5 text-xs text-gray-300 w-full">
                                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
                                 <div class="flex items-center gap-1.5 flex-grow min-w-0">
                                     <i data-lucide="volume-2" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
@@ -532,9 +656,12 @@
                             </div>
 
                             <!-- Idle Status Placeholder -->
-                            <div id="discord-idle-placeholder" class="text-xs md:text-sm text-gray-500/80 italic flex items-center gap-2">
+                            <div id="discord-idle-placeholder"
+                                class="text-xs md:text-sm text-gray-500/80 italic flex items-center gap-2">
                                 <svg class="w-3.5 h-3.5 text-gray-600 animate-pulse fill-current" viewBox="0 0 24 24">
-                                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <path
+                                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                                 </svg>
                                 Quiet on music & voice
                             </div>
@@ -545,9 +672,12 @@
                 <section id="steam-activity"
                     class="bento-wide glass-panel p-5 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center">
                     <!-- Decorative glow -->
-                    <div id="steam-glow" class="absolute -top-8 -left-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl transition-all duration-500"></div>
+                    <div id="steam-glow"
+                        class="absolute -top-8 -left-8 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl transition-all duration-500">
+                    </div>
                     <div class="relative z-10 w-full flex flex-col">
-                        <h3 class="text-xs md:text-sm font-bold text-blue-400 tracking-widest uppercase mb-3 text-left">Steam</h3>
+                        <h3 class="text-xs md:text-sm font-bold text-blue-400 tracking-widest uppercase mb-3 text-left">
+                            Steam</h3>
                         <div id="steam-widget" class="w-full">
                             <!-- Loading / Fallback structure -->
                             <div class="flex items-center gap-3 text-left">
@@ -625,8 +755,8 @@
                         <div class="flex items-center gap-4">
                             <div
                                 class="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white/10 shadow-lg flex-shrink-0">
-                                <img src="images/kazu%20small.png" alt="Kazu Icon" width="64" height="64" class="w-full h-full object-cover"
-                                    loading="lazy">
+                                <img src="images/kazu%20small.png" alt="Kazu Icon" width="64" height="64"
+                                    class="w-full h-full object-cover" loading="lazy">
                             </div>
                             <div>
                                 <h2 class="text-xl md:text-2xl font-bold text-white tech-font">Meet Kazu</h2>
@@ -642,72 +772,6 @@
                         </button>
                     </div>
                 </section>
-
-                <!-- Social Profiles — Bento Full -->
-                <section id="profile-links" class="bento-full glass-panel p-5 rounded-2xl content-hidden entrance-anim">
-                    <div class="section-header">
-                        <i data-lucide="network"></i>
-                        <h2>Social Profiles</h2>
-                    </div>
-                    <div class="flex flex-wrap gap-3 md:gap-2 justify-center">
-                        <a href="https://x.com/Kazu_Hani" target="_blank"
-                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
-                            onclick="playClick()">
-                            <img src="images/twitter.svg" alt="Twitter" width="40" height="40" loading="lazy"
-                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
-                            <span class="text-sm md:text-sm font-medium">Twitter</span>
-                        </a>
-
-                        <a href="https://www.instagram.com/kazu_hani/" target="_blank"
-                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
-                            onclick="playClick()">
-                            <img src="images/insta.svg" alt="Instagram" width="40" height="40" loading="lazy"
-                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
-                            <span class="text-sm md:text-sm font-medium">Instagram</span>
-                        </a>
-
-                        <a href="https://www.youtube.com/@Kazu_Hani" target="_blank"
-                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
-                            onclick="playClick()">
-                            <img src="images/youtube.png" alt="YouTube" width="40" height="40" loading="lazy"
-                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
-                            <span class="text-sm md:text-sm font-medium">YouTube</span>
-                        </a>
-
-                        <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank"
-                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
-                            onclick="playClick()">
-                            <img src="images/steam.png" alt="Steam" width="40" height="40" loading="lazy"
-                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
-                            <span class="text-sm md:text-sm font-medium">Steam</span>
-                        </a>
-
-                        <a href="https://www.reddit.com/user/Korat24/" target="_blank"
-                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
-                            onclick="playClick()">
-                            <img src="images/reddit.png" alt="Reddit" width="40" height="40" loading="lazy"
-                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
-                            <span class="text-sm md:text-sm font-medium">Reddit</span>
-                        </a>
-
-                        <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank"
-                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
-                            onclick="playClick()">
-                            <img src="images/mal.png" alt="MyAnimeList" width="40" height="40" loading="lazy"
-                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
-                            <span class="text-sm md:text-sm font-medium">MyAnimeList</span>
-                        </a>
-
-                        <a href="https://letterboxd.com/KazuHani/" target="_blank"
-                            class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
-                            onclick="playClick()">
-                            <img src="images/letterboxd.svg" alt="Letterboxd" width="40" height="40" loading="lazy"
-                                class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
-                            <span class="text-sm md:text-sm font-medium">Letterboxd</span>
-                        </a>
-                    </div>
-                </section>
-
 
 
                 <!-- Stories — Bento Full -->
@@ -771,12 +835,14 @@
     </div>
 
     <!-- PLAYLIST SIDEBAR -->
-    <div id="playlist-sidebar" class="fixed top-0 right-0 h-full w-[450px] max-w-full z-[1000] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex flex-col">
+    <div id="playlist-sidebar"
+        class="fixed top-0 right-0 h-full w-[450px] max-w-full z-[1000] translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex flex-col">
         <!-- Sidebar Backdrop Area (does not intercept pointer clicks outside sidebar) -->
         <div class="absolute inset-0 bg-transparent pointer-events-none"></div>
-        
+
         <!-- Sidebar Content -->
-        <div class="relative w-full h-full bg-[#0a1526]/95 backdrop-blur-[24px] border-l border-white/10 flex flex-col shadow-[-10px_0_40px_rgba(0,0,0,0.5)]">
+        <div
+            class="relative w-full h-full bg-[#0a1526]/95 backdrop-blur-[24px] border-l border-white/10 flex flex-col shadow-[-10px_0_40px_rgba(0,0,0,0.5)]">
             <!-- Sidebar Header -->
             <div class="p-4 border-b border-white/10 flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -784,30 +850,27 @@
                     <h3 class="text-lg font-bold text-white tracking-wide">Songs that SLAP</h3>
                 </div>
                 <div class="flex items-center gap-1">
-                    <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" title="Open in YouTube Music" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-cyan-400 transition-colors flex items-center justify-center">
+                    <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank"
+                        title="Open in YouTube Music"
+                        class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-cyan-400 transition-colors flex items-center justify-center">
                         <i data-lucide="external-link" class="w-5 h-5"></i>
                     </a>
-                    <button onclick="closePlaylistSidebar()" aria-label="Close playlist sidebar" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+                    <button onclick="closePlaylistSidebar()" aria-label="Close playlist sidebar"
+                        class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
             </div>
-            
+
             <!-- Sidebar Body (Embedded playlist) -->
             <div class="flex-grow p-4 overflow-hidden relative">
                 <!-- Loading Spinner behind iframe -->
                 <div class="absolute inset-0 flex items-center justify-center -z-10">
                     <div class="loader-ring"></div>
                 </div>
-                <iframe 
-                    id="playlist-iframe"
-                    width="100%" 
-                    height="100%" 
-                    src="" 
-                    frameborder="0" 
+                <iframe id="playlist-iframe" width="100%" height="100%" src="" frameborder="0"
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    referrerpolicy="strict-origin-when-cross-origin"
-                    title="YouTube Music Playlist"
+                    referrerpolicy="strict-origin-when-cross-origin" title="YouTube Music Playlist"
                     class="rounded-xl border border-white/5 bg-[#030812]">
                 </iframe>
             </div>
@@ -843,6 +906,7 @@
             ]);
 
             allReadyPromise.then(() => {
+                if (window.adaptAllContrast) window.adaptAllContrast();
                 // Force scroll to top on refresh
                 if ('scrollRestoration' in history) {
                     history.scrollRestoration = 'manual';
@@ -900,6 +964,18 @@
                         }, index * 50);
                     });
                 }
+
+                // Fade in UK sundown popup after a 3-second delay
+                setTimeout(() => {
+                    if (window.updateSundownPopup) {
+                        window.updateSundownPopup();
+                    }
+                    const popup = document.getElementById('sundown-popup');
+                    if (popup) {
+                        popup.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none', 'mt-0', 'mb-0');
+                        popup.classList.add('opacity-100', 'max-h-12', 'pointer-events-auto', 'mt-5', 'mb-1');
+                    }
+                }, 3000);
             });
         });
 
@@ -921,6 +997,36 @@
                 }
             }
         });
+
+        // Performance optimization: Pause animations and reduce rendering load when panels are off-screen
+        if ('IntersectionObserver' in window) {
+            const performanceObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const el = entry.target;
+                    if (entry.isIntersecting) {
+                        el.classList.remove('off-screen');
+                        if (el.id === 'weather-card') {
+                            const rain = document.getElementById('weather-rain');
+                            const snow = document.getElementById('weather-snow');
+                            if (rain) rain.classList.remove('paused');
+                            if (snow) snow.classList.remove('paused');
+                        }
+                    } else {
+                        el.classList.add('off-screen');
+                        if (el.id === 'weather-card') {
+                            const rain = document.getElementById('weather-rain');
+                            const snow = document.getElementById('weather-snow');
+                            if (rain) rain.classList.add('paused');
+                            if (snow) snow.classList.add('paused');
+                        }
+                    }
+                });
+            }, { root: null, threshold: 0, rootMargin: '100px' });
+
+            document.querySelectorAll('.glass-panel, .glass-card').forEach(el => {
+                performanceObserver.observe(el);
+            });
+        }
 
         /* --- ACCESSIBILITY KEYBOARD LISTENERS --- */
         // Trigger click event on Space or Enter for custom bento buttons
@@ -971,20 +1077,18 @@
             }
         }, { passive: true });
 
-        /* --- SMOOTH SCROLLING (Lighter Feel) --- */
+        /* --- SMOOTH SCROLLING (Heavier Feel) --- */
         // On mobile: skip Lenis entirely — native scroll is already smooth
         // and Lenis adds a continuous RAF loop overhead that harms mobile perf.
         let lenis;
         if (typeof Lenis !== 'undefined' && !window._isMobileDevice) {
             lenis = new Lenis({
-                duration: 1.2, // Lighter duration (closer to default)
-                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Exponential easing
+                lerp: 0.0001, // Lower value makes the scroll feel much heavier and smoother
+                wheelMultiplier: 0.005, // Slightly damps the speed to feel heavier
                 direction: 'vertical',
                 gestureDirection: 'vertical',
                 smooth: true,
-                mouseMultiplier: 1.0, // Standard multiplier for natural feel
                 smoothTouch: false, // Use native touch scrolling on mobile for better UX
-                touchMultiplier: 2,
             });
         }
 
@@ -1053,7 +1157,7 @@
             adjustSnowParticleDensity();
             refreshWeatherUI();
             updateSimulationFloatBtn();
-            
+
             // Keep modal buttons in sync if open
             const modalOpen = document.getElementById('modal-overlay').classList.contains('active');
             if (modalOpen) {
@@ -1077,7 +1181,7 @@
             adjustSnowParticleDensity();
             refreshWeatherUI();
             updateSimulationFloatBtn();
-            
+
             // Keep modal buttons in sync if open
             const modalOpen = document.getElementById('modal-overlay').classList.contains('active');
             if (modalOpen) {
@@ -1158,18 +1262,18 @@
 
         function adjustSnowParticleDensity() {
             const isMobile = window._isMobileDevice;
-            const hasSnowWeather = weatherForecastData && 
-                weatherForecastData.current && 
-                weatherMap[weatherForecastData.current.weather_code] && 
+            const hasSnowWeather = weatherForecastData &&
+                weatherForecastData.current &&
+                weatherMap[weatherForecastData.current.weather_code] &&
                 weatherMap[weatherForecastData.current.weather_code].group === 'snow';
-            
+
             const snowActive = (typeof isChristmas !== 'undefined' && isChristmas) || hasSnowWeather;
-            
+
             // Only snow if Christmas or active snow weather
             const targetCount = snowActive
                 ? ((typeof isChristmas !== 'undefined' && isChristmas) ? (isMobile ? 30 : 300) : (isMobile ? 15 : 150))
                 : 0;
-            
+
             while (particles.length < targetCount) {
                 particles.push(new Particle());
             }
@@ -1192,11 +1296,11 @@
                 this.gravity = 0.12;
                 this.alpha = 1;
                 this.decay = Math.random() * 0.025 + 0.012;
-                
+
                 this.size = Math.random() * 5 + 1.5;
                 this.rotation = Math.random() * Math.PI * 2;
                 this.rotationSpeed = (Math.random() - 0.5) * 0.25;
-                
+
                 this.isChristmas = typeof isChristmas !== 'undefined' && isChristmas;
                 if (this.isChristmas) {
                     const colors = [
@@ -1234,7 +1338,7 @@
                 confettiCtx.globalAlpha = Math.max(0, this.alpha);
                 confettiCtx.translate(this.x, this.y);
                 confettiCtx.rotate(this.rotation);
-                
+
                 if (this.isChristmas) {
                     confettiCtx.fillStyle = this.color;
                     confettiCtx.shadowColor = this.color;
@@ -1276,7 +1380,7 @@
                         confettiCtx.lineTo(this.points[i].x, this.points[i].y);
                     }
                     confettiCtx.closePath();
-                    
+
                     confettiCtx.fillStyle = `rgba(180, 245, 255, ${this.alpha})`;
                     confettiCtx.strokeStyle = `rgba(255, 255, 255, ${this.alpha * 0.8})`;
                     confettiCtx.lineWidth = 0.5;
@@ -1287,7 +1391,7 @@
             }
         }
 
-        window.spawnIceShatter = function(x, y, count = 35) {
+        window.spawnIceShatter = function (x, y, count = 35) {
             if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
             const cappedCount = isMobileDevice ? Math.min(15, count) : count;
             for (let i = 0; i < cappedCount; i++) {
@@ -1474,14 +1578,14 @@
 
             if (greetingElement) {
                 const localHour = now.getHours();
-                
+
                 let greeting = "Good Evening";
                 if (localHour >= 5 && localHour < 12) {
                     greeting = "Good Morning";
                 } else if (localHour >= 12 && localHour < 18) {
                     greeting = "Good Afternoon";
                 }
-                
+
                 if (greetingElement.textContent !== greeting) {
                     greetingElement.textContent = greeting;
                 }
@@ -1668,7 +1772,7 @@
         /* --- DAY / NIGHT CYCLE --- */
         // Stores sunrise/sunset Date objects updated whenever weather is fetched
         let _sunriseTime = null;
-        let _sunsetTime  = null;
+        let _sunsetTime = null;
         let _nightStarsSpawned = false;
         let _nightCycleInterval = null;
 
@@ -1771,20 +1875,74 @@
             }, 45 * 60 * 1000);
         }
 
+        function updateSundownPopup() {
+            const popupText = document.getElementById('sundown-text');
+            if (!popupText) return;
+
+            let sunsetTime = _sunsetTime;
+            if (!sunsetTime) {
+                const cachedSunset = localStorage.getItem('kazu_sunset');
+                if (cachedSunset) {
+                    sunsetTime = new Date(cachedSunset);
+                }
+            }
+
+            if (!sunsetTime) {
+                popupText.textContent = "Calculating UK sundown...";
+                return;
+            }
+
+            const now = Date.now();
+            const sunset = sunsetTime.getTime();
+            const buffer = 20 * 60 * 1000;
+            const diff = sunset - now;
+
+            const iconContainer = document.getElementById('sundown-icon-container');
+
+            if (now >= (sunset - buffer) && now <= (sunset + buffer)) {
+                popupText.textContent = "Fading into night mode...";
+                if (iconContainer) {
+                    iconContainer.innerHTML = '<i data-lucide="sunset" class="w-3.5 h-3.5 text-yellow-400"></i>';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            } else if (diff > 0) {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                let timeStr = "";
+                if (hours > 0) {
+                    timeStr += `${hours}h ${mins}m`;
+                } else {
+                    timeStr += `${mins}m`;
+                }
+                popupText.textContent = `${timeStr} until UK sundown`;
+                if (iconContainer) {
+                    iconContainer.innerHTML = '<i data-lucide="sunset" class="w-3.5 h-3.5 text-yellow-400"></i>';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            } else {
+                popupText.textContent = "Sundown passed (Night Mode Active)";
+                if (iconContainer) {
+                    iconContainer.innerHTML = '<i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-400"></i>';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        }
+        window.updateSundownPopup = updateSundownPopup;
+
         function evaluateDayNightCycle() {
             if (!_sunriseTime || !_sunsetTime) return;
 
             const now = Date.now();
             const sunrise = _sunriseTime.getTime();
-            const sunset  = _sunsetTime.getTime();
+            const sunset = _sunsetTime.getTime();
             // 20-minute transition buffer
             const buffer = 20 * 60 * 1000;
             const body = document.body;
 
-            const inSunsetWindow  = now >= (sunset - buffer)  && now <= (sunset + buffer);
+            const inSunsetWindow = now >= (sunset - buffer) && now <= (sunset + buffer);
             const inSunriseWindow = now >= (sunrise - buffer) && now <= (sunrise + buffer);
-            const isNight         = now > (sunset + buffer) || now < (sunrise - buffer);
-            const isDay           = now >= (sunrise + buffer) && now < (sunset - buffer);
+            const isNight = now > (sunset + buffer) || now < (sunrise - buffer);
+            const isDay = now >= (sunrise + buffer) && now < (sunset - buffer);
 
             if (inSunsetWindow && !body.classList.contains('night-mode') && !body.classList.contains('sunset-transition')) {
                 applySunsetTransition();
@@ -1795,16 +1953,19 @@
             } else if (isDay && (body.classList.contains('night-mode') || body.classList.contains('sunset-transition') || body.classList.contains('sunrise-transition'))) {
                 applyDayMode(true);
             }
+
+            // Update the sundown countdown popup
+            updateSundownPopup();
         }
 
         function updateTheme(data) {
             if (!data || !data.daily || !data.daily.sunrise || !data.daily.sunset) return;
             _sunriseTime = new Date(data.daily.sunrise[0]);
-            _sunsetTime  = new Date(data.daily.sunset[0]);
+            _sunsetTime = new Date(data.daily.sunset[0]);
             try {
                 localStorage.setItem('kazu_sunrise', data.daily.sunrise[0]);
                 localStorage.setItem('kazu_sunset', data.daily.sunset[0]);
-            } catch(e) {}
+            } catch (e) { }
             // Run immediately on new data
             evaluateDayNightCycle();
             // Start the per-minute polling loop if not already running
@@ -1849,7 +2010,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const isTestChristmas = urlParams.get('test_christmas') === 'true';
             const isChristmasDay = now.getMonth() === 11 && now.getDate() === 25; // Dec 25
-            
+
             if (christmasSimulationActive || isTestChristmas || isChristmasDay) {
                 isChristmas = true;
             } else {
@@ -1858,19 +2019,19 @@
 
             if (isChristmas) {
                 document.body.classList.add('christmas-mode');
-                
+
                 const santaHat = document.getElementById('christmas-hat');
                 if (santaHat) santaHat.classList.remove('hidden');
-                
+
                 const bdayHat = document.getElementById('birthday-hat');
                 if (bdayHat) bdayHat.classList.add('hidden');
-                
+
                 const xmasMsg = document.getElementById('christmas-message');
                 if (xmasMsg) {
                     xmasMsg.classList.remove('hidden');
                     xmasMsg.classList.add('flex');
                 }
-                
+
                 const bdayMsg = document.getElementById('birthday-message');
                 if (bdayMsg) {
                     bdayMsg.classList.add('hidden');
@@ -1886,11 +2047,11 @@
                 // Repurpose card texts
                 document.getElementById('birthday-label').textContent = "Merry Christmas!";
                 document.getElementById('birthday-label').classList.add('text-red-400');
-                
+
                 const countdownEl = document.getElementById('countdown');
                 countdownEl.textContent = "December 25th";
                 countdownEl.className = "text-2xl md:text-3xl font-bold text-white tech-font tabular-nums mt-1";
-                
+
                 const untilLbl = document.getElementById('until-birthday-label');
                 if (untilLbl) {
                     untilLbl.textContent = "Enjoy the Holiday!";
@@ -1902,10 +2063,10 @@
                 birthdayConfettiTriggered = false;
             } else {
                 document.body.classList.remove('christmas-mode');
-                
+
                 const santaHat = document.getElementById('christmas-hat');
                 if (santaHat) santaHat.classList.add('hidden');
-                
+
                 const xmasMsg = document.getElementById('christmas-message');
                 if (xmasMsg) {
                     xmasMsg.classList.add('hidden');
@@ -1931,10 +2092,10 @@
                         birthdayConfettiTriggered = true;
                         startConfettiShow(12000);
                     }
-                    
+
                     const hat = document.getElementById('birthday-hat');
                     if (hat) hat.classList.remove('hidden');
-                    
+
                     const msg = document.getElementById('birthday-message');
                     if (msg) {
                         msg.classList.remove('hidden');
@@ -1944,19 +2105,19 @@
                     document.getElementById('birthday-label').textContent = "Next Birthday (Nov 9)";
                     document.getElementById('birthday-label').classList.remove('text-yellow-400');
                     document.getElementById('birthday-label').classList.remove('text-red-400');
-                    
+
                     const countdownEl = document.getElementById('countdown');
                     countdownEl.textContent = "Today";
                     countdownEl.className = "text-4xl md:text-5xl font-bold text-white tech-font tabular-nums mt-1";
-                    
+
                     if (untilLbl) untilLbl.classList.add('hidden');
                 } else {
                     isBirthday = false;
                     birthdayConfettiTriggered = false;
-                    
+
                     const hat = document.getElementById('birthday-hat');
                     if (hat) hat.classList.add('hidden');
-                    
+
                     const msg = document.getElementById('birthday-message');
                     if (msg) {
                         msg.classList.add('hidden');
@@ -1966,10 +2127,10 @@
                     document.getElementById('birthday-label').textContent = "Next Birthday (Nov 9)";
                     document.getElementById('birthday-label').classList.remove('text-yellow-400');
                     document.getElementById('birthday-label').classList.remove('text-red-400');
-                    
+
                     const countdownEl = document.getElementById('countdown');
                     countdownEl.className = "text-xl md:text-2xl font-bold text-white tech-font tabular-nums";
-                    
+
                     if (untilLbl) untilLbl.classList.remove('hidden');
 
                     // Countdown Calc
@@ -2082,6 +2243,8 @@
                 renderWeatherModal();
             } else if (type === 'lore') {
                 renderLoreModal();
+            } else if (type === 'settings') {
+                renderSettingsModal();
             }
         }
 
@@ -2098,6 +2261,147 @@
 
             // Cleanup Intervals
             if (clockInterval) clearInterval(clockInterval);
+        }
+
+        /* --- AUTOMATIC CONTRAST ADAPTATION --- */
+        function getBlendedBackgroundColor(element) {
+            let el = element;
+            const colors = [];
+
+            while (el) {
+                const bg = window.getComputedStyle(el).backgroundColor;
+                if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') {
+                    const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                    if (match) {
+                        const r = parseInt(match[1]);
+                        const g = parseInt(match[2]);
+                        const b = parseInt(match[3]);
+                        const a = match[4] !== undefined ? parseFloat(match[4]) : 1;
+                        colors.push({ r, g, b, a });
+                        if (a === 1) break; // Fully opaque parent
+                    }
+                }
+                el = el.parentElement;
+            }
+
+            if (colors.length === 0) {
+                return { r: 10, g: 21, b: 38, a: 1 }; // Default dark slate body bg fallback
+            }
+
+            // Blend top-down
+            let blended = { r: 10, g: 21, b: 38, a: 1 };
+            if (colors[colors.length - 1].a === 1) {
+                blended = colors.pop();
+            }
+
+            while (colors.length > 0) {
+                const top = colors.pop();
+                blended.r = Math.round(top.r * top.a + blended.r * (1 - top.a));
+                blended.g = Math.round(top.g * top.a + blended.g * (1 - top.a));
+                blended.b = Math.round(top.b * top.a + blended.b * (1 - top.a));
+                blended.a = top.a + blended.a * (1 - top.a);
+            }
+
+            return blended;
+        }
+
+        function isBackgroundLight(color) {
+            const r = color.r / 255;
+            const g = color.g / 255;
+            const b = color.b / 255;
+
+            const R = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, 2.4);
+            const G = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, 2.4);
+            const B = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, 2.4);
+
+            const luminance = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+            return luminance > 0.45;
+        }
+
+        window.adaptAllContrast = function () {
+            // 1. Adapt body
+            const bodyBg = getBlendedBackgroundColor(document.body);
+            const bodyIsLight = isBackgroundLight(bodyBg);
+            document.body.classList.toggle('theme-light', bodyIsLight);
+            document.body.classList.toggle('theme-dark', !bodyIsLight);
+
+            // 2. Adapt dashboard wrapper
+            const wrapper = document.querySelector('.dashboard-wrapper');
+            if (wrapper) {
+                const wrapperBg = getBlendedBackgroundColor(wrapper);
+                const wrapperIsLight = isBackgroundLight(wrapperBg);
+                wrapper.classList.toggle('theme-light', wrapperIsLight);
+                wrapper.classList.toggle('theme-dark', !wrapperIsLight);
+            }
+
+            // 3. Adapt all glass panels, cards, modal overlays, and sidebars
+            document.querySelectorAll('.glass-panel, .glass-card, .modal-content, #playlist-sidebar > div').forEach(card => {
+                const cardBg = getBlendedBackgroundColor(card);
+                const cardIsLight = isBackgroundLight(cardBg);
+                card.classList.toggle('theme-light', cardIsLight);
+                card.classList.toggle('theme-dark', !cardIsLight);
+            });
+        };
+
+        /* --- DASHBOARD THEME LOGIC --- */
+        window.setDashboardTheme = function (theme) {
+            if (theme === 'white') {
+                document.body.classList.add('dashboard-theme-white');
+                document.body.classList.remove('dashboard-theme-black');
+                localStorage.setItem('kazu_dashboard_theme', 'white');
+            } else {
+                document.body.classList.add('dashboard-theme-black');
+                document.body.classList.remove('dashboard-theme-white');
+                localStorage.setItem('kazu_dashboard_theme', 'black');
+            }
+
+            // Trigger automatic contrast adjustments after layout settles
+            setTimeout(() => {
+                window.adaptAllContrast();
+            }, 50);
+
+            if (window.playClick) window.playClick();
+            updateThemeButtonStates(theme);
+        };
+
+        function updateThemeButtonStates(theme) {
+            const btnBlack = document.getElementById('theme-btn-black');
+            const btnWhite = document.getElementById('theme-btn-white');
+            if (!btnBlack || !btnWhite) return;
+
+            if (theme === 'white') {
+                btnWhite.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 border-cyan-400 bg-white text-slate-900 font-bold shadow-lg transition-all scale-[1.02] cursor-pointer";
+                btnBlack.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 text-gray-400 font-bold transition-all hover:bg-white/5 active:scale-95 cursor-pointer";
+            } else {
+                btnBlack.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 border-cyan-400 bg-black text-white font-bold shadow-lg transition-all scale-[1.02] cursor-pointer";
+                btnWhite.className = "flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 text-gray-400 font-bold transition-all hover:bg-white/5 active:scale-95 cursor-pointer";
+            }
+        }
+
+        function renderSettingsModal() {
+            const currentTheme = localStorage.getItem('kazu_dashboard_theme') || 'black';
+            modalContent.innerHTML = `
+                <h2 class="text-3xl font-bold text-white mb-6 tech-font">Dashboard Settings</h2>
+                <div class="w-full text-left space-y-6">
+                    <div class="p-5 bg-white/5 rounded-2xl border border-white/10">
+                        <h3 class="text-cyan-400 text-sm font-semibold uppercase tracking-widest mb-3">Dashboard Theme</h3>
+                        <p class="text-xs text-gray-400 mb-4">Choose the background style for the main dashboard panel.</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button id="theme-btn-black" onclick="setDashboardTheme('black')"
+                                class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 font-bold transition-all hover:bg-white/5 active:scale-95 cursor-pointer">
+                                <span class="w-3.5 h-3.5 rounded-full bg-black border border-white/30"></span>
+                                Black
+                            </button>
+                            <button id="theme-btn-white" onclick="setDashboardTheme('white')"
+                                class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-white/10 font-bold text-gray-300 transition-all hover:bg-white/5 active:scale-95 cursor-pointer">
+                                <span class="w-3.5 h-3.5 rounded-full bg-white border border-black/30"></span>
+                                White
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            updateThemeButtonStates(currentTheme);
         }
 
         /* --- 1. UK TIME EXPANSION --- */
@@ -2224,7 +2528,7 @@
         /* --- 4. WEATHER MODAL --- */
         function renderWeatherModal() {
             const hasWebGL = isWebGLSupported();
-            
+
             if (hasWebGL) {
                 modalContent.innerHTML = `
                     <h2 class="text-3xl font-bold text-white mb-2 tech-font">Wales Weather Radar</h2>
@@ -2265,7 +2569,7 @@
             } else {
                 // Fallback rendering
                 let forecastHTML = '';
-                
+
                 if (weatherForecastData && weatherForecastData.daily) {
                     const daily = weatherForecastData.daily;
                     forecastHTML = `
@@ -2273,7 +2577,7 @@
                             <h3 class="text-white font-bold text-lg mb-1 self-start">7-Day Forecast</h3>
                             <div class="flex flex-col gap-2">
                     `;
-                    
+
                     for (let i = 0; i < daily.time.length; i++) {
                         const date = new Date(daily.time[i]);
                         const dayName = date.toLocaleDateString('en-GB', { weekday: 'long' });
@@ -2281,11 +2585,11 @@
                         const minTemp = Math.round(daily.temperature_2m_min[i]);
                         const code = daily.weather_code[i];
                         const info = weatherMap[code] || { desc: "Unknown", icon: "cloud" };
-                        
+
                         const isToday = i === 0;
                         const rowBg = isToday ? 'bg-white/10 border-white/30' : 'bg-white/5 border-white/10';
                         const labelText = isToday ? 'Today' : dayName;
-                        
+
                         forecastHTML += `
                             <div class="flex items-center justify-between p-3 rounded-xl border ${rowBg} transition-all duration-300">
                                 <div class="w-1/3 text-left font-medium text-white">${labelText}</div>
@@ -2300,7 +2604,7 @@
                             </div>
                         `;
                     }
-                    
+
                     forecastHTML += `
                             </div>
                         </div>
@@ -2318,7 +2622,7 @@
                 const currentCode = weatherForecastData ? weatherForecastData.current.weather_code : null;
                 const currentInfo = currentCode !== null ? (weatherMap[currentCode] || { desc: "Unknown", icon: "cloud" }) : { desc: "Loading...", icon: "loader" };
                 const currentWind = weatherForecastData ? (weatherForecastData.current.wind_speed_10m * 0.621371).toFixed(1) : '--';
-                
+
                 let sunriseStr = '--:--';
                 let sunsetStr = '--:--';
                 if (weatherForecastData && weatherForecastData.daily) {
@@ -2367,7 +2671,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         }
@@ -2396,7 +2700,7 @@
                 </div>
             `;
             if (typeof lucide !== 'undefined') lucide.createIcons();
-            
+
             // Adjust modal width temporarily for this specific modal
             modalContent.style.maxWidth = '1000px';
             modalContent.style.width = '95%';
@@ -2589,19 +2893,19 @@
             lucide.createIcons();
         }
 
-        window.toggleOrnament = function(el) {
+        window.toggleOrnament = function (el) {
             const colors = ['#ff2e4c', '#2ea043', '#eab308', '#f8fafc', '#38bdf8', '#a855f7'];
             const currentColor = el.getAttribute('fill');
             let nextIndex = (colors.indexOf(currentColor) + 1) % colors.length;
             el.setAttribute('fill', colors[nextIndex]);
-            
+
             // Spawn tiny sparkles near the ornament
             const rect = el.getBoundingClientRect();
             window.spawnIceShatter(rect.left + rect.width / 2, rect.top + rect.height / 2, 8);
             if (window.playClick) window.playClick();
         };
 
-        window.startChristmasFireworks = function() {
+        window.startChristmasFireworks = function () {
             // Burst beautiful christmas sparkles across the top/middle screen
             for (let i = 0; i < 6; i++) {
                 setTimeout(() => {

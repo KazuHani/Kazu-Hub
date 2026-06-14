@@ -146,7 +146,13 @@
         }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const connectionGroups = {};
+        // Pre-allocated static opacity buckets to avoid string parsing/allocations on every frame
+        const opacityBuckets = [
+            { alpha: 0.01, lines: [] },
+            { alpha: 0.02, lines: [] },
+            { alpha: 0.03, lines: [] },
+            { alpha: 0.04, lines: [] }
+        ];
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
@@ -164,12 +170,9 @@
                 if (distSq < connectDistSq) {
                     const d = Math.sqrt(distSq);
                     const alpha = 0.045 * (1 - d / CONNECT_DIST);
-                    const roundedAlpha = Math.round(alpha * 100) / 100;
-                    if (roundedAlpha > 0) {
-                        if (!connectionGroups[roundedAlpha]) {
-                            connectionGroups[roundedAlpha] = [];
-                        }
-                        connectionGroups[roundedAlpha].push(p.x, p.y, q.x, q.y);
+                    const idx = Math.floor(alpha * 100) - 1;
+                    if (idx >= 0 && idx < opacityBuckets.length) {
+                        opacityBuckets[idx].lines.push(p.x, p.y, q.x, q.y);
                     }
                 }
             }
@@ -178,10 +181,12 @@
         // Batch draw connection lines
         ctx.lineWidth = 0.5;
         ctx.strokeStyle = cachedAccent;
-        for (const alpha in connectionGroups) {
-            ctx.globalAlpha = parseFloat(alpha);
+        for (let b = 0; b < opacityBuckets.length; b++) {
+            const bucket = opacityBuckets[b];
+            if (bucket.lines.length === 0) continue;
+            ctx.globalAlpha = bucket.alpha;
             ctx.beginPath();
-            const lines = connectionGroups[alpha];
+            const lines = bucket.lines;
             for (let i = 0; i < lines.length; i += 4) {
                 ctx.moveTo(lines[i], lines[i+1]);
                 ctx.lineTo(lines[i+2], lines[i+3]);
@@ -260,8 +265,24 @@ function initVisualizer() {
         bar.style.setProperty('--bar-speed', speed + 's');
         bar.style.setProperty('--bar-min', min + 'px');
         bar.style.setProperty('--bar-max', max + 'px');
+        bar.style.setProperty('--bar-min-val', min);
+        bar.style.setProperty('--bar-max-val', max);
         bar.style.animationDelay = (Math.random() * 1).toFixed(2) + 's';
         container.appendChild(bar);
+    }
+
+    // Pause animation when visualizer is off-screen to conserve CPU
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    container.classList.remove('paused');
+                } else {
+                    container.classList.add('paused');
+                }
+            });
+        }, { threshold: 0.05 });
+        observer.observe(container);
     }
 }
 document.addEventListener('DOMContentLoaded', initVisualizer);
@@ -814,7 +835,7 @@ function renderSteamWidget(data) {
     if (displayedGames.length > 0) {
         gamesHtml = '<div class="md:col-span-7 flex flex-col gap-1 w-full mt-4 md:mt-0 md:pl-5 md:border-l md:border-white/10">' +
             '<div class="flex items-center justify-between mb-2">' +
-            '<span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Recent Activity</span>' +
+            '<span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Recently Played Games</span>' +
             '<a href="https://steamcommunity.com/id/Kazu-Hani/games/?tab=recent" target="_blank" class="steam-view-all text-[10px] text-gray-500 transition-colors flex items-center gap-1 font-medium">View all</a>' +
             '</div>' +
             '<div class="flex flex-col gap-0.5">' +

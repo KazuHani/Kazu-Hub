@@ -3,7 +3,6 @@ module.exports = {
     content: [
         './index.html',
         './features.js',
-        './tilt-effect.js',
     ],
     safelist: [
         // Layout utilities used in index.html
@@ -109,6 +108,8 @@ module.exports = {
         'active:scale-95',
         // Group
         'group', 'group/btn', 'group/profile',
+        // Max height / dynamic push animation properties
+        'max-h-0', 'max-h-12', 'mt-0', 'mb-0', 'mt-5', 'mb-1',
         // Visibility
         'visible', 'invisible',
         // Aspect ratio

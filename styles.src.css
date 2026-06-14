@@ -65,6 +65,10 @@ html.lenis body {
 }
 
 /* --- BASE --- */
+html {
+    scroll-behavior: smooth;
+}
+
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -90,7 +94,10 @@ h1, h2, h3, .tech-font {
 /* --- ANIMATED MESH GRADIENT BACKGROUND --- */
 .mesh-gradient {
     position: fixed;
-    inset: 0;
+    top: -10%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
     z-index: 0;
     background:
         radial-gradient(ellipse 80% 60% at 20% 20%, rgba(0, 242, 254, 0.18) 0%, transparent 60%),
@@ -99,16 +106,19 @@ h1, h2, h3, .tech-font {
         radial-gradient(ellipse 50% 50% at 15% 80%, rgba(165, 243, 252, 0.07) 0%, transparent 55%),
         var(--bg-deep);
     background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-    animation: mesh-shift 25s ease-in-out infinite;
+    background-position: 0% 0%, 100% 0%, 50% 100%, 0% 50%, center;
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    animation: mesh-transform-shift 25s ease-in-out infinite;
     pointer-events: none;
 }
 
-@keyframes mesh-shift {
-    0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0% 50%, center; }
-    25%  { background-position: 50% 30%, 80% 50%, 20% 80%, 60% 20%, center; }
-    50%  { background-position: 100% 50%, 20% 80%, 80% 20%, 40% 80%, center; }
-    75%  { background-position: 30% 80%, 60% 20%, 50% 50%, 80% 40%, center; }
-    100% { background-position: 0% 0%, 100% 0%, 50% 100%, 0% 50%, center; }
+@keyframes mesh-transform-shift {
+    0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+    25%  { transform: translate3d(2%, -1%, 0) scale(1.03) rotate(0.5deg); }
+    50%  { transform: translate3d(-1%, 2%, 0) scale(0.97) rotate(-0.5deg); }
+    75%  { transform: translate3d(1%, 1%, 0) scale(1.02) rotate(0.3deg); }
+    100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
 }
 
 /* --- PARTICLE CANVAS --- */
@@ -165,7 +175,7 @@ h1, h2, h3, .tech-font {
    DASHBOARD WRAPPER — BENTO GRID
    =================================================== */
 .dashboard-wrapper {
-    background: rgba(4, 8, 16, 0.70);
+    background: rgba(0, 0, 0, 0.92);
     backdrop-filter: blur(var(--glass-blur)) saturate(120%);
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
     border: 1px solid var(--glass-border);
@@ -255,6 +265,10 @@ h1, h2, h3, .tech-font {
         border-color var(--transition-smooth),
         box-shadow var(--transition-smooth),
         transform var(--transition-spring);
+
+    /* Performance optimizations: skip rendering of off-screen panels */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
 }
 
 .glass-card {
@@ -264,14 +278,14 @@ h1, h2, h3, .tech-font {
 /* Glass Buttons */
 .glass-btn {
     position: relative;
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: var(--glass-btn-bg, rgba(255, 255, 255, 0.08)) !important;
     backdrop-filter: blur(12px) saturate(120%) !important;
     -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid var(--glass-btn-border, rgba(255, 255, 255, 0.12)) !important;
     box-shadow: 
         0 4px 12px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.10) !important;
-    color: #ffffff !important;
+        inset 0 1px 0 0 var(--glass-btn-inset-shadow, rgba(255, 255, 255, 0.10)) !important;
+    color: var(--local-text-primary, #ffffff) !important;
     transition: 
         background 0.3s ease, 
         border-color 0.3s ease, 
@@ -280,15 +294,15 @@ h1, h2, h3, .tech-font {
 }
 
 .glass-btn:hover {
-    background: rgba(255, 255, 255, 0.16) !important;
-    border-color: rgba(255, 255, 255, 0.24) !important;
+    background: var(--glass-btn-bg-hover, rgba(255, 255, 255, 0.16)) !important;
+    border-color: var(--glass-btn-border-hover, rgba(255, 255, 255, 0.24)) !important;
     box-shadow: 
         0 6px 16px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.15) !important;
+        inset 0 1px 0 0 var(--glass-btn-inset-shadow-hover, rgba(255, 255, 255, 0.15)) !important;
 }
 
 .glass-btn:active {
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: var(--glass-btn-bg-active, rgba(255, 255, 255, 0.04)) !important;
     transform: scale(0.97) !important;
 }
 
@@ -420,13 +434,12 @@ h1, h2, h3, .tech-font {
    ANIMATIONS
    =================================================== */
 
-/* Title Shimmer */
-@keyframes shimmer {
-    0% { background-position: -150% center; }
-    50% { background-position: 150% center; }
-    100% { background-position: 150% center; }
+/* Performance optimization: Pause all animations inside off-screen elements */
+.off-screen * {
+    animation-play-state: paused !important;
 }
 
+/* Title Shimmer */
 .title-shimmer {
     background: linear-gradient(
         90deg,
@@ -436,35 +449,21 @@ h1, h2, h3, .tech-font {
         #e0f7fa 75%,
         #ffffff 100%
     );
-    background-size: 200% auto;
+    background-size: 100% auto;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: shimmer 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* Floating Avatar Animation — all screen sizes */
-@keyframes float-avatar {
-    0%   { transform: translateY(0px) rotate(0deg); }
-    33%  { transform: translateY(-8px) rotate(0.3deg); }
-    66%  { transform: translateY(-3px) rotate(-0.3deg); }
-    100% { transform: translateY(0px) rotate(0deg); }
-}
-
 .animate-float-avatar {
-    animation: float-avatar 6s ease-in-out infinite;
+    animation: none;
 }
 
 /* Float (Text below avatar — Desktop only) */
-@keyframes float {
-    0%   { transform: translateY(0px); }
-    50%  { transform: translateY(-6px); }
-    100% { transform: translateY(0px); }
-}
-
 @media (min-width: 1024px) {
     .animate-float {
-        animation: float 5s ease-in-out infinite;
+        animation: none;
     }
 }
 
@@ -503,16 +502,27 @@ h1, h2, h3, .tech-font {
 
 .vis-bar {
     width: 4px;
-    border-radius: 4px;
+    height: 1px; /* Base height is 1px */
+    transform-origin: bottom;
+    will-change: transform;
+    border-radius: 2px;
     background: linear-gradient(to top, var(--accent), var(--neon-cyan));
     animation: vis-bounce var(--bar-speed, 1s) ease-in-out infinite;
     opacity: 0.85;
-    min-height: 4px;
+}
+
+.visualizer-container.paused .vis-bar {
+    animation-play-state: paused !important;
+}
+
+.weather-rain-container.paused .raindrop,
+.weather-snow-container.paused .weather-snowflake {
+    animation-play-state: paused !important;
 }
 
 @keyframes vis-bounce {
-    0%, 100% { height: var(--bar-min, 8px); }
-    50%      { height: var(--bar-max, 40px); }
+    0%, 100% { transform: scaleY(var(--bar-min-val, 8)); }
+    50%      { transform: scaleY(var(--bar-max-val, 40)); }
 }
 
 /* --- ENTRANCE ANIMATIONS --- */
@@ -559,6 +569,10 @@ h1, h2, h3, .tech-font {
     animation: loader-ring 1.6s cubic-bezier(0.4, 0.1, 0.4, 0.9) infinite;
     position: absolute;
     inset: -4px;
+}
+
+#playlist-sidebar:not(.active) .loader-ring {
+    animation: none !important;
 }
 
 /* ===================================================
@@ -909,6 +923,13 @@ h1, h2, h3, .tech-font {
 /* ===================================================
    BACK TO TOP
    =================================================== */
+#backToTop {
+    background: rgba(10, 22, 43, 0.85) !important;
+    border: 1.5px solid var(--accent, #00f2fe) !important;
+    box-shadow: 0 8px 32px rgba(0, 242, 254, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.2) !important;
+    color: var(--accent, #00f2fe) !important;
+}
+
 @media (max-width: 768px) {
     #backToTop {
         display: none !important;
@@ -920,7 +941,9 @@ h1, h2, h3, .tech-font {
 
 @media (hover: hover) {
     #backToTop:hover {
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        background: var(--accent, #00f2fe) !important;
+        color: #050b14 !important;
+        box-shadow: 0 0 20px var(--accent-glow, rgba(0, 242, 254, 0.6)) !important;
     }
 }
 
@@ -1131,6 +1154,11 @@ body.christmas-mode .mesh-gradient {
             radial-gradient(ellipse 75% 50% at 45% 75%, rgba(139, 92, 246, 0.09) 0%, transparent 65%),
             var(--bg-deep) !important;
         background-size: 100% 100% !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
     }
 
     /* 2. Christmas mode: also static mesh */
@@ -1141,6 +1169,11 @@ body.christmas-mode .mesh-gradient {
             radial-gradient(ellipse 65% 55% at 75% 35%, rgba(22, 163, 74, 0.09) 0%, transparent 50%),
             #060e0a !important;
         background-size: 100% 100% !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
     }
 
     /* 3. Freeze title shimmer — keep gradient appearance but pause animation */
@@ -1174,7 +1207,7 @@ body.christmas-mode .mesh-gradient {
     .dashboard-wrapper {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        background: rgba(4, 8, 16, 0.85) !important;
+        background: rgba(0, 0, 0, 0.95) !important;
         /* Simplify shadow too */
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
     }
@@ -1240,7 +1273,14 @@ body.christmas-mode .mesh-gradient {
    REDUCED MOTION — Respect system preference globally
    =================================================== */
 @media (prefers-reduced-motion: reduce) {
-    .mesh-gradient,
+    .mesh-gradient {
+        animation: none !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
+    }
     .animate-float-avatar,
     .animate-float,
     .title-shimmer,
@@ -1790,4 +1830,289 @@ body.night-mode #profile-pic-sleep {
 :focus-visible > .discord-copy-badge {
     opacity: 1;
     transform: translateY(-2px);
+}
+
+/* ===================================================
+   DASHBOARD DYNAMIC THEME (LIGHT/DARK CONTRAST) OVERRIDES
+   =================================================== */
+
+/* Specific background styling rules for dashboard container based on settings */
+body.dashboard-theme-white .dashboard-wrapper {
+    background: rgba(255, 255, 255, 0.90) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 
+        0 32px 80px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+body.dashboard-theme-black .dashboard-wrapper {
+    background: rgba(0, 0, 0, 0.92) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 
+        0 32px 80px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Light and Dark theme local variables for dynamic color scoping */
+.theme-light {
+    --local-text-primary: #0f172a;
+    --local-text-secondary: #475569;
+    --local-text-muted: #64748b;
+    --local-accent-cyan: #0284c7;
+    --local-accent-pink: #db2777;
+    --local-accent-purple: #7c3aed;
+    --local-accent-sky: #0369a1;
+    --local-title-shimmer: linear-gradient(90deg, #0f172a, #0369a1 25%, #00b4d8 50%, #0369a1 75%, #0f172a);
+    --glass-border: rgba(0, 0, 0, 0.1) !important;
+    
+    /* Dynamic glass button styling for light background contrast */
+    --glass-btn-bg: rgba(0, 0, 0, 0.06);
+    --glass-btn-border: rgba(0, 0, 0, 0.12);
+    --glass-btn-inset-shadow: rgba(0, 0, 0, 0.03);
+    --glass-btn-bg-hover: rgba(0, 0, 0, 0.10);
+    --glass-btn-border-hover: rgba(0, 0, 0, 0.18);
+    --glass-btn-inset-shadow-hover: rgba(0, 0, 0, 0.05);
+    --glass-btn-bg-active: rgba(0, 0, 0, 0.03);
+}
+
+.theme-dark {
+    --local-text-primary: #ffffff;
+    --local-text-secondary: #94a3b8;
+    --local-text-muted: #64748b;
+    --local-accent-cyan: #22d3ee;
+    --local-accent-pink: #f472b6;
+    --local-accent-purple: #c084fc;
+    --local-accent-sky: #38bdf8;
+    --local-title-shimmer: linear-gradient(90deg, #fff, #e0f7fa 25%, #00f2fe 50%, #e0f7fa 75%, #fff);
+    --glass-border: rgba(255, 255, 255, 0.12) !important;
+    
+    /* Dynamic glass button styling for dark background contrast */
+    --glass-btn-bg: rgba(255, 255, 255, 0.08);
+    --glass-btn-border: rgba(255, 255, 255, 0.12);
+    --glass-btn-inset-shadow: rgba(255, 255, 255, 0.10);
+    --glass-btn-bg-hover: rgba(255, 255, 255, 0.16);
+    --glass-btn-border-hover: rgba(255, 255, 255, 0.24);
+    --glass-btn-inset-shadow-hover: rgba(255, 255, 255, 0.15);
+    --glass-btn-bg-active: rgba(255, 255, 255, 0.04);
+}
+
+/* Light Theme overrides for any light-colored parent container */
+.theme-light,
+.theme-light.glass-panel,
+.theme-light.glass-card {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 
+        0 12px 30px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.5),
+        inset 0 -1px 0 0 rgba(255, 255, 255, 0.02) !important;
+    color: #1e293b !important;
+}
+
+.theme-light.glass-panel:hover,
+.theme-light.glass-card:hover {
+    background: rgba(0, 0, 0, 0.07) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 
+        0 16px 40px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Specific button overrides inside themed environments */
+.theme-light #dashboard-settings-btn {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #475569 !important;
+}
+.theme-light #dashboard-settings-btn:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+    color: #0f172a !important;
+}
+
+.theme-dark #dashboard-settings-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #94a3b8 !important;
+}
+.theme-dark #dashboard-settings-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+}
+
+/* Scoped text color overrides */
+.theme-light .text-white,
+.theme-dark .text-white,
+.theme-light h1,
+.theme-dark h1,
+.theme-light h2:not(#greeting-text),
+.theme-dark h2:not(#greeting-text),
+.theme-light h3,
+.theme-dark h3,
+.theme-light span:not([class*="text-"]):not([class*="bg-"]):not([class*="music-bar"]):not([class*="vis-bar"]):not(.carousel-dot),
+.theme-dark span:not([class*="text-"]):not([class*="bg-"]):not([class*="music-bar"]):not([class*="vis-bar"]):not(.carousel-dot),
+.theme-light .steam-profile-name,
+.theme-dark .steam-profile-name,
+.theme-light .steam-game-name,
+.theme-dark .steam-game-name,
+.theme-light .discord-status-text,
+.theme-dark .discord-status-text {
+    color: var(--local-text-primary) !important;
+}
+
+.theme-light .text-slate-400,
+.theme-dark .text-slate-400,
+.theme-light .text-gray-400,
+.theme-dark .text-gray-400,
+.theme-light .text-slate-300,
+.theme-dark .text-slate-300,
+.theme-light .text-gray-300,
+.theme-dark .text-gray-300,
+.theme-light p,
+.theme-dark p {
+    color: var(--local-text-secondary) !important;
+}
+
+/* Shimmer Title overrides based on theme */
+.theme-light .title-shimmer,
+.theme-dark .title-shimmer {
+    background: var(--local-title-shimmer) !important;
+    background-size: 100% auto !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    color: transparent !important;
+}
+
+/* Greeting text overrides */
+.theme-light #greeting-text,
+.theme-dark #greeting-text {
+    color: var(--local-accent-sky) !important;
+}
+
+/* Neon/Accent colors scoped to parent theme */
+.theme-light .text-cyan-400,
+.theme-dark .text-cyan-400,
+.theme-light .text-cyan-400\/80,
+.theme-dark .text-cyan-400\/80,
+.theme-light [class*="text-cyan-400"],
+.theme-dark [class*="text-cyan-400"] {
+    color: var(--local-accent-cyan) !important;
+}
+
+.theme-light .text-pink-400,
+.theme-dark .text-pink-400,
+.theme-light .text-pink-400\/80,
+.theme-dark .text-pink-400\/80,
+.theme-light [class*="text-pink-400"],
+.theme-dark [class*="text-pink-400"] {
+    color: var(--local-accent-pink) !important;
+}
+
+.theme-light .text-purple-400,
+.theme-dark .text-purple-400,
+.theme-light .text-purple-400\/80,
+.theme-dark .text-purple-400\/80,
+.theme-light [class*="text-purple-400"],
+.theme-dark [class*="text-purple-400"] {
+    color: var(--local-accent-purple) !important;
+}
+
+.theme-light .text-sky-400\/80,
+.theme-dark .text-sky-400\/80,
+.theme-light [class*="text-sky-400"],
+.theme-dark [class*="text-sky-400"] {
+    color: var(--local-accent-sky) !important;
+}
+
+/* Discord Status Card Overrides */
+.theme-light#discord-status,
+.theme-light#steam-activity {
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+
+.theme-light .discord-state-spotify {
+    background: rgba(30, 215, 96, 0.06) !important;
+    border-color: rgba(30, 215, 96, 0.25) !important;
+}
+.theme-light .discord-state-youtube-music {
+    background: rgba(239, 68, 68, 0.06) !important;
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+.theme-light .discord-state-gaming {
+    background: rgba(168, 85, 247, 0.06) !important;
+    border-color: rgba(168, 85, 247, 0.25) !important;
+}
+.theme-light .discord-state-streaming {
+    background: rgba(236, 72, 153, 0.06) !important;
+    border-color: rgba(236, 72, 153, 0.25) !important;
+}
+.theme-light .discord-state-chilling {
+    background: rgba(67, 181, 129, 0.06) !important;
+    border-color: rgba(67, 181, 129, 0.25) !important;
+}
+.theme-light .discord-state-offline {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Steam Card Overrides */
+.theme-light .steam-state-offline {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.theme-light .steam-state-online {
+    background: rgba(56, 189, 248, 0.06) !important;
+    border-color: rgba(56, 189, 248, 0.25) !important;
+}
+.theme-light .steam-state-ingame {
+    background: rgba(144, 255, 120, 0.08) !important;
+    border-color: rgba(144, 255, 120, 0.3) !important;
+}
+.theme-light .steam-game-row:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Christmas ornaments override in light theme */
+.theme-light #christmas-message span {
+    background: rgba(220, 38, 38, 0.08) !important;
+    border: 1px solid rgba(220, 38, 38, 0.2) !important;
+    color: #b91c1c !important;
+    text-shadow: none !important;
+}
+.theme-light #birthday-message span {
+    border-color: rgba(0, 0, 0, 0.15) !important;
+    color: #0f172a !important;
+}
+
+/* Back to Top button in light theme */
+.theme-light#backToTop {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.5) !important;
+}
+.theme-light#backToTop:hover {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+}
+
+/* Lucide and SVG icons color overrides inside light theme */
+.theme-light .section-header svg,
+.theme-light .section-header i,
+.theme-light [data-lucide="clock"],
+.theme-light [data-lucide="user"],
+.theme-light [data-lucide="calendar"],
+.theme-light [data-lucide="cloud-sun"],
+.theme-light [data-lucide="network"],
+.theme-light [data-lucide="book-open"] {
+    color: #0284c7 !important;
+}
+
+.theme-light .modal-close {
+    color: #475569 !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+.theme-light .modal-close:hover {
+    background: rgba(220, 38, 38, 0.8) !important;
+    color: #ffffff !important;
 }
