@@ -5,21 +5,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="-Hlu9Ebiaz6Oxr6qYPBHv7lNOQkxNU1hH0Q-CBkdiW4" />
-    <title>Kazu Hani | Central Hub</title>
+    
+    <title>Kazu Hani | Central Personal Hub &amp; Writing Portfolio</title>
+    <meta name="description" content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects including 'The Legend That Bleeds', and custom dashboards.">
+    <meta name="keywords" content="Kazu Hani, noodle derg, portfolio, personal hub, Cardiff, Wales, creative writing, digital status, Korat24">
+    <meta name="author" content="Kazu Hani">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://kazuhani.github.io/Kazu-Hub/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kazuhani.github.io/Kazu-Hub/">
+    <meta property="og:title" content="Kazu Hani | Central Personal Hub &amp; Writing Portfolio">
+    <meta property="og:description" content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects, and custom dashboards.">
+    <meta property="og:image" content="https://kazuhani.github.io/Kazu-Hub/images/Kazu%20Hani%20Pixelart.gif">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://kazuhani.github.io/Kazu-Hub/">
+    <meta property="twitter:title" content="Kazu Hani | Central Personal Hub &amp; Writing Portfolio">
+    <meta property="twitter:description" content="Welcome to the central personal hub of Kazu Hani (noodle derg). Explore live statuses, writing projects, and custom dashboards.">
+    <meta property="twitter:image" content="https://kazuhani.github.io/Kazu-Hub/images/Kazu%20Hani%20Pixelart.gif">
+
+    <!-- JSON-LD Structured Data for AEO / Search Engine indexing -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Kazu Hani",
+      "alternateName": "Korat24",
+      "description": "Creative writer, noodle derg creator, and digital content curator based in Cardiff, Wales, UK.",
+      "birthDate": "2001-11-09",
+      "gender": "Non-binary",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Cardiff",
+        "addressRegion": "Wales",
+        "addressCountry": "United Kingdom"
+      },
+      "url": "https://kazuhani.github.io/Kazu-Hub/",
+      "image": "https://kazuhani.github.io/Kazu-Hub/images/Kazu%20Hani%20Pixelart.gif",
+      "sameAs": [
+        "https://x.com/Kazu_Hani",
+        "https://www.instagram.com/kazu_hani/",
+        "https://www.youtube.com/@Kazu_Hani",
+        "https://steamcommunity.com/id/Kazu-Hani/",
+        "https://www.reddit.com/user/Korat24/",
+        "https://myanimelist.net/animelist/Kazu_Hani",
+        "https://letterboxd.com/KazuHani/"
+      ],
+      "creativeWork": [
+        {
+          "@type": "Book",
+          "name": "The Legend That Bleeds",
+          "description": "Chronicles and worldbuilding lore of an active literary narrative by Kazu Hani."
+        },
+        {
+          "@type": "Book",
+          "name": "The Naga and Human Kind",
+          "description": "Literary script and drafts exploring the interactions between naga and humans."
+        }
+      ]
+    }
+    </script>
+
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="images/favicon.png">
+
+    <!-- Preload LCP Image -->
+    <link rel="preload" href="images/Kazu%20Hani%20Pixelart.gif" as="image" type="image/gif">
 
     <!-- Performance Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://unpkg.com">
 
-    <script src="js/lucide.min.js"></script>
+    <script src="js/lucide.min.js" defer></script>
     <!-- Using stable Lenis version -->
-    <script src="js/lenis.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <script src="js/lenis.min.js" defer></script>
+    
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    </noscript>
 
     <link rel="stylesheet" href="styles.css">
     <script src="tilt-effect.js" defer></script>
@@ -285,11 +353,11 @@
                         <div id="pride-ring-wrapper" class="relative mx-auto" style="width:176px;height:176px;padding:4px;">
                             <div id="pride-ring" class="absolute rounded-full opacity-0 transition-opacity duration-[3000ms]"></div>
                             <div class="relative w-40 h-40 mx-auto cursor-pointer active:scale-95 transition-transform" style="top:4px;">
-                                <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile"
+                                <img id="profile-pic" src="images/Kazu%20Hani%20Pixelart.gif" alt="Kazu Hani Profile" width="160" height="160"
                                     class="absolute inset-0 w-full h-full rounded-full border-4 border-slate-900 shadow-2xl object-cover profile-glow transition-opacity duration-[3000ms]"
                                     loading="eager" onclick="playPop()"
                                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
-                                <img id="profile-pic-sleep" src="images/Kazusleep.png" alt="Kazu Hani Profile Sleeping"
+                                <img id="profile-pic-sleep" src="images/Kazusleep.png" alt="Kazu Hani Profile Sleeping" width="160" height="160"
                                     class="absolute inset-0 w-full h-full rounded-full border-4 border-slate-900 shadow-2xl object-contain bg-slate-950 p-2 profile-glow transition-opacity duration-[3000ms] opacity-0 pointer-events-none"
                                     loading="eager" onclick="playPop()"
                                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
@@ -326,7 +394,7 @@
                 </section>
 
                 <!-- Status Dashboard — Individual Bento Items -->
-                <div onclick="openModal('time')"
+                <div onclick="openModal('time')" tabindex="0" role="button" aria-haspopup="dialog" aria-label="United Kingdom Time"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                         <i data-lucide="clock" class="w-8 h-8 text-cyan-400"></i>
@@ -337,7 +405,7 @@
                 </div>
 
                 <!-- Weather -->
-                <div onclick="openModal('weather')" id="weather-card"
+                <div onclick="openModal('weather')" id="weather-card" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Current Weather"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <div id="weather-rain" class="weather-rain-container"></div>
                     <div id="weather-snow" class="weather-snow-container"></div>
@@ -358,7 +426,7 @@
                 </div>
 
                 <!-- Age Calculator -->
-                <div onclick="openModal('age')"
+                <div onclick="openModal('age')" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Current Age Statistics"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                         <i data-lucide="user" class="w-8 h-8 text-purple-400"></i>
@@ -369,7 +437,7 @@
                 </div>
 
                 <!-- Birthday Countdown -->
-                <div onclick="openModal('birthday')"
+                <div onclick="openModal('birthday')" tabindex="0" role="button" aria-haspopup="dialog" aria-label="Birthday Countdown"
                     class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <div class="absolute top-0 right-0 p-2 opacity-20 lg:group-hover:opacity-50 transition-opacity">
                         <i id="birthday-icon-cake" data-lucide="cake" class="w-8 h-8 text-pink-400"></i>
@@ -386,15 +454,19 @@
                 </div>
                            <!-- Discord Status + Steam Activity — Side by Side -->
                 <section id="discord-status" title="Click to copy Kazu's user ID?" onclick="copyDiscord(); playClick();"
+                    tabindex="0" role="button" aria-label="Kazu's Discord Status. Click to copy user ID."
                     class="discord-state-offline bento-wide glass-panel p-6 rounded-2xl content-hidden entrance-anim relative overflow-hidden flex flex-col justify-center cursor-pointer hover:bg-white/5 transition-all duration-300 group min-h-[160px]">
                     <!-- Decorative glow -->
                     <div id="discord-glow" class="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl transition-all duration-500"></div>
                     
+                    <!-- Copy ID Badge (CRO) -->
+                    <span class="discord-copy-badge"><i data-lucide="copy" class="w-3 h-3"></i> Copy ID</span>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 w-full items-center">
                         <!-- Left side: User profile & status -->
                         <div class="flex items-center gap-4 w-full">
                             <div class="relative flex-shrink-0" id="discord-img-container">
-                                <img id="discord-avatar" src="images/Kazuwhite.jpg" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md">
+                                <img id="discord-avatar" src="images/Kazuwhite.jpg" width="64" height="64" loading="lazy" class="w-16 h-16 rounded-xl object-cover border border-white/10 shadow-md">
                                 <span id="discord-status-dot" class="status-dot offline w-4 h-4 border-[3px]"
                                     style="position:absolute;bottom:-2px;right:-2px;z-index:10;"></span>
                             </div>
@@ -423,7 +495,7 @@
                             <div id="discord-music-container" class="hidden flex flex-col gap-2 w-full">
                                 <div class="flex items-center gap-3">
                                     <div class="relative w-11 h-11 flex-shrink-0">
-                                        <img id="music-album-art" src="" class="w-full h-full rounded-lg object-cover border border-white/10 shadow-md">
+                                        <img id="music-album-art" src="" width="44" height="44" loading="lazy" class="w-full h-full rounded-lg object-cover border border-white/10 shadow-md">
                                         <div id="music-app-icon" class="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-black/60 flex items-center justify-center p-0.5">
                                             <div id="music-platform-logo" class="w-full h-full flex items-center justify-center"></div>
                                         </div>
@@ -514,7 +586,7 @@
                             </div>
                             <div
                                 class="relative w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 overflow-hidden shadow-2xl z-10">
-                                <img src="images/sisu.jpg?v=2" alt="Playlist Cover"
+                                <img src="images/sisu.jpg?v=2" alt="Playlist Cover" width="160" height="160"
                                     class="w-full h-full object-cover opacity-90" loading="lazy">
                             </div>
                         </div>
@@ -553,7 +625,7 @@
                         <div class="flex items-center gap-4">
                             <div
                                 class="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white/10 shadow-lg flex-shrink-0">
-                                <img src="images/kazu%20small.png" alt="Kazu Icon" class="w-full h-full object-cover"
+                                <img src="images/kazu%20small.png" alt="Kazu Icon" width="64" height="64" class="w-full h-full object-cover"
                                     loading="lazy">
                             </div>
                             <div>
@@ -581,7 +653,7 @@
                         <a href="https://x.com/Kazu_Hani" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/twitter.svg" alt="Twitter"
+                            <img src="images/twitter.svg" alt="Twitter" width="40" height="40" loading="lazy"
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Twitter</span>
                         </a>
@@ -589,7 +661,7 @@
                         <a href="https://www.instagram.com/kazu_hani/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/insta.svg" alt="Instagram"
+                            <img src="images/insta.svg" alt="Instagram" width="40" height="40" loading="lazy"
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Instagram</span>
                         </a>
@@ -597,7 +669,7 @@
                         <a href="https://www.youtube.com/@Kazu_Hani" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/youtube.png" alt="YouTube"
+                            <img src="images/youtube.png" alt="YouTube" width="40" height="40" loading="lazy"
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">YouTube</span>
                         </a>
@@ -605,7 +677,7 @@
                         <a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/steam.png" alt="Steam"
+                            <img src="images/steam.png" alt="Steam" width="40" height="40" loading="lazy"
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Steam</span>
                         </a>
@@ -613,7 +685,7 @@
                         <a href="https://www.reddit.com/user/Korat24/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/reddit.png" alt="Reddit"
+                            <img src="images/reddit.png" alt="Reddit" width="40" height="40" loading="lazy"
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Reddit</span>
                         </a>
@@ -621,7 +693,7 @@
                         <a href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/mal.png" alt="MyAnimeList"
+                            <img src="images/mal.png" alt="MyAnimeList" width="40" height="40" loading="lazy"
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">MyAnimeList</span>
                         </a>
@@ -629,7 +701,7 @@
                         <a href="https://letterboxd.com/KazuHani/" target="_blank"
                             class="glass-card p-5 md:p-6 rounded-xl flex flex-col items-center justify-center gap-3 group min-h-[6.5rem] md:min-h-[7rem] flex-1 min-w-[30%] md:min-w-[7rem] transition-all duration-300 ease-in-out"
                             onclick="playClick()">
-                            <img src="images/letterboxd.svg" alt="Letterboxd"
+                            <img src="images/letterboxd.svg" alt="Letterboxd" width="40" height="40" loading="lazy"
                                 class="w-10 h-10 md:w-8 md:h-8 object-contain transition-transform group-hover:scale-110">
                             <span class="text-sm md:text-sm font-medium">Letterboxd</span>
                         </a>
@@ -675,7 +747,7 @@
     </main>
 
     <!-- Back to Top Button -->
-    <button id="backToTop" onclick="scrollToTop()"
+    <button id="backToTop" onclick="scrollToTop()" aria-label="Back to top"
         class="fixed bottom-6 right-6 glass-btn p-3 rounded-full shadow-lg transition-all duration-300 transform translate-y-20 z-50">
         <i data-lucide="arrow-up" class="w-6 h-6"></i>
     </button>
@@ -683,13 +755,13 @@
 
 
     <!-- GENERIC MODAL OVERLAY -->
-    <div id="modal-overlay">
+    <div id="modal-overlay" role="dialog" aria-modal="true">
         <!-- Close Overlay on click outside -->
         <div class="absolute inset-0" onclick="closeModal()"></div>
 
         <!-- Modal Content Container (Rotates content) -->
         <div class="modal-content relative z-10 flex flex-col items-center text-center">
-            <button class="modal-close" onclick="closeModal()">
+            <button class="modal-close" onclick="closeModal()" aria-label="Close modal">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
             <div id="modal-body-content" class="w-full">
@@ -715,7 +787,7 @@
                     <a href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" title="Open in YouTube Music" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-cyan-400 transition-colors flex items-center justify-center">
                         <i data-lucide="external-link" class="w-5 h-5"></i>
                     </a>
-                    <button onclick="closePlaylistSidebar()" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
+                    <button onclick="closePlaylistSidebar()" aria-label="Close playlist sidebar" class="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex items-center justify-center">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -735,6 +807,7 @@
                     frameborder="0" 
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                     referrerpolicy="strict-origin-when-cross-origin"
+                    title="YouTube Music Playlist"
                     class="rounded-xl border border-white/5 bg-[#030812]">
                 </iframe>
             </div>
@@ -832,12 +905,40 @@
 
         /* --- PAGE VISIBILITY OPTIMIZATION --- */
         // Pause animations when tab is hidden to save resources
+        let rafId = null;
         document.addEventListener('visibilitychange', () => {
             const body = document.body;
             if (document.hidden) {
                 body.classList.add('global-paused');
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
             } else {
                 body.classList.remove('global-paused');
+                if (!rafId) {
+                    rafId = requestAnimationFrame(raf);
+                }
+            }
+        });
+
+        /* --- ACCESSIBILITY KEYBOARD LISTENERS --- */
+        // Trigger click event on Space or Enter for custom bento buttons
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === ' ' || e.key === 'Enter') && e.target.getAttribute('role') === 'button') {
+                e.preventDefault();
+                e.target.click();
+            }
+            // Close modals or sidebars on Escape key press
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('modal-overlay');
+                const sidebar = document.getElementById('playlist-sidebar');
+                if (modal && modal.classList.contains('active')) {
+                    closeModal();
+                }
+                if (sidebar && sidebar.classList.contains('active')) {
+                    closePlaylistSidebar();
+                }
             }
         });
 
@@ -889,16 +990,15 @@
 
         // Integrate Lenis into animation loop
         function raf(time) {
-            if (lenis) lenis.raf(time);
-
-            // Only animate if the tab is visible
-            if (!document.hidden) {
-                animate();
+            if (document.hidden || document.body.classList.contains('global-paused')) {
+                rafId = null;
+                return;
             }
-
-            requestAnimationFrame(raf);
+            if (lenis) lenis.raf(time);
+            animate();
+            rafId = requestAnimationFrame(raf);
         }
-        requestAnimationFrame(raf);
+        rafId = requestAnimationFrame(raf);
 
         /* --- SNOW CANVAS ANIMATION --- */
         const canvas = document.getElementById('snow-canvas');
@@ -2135,7 +2235,8 @@
                             width="100%" 
                             height="100%" 
                             src="https://embed.windy.com/embed2.html?lat=51.48&lon=-3.18&detailLat=51.48&detailLon=-3.18&width=650&height=450&zoom=8&level=surface&overlay=radar&product=radar&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=default&radarRange=-1" 
-                            frameborder="0">
+                            frameborder="0"
+                            title="Windy Weather Map Radar">
                         </iframe>
                     </div>
                     <!-- Data Summary -->
@@ -2283,6 +2384,7 @@
                         height="100%" 
                         src="https://kazuhani.github.io/KazuOC/#home" 
                         frameborder="0"
+                        title="Kazu Hani Reference Sheet"
                         class="bg-slate-900">
                     </iframe>
                 </div>

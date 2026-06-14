@@ -53,6 +53,17 @@
             // Shape: 3=Triangle, 4=Diamond, 6=Hexagon
             const r = Math.random();
             this.sides = r < 0.35 ? 3 : (r < 0.75 ? 4 : 6);
+
+            // Precompute vertex coordinates for faster rendering
+            this.vertices = [];
+            const angleStep = (Math.PI * 2) / this.sides;
+            for (let i = 0; i < this.sides; i++) {
+                const angle = i * angleStep;
+                this.vertices.push({
+                    x: Math.cos(angle) * this.size,
+                    y: Math.sin(angle) * this.size
+                });
+            }
         }
 
         update() {
@@ -93,14 +104,11 @@
             ctx.rotate(this.rotation);
             ctx.beginPath();
             
-            // Draw regular polygon for crystal structure
-            const angleStep = (Math.PI * 2) / this.sides;
-            for (let i = 0; i < this.sides; i++) {
-                const angle = i * angleStep;
-                const px = Math.cos(angle) * this.size;
-                const py = Math.sin(angle) * this.size;
-                if (i === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
+            // Draw regular polygon for crystal structure using precomputed vertices
+            for (let i = 0; i < this.vertices.length; i++) {
+                const v = this.vertices[i];
+                if (i === 0) ctx.moveTo(v.x, v.y);
+                else ctx.lineTo(v.x, v.y);
             }
             
             ctx.closePath();
@@ -130,8 +138,12 @@
 
     for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new CrystalShard());
 
+    let particlesRafId = null;
     function drawParticles() {
-        if (document.hidden) { requestAnimationFrame(drawParticles); return; }
+        if (document.hidden || document.body.classList.contains('global-paused')) {
+            particlesRafId = null;
+            return;
+        }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const connectionGroups = {};
@@ -178,9 +190,16 @@
         }
         ctx.globalAlpha = 1.0; // Reset
 
-        requestAnimationFrame(drawParticles);
+        particlesRafId = requestAnimationFrame(drawParticles);
     }
-    requestAnimationFrame(drawParticles);
+    particlesRafId = requestAnimationFrame(drawParticles);
+
+    // Event listener to resume particle rendering when visibility changes
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !document.body.classList.contains('global-paused') && !particlesRafId) {
+            particlesRafId = requestAnimationFrame(drawParticles);
+        }
+    });
 })();
 
 
@@ -802,7 +821,7 @@ function renderSteamWidget(data) {
             displayedGames.map(function(g) {
                 var pct = Math.max(6, Math.round((parseFloat(g.hours) / maxHours) * 100));
                 return '<a href="' + escapeHtml(sanitizeUrl(g.link)) + '" target="_blank" class="steam-game-row flex items-center gap-3 w-full p-1.5 rounded-xl transition-all duration-200">' +
-                    '<img src="' + escapeHtml(sanitizeUrl(g.logo)) + '" alt="' + escapeHtml(g.name) + '" class="steam-capsule w-[88px] h-[33px] rounded-md object-cover border border-white/5 transition-all duration-300 flex-shrink-0" onerror="this.onerror=null;this.src=\'images/youtube.png\';">' +
+                    '<img src="' + escapeHtml(sanitizeUrl(g.logo)) + '" alt="' + escapeHtml(g.name) + '" width="88" height="33" class="steam-capsule w-[88px] h-[33px] rounded-md object-cover border border-white/5 transition-all duration-300 flex-shrink-0" onerror="this.onerror=null;this.src=\'images/youtube.png\';">' +
                     '<div class="overflow-hidden flex-grow min-w-0">' +
                     '<div class="steam-game-name text-xs font-bold text-white transition-colors truncate">' + escapeHtml(g.name) + '</div>' +
                     '<div class="text-[10px] text-gray-500 truncate mt-0.5">' + escapeHtml(g.hours) + ' hrs past 2 wks</div>' +
@@ -818,7 +837,7 @@ function renderSteamWidget(data) {
         '<div class="md:col-span-5 flex flex-col items-center text-center gap-2 w-full">' +
         '<a href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" class="flex flex-col items-center gap-2 w-full group/profile">' +
         '<div class="relative flex-shrink-0">' +
-        '<img src="' + displayImg + '" alt="' + profileName + '" class="steam-avatar w-24 h-24 md:w-[72px] md:h-[72px] rounded-xl object-cover border-2 border-white/10 shadow-lg transition-all duration-300" onerror="this.onerror=null;this.src=\'images/kazu small.png\';">'+
+        '<img src="' + displayImg + '" alt="' + profileName + '" width="72" height="72" class="steam-avatar w-24 h-24 md:w-[72px] md:h-[72px] rounded-xl object-cover border-2 border-white/10 shadow-lg transition-all duration-300" onerror="this.onerror=null;this.src=\'images/kazu small.png\';">'+
         '<span class="status-dot ' + statusDotClass + '" style="position:absolute;bottom:-3px;right:-3px;z-index:10;"></span>' +
         '</div>' +
         '<div class="steam-profile-name text-sm font-bold text-white transition-colors truncate w-full leading-tight">' + profileName + '</div>' +

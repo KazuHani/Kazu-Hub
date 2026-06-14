@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Check if device prefers reduced motion to prevent motion sickness
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
     // Check if device supports hover (mouse) to prevent interference with touch scrolling
     // Check if device supports hover (mouse) for MOUSE-based tilt
     const isHoverDevice = window.matchMedia && window.matchMedia('(hover: hover)').matches;

@@ -2,7 +2,7 @@ const fs = require('fs');
 const css = fs.readFileSync('styles.css', 'utf8');
 const checks = [
     ['bg-[#070e1a]', css.includes('070e1a')],
-    ['z-[100]', css.includes('z-\\\\[100\\\\]') || css.indexOf('[100]') > -1],
+    ['z-[100]', css.includes('z-\\[100\\]')],
     ['tracking-[0.35em]', css.includes('0\\.35')],
     ['text-[0.65rem]', css.includes('0\\.65')],
     ['max-w-[95rem]', css.includes('95rem')],

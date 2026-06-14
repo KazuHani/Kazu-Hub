@@ -524,17 +524,22 @@ h1, h2, h3, .tech-font {
 .entrance-anim {
     opacity: 0;
     transform: translateY(30px) scale(0.97);
-    filter: blur(8px);
-    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
-                filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: opacity, transform, filter;
+    will-change: opacity, transform;
 }
 
 .entrance-anim.visible {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
+    animation: entrance-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes entrance-fade-in {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 
@@ -1257,6 +1262,7 @@ body.christmas-mode .mesh-gradient {
         transform: none !important;
     }
     .entrance-anim {
+        animation: none !important;
         transition: none !important;
         transform: none !important;
         filter: none !important;
@@ -1744,4 +1750,44 @@ body.night-mode #profile-pic-sleep {
     );
     filter: blur(14px);
     z-index: 0;
+}
+
+/* ===================================================
+   ACCESSIBILITY & FOCUS INDICATORS
+   =================================================== */
+:focus-visible {
+    outline: 2px solid var(--accent, #00f2fe) !important;
+    outline-offset: 4px !important;
+    box-shadow: 0 0 15px var(--accent-glow, rgba(0, 242, 254, 0.35)) !important;
+    transition: box-shadow 0.2s ease-in-out !important;
+}
+
+/* Ensure smooth focus transitions on bento elements */
+.glass-panel:focus-visible,
+.glass-card:focus-visible {
+    transform: scale(1.02) !important;
+}
+
+/* Discord copy helper badge styling */
+.discord-copy-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 10px;
+    font-weight: bold;
+    color: #a5b4fc; /* indigo-300 */
+    background: rgba(99, 102, 241, 0.15); /* indigo-500/15 */
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+.group:hover .discord-copy-badge,
+:focus-visible > .discord-copy-badge {
+    opacity: 1;
+    transform: translateY(-2px);
 }
