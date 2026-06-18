@@ -255,8 +255,6 @@
     <!-- Animated Mesh Gradient Background -->
     <div class="mesh-gradient"></div>
 
-    <!-- Interactive Particle Canvas -->
-    <canvas id="particle-canvas"></canvas>
     <!-- Background Animations -->
     <canvas id="snow-canvas"></canvas>
     <canvas id="confetti-canvas"></canvas>
@@ -286,6 +284,7 @@
         </svg>
     </div>
     <div id="night-stars-container" aria-hidden="true"></div>
+    <div id="night-aurora" aria-hidden="true"></div>
 
     <!-- Main Content -->
     <main class="flex-grow pt-4 pb-4 px-2 sm:px-4 lg:px-6 max-w-[95rem] mx-auto w-full z-10">
@@ -304,7 +303,7 @@
 
                 <!-- Profile & Hero Section — Full Width -->
                 <section class="bento-full text-center relative content-hidden entrance-anim py-6">
-                    <div class="inline-block relative group">
+                    <div class="inline-block relative group profile-3d-group">
 
                         <!-- Birthday Hat -->
                         <div id="birthday-hat" class="hidden">
@@ -381,7 +380,7 @@
                             style="width:176px;height:176px;padding:4px;">
                             <div id="pride-ring"
                                 class="absolute rounded-full opacity-0 transition-opacity duration-[3000ms]"></div>
-                            <div class="relative w-40 h-40 mx-auto cursor-pointer active:scale-95 transition-transform"
+                            <div class="art-scene relative w-40 h-40 mx-auto cursor-pointer active:scale-95 transition-transform"
                                 style="top:4px;">
                                 <img id="profile-pic" src="images/Noice_x16_drawing.png" alt="Kazu Hani Profile"
                                     width="160" height="160"
@@ -393,6 +392,16 @@
                                     class="absolute inset-0 w-full h-full rounded-full border-4 border-slate-900 shadow-2xl object-contain bg-slate-950 p-2 profile-glow transition-opacity duration-[3000ms] opacity-0 pointer-events-none"
                                     loading="eager" onclick="playPop()"
                                     onerror="this.src='https://api.dicebear.com/9.x/avataaars/svg?seed=KazuHani&backgroundColor=050b14&clothing=hoodie'">
+
+                                <!-- 3D Art Carousel (desktop hover) — blooms out of the avatar and orbits around/behind it -->
+                                <div class="art-ring" aria-hidden="true">
+                                    <div class="art-ring__spin">
+                                        <div class="art-card" style="--a:0deg;"><img class="art-face art-face--front" src="images/Art_001.png" alt="" loading="lazy" decoding="async"><img class="art-face art-face--back" src="images/Art_001.png" alt="" aria-hidden="true" loading="lazy" decoding="async"></div>
+                                        <div class="art-card" style="--a:90deg;"><img class="art-face art-face--front" src="images/Art_002.png" alt="" loading="lazy" decoding="async"><img class="art-face art-face--back" src="images/Art_002.png" alt="" aria-hidden="true" loading="lazy" decoding="async"></div>
+                                        <div class="art-card" style="--a:180deg;"><img class="art-face art-face--front" src="images/Art_003.png" alt="" loading="lazy" decoding="async"><img class="art-face art-face--back" src="images/Art_003.png" alt="" aria-hidden="true" loading="lazy" decoding="async"></div>
+                                        <div class="art-card" style="--a:270deg;"><img class="art-face art-face--front" src="images/Art_004.png" alt="" loading="lazy" decoding="async"><img class="art-face art-face--back" src="images/Art_004.png" alt="" aria-hidden="true" loading="lazy" decoding="async"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1215,23 +1224,30 @@
             constructor() {
                 this.reset();
                 this.y = Math.random() * height;
-                this.baseSpeed = Math.random() * 1 + 0.5;
+                this.baseSpeed = Math.random() * 1 + 0.3;
             }
 
             reset() {
                 const xmasActive = typeof isChristmas !== 'undefined' && isChristmas;
                 this.x = Math.random() * width;
                 this.y = -10;
-                this.size = Math.random() * (xmasActive ? 4 : 2) + 0.5;
-                this.baseSpeed = Math.random() * (xmasActive ? 1.5 : 1) + 0.5;
+                // Larger, more visible sizes; Christmas gets even bigger
+                this.size = Math.random() * (xmasActive ? 5 : 3) + 1;
+                this.baseSpeed = Math.random() * (xmasActive ? 1.5 : 1) + 0.35;
                 this.windFactor = Math.random() * 0.5 + 0.1;
-                this.opacity = Math.random() * 0.5 + (xmasActive ? 0.4 : 0.3);
+                this.opacity = Math.random() * 0.45 + (xmasActive ? 0.55 : 0.4);
+                // Rotation for snowflake spin
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.018;
+                // Organic lateral sway
+                this.wobble = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = Math.random() * 0.04 + 0.01;
             }
 
             update(wind, speedMult) {
                 this.y += this.baseSpeed * speedMult;
-                this.x += wind * this.windFactor * speedMult;
-                // ... rest unchanged
+                this.wobble += this.wobbleSpeed;
+                this.x += wind * this.windFactor * speedMult + Math.sin(this.wobble) * 0.35;
 
                 if (this.y > height) {
                     this.reset();
@@ -1244,7 +1260,7 @@
             }
 
             draw() {
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.fillStyle = `rgba(210, 235, 255, ${this.opacity})`;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -1506,20 +1522,17 @@
                 p.update(wind, speedMultiplier);
             });
 
-            // Group snow particles by opacity to batch draw calls
-            const opacityGroups = {};
+            // Batch-draw all particles as soft circle dots grouped by opacity
+            const circleGroups = {};
             particles.forEach(p => {
-                const roundedOpacity = Math.round(p.opacity * 10) / 10;
-                if (!opacityGroups[roundedOpacity]) {
-                    opacityGroups[roundedOpacity] = [];
-                }
-                opacityGroups[roundedOpacity].push(p);
+                const key = Math.round(p.opacity * 10) / 10;
+                if (!circleGroups[key]) circleGroups[key] = [];
+                circleGroups[key].push(p);
             });
-
-            for (const opacity in opacityGroups) {
-                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            for (const opacity in circleGroups) {
+                ctx.fillStyle = `rgba(210, 235, 255, ${opacity})`;
                 ctx.beginPath();
-                opacityGroups[opacity].forEach(p => {
+                circleGroups[opacity].forEach(p => {
                     ctx.moveTo(p.x + p.size, p.y);
                     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 });
@@ -1782,25 +1795,49 @@
             const container = document.getElementById('night-stars-container');
             if (!container) return;
             container.innerHTML = '';
-            const count = window._isMobileDevice ? 30 : 70;
+            const isDesktop = !window._isMobileDevice;
+            const count = isDesktop ? 120 : 30;
+
             for (let i = 0; i < count; i++) {
                 const star = document.createElement('div');
-                star.className = 'night-star';
-                const size = (Math.random() * 2.5 + 0.8).toFixed(1);
-                const opacity = (Math.random() * 0.4 + 0.3).toFixed(2);
-                const speed = (Math.random() * 4 + 2).toFixed(1);
+                // ~12% of desktop stars get a warm glow
+                const isBright = isDesktop && Math.random() < 0.12;
+                star.className = isBright ? 'night-star night-star-bright' : 'night-star';
+                const size = isBright
+                    ? (Math.random() * 1.5 + 2.0).toFixed(1)
+                    : (Math.random() * 2.5 + 0.8).toFixed(1);
+                const opacity = isBright
+                    ? (Math.random() * 0.2 + 0.8).toFixed(2)
+                    : (Math.random() * 0.4 + 0.3).toFixed(2);
+                const speed = isBright
+                    ? (Math.random() * 2 + 3).toFixed(1)
+                    : (Math.random() * 4 + 2).toFixed(1);
                 const delay = (Math.random() * speed).toFixed(1);
                 star.style.cssText = [
                     `width:${size}px`, `height:${size}px`,
-                    `top:${Math.random() * 70}%`,
+                    `top:${Math.random() * 72}%`,
                     `left:${Math.random() * 100}%`,
                     `--star-opacity:${opacity}`,
                     `--star-speed:${speed}s`,
                     `--star-delay:${delay}s`
                 ].join(';');
                 container.appendChild(star);
-                // Stagger visibility for a gentle fade-in
-                setTimeout(() => star.classList.add('star-visible'), i * 40);
+                setTimeout(() => star.classList.add('star-visible'), i * 25);
+            }
+
+            // Add shooting stars (desktop only — uses .shooting-star CSS class)
+            if (isDesktop) {
+                const shoots = [
+                    { top: '6%',  left: '70%', delay: '5s'  },
+                    { top: '13%', left: '88%', delay: '20s' },
+                    { top: '4%',  left: '58%', delay: '37s' },
+                ];
+                shoots.forEach(pos => {
+                    const s = document.createElement('div');
+                    s.className = 'shooting-star';
+                    s.style.cssText = `top:${pos.top};left:${pos.left};animation:shoot 45s linear ${pos.delay} infinite`;
+                    container.appendChild(s);
+                });
             }
         }
 
@@ -1898,33 +1935,26 @@
             const diff = sunset - now;
 
             const iconContainer = document.getElementById('sundown-icon-container');
+            const popup = document.getElementById('sundown-popup');
+            const oneHour = 60 * 60 * 1000;
 
             if (now >= (sunset - buffer) && now <= (sunset + buffer)) {
+                if (popup) popup.style.display = '';
                 popupText.textContent = "Fading into night mode...";
                 if (iconContainer) {
                     iconContainer.innerHTML = '<i data-lucide="sunset" class="w-3.5 h-3.5 text-yellow-400"></i>';
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                 }
-            } else if (diff > 0) {
-                const hours = Math.floor(diff / (1000 * 60 * 60));
-                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                let timeStr = "";
-                if (hours > 0) {
-                    timeStr += `${hours}h ${mins}m`;
-                } else {
-                    timeStr += `${mins}m`;
-                }
-                popupText.textContent = `${timeStr} until UK sundown`;
+            } else if (diff > 0 && diff <= oneHour) {
+                if (popup) popup.style.display = '';
+                const mins = Math.floor(diff / (1000 * 60));
+                popupText.textContent = `${mins}m until sundown`;
                 if (iconContainer) {
                     iconContainer.innerHTML = '<i data-lucide="sunset" class="w-3.5 h-3.5 text-yellow-400"></i>';
                     if (typeof lucide !== 'undefined') lucide.createIcons();
                 }
             } else {
-                popupText.textContent = "Sundown passed (Night Mode Active)";
-                if (iconContainer) {
-                    iconContainer.innerHTML = '<i data-lucide="moon" class="w-3.5 h-3.5 text-indigo-400"></i>';
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                }
+                if (popup) popup.style.display = 'none';
             }
         }
         window.updateSundownPopup = updateSundownPopup;
