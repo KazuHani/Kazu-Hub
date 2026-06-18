@@ -121,6 +121,16 @@ h1, h2, h3, .tech-font {
     100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
 }
 
+/* When the tab is backgrounded (body.global-paused) the JS render loop already
+   stops; this also hard-pauses every CSS animation so the GPU compositor does
+   zero work while the page is not visible. Only applies when hidden, so there
+   is no cost to the visible page. */
+body.global-paused *,
+body.global-paused *::before,
+body.global-paused *::after {
+    animation-play-state: paused !important;
+}
+
 /* --- PARTICLE CANVAS --- */
 #particle-canvas {
     position: fixed;
@@ -175,9 +185,10 @@ h1, h2, h3, .tech-font {
    DASHBOARD WRAPPER — BENTO GRID
    =================================================== */
 .dashboard-wrapper {
+    /* Near-opaque shell sitting over the animated mesh. A live backdrop-filter
+       here re-blurred a full-viewport region every frame the mesh moved for an
+       effect hidden behind 92% black — removed. */
     background: rgba(0, 0, 0, 0.92);
-    backdrop-filter: blur(var(--glass-blur)) saturate(120%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-xl);
     padding: 1.5rem;
@@ -246,27 +257,35 @@ h1, h2, h3, .tech-font {
 .glass-panel,
 .glass-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(28px) saturate(130%);
-    -webkit-backdrop-filter: blur(28px) saturate(130%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* FROSTED GLASS — faux-glass, no live backdrop-filter.
+       These tiles sit inside the ~92%-opaque dashboard wrapper, so a real
+       backdrop blur captured almost-solid black and produced no visible frost
+       — yet it forced a per-frame blur convolution on every tile each time the
+       animated mesh moved (≈13 simultaneous blur passes at 60fps). Replaced
+       with a layered translucent fill + diagonal sheen + edge highlights that
+       read as glass at zero per-frame GPU cost. */
+    background:
+        linear-gradient(135deg,
+            rgba(255, 255, 255, 0.10) 0%,
+            rgba(255, 255, 255, 0.045) 42%,
+            rgba(255, 255, 255, 0.02) 100%),
+        rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: var(--radius-lg);
     box-shadow:
         0 16px 40px rgba(0, 0, 0, 0.35),
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
         inset 0 -1px 0 0 rgba(255, 255, 255, 0.04);
-    
-    /* Hardware acceleration promotion */
-    will-change: transform, backdrop-filter;
-    transform: translateZ(0);
-    
+
     transition:
         background var(--transition-smooth),
         border-color var(--transition-smooth),
         box-shadow var(--transition-smooth),
         transform var(--transition-spring);
 
-    /* Performance optimizations: skip rendering of off-screen panels */
+    /* Performance: skip rendering + layout of off-screen panels. No permanent
+       will-change/translateZ — that pinned ~13 GPU layers in memory for tiles
+       that are static until hovered; the hover transform promotes on demand. */
     content-visibility: auto;
     contain-intrinsic-size: auto 200px;
 }
@@ -278,9 +297,11 @@ h1, h2, h3, .tech-font {
 /* Glass Buttons */
 .glass-btn {
     position: relative;
-    background: var(--glass-btn-bg, rgba(255, 255, 255, 0.08)) !important;
-    backdrop-filter: blur(12px) saturate(120%) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
+    background:
+        linear-gradient(135deg,
+            rgba(255, 255, 255, 0.10),
+            rgba(255, 255, 255, 0.02)),
+        var(--glass-btn-bg, rgba(255, 255, 255, 0.08)) !important;
     border: 1px solid var(--glass-btn-border, rgba(255, 255, 255, 0.12)) !important;
     box-shadow: 
         0 4px 12px rgba(0, 0, 0, 0.15),
@@ -362,17 +383,27 @@ h1, h2, h3, .tech-font {
    =================================================== */
 @media (hover: hover) {
     .glass-panel:hover {
-        background: rgba(255, 255, 255, 0.10);
+        background:
+            linear-gradient(135deg,
+                rgba(255, 255, 255, 0.16) 0%,
+                rgba(255, 255, 255, 0.07) 42%,
+                rgba(255, 255, 255, 0.04) 100%),
+            rgba(255, 255, 255, 0.06);
         border-color: rgba(255, 255, 255, 0.20);
         box-shadow:
             0 24px 60px rgba(0, 0, 0, 0.45),
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.20),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.28),
             inset 0 -1px 0 0 rgba(255, 255, 255, 0.06);
         transform: translateY(-3px);
     }
 
     .glass-card:hover {
-        background: rgba(255, 255, 255, 0.10);
+        background:
+            linear-gradient(135deg,
+                rgba(255, 255, 255, 0.16) 0%,
+                rgba(255, 255, 255, 0.07) 42%,
+                rgba(255, 255, 255, 0.04) 100%),
+            rgba(255, 255, 255, 0.06);
         border-color: rgba(255, 255, 255, 0.20);
         box-shadow:
             0 24px 60px rgba(0, 0, 0, 0.45),
@@ -534,11 +565,18 @@ h1, h2, h3, .tech-font {
 .entrance-anim {
     opacity: 0;
     transform: translateY(30px) scale(0.97);
-    will-change: opacity, transform;
 }
 
 .entrance-anim.visible {
+    /* Hint only for the duration of the one-shot entrance, then release so we
+       don't pin a GPU layer per panel for the rest of the session. */
+    will-change: opacity, transform;
     animation: entrance-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Once the entrance has played, drop the compositor-layer hint. */
+.entrance-anim.visible.entrance-done {
+    will-change: auto;
 }
 
 @keyframes entrance-fade-in {
@@ -1191,15 +1229,18 @@ body.christmas-mode .mesh-gradient {
         animation: none !important;
     }
 
-    /* 5. Support mobile viewports with optimized blur and shadows */
+    /* 5. Faux-glass on mobile too — no backdrop-filter (same invisible-over-dark
+       blur, even costlier on mobile GPUs) */
     .glass-panel,
     .glass-card {
-        backdrop-filter: blur(20px) saturate(120%) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(120%) !important;
-        background: rgba(255, 255, 255, 0.05) !important;
+        background:
+            linear-gradient(135deg,
+                rgba(255, 255, 255, 0.09),
+                rgba(255, 255, 255, 0.025)),
+            rgba(255, 255, 255, 0.05) !important;
         box-shadow:
             0 12px 30px rgba(0, 0, 0, 0.35),
-            inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
             inset 0 -1px 0 0 rgba(255, 255, 255, 0.04) !important;
     }
 
@@ -1309,6 +1350,7 @@ body.christmas-mode .mesh-gradient {
         transform: none !important;
         filter: none !important;
         opacity: 1 !important;
+        will-change: auto !important;
     }
     .content-hidden {
         opacity: 1 !important;
@@ -2369,5 +2411,158 @@ body.dashboard-theme-black .dashboard-wrapper {
 @media (prefers-reduced-motion: reduce) {
     .art-ring__spin {
         animation: none !important;
+    }
+}
+
+/* ===================================================
+   REFRESH v2.1 — POLISH PASS
+   Adds depth, accent cohesion & modern micro-interactions.
+   Design rule: ZERO idle GPU cost — every effect is either a
+   static gradient or driven by :hover / entrance only. Nothing
+   new animates while the page sits still. Theme-safe: never
+   sets text `color` (owned by the contrast system), only
+   decorative layers, shadows, borders & transforms.
+   =================================================== */
+
+/* --- 1. Dashboard shell: soft ambient depth (static, free) --- */
+/* Replaces the flat fill with a layered radial wash so the hero
+   reads as gently lit from above. Appended after the theme rules
+   so it wins at equal specificity; provided for both themes. */
+body.dashboard-theme-black .dashboard-wrapper {
+    background:
+        radial-gradient(135% 80% at 50% -15%, rgba(0, 242, 254, 0.10) 0%, transparent 50%),
+        radial-gradient(100% 70% at 100% 115%, rgba(139, 92, 246, 0.10) 0%, transparent 55%),
+        rgba(3, 6, 12, 0.94) !important;
+}
+
+body.dashboard-theme-white .dashboard-wrapper {
+    background:
+        radial-gradient(135% 80% at 50% -15%, rgba(0, 180, 216, 0.12) 0%, transparent 50%),
+        radial-gradient(100% 70% at 100% 115%, rgba(124, 58, 237, 0.08) 0%, transparent 55%),
+        rgba(255, 255, 255, 0.92) !important;
+}
+
+/* --- 2. Hero title: tighter optical tracking + glow (dark only) --- */
+#kazu-title {
+    letter-spacing: -0.02em;
+}
+body.dashboard-theme-black #kazu-title {
+    text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.5),
+        0 0 28px rgba(0, 242, 254, 0.22);
+}
+
+/* --- 3. Stat tiles: colour-coded accent bar + top aura --- */
+.stat-tile            { --c: #00f2fe; --c-rgb: 0, 242, 254; }
+.stat-tile--cyan      { --c: #22d3ee; --c-rgb: 34, 211, 238; }
+.stat-tile--sky       { --c: #38bdf8; --c-rgb: 56, 189, 248; }
+.stat-tile--purple    { --c: #c084fc; --c-rgb: 192, 132, 252; }
+.stat-tile--pink      { --c: #f472b6; --c-rgb: 244, 114, 182; }
+
+/* Crisp accent bar across the top edge (::before is free on tiles). */
+.stat-tile::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 72%;
+    height: 2.5px;
+    transform: translateX(-50%) scaleX(0.55);
+    transform-origin: center;
+    background: linear-gradient(90deg, transparent, var(--c), transparent);
+    box-shadow: 0 0 12px rgba(var(--c-rgb), 0.55);
+    border-radius: 999px;
+    opacity: 0.7;
+    z-index: 4;
+    pointer-events: none;
+    transition: transform var(--transition-spring), opacity var(--transition-smooth);
+}
+
+/* Soft coloured aura at the top of each tile. This re-declares the
+   shared glass-panel ::after (the mouse spotlight) for stat tiles —
+   it keeps the spotlight layer AND adds a static colour wash, since
+   only `background`/`opacity` are overridden (rest inherits). */
+.stat-tile::after {
+    opacity: 1;
+    background:
+        radial-gradient(110% 80% at 50% -10%, rgba(var(--c-rgb), 0.18), transparent 55%),
+        radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+            rgba(255, 255, 255, 0.05), transparent 50%);
+}
+
+@media (hover: hover) {
+    .stat-tile:hover::before {
+        transform: translateX(-50%) scaleX(1);
+        opacity: 1;
+    }
+    /* The big readout glows in its category colour on hover. */
+    .stat-tile:hover .tech-font {
+        text-shadow: 0 0 18px rgba(var(--c-rgb), 0.55);
+        transition: text-shadow var(--transition-smooth);
+    }
+}
+
+/* --- 4. Section headers: icon chip + trailing hairline --- */
+.section-header {
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+.section-header [data-lucide],
+.section-header svg {
+    box-sizing: content-box;
+    padding: 5px;
+    border-radius: 8px;
+    background: rgba(0, 242, 254, 0.12);
+    border: 1px solid rgba(0, 242, 254, 0.22);
+}
+.section-header::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0, 242, 254, 0.30), transparent);
+    border-radius: 1px;
+}
+
+/* --- 5. Primary CTAs: vibrant gradient, glow on hover --- */
+/* "Listen" & "View Reference" promoted to real primary actions.
+   Same vibrant gradient in both themes for a deliberate accent. */
+.cta-btn {
+    background: linear-gradient(135deg, #0891b2 0%, #2563eb 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+    box-shadow:
+        0 8px 24px rgba(34, 211, 238, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.30) !important;
+}
+.cta-btn:hover {
+    background: linear-gradient(135deg, #0aa0c4 0%, #2f6ff5 100%) !important;
+    box-shadow:
+        0 14px 34px rgba(34, 211, 238, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.40) !important;
+    transform: translateY(-2px) scale(1.03);
+}
+
+/* --- 6. Social tiles: faint accent halo on hover --- */
+@media (hover: hover) {
+    #profile-links .glass-card:hover {
+        box-shadow:
+            0 22px 50px rgba(0, 0, 0, 0.42),
+            0 0 22px rgba(0, 242, 254, 0.16),
+            inset 0 1px 0 0 rgba(255, 255, 255, 0.22) !important;
+    }
+}
+
+/* --- Reduced-motion: drop the new hover transitions/transforms --- */
+@media (prefers-reduced-motion: reduce) {
+    .stat-tile::before {
+        transition: none !important;
+        transform: translateX(-50%) scaleX(1) !important;
+    }
+    .stat-tile:hover .tech-font {
+        text-shadow: none !important;
+    }
+    .cta-btn:hover {
+        transform: none !important;
     }
 }

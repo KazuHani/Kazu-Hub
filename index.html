@@ -451,7 +451,7 @@
                 <!-- Status Dashboard — Individual Bento Items -->
                 <div onclick="openModal('time')" tabindex="0" role="button" aria-haspopup="dialog"
                     aria-label="United Kingdom Time"
-                    class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
+                    class="glass-panel stat-tile stat-tile--cyan rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <h3 class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">United Kingdom Time</h3>
                     <div id="uk-time" class="text-2xl font-bold text-white tech-font tabular-nums">00:00:00 PM</div>
                     <div id="uk-date" class="text-cyan-400/80 text-sm md:text-xs mt-1">Loading Date...</div>
@@ -460,7 +460,7 @@
                 <!-- Weather -->
                 <div onclick="openModal('weather')" id="weather-card" tabindex="0" role="button" aria-haspopup="dialog"
                     aria-label="Current Weather"
-                    class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
+                    class="glass-panel stat-tile stat-tile--sky rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <div id="weather-rain" class="weather-rain-container"></div>
                     <div id="weather-snow" class="weather-snow-container"></div>
                     <h3 class="text-gray-400 text-xs uppercase tracking-widest mb-1 relative z-10">Weather</h3>
@@ -479,7 +479,7 @@
                 <!-- Age Calculator -->
                 <div onclick="openModal('age')" tabindex="0" role="button" aria-haspopup="dialog"
                     aria-label="Current Age Statistics"
-                    class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
+                    class="glass-panel stat-tile stat-tile--purple rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <h3 class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">Current Age</h3>
                     <div id="current-age" class="text-2xl font-bold text-white tech-font tabular-nums">--</div>
                     <div class="text-purple-400/80 text-sm md:text-xs mt-1">Years Old</div>
@@ -488,7 +488,7 @@
                 <!-- Birthday Countdown -->
                 <div onclick="openModal('birthday')" tabindex="0" role="button" aria-haspopup="dialog"
                     aria-label="Birthday Countdown"
-                    class="glass-panel rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
+                    class="glass-panel stat-tile stat-tile--pink rounded-2xl p-4 text-center relative overflow-hidden group cursor-pointer transition-colors content-hidden entrance-anim">
                     <h3 id="birthday-label" class="text-gray-400 text-sm md:text-xs uppercase tracking-widest mb-1">Next
                         Birthday
                         (Nov
@@ -955,6 +955,8 @@
                                 setTimeout(() => {
                                     el.classList.remove('content-hidden');
                                     el.classList.add('visible');
+                                    // Release the will-change layer hint once the entrance has played.
+                                    el.addEventListener('animationend', () => el.classList.add('entrance-done'), { once: true });
                                 }, index * 60); // 60ms stagger for elements entering simultaneously
                             });
                         }
@@ -970,6 +972,7 @@
                         setTimeout(() => {
                             el.classList.remove('content-hidden');
                             el.classList.add('visible');
+                            el.addEventListener('animationend', () => el.classList.add('entrance-done'), { once: true });
                         }, index * 50);
                     });
                 }
@@ -1001,9 +1004,9 @@
                 }
             } else {
                 body.classList.remove('global-paused');
-                if (!rafId) {
-                    rafId = requestAnimationFrame(raf);
-                }
+                // Restart the loop; it will self-stop again if there's nothing to do.
+                if (typeof ensureLoop === 'function') ensureLoop();
+                else if (!rafId) rafId = requestAnimationFrame(raf);
             }
         });
 
@@ -1101,17 +1104,65 @@
             });
         }
 
-        // Integrate Lenis into animation loop
+        // ---- Adaptive render loop -------------------------------------------------
+        // The old loop ran at 60fps forever. Even while idle it kept calling
+        // lenis.raf() every frame (which nudges scroll → forces the whole page to
+        // recomposite = constant GPU) plus an empty canvas pass = constant CPU.
+        // Now the loop only runs while there is real work — canvas particles to
+        // animate, or Lenis still settling a scroll — and stops completely when the
+        // page sits still. Any scroll intent or particle spawn wakes it via
+        // ensureLoop(), so behaviour is identical but idle cost drops to ~zero.
+        let scrollActiveUntil = 0;
+
+        function loopHasWork(canvasBusy) {
+            if (canvasBusy) return true;
+            if (lenis && lenis.isScrolling) return true;
+            return performance.now() < scrollActiveUntil;
+        }
+
         function raf(time) {
             if (document.hidden || document.body.classList.contains('global-paused')) {
                 rafId = null;
                 return;
             }
             if (lenis) lenis.raf(time);
-            animate();
-            rafId = requestAnimationFrame(raf);
+            const canvasBusy = animate();
+            if (loopHasWork(canvasBusy)) {
+                rafId = requestAnimationFrame(raf);
+            } else {
+                rafId = null;
+            }
         }
-        rafId = requestAnimationFrame(raf);
+
+        function ensureLoop() {
+            if (rafId === null && !document.hidden && !document.body.classList.contains('global-paused')) {
+                rafId = requestAnimationFrame(raf);
+            }
+        }
+        window.ensureLoop = ensureLoop;
+
+        // Wake the loop on any scroll intent so Lenis can animate to its target,
+        // and keep it alive briefly afterwards while Lenis settles.
+        function markScrollActive() {
+            scrollActiveUntil = performance.now() + 1200;
+            ensureLoop();
+        }
+        ['wheel', 'touchstart', 'touchmove', 'pointerdown'].forEach((evt) => {
+            window.addEventListener(evt, markScrollActive, { passive: true });
+        });
+        window.addEventListener('scroll', markScrollActive, { passive: true });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'PageUp' ||
+                e.key === 'PageDown' || e.key === 'Home' || e.key === 'End' || e.key === ' ') {
+                markScrollActive();
+            }
+        });
+        if (lenis && typeof lenis.on === 'function') {
+            // Keep the loop alive while Lenis is still emitting scroll frames.
+            lenis.on('scroll', () => { scrollActiveUntil = performance.now() + 200; });
+        }
+
+        ensureLoop();
 
         /* --- SNOW CANVAS ANIMATION --- */
         const canvas = document.getElementById('snow-canvas');
@@ -1132,6 +1183,7 @@
 
         function startConfettiShow(durationMs = 12000) {
             initConfetti();
+            if (typeof ensureLoop === 'function') ensureLoop();
             showConfettiActive = true;
             if (confettiTimeout) {
                 clearTimeout(confettiTimeout);
@@ -1298,6 +1350,8 @@
             }
             // Trigger resets so particle sizes adjust
             particles.forEach(p => p.reset());
+            // Wake the render loop if snow just appeared.
+            if (particles.length > 0 && typeof ensureLoop === 'function') ensureLoop();
         }
 
         // --- Crystalline Ice Shatter Explosion Logic ---
@@ -1413,6 +1467,7 @@
             for (let i = 0; i < cappedCount; i++) {
                 fireworkParticles.push(new IceShardParticle(x, y));
             }
+            if (typeof ensureLoop === 'function') ensureLoop();
         };
 
         // --- Interaction: Profile & Global Crystalline Spark Click Listener ---
@@ -1504,7 +1559,7 @@
                     confettiCtx.clearRect(0, 0, width, height);
                     lastCanvasActive = false;
                 }
-                return;
+                return false; // no canvas work — lets the render loop idle out
             }
 
             lastCanvasActive = true;
@@ -1558,11 +1613,32 @@
                     }
                 }
             }
+
+            // Report whether the canvas still has anything to animate so the
+            // render loop can stop once everything has settled.
+            return particles.length > 0 || confettiParticles.length > 0 || fireworkParticles.length > 0;
         }
 
         /* --- DATA LOGIC --- */
 
         // 1. UK Time (12-hour)
+        // Intl.DateTimeFormat construction is expensive, so build the formatters
+        // once and reuse them every tick instead of allocating two per second.
+        const ukTimeFormat = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Europe/London',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+        const ukDateFormat = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Europe/London',
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
         function updateTime() {
             const timeElement = document.getElementById('uk-time');
             const dateElement = document.getElementById('uk-date');
@@ -1570,24 +1646,8 @@
 
             const now = new Date();
 
-            const timeOptions = {
-                timeZone: 'Europe/London',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            };
-
-            const dateOptions = {
-                timeZone: 'Europe/London',
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            };
-
-            timeElement.textContent = new Intl.DateTimeFormat('en-GB', timeOptions).format(now);
-            dateElement.textContent = new Intl.DateTimeFormat('en-GB', dateOptions).format(now);
+            timeElement.textContent = ukTimeFormat.format(now);
+            dateElement.textContent = ukDateFormat.format(now);
 
             if (greetingElement) {
                 const localHour = now.getHours();
