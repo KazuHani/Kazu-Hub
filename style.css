@@ -81,6 +81,7 @@ body[data-theme="light"] #theme-orb > span {
 /* ---- Hero ---- */
 .hero { position: relative; text-align: center; padding: 8px 0; display: flex; flex-direction: column; align-items: center; }
 .pfp-ring {
+  position: relative;            /* anchors .party-hat and the pride ::before halo */
   margin-bottom: 8px; padding: 5px; border-radius: 50%;
   animation: floaty 6s ease-in-out infinite;
 }
@@ -244,3 +245,56 @@ body[data-theme="light"] #theme-orb > span {
 @media (max-width: 768px) { .to-top { display: none !important; } }
 
 .footer { text-align: center; margin-top: 54px; font-size: 13px; font-weight: 700; color: var(--ink-faint); }
+
+/* ============ SEASONAL EFFECTS ============ */
+/* These rules are intentionally placed AFTER the body[data-theme=...] blocks so the
+   Christmas palette (equal specificity) wins by source order regardless of saved theme. */
+
+/* ---- Birthday: party hat (revealed on body.season-birthday) ---- */
+.party-hat {
+  position: absolute; display: none;
+  width: 82px; height: auto; top: -34px; left: 14px;
+  transform: rotate(-18deg); transform-origin: bottom center;
+  z-index: 3; pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
+}
+body.season-birthday .party-hat { display: block; }
+
+/* ---- Birthday: confetti canvas (created/removed by JS) ---- */
+#confetti-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 70; }
+
+/* ---- Pride (June): aro-ace halo around the profile picture ---- */
+@keyframes prideSpin { to { transform: rotate(360deg); } }
+.pfp-ring::before {
+  content: ""; position: absolute; inset: -18px; border-radius: 50%;
+  z-index: -1; opacity: 0;
+  background: conic-gradient(from 0deg,
+    #E28C00 0deg, #ECCD00 72deg, #FFFFFF 144deg, #62AEDC 216deg, #203856 288deg, #E28C00 360deg);
+  filter: blur(10px);
+  -webkit-mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
+          mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
+  animation: prideSpin 14s linear infinite; pointer-events: none;
+}
+body.season-pride .pfp-ring::before { opacity: 1; }
+
+/* ---- Christmas (Dec 25): dark festive palette override ---- */
+body.season-christmas {
+  --page-bg:
+    radial-gradient(1100px 650px at 82% -8%, #6e1622 0%, rgba(110,22,34,0) 55%),
+    radial-gradient(900px 560px at 0% 6%, #0b3a24 0%, rgba(11,58,36,0) 52%),
+    linear-gradient(170deg, #07251a 0%, #0a2d20 45%, #14110f 100%);
+  --ink: #fff6ee; --ink-soft: #e7c7a0; --ink-faint: #b98c7e;
+  --accent: #ffd54a;
+  --card-bg: rgba(18,46,36,.72); --card-blur: blur(10px);
+  --card-bd: 1px solid rgba(255,213,74,.42); --card-shadow: 0 14px 34px rgba(3,18,12,.35);
+}
+/* Hide the theme toggle on Christmas (!important beats the mobile media-query !important) */
+body.season-christmas #theme-orb { display: none !important; }
+
+/* ---- Christmas tree: background, desktop/tablet only (>=769px) ---- */
+.xmas-scene { position: fixed; left: 0; bottom: 0; z-index: 0; pointer-events: none; display: none; }
+.xmas-tree { display: block; width: clamp(150px,18vw,260px); height: auto; opacity: .9; filter: drop-shadow(0 6px 14px rgba(0,0,0,.4)); }
+@media (min-width: 769px) { body.season-christmas .xmas-scene { display: block; } }
+
+/* ---- Respect reduced motion: keep the halo, stop the spin (confetti is skipped in JS) ---- */
+@media (prefers-reduced-motion: reduce) { .pfp-ring::before { animation: none; } }

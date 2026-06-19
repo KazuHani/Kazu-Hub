@@ -8,6 +8,35 @@
 
   const $ = (id) => document.getElementById(id);
 
+  // ---------- Seasons ----------
+  // Preview any season on any date: ?season=birthday|christmas|pride|all (comma-combinable, e.g. ?season=birthday,christmas)
+  const SEASON_OVERRIDE = (() => {
+    try {
+      const p = new URLSearchParams(location.search).get('season');
+      if (!p) return null;
+      const v = p.toLowerCase();
+      if (v === 'all') return { birthday: true, christmas: true, pride: true };
+      const set = v.split(',').map((s) => s.trim());
+      return {
+        birthday: set.includes('birthday') || set.includes('bday'),
+        christmas: set.includes('christmas') || set.includes('xmas'),
+        pride: set.includes('pride'),
+      };
+    } catch (e) { return null; }
+  })();
+
+  function seasonState(now) {
+    if (SEASON_OVERRIDE) return SEASON_OVERRIDE;
+    const m = now.getMonth(), d = now.getDate(); // LOCAL time (matches the birthday isToday check)
+    return {
+      birthday: (m === BIRTH_MONTH && d === BIRTH_DAY), // Nov 9
+      christmas: (m === 11 && d === 25),                // Dec 25
+      pride: (m === 5),                                 // all of June
+    };
+  }
+
+  let bdayCelebrated = false; // latch so confetti fires once per OFF->ON birthday transition
+
   // ---------- Clock / age / birthday ----------
   function computeClock() {
     const now = new Date();
@@ -44,6 +73,7 @@
     set('liveAge', c.ageStr);
     set('liveBday', c.bdayText);
     set('liveBdaySub', c.bdaySub);
+    applySeasons(); // re-evaluate every second so a page left open crosses midnight correctly
   }
 
   // ---------- Weather ----------
@@ -302,7 +332,54 @@
   }, { passive: true });
   toTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
+  // ---------- Seasonal effects ----------
+  function applySeasons() {
+    const s = seasonState(new Date());
+    const body = document.body;
+    body.classList.toggle('season-birthday', s.birthday);
+    body.classList.toggle('season-christmas', s.christmas);
+    body.classList.toggle('season-pride', s.pride);
+    if (s.birthday && !bdayCelebrated) { bdayCelebrated = true; fireConfetti(); }
+    if (!s.birthday) bdayCelebrated = false; // re-arm if it turns off (e.g. preview param removed)
+  }
+
+  function fireConfetti() {
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (document.getElementById('confetti-canvas')) return; // already running
+    const canvas = document.createElement('canvas');
+    canvas.id = 'confetti-canvas';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    function size() { canvas.width = innerWidth * DPR; canvas.height = innerHeight * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0); }
+    size();
+    const COLORS = ['#ff5ea8', '#a05cff', '#5cc6ff', '#ffd34d', '#3ddc97', '#ff7a59'];
+    const parts = [];
+    for (let i = 0; i < 140; i++) parts.push({
+      x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight * 0.32 + (Math.random() - 0.5) * 60,
+      vx: (Math.random() - 0.5) * 11, vy: Math.random() * -13 - 4, g: 0.28 + Math.random() * 0.12,
+      size: 5 + Math.random() * 6, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+      color: COLORS[(Math.random() * COLORS.length) | 0],
+    });
+    const start = performance.now(), DURATION = 3200;
+    function frame(t) {
+      const e = t - start;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of parts) {
+        p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.rot += p.vr;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - e / DURATION);
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+        ctx.restore();
+      }
+      if (e < DURATION) requestAnimationFrame(frame); else canvas.remove();
+    }
+    requestAnimationFrame(frame);
+  }
+
   // ---------- Boot ----------
+  applySeasons();
   tick();
   setInterval(tick, 1000);
   loadWeather();
