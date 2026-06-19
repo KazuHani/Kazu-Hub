@@ -301,6 +301,85 @@
     }
   }
 
+  // ---------- Motivational quotes ----------
+  const FALLBACK_QUOTES = [
+    ['The only way to do great work is to love what you do.', 'Steve Jobs'],
+    ['Believe you can and you’re halfway there.', 'Theodore Roosevelt'],
+    ['It does not matter how slowly you go as long as you do not stop.', 'Confucius'],
+    ['Whether you think you can or you think you can’t, you’re right.', 'Henry Ford'],
+    ['Success is not final, failure is not fatal: it is the courage to continue that counts.', 'Winston Churchill'],
+    ['The future belongs to those who believe in the beauty of their dreams.', 'Eleanor Roosevelt'],
+    ['Hardships often prepare ordinary people for an extraordinary destiny.', 'C.S. Lewis'],
+    ['It is during our darkest moments that we must focus to see the light.', 'Aristotle'],
+    ['Do not wait to strike till the iron is hot; make it hot by striking.', 'William Butler Yeats'],
+    ['You miss 100% of the shots you don’t take.', 'Wayne Gretzky'],
+    ['Act as if what you do makes a difference. It does.', 'William James'],
+    ['Success usually comes to those who are too busy to be looking for it.', 'Henry David Thoreau'],
+    ['The harder I work, the luckier I seem to get.', 'Coleman Cox'],
+    ['Don’t watch the clock; do what it does. Keep going.', 'Sam Levenson'],
+    ['Everything you’ve ever wanted is on the other side of fear.', 'George Addair'],
+    ['Hard work beats talent when talent doesn’t work hard.', 'Tim Notke'],
+    ['Dream big and dare to fail.', 'Norman Vaughan'],
+    ['Opportunities don’t happen, you create them.', 'Chris Grosser'],
+    ['I find that the harder I work, the more luck I seem to have.', 'Thomas Jefferson'],
+    ['The only limit to our realization of tomorrow is our doubts of today.', 'Franklin D. Roosevelt'],
+    ['What you get by achieving your goals is not as important as what you become by achieving your goals.', 'Zig Ziglar'],
+    ['You are never too old to set another goal or to dream a new dream.', 'C.S. Lewis'],
+    ['It always seems impossible until it’s done.', 'Nelson Mandela'],
+    ['Don’t be afraid to give up the good to go for the great.', 'John D. Rockefeller'],
+    ['The way to get started is to quit talking and begin doing.', 'Walt Disney'],
+    ['If you are working on something exciting that you care about, you don’t have to be pushed.', 'Steve Jobs'],
+    ['Success is walking from failure to failure with no loss of enthusiasm.', 'Winston Churchill'],
+    ['Quality is not an act, it is a habit.', 'Aristotle'],
+    ['Either you run the day, or the day runs you.', 'Jim Rohn'],
+    ['Energy and persistence conquer all things.', 'Benjamin Franklin'],
+    ['Believe in yourself and all that you are.', 'Christian D. Larson'],
+    ['Knowing yourself is the beginning of all wisdom.', 'Aristotle'],
+    ['You don’t have to be great to start, but you have to start to be great.', 'Zig Ziglar'],
+    ['Strive not to be a success, but rather to be of value.', 'Albert Einstein'],
+    ['The mind is everything. What you think you become.', 'Buddha'],
+    ['Failure will never overtake me if my determination to succeed is strong enough.', 'Og Mandino'],
+    ['We may encounter many defeats but we must not be defeated.', 'Maya Angelou'],
+    ['Imagine your life is perfect in every respect; what would it look like?', 'Brian Tracy'],
+    ['We generate fears while we sit. We overcome them by action.', 'Henry Link'],
+    ['Whatever the mind dwells upon, it expands.', 'Robert Cooper'],
+    ['Limitations live only in our minds. If we use our imaginations, our possibilities become limitless.', 'Jamie Paolinetti'],
+    ['You take your life in your own hands, and what happens? A terrible thing: no one to blame.', 'Erica Jong'],
+    ['What’s money? A man is a success if he gets up in the morning and goes to bed at night and in between does what he wants.', 'Bob Dylan'],
+    ['A successful man is one who can lay a firm foundation with the bricks others have thrown at him.', 'David Brinkley'],
+    ['I find that the harder I work, the more luck I seem to have.', 'Coleman Cox'],
+    ['The road to success and the road to failure are almost exactly the same.', 'Colin R. Davis'],
+    ['The only place where your dream becomes impossible is in your own thinking.', 'Robert H. Schuller'],
+    ['All progress takes place outside the comfort zone.', 'Michael John Bobak'],
+    ['Push yourself, because no one else is going to do it for you.', 'Unknown'],
+    ['Great things never come from comfort zones.', 'Unknown'],
+    ['Sometimes later becomes never. Do it now.', 'Unknown'],
+    ['Little things make big days.', 'Unknown'],
+    ['Don’t stop when you’re tired. Stop when you’re done.', 'Unknown'],
+  ];
+
+  function showFallbackQuote() {
+    const [text, author] = FALLBACK_QUOTES[(Math.random() * FALLBACK_QUOTES.length) | 0];
+    $('quoteText').textContent = text;
+    $('quoteAuthor').textContent = '— ' + author;
+    $('quoteBox').classList.add('visible');
+  }
+
+  async function loadQuote() {
+    try {
+      const r = await fetch('https://zenquotes.io/api/random');
+      const j = await r.json();
+      const q = j && j[0];
+      if (!q || !q.q) throw new Error('bad payload');
+      $('quoteText').textContent = q.q;
+      $('quoteAuthor').textContent = '— ' + (q.a || 'Unknown');
+      $('quoteBox').classList.add('visible');
+    } catch (e) {
+      showFallbackQuote();
+    }
+  }
+
+
   // ---------- Theme toggle ----------
   const orb = $('theme-orb');
   const orbIcon = $('orb-icon');
@@ -378,6 +457,14 @@
     requestAnimationFrame(frame);
   }
 
+  // ---------- Entrance animation cleanup ----------
+  // The social cards reveal via a filled CSS animation, which would otherwise
+  // keep their transform locked and kill the :hover lift. Once each card's
+  // entrance finishes, clear the inline animation so hover works normally.
+  document.querySelectorAll('.social-card').forEach((el) => {
+    el.addEventListener('animationend', () => { el.style.animation = 'none'; }, { once: true });
+  });
+
   // ---------- Boot ----------
   applySeasons();
   tick();
@@ -388,4 +475,5 @@
   setInterval(loadDiscord, 20 * 1000);
   loadSteam();
   setInterval(loadSteam, 5 * 60 * 1000);
+  loadQuote();
 })();

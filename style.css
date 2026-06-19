@@ -91,7 +91,29 @@ body[data-theme="light"] #theme-orb > span {
   font-size: clamp(54px,11vw,116px); line-height: .95; letter-spacing: -.01em;
   background: linear-gradient(110deg,#0ea5e9 0%,#3b82f6 35%,#7c5cff 70%,#22d3ee 100%);
   background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; animation: shimmer 7s linear infinite alternate;
+  -webkit-text-fill-color: transparent;
+  animation: titleReveal 1s cubic-bezier(.2,.6,.35,1) .26s both, shimmer 7s linear infinite alternate;
+}
+
+/* ---- Quote box ---- */
+.quote-box {
+  display: block; width: 100%; max-width: 560px; margin: 0 auto;
+  padding: 0 26px; font-family: inherit;
+  border: none; background: none; cursor: default;
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height .5s ease, opacity .45s ease, padding .5s ease, margin .5s ease;
+}
+.quote-box.visible {
+  max-height: 200px; opacity: 1; padding: 18px 26px; margin: 4px auto 0;
+}
+@media (prefers-reduced-motion: reduce) { .quote-box { transition: none; } }
+.quote-text {
+  font-style: italic; font-weight: 600; font-size: 16px; line-height: 1.45; color: var(--ink);
+}
+.quote-text::before { content: '”'; } .quote-text::after { content: '”'; }
+.quote-author {
+  margin-top: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--accent);
 }
 
 /* ---- Cards ---- */
@@ -295,3 +317,82 @@ body.season-christmas #theme-orb { display: none !important; }
 
 /* ---- Respect reduced motion: keep the halo, stop the spin (confetti is skipped in JS) ---- */
 @media (prefers-reduced-motion: reduce) { .pfp-ring::before { animation: none; } }
+
+/* ============ PAGE-LOAD ENTRANCE ANIMATION ============ */
+/* A staggered "settle into place" cascade that plays on every load / refresh.
+   Pure CSS (animation-fill-mode: both) so content is hidden before first paint —
+   no flash — and always resolves to the visible end state even if JS fails.
+   The whole thing is gated off under prefers-reduced-motion at the bottom. */
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes revealPop {
+  0%   { opacity: 0; transform: translateY(6px) scale(.7); }
+  55%  { opacity: 1; }
+  78%  { transform: translateY(0) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes titleReveal {
+  from { opacity: 0; transform: translateY(26px); filter: blur(12px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+@keyframes orbReveal {
+  from { opacity: 0; transform: translateY(-18px) scale(.5); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ambientFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Ambient snow layer eases in instead of popping */
+.atmosphere { animation: ambientFade 1.6s ease both; }
+
+/* Hero accents */
+#theme-orb { animation: orbReveal .7s cubic-bezier(.34,1.5,.6,1) .08s both; }
+.hero .pfp { animation: revealPop .85s ease-out .14s both; }
+/* (.title carries titleReveal + shimmer in the .title rule above) */
+
+/* The cascading blocks */
+.stat-card, .section-title, .discord-card, .steam-card,
+.music-card, .social-card, .story-link, .footer {
+  animation: revealUp .75s cubic-bezier(.21,.6,.35,1) both;
+}
+
+/* Stagger, flowing down the page */
+.stat-card:nth-child(1) { animation-delay: .34s; }
+.stat-card:nth-child(2) { animation-delay: .40s; }
+.stat-card:nth-child(3) { animation-delay: .46s; }
+.stat-card:nth-child(4) { animation-delay: .52s; }
+
+.section-title:nth-of-type(1) { animation-delay: .52s; }  /* Right now */
+.discord-card                 { animation-delay: .58s; }
+.steam-card                   { animation-delay: .64s; }
+
+.section-title:nth-of-type(2) { animation-delay: .58s; }  /* My playlist */
+.music-card                   { animation-delay: .64s; }
+
+.section-title:nth-of-type(3) { animation-delay: .62s; }  /* Socials */
+.social-card:nth-child(1)     { animation-delay: .68s; }
+.social-card:nth-child(2)     { animation-delay: .72s; }
+.social-card:nth-child(3)     { animation-delay: .76s; }
+.social-card:nth-child(4)     { animation-delay: .80s; }
+.social-card:nth-child(5)     { animation-delay: .84s; }
+.social-card:nth-child(6)     { animation-delay: .88s; }
+
+.section-title:nth-of-type(4) { animation-delay: .74s; }  /* Stories */
+.story-link:nth-child(1)      { animation-delay: .80s; }
+.story-link:nth-child(2)      { animation-delay: .86s; }
+
+.footer { animation-delay: .94s; }
+
+/* Reduced motion: skip the whole entrance — everything is simply present. */
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere, #theme-orb, .hero .pfp, .title,
+  .stat-card, .section-title, .discord-card, .steam-card,
+  .music-card, .social-card, .story-link, .footer {
+    animation: none !important;
+  }
+}
