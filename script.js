@@ -95,6 +95,21 @@
       : 'https://cdn.discordapp.com/embed/avatars/0.png';
   }
 
+  function gameIconUrl(game) {
+    const img = game && game.assets && (game.assets.large_image || game.assets.small_image);
+    if (!img) return '';
+    if (img.startsWith('mp:external/')) {
+      return 'https://media.discordapp.net/external/' + img.slice('mp:external/'.length);
+    }
+    if (img.startsWith('mp:')) {
+      return 'https://media.discordapp.net/' + img.slice('mp:'.length);
+    }
+    if (game.application_id) {
+      return 'https://cdn.discordapp.com/app-assets/' + game.application_id + '/' + img + '.png';
+    }
+    return '';
+  }
+
   let lastDiscordFallbackAvatar = '';
 
   async function loadDiscord() {
@@ -125,6 +140,18 @@
         $('discordGameSub').textContent = sub;
         $('discordGameSub').classList.toggle('hidden', parts.length === 0);
         $('discordGame').classList.remove('hidden');
+
+        const iconUrl = gameIconUrl(game);
+        const iconEl = $('discordGameIcon');
+        const emojiEl = $('discordGameEmoji');
+        if (iconUrl) {
+          iconEl.src = iconUrl;
+          iconEl.classList.remove('hidden');
+          emojiEl.classList.add('hidden');
+        } else {
+          iconEl.classList.add('hidden');
+          emojiEl.classList.remove('hidden');
+        }
       } else {
         $('discordGame').classList.add('hidden');
       }
