@@ -177,6 +177,37 @@ body[data-theme="light"] #theme-orb > span {
 .steam-fallback-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 22px; color: #fff; margin-bottom: 6px; }
 .steam-fallback-text { font-size: 13px; font-weight: 600; color: #9fc0d8; line-height: 1.5; }
 
+/* ---- Music / YouTube Music playlist ---- */
+.music-grid { display: grid; grid-template-columns: minmax(0,1fr); }
+.music-card { border-radius: 24px; padding: 22px; }
+.music-card-inner { display: flex; gap: 20px; align-items: flex-start; }
+.music-cover-wrap {
+  position: relative; width: 132px; height: 132px; border-radius: 18px; flex: none; overflow: hidden;
+  text-decoration: none; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(150deg,#ff1a1a,#7c1d2b);
+  box-shadow: 0 10px 24px rgba(255,0,0,.22);
+}
+.music-cover-wrap::after { content: "🎵"; position: absolute; font-size: 46px; opacity: .92; }
+.music-cover { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block; }
+.music-body { flex: 1; min-width: 0; }
+.music-playlist-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ff4d4d; }
+.music-playlist-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(22px,4vw,28px); color: var(--ink); line-height: 1.08; margin-top: 4px; }
+.music-playlist-sub { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
+.music-recent { margin-top: 16px; border-top: 1px solid rgba(255,90,90,.18); padding-top: 12px; }
+.music-recent-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+.music-track-row { display: flex; align-items: center; gap: 13px; padding: 8px 0; border-bottom: 1px solid rgba(140,170,200,.1); }
+.music-track-row:last-child { border-bottom: none; }
+.music-track-text { min-width: 0; flex: 1; }
+.music-track-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #ff4d4d; width: 16px; text-align: center; flex: none; }
+.music-track-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music-track-artist { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
+@media (max-width: 560px) {
+  .music-card-inner { flex-direction: column; align-items: center; text-align: center; }
+  .music-cover-wrap { width: 120px; height: 120px; }
+  .music-body { width: 100%; }
+  .music-recent { text-align: left; }
+}
+
 /* ---- Socials ---- */
 .socials-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(168px,1fr)); gap: 14px; }
 .social-card {
