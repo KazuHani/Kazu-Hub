@@ -49,12 +49,9 @@ body[data-theme="light"] {
 
 /* ---- Theme orb ---- */
 #theme-orb {
-  position: fixed; top: 18px; left: 0; z-index: 60;
+  position: fixed; top: 18px; left: 18px; z-index: 60;
   width: 56px; height: 56px; border: none; padding: 0; background: none; cursor: pointer;
-  transition: left .95s cubic-bezier(.65,0,.35,1);
-  left: calc(100vw - 74px);
 }
-body[data-theme="light"] #theme-orb { left: 18px; }
 #theme-orb > span {
   display: flex; align-items: center; justify-content: center;
   width: 56px; height: 56px; border-radius: 50%; font-size: 27px; line-height: 1;
