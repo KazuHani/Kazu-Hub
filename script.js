@@ -73,6 +73,7 @@
     set('liveAge', c.ageStr);
     set('liveBday', c.bdayText);
     set('liveBdaySub', c.bdaySub);
+    updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
     applySeasons(); // re-evaluate every second so a page left open crosses midnight correctly
   }
 
@@ -142,6 +143,81 @@
 
   let lastDiscordFallbackAvatar = '';
 
+  // ---- Extra Lanyard presence state (set by loadDiscord, animated by tick) ----
+  let discordUsername = '';
+  let spotifyTimes = null;   // { start, end } in ms while listening
+  let gameStartMs = null;    // activity start in ms while playing
+
+  const PLATFORM_ICONS = {
+    mobile: '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M16 1H8a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm-4 21a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6zM16 18H8V4h8z"/></svg>',
+    desktop: '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M21 3H3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h7v2H8v2h8v-2h-2v-2h7a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zm-1 12H4V5h16z"/></svg>',
+    web: '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.92 6h-2.95a15.7 15.7 0 0 0-1.38-3.56A8 8 0 0 1 18.92 8zM12 4c.83 1.2 1.48 2.53 1.85 4h-3.7c.37-1.47 1.02-2.8 1.85-4zM4.26 14a8 8 0 0 1 0-4h3.38a17.5 17.5 0 0 0 0 4zm.82 2h2.95c.34 1.3.81 2.5 1.38 3.56A8 8 0 0 1 5.08 16zm2.95-8H5.08a8 8 0 0 1 4.33-3.56A15.7 15.7 0 0 0 8.03 8zM12 20c-.83-1.2-1.48-2.53-1.85-4h3.7c-.37 1.47-1.02 2.8-1.85 4zm2.34-6H9.66a15.5 15.5 0 0 1 0-4h4.68a15.5 15.5 0 0 1 0 4zm.27 5.56c.57-1.06 1.04-2.26 1.38-3.56h2.95a8 8 0 0 1-4.33 3.56zM16.36 14a17.5 17.5 0 0 0 0-4h3.38a8 8 0 0 1 0 4z"/></svg>',
+  };
+
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmtClock(ms) {
+    const total = Math.max(0, Math.floor((ms || 0) / 1000));
+    return Math.floor(total / 60) + ':' + pad2(total % 60);
+  }
+  function fmtElapsed(ms) {
+    const total = Math.max(0, Math.floor((ms || 0) / 1000));
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+    if (h > 0) return 'for ' + h + 'h ' + pad2(m) + 'm';
+    if (m > 0) return 'for ' + m + ' min';
+    return 'for ' + s + 's';
+  }
+
+  // Advance the Spotify bar + game timer smoothly between Lanyard polls (called each second by tick)
+  function updatePresenceProgress() {
+    const now = Date.now();
+    if (spotifyTimes) {
+      const dur = spotifyTimes.end - spotifyTimes.start;
+      const pos = Math.min(Math.max(now - spotifyTimes.start, 0), Math.max(dur, 0));
+      const fill = $('spotifyBarFill');
+      if (fill) fill.style.width = (dur > 0 ? (pos / dur) * 100 : 0).toFixed(1) + '%';
+      const el = $('spotifyElapsed'); if (el) el.textContent = fmtClock(pos);
+      const du = $('spotifyDuration'); if (du) du.textContent = fmtClock(dur);
+    }
+    const gEl = $('discordGameElapsed');
+    if (gEl) {
+      if (gameStartMs) { gEl.textContent = fmtElapsed(now - gameStartMs); gEl.classList.remove('hidden'); }
+      else { gEl.textContent = ''; gEl.classList.add('hidden'); }
+    }
+  }
+
+  // ---- Toast + "copy my Discord username" (shared by the Add me pill and the @username line) ----
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = $('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+  function legacyCopy(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed'; ta.style.top = '-1000px';
+      document.body.appendChild(ta); ta.select();
+      const done = document.execCommand('copy');
+      ta.remove();
+      return done;
+    } catch (e) { return false; }
+  }
+  function copyDiscordUsername() {
+    if (!discordUsername) return;
+    const handle = '@' + discordUsername;
+    const ok = () => showToast('Copied ' + handle + ' — add me on Discord!');
+    const fallback = () => showToast((legacyCopy(discordUsername) ? 'Copied ' : 'My Discord: ') + handle);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(discordUsername).then(ok).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
   async function loadDiscord() {
     try {
       const r = await fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID);
@@ -155,15 +231,54 @@
       $('discordAvatar').src = sharedAvatarUrl || lastDiscordFallbackAvatar;
       $('discordName').textContent = displayName;
 
+      discordUsername = u.username || '';
+      const handleEl = $('discordUsername');
+      if (handleEl) {
+        if (u.username) { handleEl.textContent = '@' + u.username; handleEl.classList.remove('hidden'); }
+        else handleEl.classList.add('hidden');
+      }
+
       const s = STATUS_MAP[dc.discord_status] || STATUS_MAP.offline;
       $('discordStatusText').textContent = '● ' + s[0];
       $('discordStatusText').style.color = s[1];
       $('discordStatusDot').style.background = s[1];
 
+      // Platform (mobile / desktop / web) — only meaningful while connected
+      const plat = (dc.discord_status !== 'offline')
+        ? (dc.active_on_discord_mobile ? { k: 'mobile', t: 'Active on mobile' }
+          : dc.active_on_discord_desktop ? { k: 'desktop', t: 'Active on desktop' }
+          : dc.active_on_discord_web ? { k: 'web', t: 'Active on web' } : null)
+        : null;
+      const platEl = $('discordPlatform');
+      if (platEl) {
+        if (plat) { platEl.innerHTML = PLATFORM_ICONS[plat.k]; platEl.title = plat.t; platEl.classList.remove('hidden'); }
+        else { platEl.innerHTML = ''; platEl.classList.add('hidden'); }
+      }
+
+      // Custom status (activity type 4) — emoji can be unicode or a custom server emoji
+      const custom = (dc.activities || []).find((a) => a.type === 4);
+      const hasCustom = !!(custom && (custom.state || (custom.emoji && (custom.emoji.id || custom.emoji.name))));
+      const customEl = $('discordCustom');
+      if (customEl) {
+        if (hasCustom) {
+          const emojiEl = $('discordCustomEmoji');
+          if (custom.emoji && custom.emoji.id) {
+            emojiEl.innerHTML = '<img class="discord-custom-emoji-img" src="https://cdn.discordapp.com/emojis/' + custom.emoji.id + (custom.emoji.animated ? '.gif' : '.png') + '?size=32" alt="">';
+          } else {
+            emojiEl.textContent = (custom.emoji && custom.emoji.name) ? custom.emoji.name : '💬';
+          }
+          $('discordCustomText').textContent = custom.state || '';
+          customEl.classList.remove('hidden');
+        } else {
+          customEl.classList.add('hidden');
+        }
+      }
+
       const game = (dc.activities || []).find((a) => a.type === 0);
       const isSpotify = !!(dc.listening_to_spotify && dc.spotify);
 
       if (game) {
+        gameStartMs = (game.timestamps && game.timestamps.start) ? game.timestamps.start : null;
         $('discordGameName').textContent = game.name || 'a game';
         const parts = [game.details, game.state].filter(Boolean);
         const sub = parts.join(' · ');
@@ -183,6 +298,7 @@
           emojiEl.classList.remove('hidden');
         }
       } else {
+        gameStartMs = null;
         $('discordGame').classList.add('hidden');
       }
 
@@ -190,12 +306,16 @@
         $('spotifySong').textContent = dc.spotify.song || '';
         $('spotifyArtist').textContent = dc.spotify.artist || '';
         if (dc.spotify.album_art_url) $('spotifyArt').src = dc.spotify.album_art_url;
+        const ts = dc.spotify.timestamps;
+        spotifyTimes = (ts && ts.start && ts.end) ? { start: ts.start, end: ts.end } : null;
+        $('spotifyProgress').classList.toggle('hidden', !spotifyTimes);
         $('discordSpotify').classList.remove('hidden');
       } else {
+        spotifyTimes = null;
         $('discordSpotify').classList.add('hidden');
       }
 
-      const idle = !game && !isSpotify;
+      const idle = !game && !isSpotify && !hasCustom;
       if (idle) {
         $('discordIdle').textContent = dc.discord_status === 'offline'
           ? 'Currently offline — catch me later ❄️'
@@ -205,6 +325,7 @@
         $('discordIdle').classList.add('hidden');
       }
 
+      updatePresenceProgress();
       $('discordLoaded').classList.remove('hidden');
       $('discordLoading').classList.add('hidden');
     } catch (e) {
@@ -482,6 +603,13 @@
   setInterval(loadWeather, 10 * 60 * 1000);
   loadDiscord();
   setInterval(loadDiscord, 20 * 1000);
+
+  // "Add me" pill + the @username line both copy my Discord username to the clipboard
+  const addMeLink = $('discordAddMe');
+  if (addMeLink) addMeLink.addEventListener('click', copyDiscordUsername);
+  const usernameBtn = $('discordUsername');
+  if (usernameBtn) usernameBtn.addEventListener('click', copyDiscordUsername);
+
   loadSteam();
   setInterval(loadSteam, 5 * 60 * 1000);
   loadQuote();
