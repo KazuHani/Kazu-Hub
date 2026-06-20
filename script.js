@@ -457,13 +457,22 @@
     requestAnimationFrame(frame);
   }
 
-  // ---------- Entrance animation cleanup ----------
-  // The social cards reveal via a filled CSS animation, which would otherwise
-  // keep their transform locked and kill the :hover lift. Once each card's
-  // entrance finishes, clear the inline animation so hover works normally.
-  document.querySelectorAll('.social-card').forEach((el) => {
-    el.addEventListener('animationend', () => { el.style.animation = 'none'; }, { once: true });
-  });
+  // ---------- Scroll reveal ----------
+  // Elements below the hero/stat strip start hidden (.scroll-reveal in
+  // style.css) and fade + slide in once they enter the viewport.
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.scroll-reveal').forEach((el) => revealObserver.observe(el));
+  } else {
+    document.querySelectorAll('.scroll-reveal').forEach((el) => el.classList.add('is-visible'));
+  }
 
   // ---------- Boot ----------
   applySeasons();
