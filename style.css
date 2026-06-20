@@ -320,14 +320,14 @@ body[data-theme="light"] #theme-orb > span {
 
 /* ---- Back to top ---- */
 .to-top {
-  position: fixed; right: 26px; bottom: 26px; z-index: 50; width: 52px; height: 52px;
+  position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 52px; height: 52px;
   border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: 23px; line-height: 1;
   box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
   transition: transform .15s ease;
 }
 .to-top:hover { transform: translateY(-3px); }
-@media (max-width: 768px) { .to-top { display: none !important; } }
+@media (max-width: 480px) { .to-top { width: 48px; height: 48px; font-size: 20px; right: 16px; bottom: 24px; } }
 
 .footer { text-align: center; margin-top: 54px; font-size: 13px; font-weight: 700; color: var(--ink-faint); }
 
