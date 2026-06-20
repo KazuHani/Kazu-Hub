@@ -34,3 +34,15 @@ Everything lives in one IIFE in [script.js](script.js). Key things to know befor
 ## Editing the playlist card
 
 The static YouTube Music card in [index.html](index.html) is hand-maintained (no API) — comments inline in the HTML mark the exact spots to edit: cover image (`assets/playlist.jpg`), the two playlist link hrefs, and the playlist/song text.
+
+## Publishing changes
+
+After every change to the codebase, commit and push to GitHub:
+
+```bash
+git add <modified-file>
+git commit -m "Description of change"
+git push origin Main
+```
+
+This ensures the live site stays in sync with the repository.
