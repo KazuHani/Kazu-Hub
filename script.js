@@ -596,21 +596,42 @@
   }
 
   // ---------- Boot ----------
-  applySeasons();
-  tick();
-  setInterval(tick, 1000);
-  loadWeather();
-  setInterval(loadWeather, 10 * 60 * 1000);
-  loadDiscord();
-  setInterval(loadDiscord, 20 * 1000);
-
   // "Add me" pill + the @username line both copy my Discord username to the clipboard
   const addMeLink = $('discordAddMe');
   if (addMeLink) addMeLink.addEventListener('click', copyDiscordUsername);
   const usernameBtn = $('discordUsername');
   if (usernameBtn) usernameBtn.addEventListener('click', copyDiscordUsername);
 
-  loadSteam();
-  setInterval(loadSteam, 5 * 60 * 1000);
   loadQuote();
+
+  // ---------- Pause polling/ticking while the page isn't visible ----------
+  // Saves battery/data when the tab is backgrounded or the phone screen is
+  // locked/swiped away — covered by the Page Visibility API on both desktop
+  // and mobile browsers (Chrome included).
+  const POLLERS = [
+    { fn: tick, ms: 1000 },
+    { fn: loadWeather, ms: 10 * 60 * 1000 },
+    { fn: loadDiscord, ms: 20 * 1000 },
+    { fn: loadSteam, ms: 5 * 60 * 1000 },
+  ];
+  let timers = [];
+
+  function startPolling() {
+    if (timers.length) return; // already running
+    for (const p of POLLERS) {
+      p.fn(); // refresh immediately so data isn't stale after a pause
+      timers.push(setInterval(p.fn, p.ms));
+    }
+  }
+  function stopPolling() {
+    timers.forEach(clearInterval);
+    timers = [];
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopPolling();
+    else startPolling();
+  });
+
+  if (!document.hidden) startPolling();
 })();
