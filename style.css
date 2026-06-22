@@ -249,6 +249,7 @@ body[data-theme="light"] #theme-orb > span {
 .music-card {
   position: relative; border-radius: 24px; padding: 22px; overflow: hidden;
   isolation: isolate;
+  border: none;
 }
 .music-card::before {
   content: ""; position: absolute; inset: -10%; z-index: -1;
