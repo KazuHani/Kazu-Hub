@@ -504,6 +504,12 @@ body.season-christmas #theme-orb { display: none !important; }
 }
 .stat-card:not(.stat-card--bday),
 .social-card {
+  /* sky -> violet brand tint (the same 150deg #0ea5e9 -> #7c5cff as the title +
+     birthday tile), kept translucent over a fainter themed base so it stays glass
+     and still adapts to light/dark. The base is the final background-color layer. */
+  background:
+    linear-gradient(150deg, rgba(14, 165, 233, .22), rgba(124, 92, 255, .22)),
+    color-mix(in srgb, var(--card-bg) 40%, transparent);
   box-shadow: var(--card-shadow), var(--glint);
 }
 /* keep the glint on the social tile's lift-on-hover shadow */
