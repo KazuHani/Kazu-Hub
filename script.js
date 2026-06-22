@@ -635,3 +635,136 @@
 
   if (!document.hidden) startPolling();
 })();
+
+/* ============================================================================
+   LIQUID GLASS — refractive rim for the translucent cards
+   ----------------------------------------------------------------------------
+   Progressive enhancement on top of the CSS frosted-glass look (see style.css).
+   The displacement-map maths here is the lens demo's buildLensMap, adapted from a
+   draggable lens-over-cloned-scene into a static, per-card backdrop-filter: for
+   each translucent card we bake a PNG whose R/G channels encode an inward
+   refraction "ring" sitting just inside the rounded edge (flat, undistorted
+   interior so text stays crisp), feed it to an feDisplacementMap, and apply that
+   via `backdrop-filter: … url(#id)` so the real page content behind the card bends
+   at the rim. Chromium-only: backdrop-filter + SVG filters don't compose in
+   WebKit/Gecko, so elsewhere this bails and the cards keep the stylesheet's blur +
+   glint. Maps are cached by size and only rebuilt when a card changes size. */
+(() => {
+  const ua = navigator.userAgent;
+  const CAN_REFRACT =
+    'CSS' in window && CSS.supports && CSS.supports('backdrop-filter', 'url("#a")') &&
+    /Chrome|Chromium|Edg|OPR/.test(ua) && !/CriOS|EdgiOS|FxiOS|OPiOS/.test(ua);
+  if (!CAN_REFRACT) return;
+
+  const housing = document.getElementById('glass-filters');
+  if (!housing) return;
+
+  // --- tuning (gentle by default so card text stays readable) ---
+  const DEPTH = 12;    // displacement scale in px — refraction strength at the rim
+  const RIM = 3;       // edge inset + width of the hard part of the bevel
+  const FEATHER = 20;  // soft inner falloff of the bevel ring
+  const CURVE = 1.5;   // bevel profile shaping (matches the demo's "curvature")
+  const BOOST = 0.85;  // displacement-map saturation
+  const BLUR = 5;      // backdrop blur under the refraction
+  const SAT = 1.55;    // backdrop saturation
+
+  const clamp255 = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
+  const mapCache = new Map();
+
+  // Bake a w×h displacement map: a rounded-rect SDF (inset by RIM so the bevel sits
+  // fully inside the box) drives an inward-pointing refraction ring along the edge.
+  function buildMap(w, h, radius) {
+    const key = w + 'x' + h + 'r' + Math.round(radius);
+    const hit = mapCache.get(key);
+    if (hit) return hit;
+
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext('2d');
+    const img = ctx.createImageData(w, h), px = img.data;
+
+    const hx = w / 2 - RIM, hy = h / 2 - RIM;                 // glass half-size (inset)
+    const rad = Math.max(0, Math.min(radius - RIM, hx, hy));  // corner radius, clamped
+    const sdf = (x, y) => {                                   // signed dist to the edge
+      const qx = Math.abs(x - w / 2) - (hx - rad);
+      const qy = Math.abs(y - h / 2) - (hy - rad);
+      const ox = Math.max(qx, 0), oy = Math.max(qy, 0);
+      return Math.hypot(ox, oy) + Math.min(Math.max(qx, qy), 0) - rad;
+    };
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const cx = x + 0.5, cy = y + 0.5;
+        const s = sdf(cx, cy);
+        const gx = sdf(cx + 1, cy) - sdf(cx - 1, cy);         // outward edge normal
+        const gy = sdf(cx, cy + 1) - sdf(cx, cy - 1);
+        const len = Math.hypot(gx, gy) || 1;
+        const nx = gx / len, ny = gy / len;
+        const span = s < 0 ? RIM + FEATHER : RIM;             // softer falloff inside
+        let amt = Math.max(0, 1 - Math.abs(s) / span);
+        amt = amt * amt * amt * (amt * (amt * 6 - 15) + 10);  // smootherstep (no crease)
+        amt = Math.pow(amt, CURVE);
+        const i = (y * w + x) * 4;
+        px[i]     = clamp255(Math.round(127.5 - nx * amt * 127 * BOOST)); // R = x displ (inward)
+        px[i + 1] = clamp255(Math.round(127.5 - ny * amt * 127 * BOOST)); // G = y displ
+        px[i + 2] = 128;                                      // B unused
+        px[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const url = cv.toDataURL('image/png');
+    if (mapCache.size > 60) mapCache.delete(mapCache.keys().next().value);
+    mapCache.set(key, url);
+    return url;
+  }
+
+  const filters = new Map(); // id -> <filter> markup, all re-rendered into the housing
+  function renderHousing() {
+    housing.innerHTML = '<defs>' + Array.from(filters.values()).join('') + '</defs>';
+  }
+
+  // Rebuild a card's filter only when its size actually changes (responsive reflow,
+  // font load, toast growing to fit its text), then point its backdrop-filter at it.
+  function refresh(card) {
+    const r = card.el.getBoundingClientRect();
+    const w = Math.round(r.width), h = Math.round(r.height);
+    if (!w || !h || (w === card.w && h === card.h)) return;
+    card.w = w; card.h = h;
+    const radius = parseFloat(getComputedStyle(card.el).borderTopLeftRadius) || 18;
+    const url = buildMap(w, h, radius);
+    filters.set(card.id,
+      '<filter id="' + card.id + '" x="0" y="0" width="100%" height="100%" ' +
+      'filterUnits="objectBoundingBox" color-interpolation-filters="sRGB">' +
+      '<feImage href="' + url + '" xlink:href="' + url + '" x="0" y="0" width="' + w +
+      '" height="' + h + '" preserveAspectRatio="none" result="map"/>' +
+      '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + DEPTH +
+      '" xChannelSelector="R" yChannelSelector="G"/></filter>');
+    renderHousing();
+    const f = 'blur(' + BLUR + 'px) saturate(' + SAT + ') url(#' + card.id + ')';
+    card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
+  }
+
+  // Matches the translucent selector list in style.css.
+  const cards = Array.from(
+    document.querySelectorAll('.stat-card:not(.stat-card--bday), .social-card, .toast'),
+  ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
+
+  function refreshAll() { cards.forEach(refresh); }
+
+  let pending = false;
+  function schedule() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => { pending = false; refreshAll(); });
+  }
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(schedule);
+    cards.forEach((c) => ro.observe(c.el));
+  } else {
+    window.addEventListener('resize', schedule, { passive: true });
+  }
+
+  refreshAll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshAll);
+  window.addEventListener('load', refreshAll);
+})();

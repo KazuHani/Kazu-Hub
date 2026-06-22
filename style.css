@@ -472,3 +472,34 @@ body.season-christmas #theme-orb { display: none !important; }
     transition: none !important;
   }
 }
+
+/* ============ LIQUID GLASS ============ */
+/* An Apple-style "liquid glass" treatment for the genuinely translucent sections:
+   the live-stat tiles, the social tiles and the copy toast. Two parts —
+     1. always-on (every browser): a saturated backdrop blur + a specular "glint"
+        (bright top-left / dark bottom-right inset bevel), and
+     2. Chromium-only: an SVG feDisplacementMap wired up in script.js that refracts
+        the page content at the rounded rim (set as an inline backdrop-filter that
+        supersedes the blur below). Where that can't run, this base look remains.
+   The opaque gradient cards — birthday tile, Discord, Steam, music, stories — keep
+   their solid backgrounds and are intentionally left out. Placed after the .card /
+   .toast rules so it wins on source order at equal specificity. */
+.stat-card:not(.stat-card--bday),
+.social-card,
+.toast {
+  --glint: inset 1.6px 1.6px 3px rgba(255, 255, 255, .5),
+           inset -2px -2px 5px rgba(0, 0, 0, .16);
+  -webkit-backdrop-filter: blur(8px) saturate(1.45);
+          backdrop-filter: blur(8px) saturate(1.45);
+}
+.stat-card:not(.stat-card--bday),
+.social-card {
+  box-shadow: var(--card-shadow), var(--glint);
+}
+/* keep the glint on the social tile's lift-on-hover shadow */
+.social-card:hover {
+  box-shadow: 0 18px 34px rgba(70, 150, 230, .22), var(--glint);
+}
+.toast {
+  box-shadow: 0 14px 34px rgba(3, 10, 24, .3), var(--glint);
+}
