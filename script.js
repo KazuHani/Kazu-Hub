@@ -669,7 +669,7 @@
   const FEATHER = 26;  // soft inner falloff — width of the visible refractive band
   const CURVE = 1.4;   // bevel profile shaping (matches the demo's "curvature")
   const BOOST = 0.9;   // displacement-map saturation
-  const BLUR = 6;      // backdrop blur under the refraction (matches the CSS base)
+  const BLUR = 0;      // backdrop blur under the refraction (matches the CSS base)
   const SAT = 1.7;     // backdrop saturation (matches the CSS base)
 
   const clamp255 = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
