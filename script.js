@@ -659,14 +659,18 @@
   const housing = document.getElementById('glass-filters');
   if (!housing) return;
 
-  // --- tuning (gentle by default so card text stays readable) ---
-  const DEPTH = 12;    // displacement scale in px — refraction strength at the rim
-  const RIM = 3;       // edge inset + width of the hard part of the bevel
-  const FEATHER = 20;  // soft inner falloff of the bevel ring
-  const CURVE = 1.5;   // bevel profile shaping (matches the demo's "curvature")
-  const BOOST = 0.85;  // displacement-map saturation
-  const BLUR = 5;      // backdrop blur under the refraction
-  const SAT = 1.55;    // backdrop saturation
+  // --- tuning ---
+  // Displacement only warps the BACKDROP behind the card (never the card's own
+  // text), so we can push it hard for an obvious glass-edge magnification while
+  // keeping the interior flat + readable. Keep BLUR modest: a heavy blur flattens
+  // the backdrop to a uniform wash, leaving the displacement nothing to refract.
+  const DEPTH = 20;    // displacement scale in px — refraction strength at the rim
+  const RIM = 2;       // edge inset + width of the hard part of the bevel
+  const FEATHER = 26;  // soft inner falloff — width of the visible refractive band
+  const CURVE = 1.4;   // bevel profile shaping (matches the demo's "curvature")
+  const BOOST = 0.9;   // displacement-map saturation
+  const BLUR = 6;      // backdrop blur under the refraction (matches the CSS base)
+  const SAT = 1.7;     // backdrop saturation (matches the CSS base)
 
   const clamp255 = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
   const mapCache = new Map();

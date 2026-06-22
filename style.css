@@ -476,8 +476,11 @@ body.season-christmas #theme-orb { display: none !important; }
 /* ============ LIQUID GLASS ============ */
 /* An Apple-style "liquid glass" treatment for the genuinely translucent sections:
    the live-stat tiles, the social tiles and the copy toast. Two parts —
-     1. always-on (every browser): a saturated backdrop blur + a specular "glint"
-        (bright top-left / dark bottom-right inset bevel), and
+     1. always-on (every browser): a more transparent fill so the blurred page
+        shows through, plus a specular "glint" that defines the edge with LIGHT on
+        glass (a crisp top light-catch, a soft top-left sheen, lower-right depth and
+        a hairline rim) — deliberately NOT a flat coloured border, which is what
+        made the old edges look drawn-on. The `.card` border is removed below.
      2. Chromium-only: an SVG feDisplacementMap wired up in script.js that refracts
         the page content at the rounded rim (set as an inline backdrop-filter that
         supersedes the blur below). Where that can't run, this base look remains.
@@ -487,10 +490,17 @@ body.season-christmas #theme-orb { display: none !important; }
 .stat-card:not(.stat-card--bday),
 .social-card,
 .toast {
-  --glint: inset 1.6px 1.6px 3px rgba(255, 255, 255, .5),
-           inset -2px -2px 5px rgba(0, 0, 0, .16);
-  -webkit-backdrop-filter: blur(8px) saturate(1.45);
-          backdrop-filter: blur(8px) saturate(1.45);
+  --glint:
+    inset 0 1.5px 0.5px rgba(255, 255, 255, .55),   /* crisp top-edge light-catch */
+    inset 2px 3px 4px rgba(255, 255, 255, .18),     /* soft top-left sheen */
+    inset -2px -3px 8px rgba(0, 0, 0, .24),         /* lower-right depth */
+    inset 0 0 0 1px rgba(255, 255, 255, .14);       /* hairline glass rim (replaces the border) */
+  /* fade the themed fill back so the refraction/blur behind actually reads as glass.
+     Falls back to the solid var(--card-bg) where color-mix is unsupported. */
+  background: color-mix(in srgb, var(--card-bg) 50%, transparent);
+  border: none;
+  -webkit-backdrop-filter: blur(6px) saturate(1.7);
+          backdrop-filter: blur(6px) saturate(1.7);
 }
 .stat-card:not(.stat-card--bday),
 .social-card {
