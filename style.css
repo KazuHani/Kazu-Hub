@@ -493,8 +493,7 @@ body.season-christmas #theme-orb { display: none !important; }
   --glint:
     inset 0 1.5px 0.5px rgba(255, 255, 255, .55),   /* crisp top-edge light-catch */
     inset 2px 3px 4px rgba(255, 255, 255, .18),     /* soft top-left sheen */
-    inset -2px -3px 8px rgba(0, 0, 0, .24),         /* lower-right depth */
-    inset 0 0 0 1px rgba(255, 255, 255, .14);       /* hairline glass rim (replaces the border) */
+    inset -2px -3px 8px rgba(0, 0, 0, .24);         /* lower-right depth */
   /* fade the themed fill back so the refraction/blur behind actually reads as glass.
      Falls back to the solid var(--card-bg) where color-mix is unsupported. */
   background: color-mix(in srgb, var(--card-bg) 50%, transparent);
