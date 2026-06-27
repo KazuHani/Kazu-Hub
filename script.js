@@ -1,12 +1,16 @@
 (() => {
-  const BIRTH_YEAR = 2001;
-  const BIRTH_MONTH = 10; // November, 0-indexed
-  const BIRTH_DAY = 9;
+  const $ = (id) => document.getElementById(id);
+
+  // Birth config is owned by lib.js (single source of truth). Fall back to the
+  // literals if lib.js failed to load so the rest of the page still works.
+  const KazuLib = window.KazuLib;
+  const _BIRTH = (KazuLib && KazuLib.BIRTH) || { year: 2001, month: 10, day: 9 };
+  const BIRTH_YEAR = _BIRTH.year;
+  const BIRTH_MONTH = _BIRTH.month; // 0-indexed: 10 = November
+  const BIRTH_DAY = _BIRTH.day;
   const TIMEZONE = 'Europe/London';
   const DISCORD_ID = '346360416827473921';
   const STEAM_VANITY = 'Kazu-Hani';
-
-  const $ = (id) => document.getElementById(id);
 
   // ---------- Seasons ----------
   // Preview any season on any date: ?season=birthday|christmas|pride|all (comma-combinable, e.g. ?season=birthday,christmas)
@@ -531,6 +535,271 @@
     toTopBtn.classList.toggle('hidden', window.scrollY <= 420);
   }, { passive: true });
   toTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // ---------- Card detail modals ----------
+  // Click/Enter on any .stat-card[data-modal] opens one reusable glass pop-up.
+  // Each card maps to an entry in MODALS: render() paints the body, afterRender()
+  // runs DOM work that needs layout (mount the wind-globe iframe, draw the
+  // life-weeks canvas), live() re-runs every second while the pop-up is open.
+  const modalEl = $('cardModal');
+  const modalPanel = modalEl ? modalEl.querySelector('.modal-panel') : null;
+  const modalTitleEl = $('modalTitle');
+  const modalBodyEl = $('modalBody');
+  const modalCloseEl = $('modalClose');
+  const FOCUSABLE = 'a[href], button:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])';
+  let modalTrigger = null; // card that opened the pop-up (focus returns here)
+  let modalUpdater = null; // setInterval id for live() while open
+  let modalKey = null;
+
+  // Intl formatters are cheap to keep around and reused by the live tick.
+  const fmtTime = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const fmtTimeUK = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const fmtDayUK = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, weekday: 'short', day: 'numeric', month: 'short' });
+
+  // ----- Time & timezones -----
+  function timeModalHTML() {
+    const now = new Date();
+    const localZone = (Intl.DateTimeFormat().resolvedOptions().timeZone || 'your device').replace(/_/g, ' ');
+    const ukOffset = KazuLib.isUkBST(now) ? 1 : 0;
+    const localOffset = -now.getTimezoneOffset() / 60;
+    const diff = localOffset - ukOffset;
+    const absDiff = Math.abs(diff);
+    const diffText = absDiff < 0.001
+      ? 'None — same as the UK 🇬🇧'
+      : absDiff + (absDiff === 1 ? ' hour ' : ' hours ') + (diff > 0 ? 'ahead of the UK' : 'behind the UK');
+
+    const dst = KazuLib.nextUkDstTransition(now);
+    const dstDate = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(dst.date);
+    const daysToDst = Math.ceil((dst.date - now) / 86400000);
+    const dirText = dst.direction === 'forward'
+      ? 'clocks go <strong>forward</strong> 1 hour — lose an hour, BST begins ☀️'
+      : 'clocks go <strong>back</strong> 1 hour — gain an hour, GMT returns 🌙';
+    const stateText = KazuLib.isUkBST(now)
+      ? 'Right now: <strong>British Summer Time</strong> (BST, UTC+1)'
+      : 'Right now: <strong>Greenwich Mean Time</strong> (GMT, UTC+0)';
+
+    return ''
+      + '<div class="tz-grid">'
+      +   '<div class="tz-cell"><div class="tz-label">🇬🇧 UK time</div>'
+      +     '<div class="tz-time" id="mUkTime">' + fmtTimeUK.format(now) + '</div>'
+      +     '<div class="tz-meta">' + fmtDayUK.format(now) + ' · Europe/London</div></div>'
+      +   '<div class="tz-cell"><div class="tz-label">📍 Your time</div>'
+      +     '<div class="tz-time" id="mLocalTime">' + fmtTime.format(now) + '</div>'
+      +     '<div class="tz-meta">' + localZone + '</div></div>'
+      + '</div>'
+      + '<div class="modal-note"><div class="modal-row"><span>Time difference</span><strong>' + diffText + '</strong></div></div>'
+      + '<div class="modal-note">' + stateText + '<br>'
+      +   '<span class="modal-row-sub">Next clock change:</span> <strong>' + dstDate + '</strong> '
+      +   '(in ' + daysToDst + ' day' + (daysToDst === 1 ? '' : 's') + ') — ' + dirText + '</div>';
+  }
+  function timeModalLive() {
+    const now = new Date();
+    const set = (id, v) => { const el = $(id); if (el && el.textContent !== v) el.textContent = v; };
+    set('mUkTime', fmtTimeUK.format(now));
+    set('mLocalTime', fmtTime.format(now));
+  }
+
+  // ----- Weather: 3D wind globe -----
+  function weatherModalHTML() {
+    return ''
+      + '<p class="modal-lead">Live surface wind, centred on the UK. Drag to spin the globe, scroll to zoom — the moving particles trace wind direction and speed in real time.</p>'
+      + '<div class="globe-frame" id="globeFrame"></div>'
+      + '<div class="modal-actions">'
+      +   '<a class="modal-btn" id="globeOpen" target="_blank" rel="noopener">Open full UK wind map ↗</a>'
+      + '</div>'
+      + '<p class="modal-credit">Source: earth.nullschool.net — global weather, forecast by supercomputer.</p>';
+  }
+  function weatherModalAfter() {
+    const url = KazuLib.nullschoolUrl({ lon: -2.5, lat: 54.5, zoom: 2800 });
+    const open = $('globeOpen'); if (open) open.href = url;
+    const frame = $('globeFrame');
+    if (frame) {
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.loading = 'lazy';
+      iframe.title = 'Interactive 3D wind globe of the UK';
+      iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+      frame.appendChild(iframe);
+    }
+  }
+
+  // ----- Age & life stats -----
+  const nf = (n) => n.toLocaleString('en-GB');
+  function statTile(num, label) {
+    return '<div class="stat-tile"><div class="stat-tile-num">' + num + '</div><div class="stat-tile-label">' + label + '</div></div>';
+  }
+  function ageModalHTML() {
+    const a = KazuLib.ageBreakdown(new Date());
+    const f = KazuLib.birthFacts();
+    const milestoneOn = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(a.nextMilestoneOn);
+    return ''
+      + '<div class="age-head">' + a.years + ' years, ' + a.months + ' months, ' + a.days + ' days <span class="age-sub">old</span></div>'
+      + '<div class="stat-tiles">'
+      +   statTile(nf(a.totalDays), 'days lived')
+      +   statTile(nf(a.totalWeeks), 'weeks lived')
+      +   statTile(nf(a.totalHours), 'hours lived')
+      +   statTile('~' + nf(a.heartbeats), 'heartbeats')
+      + '</div>'
+      + '<div class="modal-note">'
+      +   '<div class="modal-row"><span>Next milestone</span><strong>' + nf(a.nextMilestoneDays) + ' days</strong></div>'
+      +   '<div class="modal-row modal-row-sub"><span>reached on</span><span>' + milestoneOn + ' · ' + nf(a.nextMilestoneDays - a.totalDays) + ' to go</span></div>'
+      + '</div>'
+      + '<div class="sign-row"><div class="sign-glyph">' + f.starGlyph + '</div><div>'
+      +   '<div class="tz-label">Star sign</div><div class="sign-name">' + f.starSign + '</div>'
+      +   '<div class="tz-meta">Born ' + f.dateLabel + ' — a ' + f.weekday + '</div></div></div>'
+      + '<div class="life-weeks-wrap">'
+      +   '<div class="life-weeks-head"><span class="life-weeks-title">Life in weeks</span>'
+      +     '<span class="life-weeks-legend">each dot = 1 week · filled = lived</span></div>'
+      +   '<canvas id="lifeWeeksCanvas"></canvas>'
+      + '</div>';
+  }
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function drawLifeWeeks() {
+    const canvas = $('lifeWeeksCanvas');
+    if (!canvas) return;
+    const YEARS = 90, WEEKS = 52, gap = 2;
+    const lived = KazuLib.lifeWeeksLived(new Date());
+    // measure the container, not the canvas (a bare canvas reports its 300px default)
+    const wrap = canvas.parentElement;
+    const avail = (wrap && wrap.clientWidth) || modalBodyEl.clientWidth || 460;
+    const cell = Math.max(3, Math.floor((avail - (WEEKS - 1) * gap) / WEEKS));
+    const W = WEEKS * cell + (WEEKS - 1) * gap;
+    const H = YEARS * cell + (YEARS - 1) * gap;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#5cc6ff';
+    const r = Math.max(1, cell * 0.28);
+    for (let i = 0; i < YEARS * WEEKS; i++) {
+      const x = (i % WEEKS) * (cell + gap), y = Math.floor(i / WEEKS) * (cell + gap);
+      ctx.fillStyle = i < lived ? accent : 'rgba(140,170,210,.18)';
+      roundRect(ctx, x, y, cell, cell, r); ctx.fill();
+    }
+  }
+
+  // ----- Next birthday: countdown + calendar export -----
+  function cdCell(id, val, label) {
+    return '<div class="cd-cell"><div class="cd-num" id="' + id + '">' + val + '</div><div class="cd-label">' + label + '</div></div>';
+  }
+  function bdayModalHTML() {
+    const p = KazuLib.birthdayCountdownParts(new Date());
+    const dateLabel = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(p.targetDate);
+    const head = p.isToday
+      ? '🎉 It’s today — happy birthday! Turning <strong>' + p.turning + '</strong>'
+      : 'Turning <strong>' + p.turning + '</strong> on ' + dateLabel;
+    return ''
+      + '<div class="modal-note modal-note--center">' + head + '</div>'
+      + '<div class="countdown">'
+      +   cdCell('cdDays', p.days, 'days')
+      +   cdCell('cdHours', pad2(p.hours), 'hours')
+      +   cdCell('cdMins', pad2(p.minutes), 'mins')
+      +   cdCell('cdSecs', pad2(p.seconds), 'secs')
+      + '</div>'
+      + '<div class="modal-actions modal-actions--center">'
+      +   '<a class="modal-btn" id="bdayGoogle" target="_blank" rel="noopener">📅 Add to Google Calendar</a>'
+      +   '<button type="button" class="modal-btn modal-btn--ghost" id="bdayIcs">⬇️ Download .ics file</button>'
+      + '</div>'
+      + '<p class="modal-credit modal-credit--center">Adds a yearly all-day event with a reminder the day before.</p>';
+  }
+  function bdayModalAfter() {
+    const p = KazuLib.birthdayCountdownParts(new Date());
+    const summary = 'Kazu’s Birthday 🎂';
+    const g = $('bdayGoogle');
+    if (g) g.href = KazuLib.googleCalendarUrl({ summary: summary, date: p.targetDate, details: 'Kazu turns ' + p.turning + '! 🎉' });
+    const ics = $('bdayIcs');
+    if (ics) ics.addEventListener('click', () => downloadBirthdayICS(summary));
+  }
+  function bdayModalLive() {
+    const p = KazuLib.birthdayCountdownParts(new Date());
+    const set = (id, v) => { const el = $(id); if (el && el.textContent !== String(v)) el.textContent = v; };
+    set('cdDays', p.days); set('cdHours', pad2(p.hours)); set('cdMins', pad2(p.minutes)); set('cdSecs', pad2(p.seconds));
+  }
+  function downloadBirthdayICS(summary) {
+    const blob = new Blob([KazuLib.buildBirthdayICS({ summary: summary })], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'kazu-birthday.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Saved kazu-birthday.ics 🎂');
+  }
+
+  const MODALS = {
+    time: { title: '🕒 Time & timezones', render: timeModalHTML, live: timeModalLive },
+    weather: { title: '🌬️ UK wind globe', wide: true, render: weatherModalHTML, afterRender: weatherModalAfter },
+    age: { title: '🎂 Age & life stats', render: ageModalHTML, afterRender: drawLifeWeeks },
+    bday: { title: '🎉 Next birthday', render: bdayModalHTML, afterRender: bdayModalAfter, live: bdayModalLive },
+  };
+
+  function openModal(key, trigger) {
+    if (!modalEl || !KazuLib) return;
+    const def = MODALS[key];
+    if (!def) return;
+    modalKey = key;
+    modalTrigger = trigger || null;
+    modalPanel.classList.toggle('modal-panel--wide', !!def.wide);
+    modalTitleEl.innerHTML = def.title;
+    modalBodyEl.innerHTML = def.render();
+    modalEl.hidden = false;                 // unhide first so afterRender() has real layout
+    document.body.classList.add('modal-open');
+    if (def.afterRender) def.afterRender();
+    void modalEl.offsetWidth;               // reflow so the open transition runs
+    modalEl.classList.add('is-open');
+    modalPanel.focus();
+    if (def.live) { def.live(); modalUpdater = setInterval(def.live, 1000); }
+  }
+
+  function closeModal() {
+    if (!modalEl || modalEl.hidden) return;
+    modalEl.classList.remove('is-open');
+    document.body.classList.remove('modal-open');
+    if (modalUpdater) { clearInterval(modalUpdater); modalUpdater = null; }
+    if (modalTrigger && modalTrigger.focus) modalTrigger.focus();
+    modalTrigger = null; modalKey = null;
+    setTimeout(() => {                       // hide + unmount after the fade-out
+      if (!modalEl.classList.contains('is-open')) {
+        modalEl.hidden = true;
+        modalBodyEl.innerHTML = '';          // stops the globe iframe + frees the canvas
+      }
+    }, 340);
+  }
+
+  function trapFocus(e) {
+    if (e.key !== 'Tab') return;
+    const nodes = Array.from(modalPanel.querySelectorAll(FOCUSABLE)).filter((n) => n.offsetParent !== null);
+    if (!nodes.length) { e.preventDefault(); modalPanel.focus(); return; }
+    const first = nodes[0], last = nodes[nodes.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  if (modalEl) {
+    modalEl.addEventListener('click', (e) => { if (e.target === modalEl) closeModal(); });
+    if (modalCloseEl) modalCloseEl.addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (modalEl.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); closeModal(); }
+      else trapFocus(e);
+    });
+    window.addEventListener('resize', () => { if (modalKey === 'age') drawLifeWeeks(); }, { passive: true });
+    document.querySelectorAll('.stat-card[data-modal]').forEach((card) => {
+      card.addEventListener('click', () => openModal(card.dataset.modal, card));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(card.dataset.modal, card); }
+      });
+    });
+  }
 
   // ---------- Seasonal effects ----------
   function applySeasons() {

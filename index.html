@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body data-theme="dark">
 
@@ -78,16 +78,16 @@
         </div>
       </header>
 
-      <!-- LIVE STAT STRIP -->
+      <!-- LIVE STAT STRIP — each tile opens a detail pop-up (see script.js / lib.js) -->
       <section class="stat-grid">
-        <div class="card stat-card">
+        <div class="card stat-card" data-modal="time" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Time and timezones — open details">
           <div class="stat-bg-icon">🕒</div>
           <div class="stat-label">UK time</div>
           <div class="stat-value" id="liveTime">--:--:--</div>
           <div class="stat-sub" id="liveDate">—</div>
         </div>
 
-        <div class="card stat-card">
+        <div class="card stat-card" data-modal="weather" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Weather — open the interactive UK wind globe">
           <div class="stat-bg-icon" id="weatherBgIcon">❄️</div>
           <div class="stat-label">Weather</div>
           <div id="weatherLoaded" class="hidden">
@@ -100,14 +100,14 @@
           </div>
         </div>
 
-        <div class="card stat-card">
+        <div class="card stat-card" data-modal="age" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Age and life stats — open details">
           <div class="stat-bg-icon">🎂</div>
           <div class="stat-label">Age</div>
           <div class="stat-value" id="liveAge">—</div>
           <div class="stat-sub">years young</div>
         </div>
 
-        <div class="card stat-card stat-card--bday">
+        <div class="card stat-card stat-card--bday" data-modal="bday" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Next birthday — open countdown and add to calendar">
           <div class="stat-bg-icon">🎉</div>
           <div class="stat-label stat-label--onbrand">Next birthday</div>
           <div class="stat-value" id="liveBday">—</div>
@@ -349,6 +349,15 @@
     </div>
   </div>
 
+<!-- Card detail pop-up: one reusable shell, content injected by script.js -->
+<div id="cardModal" class="modal-overlay" hidden>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+    <button type="button" class="modal-close" id="modalClose" aria-label="Close">×</button>
+    <h2 class="modal-title" id="modalTitle"></h2>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <!-- Liquid-glass displacement filters: <filter> defs are injected here by script.js
@@ -356,6 +365,7 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="script.js"></script>
+<script src="lib.js?v=1"></script>
+<script src="script.js?v=2"></script>
 </body>
 </html>

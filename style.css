@@ -570,3 +570,155 @@ body.season-christmas #theme-orb { display: none !important; }
 .toast {
   box-shadow: 0 14px 34px rgba(3, 10, 24, .3), var(--glint);
 }
+
+/* ============ CARD DETAIL MODALS ============ */
+/* Each .stat-card opens a glass pop-up (markup in index.html, wired in
+   script.js). The panel reuses the same brand-tinted glass + glint as the
+   stat/social tiles so it sits in the existing visual language. */
+
+/* clickable affordance on the four tiles */
+.stat-card[data-modal] {
+  cursor: pointer;
+  transition: transform .25s cubic-bezier(.34,1.45,.55,1), box-shadow .25s ease;
+}
+.stat-card[data-modal]:hover { transform: translateY(-3px); }
+.stat-card[data-modal]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.stat-card[data-modal]::after {
+  content: "\2922"; /* ⤢ expand */
+  position: absolute; right: 12px; bottom: 9px; z-index: 2;
+  font-size: 14px; line-height: 1; color: var(--ink-soft);
+  opacity: 0; transition: opacity .25s ease; pointer-events: none;
+}
+.stat-card[data-modal]:hover::after,
+.stat-card[data-modal]:focus-visible::after { opacity: .65; }
+.stat-card--bday[data-modal]::after { color: rgba(255,255,255,.9); }
+
+body.modal-open { overflow: hidden; }
+
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  background: rgba(4,10,22,.55);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  opacity: 0; transition: opacity .28s ease;
+}
+.modal-overlay.is-open { opacity: 1; }
+.modal-overlay[hidden] { display: none; }
+
+.modal-panel {
+  position: relative; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+  border-radius: 26px; padding: 26px 24px 28px; color: var(--ink);
+  background:
+    linear-gradient(150deg, rgba(14,165,233,.18), rgba(124,92,255,.18)),
+    var(--card-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow:
+    0 30px 80px rgba(3,10,24,.55),
+    inset 0 1.5px .5px rgba(255,255,255,.5),
+    inset 2px 3px 4px rgba(255,255,255,.16),
+    inset -2px -3px 10px rgba(0,0,0,.26);
+  transform: translateY(14px) scale(.96); opacity: 0;
+  transition: transform .32s cubic-bezier(.21,.7,.3,1.05), opacity .28s ease;
+}
+.modal-overlay.is-open .modal-panel { transform: translateY(0) scale(1); opacity: 1; }
+.modal-panel--wide { max-width: 760px; }
+/* focused only to anchor the focus-trap — no visible ring on the container itself */
+.modal-panel:focus { outline: none; }
+
+.modal-close {
+  position: absolute; top: 14px; right: 14px; width: 38px; height: 38px;
+  border: none; cursor: pointer; border-radius: 50%;
+  background: rgba(140,170,210,.18); color: var(--ink);
+  font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;
+  transition: background .2s ease, transform .2s ease;
+}
+.modal-close:hover { background: rgba(140,170,210,.34); transform: rotate(90deg) scale(1.06); }
+
+.modal-title {
+  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 23px;
+  margin: 2px 44px 18px 2px; color: var(--ink);
+  display: flex; align-items: center; gap: 9px;
+}
+.modal-body { font-size: 15px; }
+.modal-lead { font-size: 14px; font-weight: 600; color: var(--ink-soft); line-height: 1.5; margin-bottom: 14px; }
+.modal-credit { font-size: 12px; font-weight: 600; color: var(--ink-faint); margin-top: 12px; }
+.modal-credit--center { text-align: center; }
+
+.modal-note {
+  margin-top: 14px; background: rgba(140,170,210,.12); border-radius: 16px;
+  padding: 14px 16px; font-size: 14px; font-weight: 600; color: var(--ink-soft); line-height: 1.5;
+}
+.modal-note--center { text-align: center; color: var(--ink); }
+.modal-note strong { color: var(--ink); font-weight: 800; }
+.modal-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.modal-row-sub { color: var(--ink-faint); font-weight: 700; }
+.modal-row.modal-row-sub { margin-top: 6px; font-size: 13px; }
+
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.modal-actions--center { justify-content: center; }
+.modal-btn {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none;
+  text-decoration: none; font-family: inherit; font-size: 14px; font-weight: 800;
+  padding: 11px 18px; border-radius: 999px; color: #fff;
+  background: linear-gradient(150deg,#0ea5e9,#7c5cff);
+  box-shadow: 0 8px 20px rgba(80,110,230,.35);
+  transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease, background .2s ease;
+}
+.modal-btn:hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.08); box-shadow: 0 12px 26px rgba(80,110,230,.5); }
+.modal-btn:active { transform: scale(.97); }
+.modal-btn--ghost { background: rgba(140,170,210,.16); color: var(--ink); box-shadow: none; }
+.modal-btn--ghost:hover { background: rgba(140,170,210,.3); filter: none; }
+
+/* Time modal */
+.tz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tz-cell { background: rgba(140,170,210,.12); border-radius: 16px; padding: 15px 16px; }
+.tz-label { font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.tz-time { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 28px; line-height: 1.05; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.tz-meta { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
+
+/* Weather globe */
+.globe-frame {
+  position: relative; width: 100%; height: min(60vh, 460px);
+  border-radius: 18px; overflow: hidden; background: #05070d;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.globe-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* Age modal */
+.age-head { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(21px,5vw,28px); color: var(--ink); margin-bottom: 16px; }
+.age-head .age-sub { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 16px; color: var(--ink-soft); }
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px,1fr)); gap: 12px; }
+.stat-tile { background: rgba(140,170,210,.12); border-radius: 16px; padding: 14px 16px; }
+.stat-tile-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+.stat-tile-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 6px; }
+.sign-row { display: flex; align-items: center; gap: 14px; margin-top: 14px; background: rgba(140,170,210,.12); border-radius: 16px; padding: 14px 16px; }
+.sign-glyph { font-size: 34px; line-height: 1; flex: none; }
+.sign-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px; color: var(--ink); line-height: 1.1; }
+.life-weeks-wrap { margin-top: 18px; }
+.life-weeks-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 9px; flex-wrap: wrap; }
+.life-weeks-title { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.life-weeks-legend { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+#lifeWeeksCanvas { display: block; max-width: 100%; }
+
+/* Birthday countdown */
+.countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+.cd-cell { background: rgba(140,170,210,.14); border-radius: 16px; padding: 14px 6px; text-align: center; }
+.cd-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(24px,7vw,32px); line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cd-label { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); margin-top: 6px; }
+
+@media (max-width: 520px) {
+  .modal-panel { padding: 22px 16px 24px; border-radius: 22px; }
+  .tz-grid { grid-template-columns: 1fr; }
+  .modal-actions { flex-direction: column; }
+  .modal-btn { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay { transition: opacity .2s ease; }
+  .modal-panel { transition: opacity .2s ease; transform: none; }
+  .modal-overlay.is-open .modal-panel { transform: none; }
+  .modal-close:hover { transform: none; }
+  .stat-card[data-modal] { transition: none; }
+  .stat-card[data-modal]:hover { transform: none; }
+  .modal-btn:hover { transform: none; }
+}

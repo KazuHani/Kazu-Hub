@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kazu Hub — lib.js gate tests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0d1b31; color: #eaf4ff; padding: 24px; line-height: 1.4; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.lead { color: #9db8d4; font-size: 13px; margin-bottom: 16px; }
+  #summary { margin: 14px 0; font-size: 18px; font-weight: 800; }
+  .row { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 14px; }
+  .pass { color: #3ddc97; font-weight: 700; }
+  .fail { color: #ff6b6b; font-weight: 800; }
+  code { color: #ffd34d; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>lib.js gate tests</h1>
+  <p class="lead">Deterministic checks for the modal maths — DST dates, age, birthday countdown, ICS &amp; Google Calendar export, star sign, nullschool URL. No network, runs in &lt;1s.</p>
+  <div id="summary">Running…</div>
+  <div id="out"></div>
+
+  <script src="lib.js?v=1"></script>
+  <script>
+    (function () {
+      var out = document.getElementById('out');
+      var pass = 0, fail = 0;
+      function row(okFlag, name, extra) {
+        var d = document.createElement('div');
+        d.className = 'row';
+        d.innerHTML = '<span class="' + (okFlag ? 'pass' : 'fail') + '">' + (okFlag ? 'PASS' : 'FAIL') + '</span> ' +
+          name + (okFlag || !extra ? '' : ' <code>' + extra + '</code>');
+        out.appendChild(d);
+        okFlag ? pass++ : fail++;
+      }
+      function ok(name, cond, detail) { row(!!cond, name, String(detail)); }
+      function eq(name, actual, expected) {
+        row(JSON.stringify(actual) === JSON.stringify(expected), name,
+          'got ' + JSON.stringify(actual) + ', expected ' + JSON.stringify(expected));
+      }
+
+      var L = window.KazuLib;
+      ok('KazuLib loaded', !!L);
+
+      // ---- UK DST ----
+      var marF = L.nextUkDstTransition(new Date(Date.UTC(2026, 0, 15)));
+      eq('next DST from Jan 2026 → forward', marF.direction, 'forward');
+      ok('forward date = Sun 29 Mar 2026', marF.date.getUTCMonth() === 2 && marF.date.getUTCDate() === 29, marF.date.toUTCString());
+      var octB = L.nextUkDstTransition(new Date(Date.UTC(2026, 5, 15)));
+      eq('next DST from Jun 2026 → back', octB.direction, 'back');
+      ok('back date = Sun 25 Oct 2026', octB.date.getUTCMonth() === 9 && octB.date.getUTCDate() === 25, octB.date.toUTCString());
+      var nxt = L.nextUkDstTransition(new Date(Date.UTC(2026, 10, 15)));
+      ok('after Oct → forward Mar 2027', nxt.direction === 'forward' && nxt.date.getUTCFullYear() === 2027, nxt.date.toUTCString());
+      ok('July is BST', L.isUkBST(new Date(Date.UTC(2026, 6, 1))) === true);
+      ok('January is not BST', L.isUkBST(new Date(Date.UTC(2026, 0, 1))) === false);
+
+      // ---- Birthday countdown ----
+      var p = L.birthdayCountdownParts(new Date(2026, 5, 27, 12, 0, 0)); // 27 Jun 2026, noon
+      eq('calendar days to birthday = 135', p.calDays, 135);
+      eq('turning 25', p.turning, 25);
+      ok('isToday true on 9 Nov 2026', L.birthdayCountdownParts(new Date(2026, 10, 9, 9, 0, 0)).isToday === true);
+
+      // ---- Age ----
+      var a = L.ageBreakdown(new Date(2026, 5, 27, 12, 0, 0));
+      eq('age years on 27 Jun 2026 = 24', a.years, 24);
+      eq('breakdown = 24y 7m 18d', [a.years, a.months, a.days], [24, 7, 18]);
+      ok('totalDays > 8000', a.totalDays > 8000, a.totalDays);
+      ok('next milestone is a future multiple of 1000', a.nextMilestoneDays % 1000 === 0 && a.nextMilestoneDays > a.totalDays, a.nextMilestoneDays);
+      ok('lifeWeeksLived ≈ totalDays/7', Math.abs(L.lifeWeeksLived(new Date(2026, 5, 27)) - Math.floor(a.totalDays / 7)) <= 1);
+
+      // ---- Star sign + birth facts ----
+      var f = L.birthFacts();
+      eq('star sign = Scorpio', f.starSign, 'Scorpio');
+      eq('born on a Friday', f.weekday, 'Friday');
+      eq('zodiac Nov 25 = Sagittarius', L.zodiac(10, 25).name, 'Sagittarius');
+      eq('zodiac Jan 1 = Capricorn', L.zodiac(0, 1).name, 'Capricorn');
+
+      // ---- ICS ----
+      var ics = L.buildBirthdayICS({ summary: 'Test BD' });
+      ok('ICS wrapped in VCALENDAR', /BEGIN:VCALENDAR[\s\S]*END:VCALENDAR/.test(ics));
+      ok('ICS DTSTART all-day …1109', /DTSTART;VALUE=DATE:\d{4}1109/.test(ics));
+      ok('ICS DTEND next day …1110', /DTEND;VALUE=DATE:\d{4}1110/.test(ics));
+      ok('ICS yearly recurrence', /RRULE:FREQ=YEARLY/.test(ics));
+      ok('ICS 1-day-before alarm', /BEGIN:VALARM[\s\S]*TRIGGER:-P1D[\s\S]*END:VALARM/.test(ics));
+      ok('ICS uses CRLF line endings', ics.indexOf('\r\n') > -1);
+
+      // ---- Google Calendar URL ----
+      var g = L.googleCalendarUrl({ summary: 'Kazu BD', date: new Date(2026, 10, 9), details: 'hi' });
+      ok('Google action=TEMPLATE', g.indexOf('action=TEMPLATE') > -1);
+      ok('Google dates 20261109/20261110', g.indexOf('dates=20261109/20261110') > -1, g);
+      ok('Google yearly recurrence', g.indexOf('FREQ%3DYEARLY') > -1, g);
+
+      // ---- nullschool URL ----
+      ok('nullschool orthographic, UK-centred', L.nullschoolUrl({ lon: -2.5, lat: 54.5, zoom: 2800 }).indexOf('orthographic=-2.50,54.50,2800') > -1);
+
+      var s = document.getElementById('summary');
+      s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
+      s.className = fail === 0 ? 'pass' : 'fail';
+      console.log('[lib.js tests]', pass, 'passed,', fail, 'failed');
+    })();
+  </script>
+</body>
+</html>
