@@ -359,16 +359,33 @@ body[data-theme="light"] .stat-bg-icon { opacity: .32; }
 .story-link:hover .story-cta { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.28); gap: 11px; }
 
 /* ---- Back to top ---- */
+/* Fades + scales in/out instead of popping via display:none, matching the
+   .scroll-reveal easing used everywhere else. Stays display:flex at all times
+   so the transition can actually run; .to-top.hidden overrides the generic
+   .hidden{display:none!important} rule (two classes beats one at equal
+   !important weight) and drives the hidden state with opacity/transform/
+   pointer-events instead. */
 .to-top {
   position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 52px; height: 52px;
   border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: 23px; line-height: 1;
   box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
-  transition: transform .3s cubic-bezier(.34,1.6,.55,1), box-shadow .3s ease;
+  opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.6,.55,1), box-shadow .3s ease;
 }
 .to-top:hover { transform: translateY(-5px) scale(1.08) rotate(-8deg); box-shadow: 0 16px 36px rgba(80,110,230,.55); }
 .to-top:active { transform: translateY(-1px) scale(.96); }
+.to-top.hidden {
+  display: flex !important;
+  opacity: 0;
+  transform: translateY(14px) scale(.85);
+  pointer-events: none;
+}
 @media (max-width: 480px) { .to-top { width: 48px; height: 48px; font-size: 20px; right: 16px; bottom: 24px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .to-top { transition: none; }
+}
 
 .footer { text-align: center; margin-top: 54px; font-size: 13px; font-weight: 700; color: var(--ink-faint); }
 

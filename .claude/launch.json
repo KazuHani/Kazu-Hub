@@ -4,8 +4,8 @@
     {
       "name": "kazu-static",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5500"],
-      "port": 5500
+      "runtimeArgs": ["-m", "http.server", "5501"],
+      "port": 5501
     }
   ]
 }
