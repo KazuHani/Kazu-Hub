@@ -25,7 +25,37 @@
     });
   }
 
-  function birthDate() { return new Date(BIRTH.year, BIRTH.month, BIRTH.day, 0, 0, 0); }
+  // ---- UK wall clock -------------------------------------------------------
+  // Age/birthday maths run in the Europe/London wall-clock frame, not the
+  // visitor's local frame: Kazu's birthday starts at midnight in the UK,
+  // whatever timezone the page is viewed from. Wall-clock components come
+  // from Intl; calendar arithmetic happens in a fake-UTC frame so a "day" is
+  // always exactly 86400s and results are identical on any machine.
+  var dtfUK = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TIMEZONE, year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false,
+  });
+
+  // { year, month (0-indexed), day, hours, minutes, seconds } on the UK clock.
+  function ukWallParts(date) {
+    date = date || new Date();
+    var parts = dtfUK.formatToParts(date);
+    var o = {};
+    for (var i = 0; i < parts.length; i++) o[parts[i].type] = parts[i].value;
+    return {
+      year: +o.year, month: +o.month - 1, day: +o.day,
+      hours: (+o.hour) % 24, // some ICU builds report midnight as 24
+      minutes: +o.minute, seconds: +o.second,
+    };
+  }
+
+  // The same instant expressed as milliseconds in the fake-UTC wall frame.
+  function ukWallMs(date) {
+    var w = ukWallParts(date);
+    return Date.UTC(w.year, w.month, w.day, w.hours, w.minutes, w.seconds);
+  }
+
+  var BIRTH_WALL_MS = Date.UTC(BIRTH.year, BIRTH.month, BIRTH.day, 0, 0, 0);
 
   // ---- UK daylight saving (BST/GMT) -------------------------------------
   // UK clocks change on the last Sunday of March (forward, BST begins) and the
@@ -65,23 +95,23 @@
   // ---- Age ---------------------------------------------------------------
   function ageBreakdown(now) {
     now = now || new Date();
-    var birth = birthDate();
+    var w = ukWallParts(now);
 
-    var years = now.getFullYear() - birth.getFullYear();
-    var months = now.getMonth() - birth.getMonth();
-    var days = now.getDate() - birth.getDate();
+    var years = w.year - BIRTH.year;
+    var months = w.month - BIRTH.month;
+    var days = w.day - BIRTH.day;
     if (days < 0) {
       months--;
-      days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); // days in previous month
+      days += new Date(Date.UTC(w.year, w.month, 0)).getUTCDate(); // days in previous month
     }
     if (months < 0) { years--; months += 12; }
 
-    var msAlive = now - birth;
+    var msAlive = ukWallMs(now) - BIRTH_WALL_MS;
     var totalDays = Math.floor(msAlive / 86400000);
     var totalWeeks = Math.floor(totalDays / 7);
     var totalHours = Math.floor(msAlive / 3600000);
     var nextMilestoneDays = (Math.floor(totalDays / 1000) + 1) * 1000;
-    var nextMilestoneOn = new Date(birth.getTime() + nextMilestoneDays * 86400000);
+    var nextMilestoneOn = new Date(BIRTH_WALL_MS + nextMilestoneDays * 86400000); // wall frame: format with timeZone:'UTC'
     var heartbeats = Math.floor((msAlive / 60000) * 72); // ~72 bpm
 
     return {
@@ -94,31 +124,32 @@
 
   function lifeWeeksLived(now) {
     now = now || new Date();
-    return Math.floor((now - birthDate()) / (7 * 86400000));
+    return Math.floor((ukWallMs(now) - BIRTH_WALL_MS) / (7 * 86400000));
   }
 
   // ---- Birthday countdown ------------------------------------------------
   function birthdayCountdownParts(now) {
     now = now || new Date();
-    var age = now.getFullYear() - BIRTH.year;
-    var m = now.getMonth(), d = now.getDate();
-    var hadBday = (m > BIRTH.month) || (m === BIRTH.month && d >= BIRTH.day);
+    var w = ukWallParts(now);
+    var age = w.year - BIRTH.year;
+    var hadBday = (w.month > BIRTH.month) || (w.month === BIRTH.month && w.day >= BIRTH.day);
     if (!hadBday) age--;
 
-    var target = new Date(now.getFullYear(), BIRTH.month, BIRTH.day, 0, 0, 0);
-    var todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (todayMid > target) target = new Date(now.getFullYear() + 1, BIRTH.month, BIRTH.day, 0, 0, 0);
+    var target = Date.UTC(w.year, BIRTH.month, BIRTH.day, 0, 0, 0);
+    var todayMid = Date.UTC(w.year, w.month, w.day);
+    if (todayMid > target) target = Date.UTC(w.year + 1, BIRTH.month, BIRTH.day, 0, 0, 0);
 
-    var totalSec = Math.max(0, Math.floor((target - now) / 1000));
+    var totalSec = Math.max(0, Math.floor((target - ukWallMs(now)) / 1000));
     return {
       days: Math.floor(totalSec / 86400),
       hours: Math.floor((totalSec % 86400) / 3600),
       minutes: Math.floor((totalSec % 3600) / 60),
       seconds: totalSec % 60,
       calDays: Math.round((target - todayMid) / 86400000), // whole calendar days, matches the card
-      targetDate: target,
-      turning: age + 1,
-      isToday: (m === BIRTH.month && d === BIRTH.day),
+      targetDate: new Date(target), // wall frame: read with UTC getters / timeZone:'UTC'
+      ageNow: age,     // current age (on the birthday itself, the age just turned)
+      turning: age + 1, // age at the upcoming birthday (next year's, on the day itself)
+      isToday: (w.month === BIRTH.month && w.day === BIRTH.day),
     };
   }
 
@@ -133,13 +164,13 @@
   }
 
   function birthFacts() {
-    var birth = birthDate();
+    var birth = new Date(BIRTH_WALL_MS); // wall frame: format with timeZone:'UTC'
     var z = zodiac(BIRTH.month, BIRTH.day);
     return {
       starSign: z.name,
       starGlyph: z.glyph,
-      weekday: new Intl.DateTimeFormat('en-GB', { weekday: 'long' }).format(birth),
-      dateLabel: new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(birth),
+      weekday: new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'UTC' }).format(birth),
+      dateLabel: new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(birth),
     };
   }
 
@@ -184,10 +215,12 @@
   function googleCalendarUrl(opts) {
     opts = opts || {};
     var summary = opts.summary || "Kazu's Birthday";
+    // Wall-frame date (see birthdayCountdownParts): read via UTC getters so the
+    // all-day event lands on 9 November no matter the viewer's timezone.
     var date = opts.date || birthdayCountdownParts(new Date()).targetDate;
-    var start = ymd(date.getFullYear(), date.getMonth(), date.getDate());
-    var endDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    var end = ymd(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    var start = ymd(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+    var endDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1));
+    var end = ymd(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate());
     var params = [
       'action=TEMPLATE',
       'text=' + encodeURIComponent(summary),
@@ -213,6 +246,7 @@
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
     escapeHtml: escapeHtml,
+    ukWallParts: ukWallParts,
     lastSundayOfMonth: lastSundayOfMonth,
     ukTransitionInstant: ukTransitionInstant,
     isUkBST: isUkBST,

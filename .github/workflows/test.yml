@@ -1,0 +1,33 @@
+name: gate tests
+
+on:
+  push:
+    branches: [Main]
+  pull_request:
+
+jobs:
+  lib-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # The suite asserts UK wall-clock results, so it must pass under any
+      # machine timezone. Run it at the extremes to prove it.
+      - name: lib.js gate tests (UTC)
+        run: node tests.js
+        env:
+          TZ: UTC
+
+      - name: lib.js gate tests (UTC+14, ahead of the UK)
+        run: node tests.js
+        env:
+          TZ: Pacific/Kiritimati
+
+      - name: lib.js gate tests (UTC-7, behind the UK)
+        run: node tests.js
+        env:
+          TZ: America/Los_Angeles

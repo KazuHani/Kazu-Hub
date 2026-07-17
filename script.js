@@ -36,11 +36,17 @@
 
   function seasonState(now) {
     if (SEASON_OVERRIDE) return SEASON_OVERRIDE;
-    const m = now.getMonth(), d = now.getDate(); // LOCAL time (matches the birthday isToday check)
+    const m = now.getMonth(), d = now.getDate(); // visitor-local: Christmas & pride are ambient
+    // The birthday season follows the UK wall clock: it's Kazu's day, in the UK.
+    let bM = m, bD = d;
+    if (KazuLib && KazuLib.ukWallParts) {
+      const w = KazuLib.ukWallParts(now);
+      bM = w.month; bD = w.day;
+    }
     return {
-      birthday: (m === BIRTH_MONTH && d === BIRTH_DAY), // Nov 9
-      christmas: (m === 11 && d === 25),                // Dec 25
-      pride: (m === 5),                                 // all of June
+      birthday: (bM === BIRTH_MONTH && bD === BIRTH_DAY), // Nov 9, UK time
+      christmas: (m === 11 && d === 25),                  // Dec 25
+      pride: (m === 5),                                   // all of June
     };
   }
 
@@ -52,26 +58,42 @@
     const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
     const dateStr = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(now);
 
-    let age = now.getFullYear() - BIRTH_YEAR;
-    const m = now.getMonth(), d = now.getDate();
-    const hadBday = (m > BIRTH_MONTH) || (m === BIRTH_MONTH && d >= BIRTH_DAY);
-    if (!hadBday) age--;
-
-    let target = new Date(now.getFullYear(), BIRTH_MONTH, BIRTH_DAY);
-    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    if (todayMid > target) target = new Date(now.getFullYear() + 1, BIRTH_MONTH, BIRTH_DAY);
-    const days = Math.round((target - todayMid) / 86400000);
-    const isToday = (m === BIRTH_MONTH && d === BIRTH_DAY);
-
-    let bdayText, bdaySub;
-    if (isToday) {
-      bdayText = '🎉 Today!';
-      bdaySub = 'Happy birthday — turning ' + (age + 1);
+    let ageStr, bdayText, bdaySub;
+    if (KazuLib) {
+      // UK wall clock (see lib.js): the birthday flips at midnight in the UK,
+      // not at midnight in the visitor's timezone.
+      const p = KazuLib.birthdayCountdownParts(now);
+      ageStr = String(p.ageNow);
+      if (p.isToday) {
+        bdayText = '🎉 Today!';
+        bdaySub = 'Happy birthday — turning ' + p.ageNow;
+      } else {
+        bdayText = p.calDays + (p.calDays === 1 ? ' day' : ' days');
+        bdaySub = 'until turning ' + p.turning;
+      }
     } else {
-      bdayText = days + (days === 1 ? ' day' : ' days');
-      bdaySub = 'until turning ' + (age + 1);
+      // Fallback if lib.js failed to load: visitor-local math (approximate).
+      let age = now.getFullYear() - BIRTH_YEAR;
+      const m = now.getMonth(), d = now.getDate();
+      const hadBday = (m > BIRTH_MONTH) || (m === BIRTH_MONTH && d >= BIRTH_DAY);
+      if (!hadBday) age--;
+
+      let target = new Date(now.getFullYear(), BIRTH_MONTH, BIRTH_DAY);
+      const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (todayMid > target) target = new Date(now.getFullYear() + 1, BIRTH_MONTH, BIRTH_DAY);
+      const days = Math.round((target - todayMid) / 86400000);
+      const isToday = (m === BIRTH_MONTH && d === BIRTH_DAY);
+
+      ageStr = String(age);
+      if (isToday) {
+        bdayText = '🎉 Today!';
+        bdaySub = 'Happy birthday — turning ' + age;
+      } else {
+        bdayText = days + (days === 1 ? ' day' : ' days');
+        bdaySub = 'until turning ' + (age + 1);
+      }
     }
-    return { timeStr, dateStr, ageStr: String(age), bdayText, bdaySub };
+    return { timeStr, dateStr, ageStr, bdayText, bdaySub };
   }
 
   function tick() {
@@ -640,7 +662,7 @@
   function ageModalHTML() {
     const a = KazuLib.ageBreakdown(new Date());
     const f = KazuLib.birthFacts();
-    const milestoneOn = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(a.nextMilestoneOn);
+    const milestoneOn = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(a.nextMilestoneOn);
     return ''
       + '<div class="age-head">' + a.years + ' years, ' + a.months + ' months, ' + a.days + ' days <span class="age-sub">old</span></div>'
       + '<div class="stat-tiles">'
@@ -703,9 +725,11 @@
   }
   function bdayModalHTML() {
     const p = KazuLib.birthdayCountdownParts(new Date());
-    const dateLabel = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(p.targetDate);
+    // targetDate is a UK wall-frame date: format in UTC so the label is right
+    // in every timezone.
+    const dateLabel = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(p.targetDate);
     const head = p.isToday
-      ? '🎉 It’s today — happy birthday! Turning <strong>' + p.turning + '</strong>'
+      ? '🎉 It’s today — happy birthday! Turning <strong>' + p.ageNow + '</strong>'
       : 'Turning <strong>' + p.turning + '</strong> on ' + dateLabel;
     return ''
       + '<div class="modal-note modal-note--center">' + head + '</div>'
@@ -725,7 +749,7 @@
     const p = KazuLib.birthdayCountdownParts(new Date());
     const summary = 'Kazu’s Birthday 🎂';
     const g = $('bdayGoogle');
-    if (g) g.href = KazuLib.googleCalendarUrl({ summary: summary, date: p.targetDate, details: 'Kazu turns ' + p.turning + '! 🎉' });
+    if (g) g.href = KazuLib.googleCalendarUrl({ summary: summary, date: p.targetDate, details: 'Kazu turns ' + (p.isToday ? p.ageNow : p.turning) + '! 🎉' });
     const ics = $('bdayIcs');
     if (ics) ics.addEventListener('click', () => downloadBirthdayICS(summary));
   }
