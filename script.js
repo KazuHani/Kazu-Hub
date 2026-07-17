@@ -536,6 +536,62 @@
     }
   }
 
+  // ---------- MyAnimeList (Jikan) ----------
+  const MAL_USER = 'Kazu_Hani';
+  // Entry-to-row extraction lives in lib.js (gate-tested); local copy keeps
+  // the card working if lib.js fails to load.
+  const malRow = (KazuLib && KazuLib.malRow) || function (entry) {
+    const a = entry && entry.anime;
+    if (!a || !(a.title_english || a.title)) return null;
+    const watched = (typeof entry.episodes_watched === 'number' && entry.episodes_watched >= 0) ? entry.episodes_watched : 0;
+    const total = (typeof a.episodes === 'number' && a.episodes > 0) ? a.episodes : null;
+    const img = (a.images && a.images.jpg && (a.images.jpg.small_image_url || a.images.jpg.image_url)) || '';
+    return {
+      url: a.url || (a.mal_id ? 'https://myanimelist.net/anime/' + a.mal_id : 'https://myanimelist.net'),
+      title: a.title_english || a.title,
+      watched, total,
+      pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
+      img,
+    };
+  };
+
+  async function loadMal() {
+    try {
+      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching');
+      if (!r.ok) throw new Error('bad status ' + r.status);
+      const j = await r.json();
+      // ?status=watching does the filtering server-side; the extra client-side
+      // check guards against the param being ignored, tolerating entries that
+      // don't carry the field at all.
+      const rows = ((j && j.data) || [])
+        .filter((e) => !e || !e.watching_status || e.watching_status === 'watching')
+        .map(malRow)
+        .filter(Boolean)
+        .slice(0, 3);
+
+      $('malList').innerHTML = rows.map((x) => (
+        '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+          (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy">' : '') +
+          '<div class="mal-info">' +
+            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+            '<div class="mal-progress">' +
+              (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
+              '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</a>'
+      )).join('');
+      $('malIdle').classList.toggle('hidden', rows.length > 0);
+
+      $('malLoaded').classList.remove('hidden');
+      $('malLoading').classList.add('hidden');
+      $('malError').classList.add('hidden');
+    } catch (e) {
+      $('malLoading').classList.add('hidden');
+      $('malError').classList.remove('hidden');
+    }
+  }
+
   // ---------- Motivational quotes ----------
   const FALLBACK_QUOTES = [
     ['The only way to do great work is to love what you do.', 'Steve Jobs'],
@@ -996,6 +1052,12 @@
     $('discordLoading').classList.remove('hidden');
     loadDiscord();
   });
+  const malRetryBtn = $('malRetry');
+  if (malRetryBtn) malRetryBtn.addEventListener('click', () => {
+    $('malError').classList.add('hidden');
+    $('malLoading').classList.remove('hidden');
+    loadMal();
+  });
 
   setAtmosphere(ATMOSPHERE_OVERRIDE || 'snow');
   loadQuote();
@@ -1009,6 +1071,7 @@
     { fn: loadWeather, ms: 10 * 60 * 1000 },
     { fn: loadDiscord, ms: 20 * 1000 },
     { fn: loadSteam, ms: 5 * 60 * 1000 },
+    { fn: loadMal, ms: 10 * 60 * 1000 },
   ];
   let timers = [];
 

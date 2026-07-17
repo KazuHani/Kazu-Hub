@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body data-theme="dark">
 
@@ -254,6 +254,32 @@
           </div>
         </div>
 
+        <!-- MYANIMELIST (currently watching, via the Jikan API) -->
+        <div class="card mal-card scroll-reveal">
+          <div class="card-head" style="position:relative;">
+            <div class="card-head-title" style="color:#8fb0ff;">
+              <span class="mal-head-badge">MAL</span>
+              MyAnimeList
+            </div>
+            <a class="pill-link" href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener">View list →</a>
+          </div>
+
+          <div id="malLoaded" class="hidden" style="position:relative;">
+            <div id="malList"></div>
+            <div id="malIdle" class="idle-banner hidden">Not watching anything right now ❄️</div>
+          </div>
+
+          <div id="malLoading" class="loading-row" style="position:relative;">
+            <span class="pulse-dot" style="background:#8fb0ff;"></span>
+            Connecting to MyAnimeList…
+          </div>
+
+          <div id="malError" class="loading-row hidden" style="position:relative;">
+            ⚠️ Can't reach MyAnimeList right now.
+            <button type="button" class="retry-btn" id="malRetry">Retry</button>
+          </div>
+        </div>
+
       </section>
 
       <!-- ───────────────────────────────────────────────────────────────
@@ -388,7 +414,7 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=4"></script>
-<script src="script.js?v=5"></script>
+<script src="lib.js?v=5"></script>
+<script src="script.js?v=6"></script>
 </body>
 </html>

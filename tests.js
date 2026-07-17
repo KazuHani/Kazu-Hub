@@ -113,6 +113,21 @@ eq('fog 45 → snow', L.atmosphereMode(45), 'snow');
 eq('garbage → snow', L.atmosphereMode('abc'), 'snow');
 eq('null → snow', L.atmosphereMode(null), 'snow');
 
+// ---- malRow (MyAnimeList card) ----
+const malEntry = {
+  watching_status: 'watching', episodes_watched: 7,
+  anime: { mal_id: 1, url: 'https://myanimelist.net/anime/1/x', title: 'Cowboy Bebop', title_english: 'Cowboy Bebop', episodes: 26, images: { jpg: { small_image_url: 'https://img/s.jpg', image_url: 'https://img/l.jpg' } } },
+};
+const malRowFull = L.malRow(malEntry);
+eq('malRow title', malRowFull.title, 'Cowboy Bebop');
+eq('malRow progress 7/26 → 27%', [malRowFull.watched, malRowFull.total, malRowFull.pct], [7, 26, 27]);
+eq('malRow prefers small image', malRowFull.img, 'https://img/s.jpg');
+eq('malRow falls back to title', L.malRow({ episodes_watched: 2, anime: { title: 'TTGL', title_english: null, episodes: null, images: { jpg: {} } } }).title, 'TTGL');
+const malNoTotal = L.malRow({ episodes_watched: 3, anime: { mal_id: 5, title: 'Ongoing Show', episodes: null } });
+ok('malRow unknown total: pct 0, total null, url from mal_id', malNoTotal.total === null && malNoTotal.pct === 0 && malNoTotal.url === 'https://myanimelist.net/anime/5', JSON.stringify(malNoTotal));
+eq('malRow empty → null', L.malRow({}), null);
+eq('malRow null → null', L.malRow(null), null);
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));

@@ -255,6 +255,27 @@
     return 'snow';
   }
 
+  // ---- MyAnimeList (Jikan) -------------------------------------------------
+  // Extracts one Jikan GET /users/{name}/animelist entry into the flat shape
+  // the MAL card renders. Tolerant of missing fields (Jikan omits
+  // title_english, episodes and images for some entries). Returns null when
+  // the entry carries no usable anime.
+  function malRow(entry) {
+    var a = entry && entry.anime;
+    if (!a || !(a.title_english || a.title)) return null;
+    var watched = (typeof entry.episodes_watched === 'number' && entry.episodes_watched >= 0) ? entry.episodes_watched : 0;
+    var total = (typeof a.episodes === 'number' && a.episodes > 0) ? a.episodes : null;
+    var img = (a.images && a.images.jpg && (a.images.jpg.small_image_url || a.images.jpg.image_url)) || '';
+    return {
+      url: a.url || (a.mal_id ? 'https://myanimelist.net/anime/' + a.mal_id : 'https://myanimelist.net'),
+      title: a.title_english || a.title,
+      watched: watched,
+      total: total, // null = episode count unknown (usually still airing)
+      pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
+      img: img,
+    };
+  }
+
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -273,5 +294,6 @@
     googleCalendarUrl: googleCalendarUrl,
     nullschoolUrl: nullschoolUrl,
     atmosphereMode: atmosphereMode,
+    malRow: malRow,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

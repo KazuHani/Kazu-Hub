@@ -287,6 +287,25 @@ body[data-theme="light"] .stat-bg-icon { opacity: .32; }
 .steam-fallback-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 22px; color: #fff; margin-bottom: 6px; }
 .steam-fallback-text { font-size: 13px; font-weight: 600; color: #9fc0d8; line-height: 1.5; }
 
+/* ---- MyAnimeList (currently watching, via Jikan) ---- */
+.mal-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; background: linear-gradient(150deg,#16213e 0%,#2e51a2 60%,#16213e 100%); box-shadow: 0 16px 38px rgba(20,40,100,.32); backdrop-filter: none; border: none; }
+.mal-card .loading-row { color: #c7d4f7; }
+.mal-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
+.mal-card .idle-banner { background: rgba(255,255,255,.12); color: #c7d4f7; }
+.mal-head-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #2e51a2; color: #fff; font-size: 8px; font-weight: 900; letter-spacing: .02em; box-shadow: 0 0 0 1.5px rgba(255,255,255,.25); flex: none; }
+.mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 10px 12px; margin-top: 10px; text-decoration: none; transition: transform .25s ease, background .25s ease; }
+.mal-row:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
+.mal-row:active { transform: translateY(0) scale(.98); }
+.mal-cover { width: 44px; height: 62px; border-radius: 8px; object-fit: cover; flex: none; background: rgba(143,176,255,.18); }
+.mal-info { min-width: 0; flex: 1; }
+.mal-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mal-progress { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.mal-bar { flex: 1; height: 5px; border-radius: 999px; background: rgba(255,255,255,.2); overflow: hidden; }
+.mal-bar span { display: block; height: 100%; border-radius: 999px; background: #8fb0ff; }
+.mal-eps { font-size: 11px; font-weight: 700; color: #c7d4f7; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mal-progress .mal-eps:only-child { margin-left: 0; }
+@media (prefers-reduced-motion: reduce) { .mal-row { transition: none; } .mal-row:hover, .mal-row:active { transform: none; } }
+
 /* ---- Music / YouTube Music playlist ---- */
 .music-grid { display: grid; grid-template-columns: minmax(0,1fr); }
 .music-card {

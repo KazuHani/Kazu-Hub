@@ -11,8 +11,9 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
   Each card opens a detail pop-up: timezone/DST explainer, an interactive 3D UK
   wind globe, life stats with a "life in weeks" canvas, and a birthday
   countdown with Google Calendar / .ics export.
-- "Right now": live Discord presence (via [Lanyard](https://github.com/Phineas/lanyard))
-  and Steam status with recently played games.
+- "Right now": live Discord presence (via [Lanyard](https://github.com/Phineas/lanyard)),
+  Steam status with recently played games, and MyAnimeList currently-watching
+  with episode progress (via [Jikan](https://jikan.moe/)).
 - YouTube Music playlist, socials, and in-progress stories.
 - Dark/light theme (saved to localStorage), seasonal modes (birthday,
   Christmas, pride), a weather-reactive atmosphere (rain streaks or heavier
