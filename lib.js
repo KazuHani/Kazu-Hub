@@ -242,6 +242,19 @@
       lon.toFixed(2) + ',' + lat.toFixed(2) + ',' + zoom;
   }
 
+  // ---- Weather-reactive atmosphere ----------------------------------------
+  // Maps an Open-Meteo weather code to the ambient particle mode:
+  //   'rain'       drizzle / rain / showers / thunderstorm
+  //   'snow-heavy' actually snowing right now (heavier than the default)
+  //   'snow'       the arctic default for everything else
+  function atmosphereMode(weatherCode) {
+    var c = +weatherCode;
+    if (isNaN(c)) return 'snow';
+    if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow-heavy';
+    return 'snow';
+  }
+
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -259,5 +272,6 @@
     buildBirthdayICS: buildBirthdayICS,
     googleCalendarUrl: googleCalendarUrl,
     nullschoolUrl: nullschoolUrl,
+    atmosphereMode: atmosphereMode,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

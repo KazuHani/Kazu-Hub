@@ -34,6 +34,18 @@
     } catch (e) { return null; }
   })();
 
+  // Preview the weather-reactive atmosphere on demand:
+  // ?atmosphere=rain|snow|snow-heavy|none
+  const ATMOSPHERE_OVERRIDE = (() => {
+    try {
+      const p = new URLSearchParams(location.search).get('atmosphere');
+      if (!p) return null;
+      const v = p.toLowerCase().trim();
+      if (v === 'off') return 'none';
+      return ['rain', 'snow', 'snow-heavy', 'none'].includes(v) ? v : null;
+    } catch (e) { return null; }
+  })();
+
   function seasonState(now) {
     if (SEASON_OVERRIDE) return SEASON_OVERRIDE;
     const m = now.getMonth(), d = now.getDate(); // visitor-local: Christmas & pride are ambient
@@ -134,6 +146,7 @@
       $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
       $('liveWeatherDesc').textContent = info.d;
       $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
+      if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code));
       $('weatherLoaded').classList.remove('hidden');
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.add('hidden');
@@ -141,6 +154,72 @@
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.remove('hidden');
     }
+  }
+
+  // ---------- Weather-reactive atmosphere ----------
+  // Ambient particles follow the live weather: rain streaks when it's
+  // raining, a heavier snowfall when it's actually snowing, and the arctic
+  // default snow otherwise. The mode mapping lives in lib.js
+  // (KazuLib.atmosphereMode) so it's gate-tested; the local copy keeps the
+  // page working if lib.js fails to load.
+  const atmosphereMode = (KazuLib && KazuLib.atmosphereMode) || function (code) {
+    const c = +code;
+    if (isNaN(c)) return 'snow';
+    if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow-heavy';
+    return 'snow';
+  };
+
+  const atmosphereEl = document.querySelector('.atmosphere');
+  let atmosphereCurrent = null;
+  const SNOW_GLYPHS = ['❄', '❅'];
+  const SNOW_COLORS = ['#bfe3ff', '#a9d6ff', '#cde8ff', '#b9deff'];
+  const randRange = (min, max) => min + Math.random() * (max - min);
+
+  function buildFlakes(count, sizeMin, sizeMax) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('span');
+      s.className = 'flake';
+      s.textContent = SNOW_GLYPHS[(Math.random() * SNOW_GLYPHS.length) | 0];
+      s.style.left = randRange(0, 100).toFixed(1) + '%';
+      s.style.top = '-5%';
+      s.style.fontSize = randRange(sizeMin, sizeMax).toFixed(0) + 'px';
+      s.style.color = SNOW_COLORS[(Math.random() * SNOW_COLORS.length) | 0];
+      s.style.opacity = randRange(0.45, 0.75).toFixed(2);
+      s.style.animationDuration = randRange(13, 24).toFixed(1) + 's';
+      s.style.animationDelay = randRange(0, 8).toFixed(1) + 's';
+      frag.appendChild(s);
+    }
+    return frag;
+  }
+
+  function buildDrops(count) {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < count; i++) {
+      const d = document.createElement('span');
+      d.className = 'drop';
+      d.style.left = randRange(0, 100).toFixed(1) + '%';
+      d.style.top = '-15%';
+      d.style.opacity = randRange(0.35, 0.7).toFixed(2);
+      d.style.animationDuration = randRange(0.7, 1.4).toFixed(2) + 's';
+      d.style.animationDelay = randRange(0, 2).toFixed(2) + 's';
+      frag.appendChild(d);
+    }
+    return frag;
+  }
+
+  // Rebuilds .atmosphere for the given mode (no-op when the mode hasn't
+  // changed). The hardcoded flakes in index.html are the no-JS fallback;
+  // the first call replaces them.
+  function setAtmosphere(mode) {
+    if (!atmosphereEl || mode === atmosphereCurrent) return;
+    atmosphereCurrent = mode;
+    atmosphereEl.innerHTML = '';
+    if (mode === 'none') return;
+    if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(46)); return; }
+    if (mode === 'snow-heavy') { atmosphereEl.appendChild(buildFlakes(26, 10, 24)); return; }
+    atmosphereEl.appendChild(buildFlakes(12, 11, 22)); // arctic default
   }
 
   // ---------- Discord (Lanyard) ----------
@@ -918,6 +997,7 @@
     loadDiscord();
   });
 
+  setAtmosphere(ATMOSPHERE_OVERRIDE || 'snow');
   loadQuote();
 
   // ---------- Pause polling/ticking while the page isn't visible ----------

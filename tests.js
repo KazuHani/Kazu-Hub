@@ -99,6 +99,20 @@ ok('Google yearly recurrence', g.indexOf('FREQ%3DYEARLY') > -1, g);
 // ---- nullschool URL ----
 ok('nullschool orthographic, UK-centred', L.nullschoolUrl({ lon: -2.5, lat: 54.5, zoom: 2800 }).indexOf('orthographic=-2.50,54.50,2800') > -1);
 
+// ---- atmosphereMode (weather-reactive particles) ----
+eq('drizzle 51 → rain', L.atmosphereMode(51), 'rain');
+eq('rain 61 → rain', L.atmosphereMode(61), 'rain');
+eq('showers 80 → rain', L.atmosphereMode(80), 'rain');
+eq('thunderstorm 95 → rain', L.atmosphereMode(95), 'rain');
+eq('snow 71 → snow-heavy', L.atmosphereMode(71), 'snow-heavy');
+eq('heavy snow 75 → snow-heavy', L.atmosphereMode(75), 'snow-heavy');
+eq('snow showers 86 → snow-heavy', L.atmosphereMode(86), 'snow-heavy');
+eq('clear 0 → snow', L.atmosphereMode(0), 'snow');
+eq('overcast 3 → snow', L.atmosphereMode(3), 'snow');
+eq('fog 45 → snow', L.atmosphereMode(45), 'snow');
+eq('garbage → snow', L.atmosphereMode('abc'), 'snow');
+eq('null → snow', L.atmosphereMode(null), 'snow');
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));

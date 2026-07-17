@@ -15,8 +15,9 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
   and Steam status with recently played games.
 - YouTube Music playlist, socials, and in-progress stories.
 - Dark/light theme (saved to localStorage), seasonal modes (birthday,
-  Christmas, pride), snowfall, and a liquid-glass refraction effect on
-  Chromium.
+  Christmas, pride), a weather-reactive atmosphere (rain streaks or heavier
+  snow when the live forecast calls for it), and a liquid-glass refraction
+  effect on Chromium.
 
 ## Run it locally
 
@@ -35,6 +36,17 @@ Force any seasonal theme on any date with a query param (comma-combinable):
 - `?season=christmas` — festive palette + tree
 - `?season=pride` — aro-ace halo
 - `?season=all` or `?season=birthday,christmas`
+
+## Atmosphere previews
+
+The ambient particles follow the live Aberystwyth weather: rain streaks when
+it's raining, heavier snowfall when it's actually snowing, gentle arctic snow
+otherwise. Force a mode with a query param:
+
+- `?atmosphere=rain`
+- `?atmosphere=snow`
+- `?atmosphere=snow-heavy`
+- `?atmosphere=none` (or `off`) — no particles
 
 ## Tests
 

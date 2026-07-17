@@ -42,8 +42,12 @@ body[data-theme="light"] {
 /* ---- Atmosphere: snowfall ---- */
 .atmosphere { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 .flake { position: absolute; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
-@media (prefers-reduced-motion: reduce) { .flake { animation: none; display: none; } }
+/* Rain streaks: injected by script.js when live weather says it's raining.
+   Same pattern as .flake: timing in the class, duration/delay inline per drop. */
+.drop { position: absolute; width: 1.5px; height: clamp(60px, 12vh, 110px); border-radius: 1px; background: linear-gradient(to bottom, rgba(170,210,255,0), rgba(170,210,255,.6)); animation-name: rainfall; animation-timing-function: linear; animation-iteration-count: infinite; }
+@media (prefers-reduced-motion: reduce) { .flake, .drop { animation: none; display: none; } }
 @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); } 100% { transform: translateY(110vh) rotate(360deg); } }
+@keyframes rainfall { 0% { transform: translateY(-15vh) rotate(9deg); } 100% { transform: translateY(115vh) rotate(9deg); } }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
 @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 @keyframes shimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
