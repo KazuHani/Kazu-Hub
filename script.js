@@ -255,8 +255,9 @@
 
   let lastDiscordFallbackAvatar = '';
 
-  // ---- Extra Lanyard presence state (set by loadDiscord, animated by tick) ----
+  // ---- Extra Lanyard presence state (set by renderDiscord, animated by tick) ----
   let discordUsername = '';
+  let discordHasData = false; // true after the first successful render
   let spotifyTimes = null;   // { start, end } in ms while listening
   let gameStartMs = null;    // activity start in ms while playing
 
@@ -330,121 +331,207 @@
     }
   }
 
+  // REST fallback: used for the first paint and whenever the socket is down.
+  // While the socket is live it is the fresher source, so the poll no-ops.
   async function loadDiscord() {
+    if (lanyardWsLive) return;
     try {
       const r = await fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID);
       const j = await r.json();
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
-      const dc = j.data;
-      const u = dc.discord_user;
-
-      const displayName = u.global_name || u.display_name || u.username;
-      lastDiscordFallbackAvatar = discordAvatarUrl(u);
-      $('discordAvatar').src = sharedAvatarUrl || lastDiscordFallbackAvatar;
-      $('discordName').textContent = displayName;
-
-      discordUsername = u.username || '';
-      const handleEl = $('discordUsername');
-      if (handleEl) {
-        if (u.username) { handleEl.textContent = '@' + u.username; handleEl.classList.remove('hidden'); }
-        else handleEl.classList.add('hidden');
-      }
-
-      const s = STATUS_MAP[dc.discord_status] || STATUS_MAP.offline;
-      $('discordStatusText').textContent = '● ' + s[0];
-      $('discordStatusText').style.color = s[1];
-      $('discordStatusDot').style.background = s[1];
-
-      // Platform (mobile / desktop / web) — only meaningful while connected
-      const plat = (dc.discord_status !== 'offline')
-        ? (dc.active_on_discord_mobile ? { k: 'mobile', t: 'Active on mobile' }
-          : dc.active_on_discord_desktop ? { k: 'desktop', t: 'Active on desktop' }
-          : dc.active_on_discord_web ? { k: 'web', t: 'Active on web' } : null)
-        : null;
-      const platEl = $('discordPlatform');
-      if (platEl) {
-        if (plat) { platEl.innerHTML = PLATFORM_ICONS[plat.k]; platEl.title = plat.t; platEl.classList.remove('hidden'); }
-        else { platEl.innerHTML = ''; platEl.classList.add('hidden'); }
-      }
-
-      // Custom status (activity type 4) — emoji can be unicode or a custom server emoji
-      const custom = (dc.activities || []).find((a) => a.type === 4);
-      const hasCustom = !!(custom && (custom.state || (custom.emoji && (custom.emoji.id || custom.emoji.name))));
-      const customEl = $('discordCustom');
-      if (customEl) {
-        if (hasCustom) {
-          const emojiEl = $('discordCustomEmoji');
-          if (custom.emoji && custom.emoji.id) {
-            emojiEl.innerHTML = '<img class="discord-custom-emoji-img" src="https://cdn.discordapp.com/emojis/' + custom.emoji.id + (custom.emoji.animated ? '.gif' : '.png') + '?size=32" alt="">';
-          } else {
-            emojiEl.textContent = (custom.emoji && custom.emoji.name) ? custom.emoji.name : '💬';
-          }
-          $('discordCustomText').textContent = custom.state || '';
-          customEl.classList.remove('hidden');
-        } else {
-          customEl.classList.add('hidden');
-        }
-      }
-
-      const game = (dc.activities || []).find((a) => a.type === 0);
-      const isSpotify = !!(dc.listening_to_spotify && dc.spotify);
-
-      if (game) {
-        gameStartMs = (game.timestamps && game.timestamps.start) ? game.timestamps.start : null;
-        $('discordGameName').textContent = game.name || 'a game';
-        const parts = [game.details, game.state].filter(Boolean);
-        const sub = parts.join(' · ');
-        $('discordGameSub').textContent = sub;
-        $('discordGameSub').classList.toggle('hidden', parts.length === 0);
-        $('discordGame').classList.remove('hidden');
-
-        const iconUrl = gameIconUrl(game);
-        const iconEl = $('discordGameIcon');
-        const emojiEl = $('discordGameEmoji');
-        if (iconUrl) {
-          iconEl.src = iconUrl;
-          iconEl.classList.remove('hidden');
-          emojiEl.classList.add('hidden');
-        } else {
-          iconEl.classList.add('hidden');
-          emojiEl.classList.remove('hidden');
-        }
-      } else {
-        gameStartMs = null;
-        $('discordGame').classList.add('hidden');
-      }
-
-      if (isSpotify) {
-        $('spotifySong').textContent = dc.spotify.song || '';
-        $('spotifyArtist').textContent = dc.spotify.artist || '';
-        if (dc.spotify.album_art_url) $('spotifyArt').src = dc.spotify.album_art_url;
-        const ts = dc.spotify.timestamps;
-        spotifyTimes = (ts && ts.start && ts.end) ? { start: ts.start, end: ts.end } : null;
-        $('spotifyProgress').classList.toggle('hidden', !spotifyTimes);
-        $('discordSpotify').classList.remove('hidden');
-      } else {
-        spotifyTimes = null;
-        $('discordSpotify').classList.add('hidden');
-      }
-
-      const idle = !game && !isSpotify && !hasCustom;
-      if (idle) {
-        $('discordIdle').textContent = dc.discord_status === 'offline'
-          ? 'Currently offline — catch me later ❄️'
-          : 'Online, not in a game right now';
-        $('discordIdle').classList.remove('hidden');
-      } else {
-        $('discordIdle').classList.add('hidden');
-      }
-
-      updatePresenceProgress();
-      $('discordLoaded').classList.remove('hidden');
-      $('discordLoading').classList.add('hidden');
-      $('discordError').classList.add('hidden');
+      if (lanyardWsLive) return; // a socket update beat this response
+      renderDiscord(j.data);
     } catch (e) {
-      $('discordLoading').classList.add('hidden');
-      $('discordError').classList.remove('hidden');
+      // With data already on screen, stay silent: stale beats an error card.
+      if (!discordHasData && !lanyardWsLive) {
+        $('discordLoading').classList.add('hidden');
+        $('discordError').classList.remove('hidden');
+      }
     }
+  }
+
+  // Renders one Lanyard payload. REST `data` and the WebSocket's
+  // INIT_STATE / PRESENCE_UPDATE `d` share the same shape, so both feed here.
+  function renderDiscord(dc) {
+    const u = dc.discord_user;
+
+    const displayName = u.global_name || u.display_name || u.username;
+    lastDiscordFallbackAvatar = discordAvatarUrl(u);
+    $('discordAvatar').src = sharedAvatarUrl || lastDiscordFallbackAvatar;
+    $('discordName').textContent = displayName;
+
+    discordUsername = u.username || '';
+    const handleEl = $('discordUsername');
+    if (handleEl) {
+      if (u.username) { handleEl.textContent = '@' + u.username; handleEl.classList.remove('hidden'); }
+      else handleEl.classList.add('hidden');
+    }
+
+    const s = STATUS_MAP[dc.discord_status] || STATUS_MAP.offline;
+    $('discordStatusText').textContent = '● ' + s[0];
+    $('discordStatusText').style.color = s[1];
+    $('discordStatusDot').style.background = s[1];
+
+    // Platform (mobile / desktop / web) — only meaningful while connected
+    const plat = (dc.discord_status !== 'offline')
+      ? (dc.active_on_discord_mobile ? { k: 'mobile', t: 'Active on mobile' }
+        : dc.active_on_discord_desktop ? { k: 'desktop', t: 'Active on desktop' }
+        : dc.active_on_discord_web ? { k: 'web', t: 'Active on web' } : null)
+      : null;
+    const platEl = $('discordPlatform');
+    if (platEl) {
+      if (plat) { platEl.innerHTML = PLATFORM_ICONS[plat.k]; platEl.title = plat.t; platEl.classList.remove('hidden'); }
+      else { platEl.innerHTML = ''; platEl.classList.add('hidden'); }
+    }
+
+    // Custom status (activity type 4) — emoji can be unicode or a custom server emoji
+    const custom = (dc.activities || []).find((a) => a.type === 4);
+    const hasCustom = !!(custom && (custom.state || (custom.emoji && (custom.emoji.id || custom.emoji.name))));
+    const customEl = $('discordCustom');
+    if (customEl) {
+      if (hasCustom) {
+        const emojiEl = $('discordCustomEmoji');
+        if (custom.emoji && custom.emoji.id) {
+          emojiEl.innerHTML = '<img class="discord-custom-emoji-img" src="https://cdn.discordapp.com/emojis/' + custom.emoji.id + (custom.emoji.animated ? '.gif' : '.png') + '?size=32" alt="">';
+        } else {
+          emojiEl.textContent = (custom.emoji && custom.emoji.name) ? custom.emoji.name : '💬';
+        }
+        $('discordCustomText').textContent = custom.state || '';
+        customEl.classList.remove('hidden');
+      } else {
+        customEl.classList.add('hidden');
+      }
+    }
+
+    const game = (dc.activities || []).find((a) => a.type === 0);
+    const isSpotify = !!(dc.listening_to_spotify && dc.spotify);
+
+    if (game) {
+      gameStartMs = (game.timestamps && game.timestamps.start) ? game.timestamps.start : null;
+      $('discordGameName').textContent = game.name || 'a game';
+      const parts = [game.details, game.state].filter(Boolean);
+      const sub = parts.join(' · ');
+      $('discordGameSub').textContent = sub;
+      $('discordGameSub').classList.toggle('hidden', parts.length === 0);
+      $('discordGame').classList.remove('hidden');
+
+      const iconUrl = gameIconUrl(game);
+      const iconEl = $('discordGameIcon');
+      const emojiEl = $('discordGameEmoji');
+      if (iconUrl) {
+        iconEl.src = iconUrl;
+        iconEl.classList.remove('hidden');
+        emojiEl.classList.add('hidden');
+      } else {
+        iconEl.classList.add('hidden');
+        emojiEl.classList.remove('hidden');
+      }
+    } else {
+      gameStartMs = null;
+      $('discordGame').classList.add('hidden');
+    }
+
+    if (isSpotify) {
+      $('spotifySong').textContent = dc.spotify.song || '';
+      $('spotifyArtist').textContent = dc.spotify.artist || '';
+      if (dc.spotify.album_art_url) $('spotifyArt').src = dc.spotify.album_art_url;
+      const ts = dc.spotify.timestamps;
+      spotifyTimes = (ts && ts.start && ts.end) ? { start: ts.start, end: ts.end } : null;
+      $('spotifyProgress').classList.toggle('hidden', !spotifyTimes);
+      $('discordSpotify').classList.remove('hidden');
+    } else {
+      spotifyTimes = null;
+      $('discordSpotify').classList.add('hidden');
+    }
+
+    const idle = !game && !isSpotify && !hasCustom;
+    if (idle) {
+      $('discordIdle').textContent = dc.discord_status === 'offline'
+        ? 'Currently offline — catch me later ❄️'
+        : 'Online, not in a game right now';
+      $('discordIdle').classList.remove('hidden');
+    } else {
+      $('discordIdle').classList.add('hidden');
+    }
+
+    updatePresenceProgress();
+    discordHasData = true;
+    $('discordLoaded').classList.remove('hidden');
+    $('discordLoading').classList.add('hidden');
+    $('discordError').classList.add('hidden');
+  }
+
+  // ---- Lanyard WebSocket: instant presence, REST poll as fallback ----
+  // Protocol: server Hello (op 1, heartbeat interval) → client Initialize
+  // (op 2, subscribe_to_id) → INIT_STATE, then PRESENCE_UPDATE on every
+  // change; client answers with heartbeat (op 3) on the given interval.
+  let lanyardSocket = null;
+  let lanyardHeartbeat = null;
+  let lanyardReconnect = null;
+  let lanyardWsLive = false;  // true once the socket has delivered state
+  let lanyardWanted = false;  // false while intentionally disconnected (hidden tab)
+  let lanyardBackoff = 1000;  // doubles on each failed attempt, capped at 30s
+
+  function startLanyard() {
+    if (lanyardWanted) return;
+    lanyardWanted = true;
+    connectLanyard();
+  }
+
+  function stopLanyard() {
+    lanyardWanted = false;
+    lanyardWsLive = false;
+    if (lanyardHeartbeat) { clearInterval(lanyardHeartbeat); lanyardHeartbeat = null; }
+    if (lanyardReconnect) { clearTimeout(lanyardReconnect); lanyardReconnect = null; }
+    if (lanyardSocket) {
+      const s = lanyardSocket;
+      lanyardSocket = null;
+      try { s.close(); } catch (e) {}
+    }
+  }
+
+  function connectLanyard() {
+    if (lanyardSocket) return;
+    let socket;
+    try { socket = new WebSocket('wss://api.lanyard.rest/socket'); }
+    catch (e) { scheduleLanyardReconnect(); return; }
+    lanyardSocket = socket;
+
+    socket.onmessage = (event) => {
+      let msg;
+      try { msg = JSON.parse(event.data); } catch (e) { return; }
+      if (msg.op === 1) { // Hello: subscribe + start heartbeating
+        try { socket.send(JSON.stringify({ op: 2, d: { subscribe_to_id: DISCORD_ID } })); } catch (e) {}
+        const every = (msg.d && msg.d.heartbeat_interval) || 30000;
+        if (lanyardHeartbeat) clearInterval(lanyardHeartbeat);
+        lanyardHeartbeat = setInterval(() => {
+          if (socket.readyState === 1) { try { socket.send(JSON.stringify({ op: 3 })); } catch (e) {} }
+        }, every);
+      } else if (msg.op === 0 && (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE')) {
+        if (msg.d && msg.d.discord_user) {
+          lanyardWsLive = true;
+          lanyardBackoff = 1000; // healthy traffic resets the reconnect backoff
+          renderDiscord(msg.d);
+        }
+      }
+    };
+    socket.onclose = () => {
+      if (lanyardSocket === socket) lanyardSocket = null;
+      lanyardWsLive = false;
+      if (lanyardHeartbeat) { clearInterval(lanyardHeartbeat); lanyardHeartbeat = null; }
+      if (lanyardWanted) scheduleLanyardReconnect();
+    };
+    socket.onerror = () => { try { socket.close(); } catch (e) {} };
+  }
+
+  function scheduleLanyardReconnect() {
+    if (lanyardReconnect || !lanyardWanted) return;
+    const wait = lanyardBackoff;
+    lanyardBackoff = Math.min(lanyardBackoff * 2, 30000);
+    lanyardReconnect = setTimeout(() => {
+      lanyardReconnect = null;
+      if (lanyardWanted) connectLanyard();
+    }, wait);
   }
 
   // ---------- Steam ----------
@@ -1051,6 +1138,7 @@
     $('discordError').classList.add('hidden');
     $('discordLoading').classList.remove('hidden');
     loadDiscord();
+    startLanyard(); // also re-arm the socket if it was the one that failed
   });
   const malRetryBtn = $('malRetry');
   if (malRetryBtn) malRetryBtn.addEventListener('click', () => {
@@ -1088,11 +1176,11 @@
   }
 
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stopPolling();
-    else startPolling();
+    if (document.hidden) { stopPolling(); stopLanyard(); }
+    else { startPolling(); startLanyard(); }
   });
 
-  if (!document.hidden) startPolling();
+  if (!document.hidden) { startPolling(); startLanyard(); }
 })();
 
 /* ============================================================================
