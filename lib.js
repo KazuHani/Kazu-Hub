@@ -15,6 +15,16 @@
   var TIMEZONE = 'Europe/London';
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  // Escape the five HTML-special chars so API-sourced strings (Steam game
+  // names, etc.) can be interpolated into innerHTML without breaking markup
+  // or injecting elements.
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
   function birthDate() { return new Date(BIRTH.year, BIRTH.month, BIRTH.day, 0, 0, 0); }
 
   // ---- UK daylight saving (BST/GMT) -------------------------------------
@@ -202,6 +212,7 @@
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
+    escapeHtml: escapeHtml,
     lastSundayOfMonth: lastSundayOfMonth,
     ukTransitionInstant: ukTransitionInstant,
     isUkBST: isUkBST,

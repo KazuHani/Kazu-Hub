@@ -12,6 +12,11 @@
   const DISCORD_ID = '346360416827473921';
   const STEAM_VANITY = 'Kazu-Hani';
 
+  // Owned by lib.js; local copy so the page still escapes safely if lib.js fails to load.
+  const escapeHtml = (KazuLib && KazuLib.escapeHtml) || function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  };
+
   // ---------- Seasons ----------
   // Preview any season on any date: ?season=birthday|christmas|pride|all (comma-combinable, e.g. ?season=birthday,christmas)
   const SEASON_OVERRIDE = (() => {
@@ -109,8 +114,10 @@
       $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
       $('weatherLoaded').classList.remove('hidden');
       $('weatherLoading').classList.add('hidden');
+      $('weatherError').classList.add('hidden');
     } catch (e) {
-      // keep showing the loading state if the fetch fails
+      $('weatherLoading').classList.add('hidden');
+      $('weatherError').classList.remove('hidden');
     }
   }
 
@@ -226,7 +233,7 @@
     try {
       const r = await fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID);
       const j = await r.json();
-      if (!j || !j.success || !j.data || !j.data.discord_user) return;
+      if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
       const dc = j.data;
       const u = dc.discord_user;
 
@@ -332,8 +339,10 @@
       updatePresenceProgress();
       $('discordLoaded').classList.remove('hidden');
       $('discordLoading').classList.add('hidden');
+      $('discordError').classList.add('hidden');
     } catch (e) {
-      // keep the connecting state on failure
+      $('discordLoading').classList.add('hidden');
+      $('discordError').classList.remove('hidden');
     }
   }
 
@@ -395,15 +404,15 @@
       }
 
       const recent = games.slice(0, 3).map((g) => ({
-        name: g.name,
-        logo: g.logo,
+        name: escapeHtml(g.name),
+        logo: escapeHtml(g.logo),
         hoursStr: g.hoursPlayed > 0 ? g.hoursPlayed.toFixed(1) + ' hrs recently' : (g.hoursOnRecord > 0 ? g.hoursOnRecord.toFixed(1) + ' hrs total' : 'played'),
       }));
       const listEl = $('recentGamesList');
       if (recent.length) {
         listEl.innerHTML = recent.map((g) => (
           '<div class="recent-game-row">' +
-            '<img class="recent-game-logo" src="' + g.logo + '" alt="' + g.name.replace(/"/g, '&quot;') + '" loading="lazy">' +
+            '<img class="recent-game-logo" src="' + g.logo + '" alt="' + g.name + '" loading="lazy">' +
             '<div style="min-width:0;flex:1;">' +
               '<div class="recent-game-name">' + g.name + '</div>' +
               '<div class="recent-game-hours">' + g.hoursStr + '</div>' +
@@ -870,6 +879,20 @@
   if (addMeLink) addMeLink.addEventListener('click', copyDiscordUsername);
   const usernameBtn = $('discordUsername');
   if (usernameBtn) usernameBtn.addEventListener('click', copyDiscordUsername);
+
+  // Retry buttons on the weather / Discord error states
+  const weatherRetry = $('weatherRetry');
+  if (weatherRetry) weatherRetry.addEventListener('click', () => {
+    $('weatherError').classList.add('hidden');
+    $('weatherLoading').classList.remove('hidden');
+    loadWeather();
+  });
+  const discordRetryBtn = $('discordRetry');
+  if (discordRetryBtn) discordRetryBtn.addEventListener('click', () => {
+    $('discordError').classList.add('hidden');
+    $('discordLoading').classList.remove('hidden');
+    loadDiscord();
+  });
 
   loadQuote();
 

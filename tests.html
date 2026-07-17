@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=1"></script>
+  <script src="lib.js?v=2"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -42,6 +42,12 @@
 
       var L = window.KazuLib;
       ok('KazuLib loaded', !!L);
+
+      // ---- escapeHtml (guards innerHTML interpolation of API strings) ----
+      eq('escapes all five specials', L.escapeHtml('&<>"\''), '&amp;&lt;&gt;&quot;&#39;');
+      eq('leaves safe text alone', L.escapeHtml('Baldur’s Gate 3'), 'Baldur’s Gate 3');
+      eq('handles non-strings', L.escapeHtml(null), '');
+      eq('escapes ampersand first', L.escapeHtml('a&b<c'), 'a&amp;b&lt;c');
 
       // ---- UK DST ----
       var marF = L.nextUkDstTransition(new Date(Date.UTC(2026, 0, 15)));

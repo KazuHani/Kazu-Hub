@@ -42,6 +42,7 @@ body[data-theme="light"] {
 /* ---- Atmosphere: snowfall ---- */
 .atmosphere { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
 .flake { position: absolute; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+@media (prefers-reduced-motion: reduce) { .flake { animation: none; display: none; } }
 @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); } 100% { transform: translateY(110vh) rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
 @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
@@ -209,6 +210,17 @@ body[data-theme="light"] .stat-bg-icon { opacity: .32; }
 
 .loading-row { display: flex; align-items: center; gap: 12px; padding: 14px 4px; color: var(--ink-faint); font-weight: 700; }
 .pulse-dot { width: 12px; height: 12px; border-radius: 50%; animation: pulse 1.1s ease-in-out infinite; }
+
+/* Small pill button used by the weather / Discord fetch-error states */
+.retry-btn {
+  appearance: none; border: 1px solid rgba(140,180,230,.4); background: rgba(120,170,230,.16);
+  color: inherit; font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .04em;
+  border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  transition: transform .25s ease, background .25s ease;
+}
+.retry-btn:hover { transform: translateY(-1px); background: rgba(120,170,230,.3); }
+.retry-btn:active { transform: translateY(0) scale(.97); }
+@media (prefers-reduced-motion: reduce) { .retry-btn { transition: none; } .retry-btn:hover, .retry-btn:active { transform: none; } }
 
 .steam-avatar { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; box-shadow: 0 6px 18px rgba(0,0,0,.45); flex: none; }
 .steam-card .presence-name { font-size: 20px; }

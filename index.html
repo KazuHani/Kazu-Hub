@@ -5,11 +5,25 @@
 <title>Kazu Hani</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Kazu Hani — personal hub: socials, live status, and stories.">
+<link rel="canonical" href="https://kazuhani.github.io/Kazu-Hub/">
+<meta name="theme-color" content="#0d1b31">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kazu Hani">
+<meta property="og:title" content="Kazu Hani">
+<meta property="og:description" content="Arctic Dragon ❄️🐉 — socials, live Discord &amp; Steam status, weather, and stories.">
+<meta property="og:url" content="https://kazuhani.github.io/Kazu-Hub/">
+<meta property="og:image" content="https://kazuhani.github.io/Kazu-Hub/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kazu Hani">
+<meta name="twitter:description" content="Arctic Dragon ❄️🐉 — socials, live Discord &amp; Steam status, weather, and stories.">
+<meta name="twitter:image" content="https://kazuhani.github.io/Kazu-Hub/assets/og.jpg">
 <link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body data-theme="dark">
 
@@ -49,7 +63,7 @@
       <!-- HERO -->
       <header class="hero">
         <div class="pfp-ring">
-          <img class="pfp" src="assets/profile.png" alt="Kazu Hani" width="181" height="181" loading="lazy">
+          <img class="pfp" src="assets/profile.webp" alt="Kazu Hani" width="181" height="181" fetchpriority="high">
           <!-- party hat: revealed only on body.season-birthday -->
           <svg class="party-hat" viewBox="0 0 100 120" aria-hidden="true" focusable="false">
             <defs>
@@ -97,6 +111,10 @@
           </div>
           <div id="weatherLoading">
             <div class="stat-loading-text">Reading the sky…</div>
+          </div>
+          <div id="weatherError" class="hidden">
+            <div class="stat-loading-text">Couldn't read the sky ☁️</div>
+            <button type="button" class="retry-btn" id="weatherRetry">Retry</button>
           </div>
         </div>
 
@@ -182,6 +200,10 @@
           <div id="discordLoading" class="loading-row">
             <span class="pulse-dot" style="background:#5865F2;"></span>
             Connecting to Discord…
+          </div>
+          <div id="discordError" class="loading-row hidden">
+            ⚠️ Can't reach Discord right now.
+            <button type="button" class="retry-btn" id="discordRetry">Retry</button>
           </div>
         </div>
 
@@ -372,7 +394,7 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=1"></script>
-<script src="script.js?v=2"></script>
+<script src="lib.js?v=2"></script>
+<script src="script.js?v=3"></script>
 </body>
 </html>
