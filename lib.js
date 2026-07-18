@@ -314,6 +314,29 @@
     };
   }
 
+  // Extracts one entry of MAL's own GET /animelist/{user}/load.json payload
+  // into the same flat shape as malRow. That endpoint is what myanimelist.net
+  // itself calls to render the list page, so it keeps answering when Jikan's
+  // scrape of the same data is refused (Jikan user endpoints 504 for weeks
+  // at a time). MAL sends no Access-Control-Allow-Origin, so the site reaches
+  // it through the same CORS proxy the Steam card uses.
+  function malListRow(entry) {
+    if (!entry) return null;
+    var title = entry.anime_title_eng || entry.anime_title;
+    if (!title) return null;
+    var id = (typeof entry.anime_id === 'number' && entry.anime_id > 0) ? entry.anime_id : null;
+    var watched = (typeof entry.num_watched_episodes === 'number' && entry.num_watched_episodes >= 0) ? entry.num_watched_episodes : 0;
+    var total = (typeof entry.anime_num_episodes === 'number' && entry.anime_num_episodes > 0) ? entry.anime_num_episodes : null;
+    return {
+      url: id ? 'https://myanimelist.net/anime/' + id : 'https://myanimelist.net',
+      title: title,
+      watched: watched,
+      total: total, // null = episode count unknown (usually still airing)
+      pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
+      img: typeof entry.anime_image_path === 'string' ? entry.anime_image_path : '',
+    };
+  }
+
   // Reads the localStorage fallback copy of the MAL card (written after every
   // successful fetch). Jikan's user endpoints 504 whenever MyAnimeList refuses
   // its scraper, so the card renders the last good rows instead of an error
@@ -365,6 +388,7 @@
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     malRow: malRow,
+    malListRow: malListRow,
     malCacheParse: malCacheParse,
     forecastRows: forecastRows,
   };

@@ -154,6 +154,26 @@
       eq('malRow empty → null', L.malRow({}), null);
       eq('malRow null → null', L.malRow(null), null);
 
+      // ---- malListRow (MAL load.json fallback when Jikan is down) ----
+      var listEntry = {
+        status: 1, anime_id: 31964, anime_title: 'Boku no Hero Academia', anime_title_eng: 'My Hero Academia',
+        num_watched_episodes: 3, anime_num_episodes: 13, anime_image_path: 'https://cdn.myanimelist.net/r/192x272/images/anime/10/78745.jpg',
+      };
+      var listRowFull = L.malListRow(listEntry);
+      eq('malListRow prefers english title', listRowFull.title, 'My Hero Academia');
+      eq('malListRow progress 3/13 → 23%', [listRowFull.watched, listRowFull.total, listRowFull.pct], [3, 13, 23]);
+      eq('malListRow builds url from anime_id', listRowFull.url, 'https://myanimelist.net/anime/31964');
+      eq('malListRow keeps cover path', listRowFull.img, 'https://cdn.myanimelist.net/r/192x272/images/anime/10/78745.jpg');
+      eq('malListRow falls back to romaji title', L.malListRow({ anime_id: 1, anime_title: 'Cowboy Bebop', anime_title_eng: null }).title, 'Cowboy Bebop');
+      var listNoTotal = L.malListRow({ anime_id: 5, anime_title: 'Ongoing Show', anime_num_episodes: 0 });
+      ok('malListRow unknown total: pct 0, total null', listNoTotal.total === null && listNoTotal.pct === 0, JSON.stringify(listNoTotal));
+      eq('malListRow no title → null', L.malListRow({ anime_id: 5 }), null);
+      eq('malListRow null → null', L.malListRow(null), null);
+      eq('malListRow coerces bad watched/img', (function () {
+        var r = L.malListRow({ anime_id: 2, anime_title: 'Show', num_watched_episodes: -1, anime_image_path: 7 });
+        return [r.watched, r.img];
+      })(), [0, '']);
+
       // ---- malCacheParse (localStorage fallback when Jikan is down) ----
       var cacheRow = { url: 'https://myanimelist.net/anime/1/x', title: 'Cowboy Bebop', watched: 7, total: 26, pct: 27, img: 'https://img/s.jpg' };
       var cacheRows = L.malCacheParse(JSON.stringify({ at: 1752700000000, rows: [cacheRow] }));
