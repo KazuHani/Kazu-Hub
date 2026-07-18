@@ -345,28 +345,6 @@
     }
   }
 
-  // ---- Share this page (Web Share API, clipboard fallback) ----
-  function shareSite() {
-    const url = 'https://kazuhani.github.io/Kazu-Hub/';
-    if (navigator.share) {
-      // Native sheet (mobile + some desktops). A cancelled share rejects the
-      // promise; that is normal use, so swallow it quietly.
-      navigator.share({
-        title: 'Kazu Hani',
-        text: 'Arctic Dragon ❄️🐉 — socials, live Discord & Steam status, weather, and stories.',
-        url: url,
-      }).catch(() => {});
-      return;
-    }
-    const ok = () => showToast('Link copied — share it anywhere!');
-    const fallback = () => showToast((legacyCopy(url) ? 'Link copied' : 'My page: ' + url));
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(ok).catch(fallback);
-    } else {
-      fallback();
-    }
-  }
-
   // REST fallback: used for the first paint and whenever the socket is down.
   // While the socket is live it is the fresher source, so the poll no-ops.
   async function loadDiscord() {
@@ -1316,10 +1294,6 @@
   if (addMeLink) addMeLink.addEventListener('click', copyDiscordUsername);
   const usernameBtn = $('discordUsername');
   if (usernameBtn) usernameBtn.addEventListener('click', copyDiscordUsername);
-
-  // Hero share button: native share sheet where supported, clipboard otherwise
-  const shareBtn = $('shareBtn');
-  if (shareBtn) shareBtn.addEventListener('click', shareSite);
 
   // Retry buttons on the weather / Discord error states
   const weatherRetry = $('weatherRetry');
