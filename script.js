@@ -961,10 +961,11 @@
   }
 
   // ---------- ListenBrainz recent tracks (music card) ----------
-  // Set LISTENBRAINZ_USER to switch this on: the API is free, keyless and
-  // CORS-open. While it's empty the "recently played" block stays hidden and
-  // nothing is fetched — the static playlist card is the content.
-  const LISTENBRAINZ_USER = '';
+  // Free, keyless, CORS-open API. While the account 404s (or a fetch fails)
+  // the "recently played" block stays hidden and the static playlist card is
+  // the content — so this switches itself on once listens exist, no deploy
+  // needed.
+  const LISTENBRAINZ_USER = 'Kazu_Hani';
 
   async function loadMusicRecent() {
     if (!LISTENBRAINZ_USER || !KazuLib || !KazuLib.listenbrainzRow) return;
