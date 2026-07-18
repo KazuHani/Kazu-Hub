@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Page not found — Kazu Hani</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0d1b31">
+<link rel="icon" href="/Kazu-Hub/assets/favicon.png" type="image/png">
+<!--
+  Fully self-contained on purpose: GitHub Pages serves this file AT the
+  requested (bad) URL, so relative asset paths would break on nested paths
+  like /Kazu-Hub/foo/bar. Only absolute /Kazu-Hub/ paths and https URLs.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; display: grid; place-items: center; padding: 24px;
+    font-family: 'Nunito', system-ui, sans-serif; color: #eaf4ff;
+    background:
+      radial-gradient(1200px 700px at 80% -10%, #15365c 0%, rgba(21,54,92,0) 55%),
+      radial-gradient(1000px 600px at 0% 5%, #1b2a52 0%, rgba(27,42,82,0) 50%),
+      linear-gradient(170deg, #0a1626 0%, #0d1b31 45%, #101a36 100%);
+  }
+  .flake {
+    position: fixed; top: -8%; pointer-events: none; user-select: none;
+    animation: fall linear infinite;
+  }
+  @keyframes fall {
+    0%   { transform: translateY(0)     translateX(0)    rotate(0deg); }
+    50%  { transform: translateY(55vh)  translateX(3vw)  rotate(180deg); }
+    100% { transform: translateY(112vh) translateX(-2vw) rotate(360deg); }
+  }
+  @media (prefers-reduced-motion: reduce) { .flake { display: none; } }
+  .card {
+    position: relative; max-width: 420px; width: 100%; text-align: center;
+    background: rgba(46,70,108,.74); backdrop-filter: blur(10px);
+    border: 1px solid rgba(92,150,220,.55); border-radius: 24px;
+    box-shadow: 0 14px 34px rgba(3,10,24,.16); padding: 38px 30px 32px;
+  }
+  .avatar {
+    width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
+    border: 2px solid rgba(92,150,220,.55); margin-bottom: 14px;
+  }
+  .code {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 72px;
+    line-height: 1; letter-spacing: .02em;
+  }
+  h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 500; font-size: 24px;
+    margin-top: 8px;
+  }
+  p { color: #9db8d4; font-size: 15px; line-height: 1.55; margin-top: 10px; }
+  .home {
+    display: inline-block; margin-top: 22px; padding: 12px 26px;
+    font: 800 15px 'Nunito', sans-serif; color: #0d1b31; text-decoration: none;
+    background: #5cc6ff; border-radius: 999px;
+    transition: transform .15s ease, background .15s ease;
+  }
+  .home:hover, .home:focus-visible { background: #8fd9ff; transform: translateY(-2px); }
+</style>
+</head>
+<body>
+  <span class="flake" aria-hidden="true" style="left:12%;font-size:18px;color:#bfe3ff;opacity:.7;animation-duration:13s;">❄</span>
+  <span class="flake" aria-hidden="true" style="left:30%;font-size:12px;color:#a9d6ff;opacity:.55;animation-duration:19s;animation-delay:2s;">❅</span>
+  <span class="flake" aria-hidden="true" style="left:52%;font-size:22px;color:#cde8ff;opacity:.6;animation-duration:16s;animation-delay:1s;">❄</span>
+  <span class="flake" aria-hidden="true" style="left:71%;font-size:14px;color:#b9deff;opacity:.65;animation-duration:21s;animation-delay:3.5s;">❅</span>
+  <span class="flake" aria-hidden="true" style="left:88%;font-size:19px;color:#bfe3ff;opacity:.5;animation-duration:15s;animation-delay:.8s;">❄</span>
+
+  <main class="card">
+    <img class="avatar" src="/Kazu-Hub/assets/icon-192.png" alt="Kazu Hani, a blue dragon">
+    <div class="code">404</div>
+    <h1>Lost in the snow ❄️</h1>
+    <p>This page drifted off the trail. The den — socials, live status, weather, and stories — is back this way.</p>
+    <a class="home" href="/Kazu-Hub/">🐉 Back to the den</a>
+  </main>
+</body>
+</html>
