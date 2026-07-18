@@ -662,6 +662,35 @@
     };
   };
 
+  // Last-good rows survive Jikan outages (its user endpoints 504 whenever MAL
+  // refuses the scrape): written on every successful fetch, read on failure.
+  const MAL_CACHE_KEY = 'kazu-mal-cache';
+
+  function renderMalRows(rows) {
+    $('malList').innerHTML = rows.map((x) => (
+      '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+        (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy">' : '') +
+        '<div class="mal-info">' +
+          '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+          '<div class="mal-progress">' +
+            (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
+            '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</a>'
+    )).join('');
+    $('malIdle').classList.toggle('hidden', rows.length > 0);
+
+    $('malLoaded').classList.remove('hidden');
+    $('malLoading').classList.add('hidden');
+    $('malError').classList.add('hidden');
+  }
+
+  function malCacheRead() {
+    const parse = (KazuLib && KazuLib.malCacheParse) || function () { return null; };
+    try { return parse(localStorage.getItem(MAL_CACHE_KEY)); } catch (e) { return null; }
+  }
+
   async function loadMal() {
     try {
       const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching');
@@ -676,24 +705,14 @@
         .filter(Boolean)
         .slice(0, 3);
 
-      $('malList').innerHTML = rows.map((x) => (
-        '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
-          (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy">' : '') +
-          '<div class="mal-info">' +
-            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
-            '<div class="mal-progress">' +
-              (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
-              '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
-            '</div>' +
-          '</div>' +
-        '</a>'
-      )).join('');
-      $('malIdle').classList.toggle('hidden', rows.length > 0);
-
-      $('malLoaded').classList.remove('hidden');
-      $('malLoading').classList.add('hidden');
-      $('malError').classList.add('hidden');
+      renderMalRows(rows);
+      try { localStorage.setItem(MAL_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
     } catch (e) {
+      const cached = malCacheRead();
+      if (cached) {
+        renderMalRows(cached);
+        return;
+      }
       $('malLoading').classList.add('hidden');
       $('malError').classList.remove('hidden');
     }

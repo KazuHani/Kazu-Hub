@@ -288,6 +288,36 @@
     };
   }
 
+  // Reads the localStorage fallback copy of the MAL card (written after every
+  // successful fetch). Jikan's user endpoints 504 whenever MyAnimeList refuses
+  // its scraper, so the card renders the last good rows instead of an error
+  // when the live fetch fails. Returns the sanitized rows array (possibly
+  // empty) for a well-formed payload, null for anything else — a corrupt or
+  // hand-edited cache must behave like no cache at all.
+  function malCacheParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    if (!payload || !Array.isArray(payload.rows)) return null;
+    var rows = [];
+    for (var i = 0; i < payload.rows.length; i++) {
+      var r = payload.rows[i];
+      if (!r || typeof r.title !== 'string' || !r.title) return null;
+      if (typeof r.url !== 'string' || !r.url) return null;
+      var total = (typeof r.total === 'number' && r.total > 0) ? r.total : null;
+      var watched = (typeof r.watched === 'number' && r.watched >= 0) ? r.watched : 0;
+      rows.push({
+        url: r.url,
+        title: r.title,
+        watched: watched,
+        total: total,
+        pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
+        img: typeof r.img === 'string' ? r.img : '',
+      });
+    }
+    return rows;
+  }
+
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -309,5 +339,6 @@
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     malRow: malRow,
+    malCacheParse: malCacheParse,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

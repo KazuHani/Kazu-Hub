@@ -137,6 +137,24 @@ ok('malRow unknown total: pct 0, total null, url from mal_id', malNoTotal.total 
 eq('malRow empty → null', L.malRow({}), null);
 eq('malRow null → null', L.malRow(null), null);
 
+// ---- malCacheParse (localStorage fallback when Jikan is down) ----
+const cacheRow = { url: 'https://myanimelist.net/anime/1/x', title: 'Cowboy Bebop', watched: 7, total: 26, pct: 27, img: 'https://img/s.jpg' };
+const cacheRows = L.malCacheParse(JSON.stringify({ at: 1752700000000, rows: [cacheRow] }));
+eq('malCacheParse round-trips a written payload', cacheRows, [cacheRow]);
+ok('malCacheParse recomputes pct, ignores stored pct', (function () {
+  const r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', watched: 1, total: 4, pct: 99, img: '' }] }));
+  return r && r[0].pct === 25;
+})());
+eq('malCacheParse valid empty list → []', L.malCacheParse(JSON.stringify({ at: 1, rows: [] })), []);
+eq('malCacheParse bad JSON → null', L.malCacheParse('{nope'), null);
+eq('malCacheParse null → null', L.malCacheParse(null), null);
+eq('malCacheParse missing rows → null', L.malCacheParse(JSON.stringify({ at: 1 })), null);
+eq('malCacheParse row without title → null', L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: '' }] })), null);
+eq('malCacheParse coerces bad total/watched', (function () {
+  const r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', watched: -3, total: 'x' }] }));
+  return r && [r[0].watched, r[0].total, r[0].pct, r[0].img];
+})(), [0, null, 0, '']);
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));
