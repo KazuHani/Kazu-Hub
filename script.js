@@ -1260,6 +1260,56 @@
     document.querySelectorAll('.scroll-reveal').forEach((el) => el.classList.add('is-visible'));
   }
 
+  // ---------- Konami code easter egg ----------
+  // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.
+  // The sequence check lives in KazuLib.konamiMatch (gate-tested); the local
+  // copy keeps the egg alive if lib.js fails to load.
+  const konamiMatch = (KazuLib && KazuLib.konamiMatch) || function (recent) {
+    const CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    if (!recent || recent.length < CODE.length) return false;
+    const off = recent.length - CODE.length;
+    for (let i = 0; i < CODE.length; i++) if (recent[off + i] !== CODE[i]) return false;
+    return true;
+  };
+  const konamiRecent = [];
+  let konamiBusy = false;
+  function dragonFly() {
+    if (konamiBusy) return;
+    konamiBusy = true;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      showToast('You found the dragon! 🐉');
+      konamiBusy = false;
+      return;
+    }
+    showToast('🐉 Konami! The dragon takes flight…');
+    const d = document.createElement('div');
+    d.className = 'konami-dragon';
+    d.textContent = '🐉';
+    d.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(d);
+    d.addEventListener('animationend', () => { d.remove(); konamiBusy = false; });
+    for (let i = 0; i < 24; i++) {
+      const f = document.createElement('span');
+      f.className = 'konami-flake';
+      f.setAttribute('aria-hidden', 'true');
+      f.textContent = Math.random() < 0.5 ? '❄' : '❅';
+      f.style.left = (Math.random() * 100) + 'vw';
+      f.style.fontSize = (10 + Math.random() * 16) + 'px';
+      f.style.color = SNOW_COLORS[(Math.random() * SNOW_COLORS.length) | 0];
+      f.style.animationDelay = (Math.random() * 0.9) + 's';
+      f.style.animationDuration = (2.2 + Math.random() * 1.6) + 's';
+      document.body.appendChild(f);
+      setTimeout(() => f.remove(), 5000);
+    }
+  }
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return; // never hijack typing
+    konamiRecent.push(e.key);
+    if (konamiRecent.length > 10) konamiRecent.shift();
+    if (konamiMatch(konamiRecent)) { konamiRecent.length = 0; dragonFly(); }
+  });
+
   // ---------- Boot ----------
   // "Add me" pill + the @username line both copy my Discord username to the clipboard
   const addMeLink = $('discordAddMe');

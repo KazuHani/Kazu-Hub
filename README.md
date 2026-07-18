@@ -22,6 +22,7 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
   worker — nothing is cached offline.
 - Share button in the hero: native Web Share API where supported, clipboard
   copy with a toast confirmation everywhere else.
+- Somewhere on the page there's a hidden easter egg. Bring a keyboard.
 - Dark/light theme (saved to localStorage), seasonal modes (birthday,
   Christmas, pride), a weather-reactive atmosphere (rain streaks or heavier
   snow when the live forecast calls for it), and a liquid-glass refraction

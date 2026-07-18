@@ -209,6 +209,15 @@ ok('forecastRows stops at available days when fewer than limit', (function () {
 eq('forecastRows null daily → []', L.forecastRows(null, 5), []);
 eq('forecastRows daily without time array → []', L.forecastRows({ weather_code: [2] }, 5), []);
 
+// ---- konamiMatch (Konami code easter egg) ----
+const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+ok('konamiMatch exact code → true', L.konamiMatch(KONAMI));
+ok('konamiMatch code after junk keys → true', L.konamiMatch(['x', 'ArrowUp', 'q'].concat(KONAMI)));
+ok('konamiMatch short window → false', !L.konamiMatch(KONAMI.slice(0, 9)));
+ok('konamiMatch wrong final key → false', !L.konamiMatch(KONAMI.slice(0, 9).concat(['b'])));
+ok('konamiMatch code not at the end → false', !L.konamiMatch(KONAMI.concat(['c'])));
+eq('konamiMatch null → false', L.konamiMatch(null), false);
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));

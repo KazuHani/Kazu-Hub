@@ -825,3 +825,30 @@ body.modal-open { overflow: hidden; }
   .stat-card[data-modal]:hover { transform: none; }
   .modal-btn:hover { transform: none; }
 }
+
+/* ---- Konami dragon easter egg ----
+   Fixed-position, pointer-events none, created on the fly by script.js.
+   The 🐉 glyph faces left, so every keyframe keeps scaleX(-1) to fly right. */
+.konami-dragon {
+  position: fixed; top: 18%; left: 0; z-index: 200; font-size: 64px; line-height: 1;
+  pointer-events: none; user-select: none;
+  filter: drop-shadow(0 10px 20px rgba(3,10,24,.5));
+  animation: konamiFly 3.2s cubic-bezier(.3,.55,.45,1) forwards;
+}
+@keyframes konamiFly {
+  0%   { transform: translate(-14vw, 0)   scaleX(-1) rotate(-4deg); }
+  25%  { transform: translate(21vw, -7vh) scaleX(-1) rotate(5deg); }
+  50%  { transform: translate(53vw, 3vh)  scaleX(-1) rotate(-5deg); }
+  75%  { transform: translate(81vw, -6vh) scaleX(-1) rotate(4deg); }
+  100% { transform: translate(116vw, 0)   scaleX(-1) rotate(0deg); }
+}
+.konami-flake {
+  position: fixed; top: -5%; z-index: 199; pointer-events: none; user-select: none;
+  animation: konamiFlakeFall linear forwards;
+}
+@keyframes konamiFlakeFall {
+  to { transform: translateY(115vh) rotate(320deg); opacity: .15; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .konami-dragon, .konami-flake { display: none; }
+}

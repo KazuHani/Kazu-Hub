@@ -367,6 +367,21 @@
     return rows;
   }
 
+  // ---- Konami code easter egg ----------------------------------------------
+  // The classic ↑↑↓↓←→←→BA. script.js keeps a rolling window of recent keys
+  // and asks this whether the window ENDS with the code, so junk typed before
+  // the sequence is fine but a wrong key inside it is not.
+  var KONAMI_CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+    'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  function konamiMatch(recentKeys) {
+    if (!recentKeys || recentKeys.length < KONAMI_CODE.length) return false;
+    var start = recentKeys.length - KONAMI_CODE.length;
+    for (var i = 0; i < KONAMI_CODE.length; i++) {
+      if (recentKeys[start + i] !== KONAMI_CODE[i]) return false;
+    }
+    return true;
+  }
+
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -391,5 +406,6 @@
     malListRow: malListRow,
     malCacheParse: malCacheParse,
     forecastRows: forecastRows,
+    konamiMatch: konamiMatch,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
