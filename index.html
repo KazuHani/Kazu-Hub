@@ -28,6 +28,16 @@
 <link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Warm up DNS+TLS for the APIs fetched on load (CORS-mode ⇒ crossorigin) -->
+<link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
+<link rel="preconnect" href="https://api.lanyard.rest" crossorigin>
+<link rel="preconnect" href="https://api.jikan.moe" crossorigin>
+<link rel="preconnect" href="https://corsproxy.io" crossorigin>
+<link rel="preconnect" href="https://zenquotes.io" crossorigin>
+<!-- Cheaper DNS-only hints for the image CDNs -->
+<link rel="dns-prefetch" href="//cdn.discordapp.com">
+<link rel="dns-prefetch" href="//cdn.myanimelist.net">
+<link rel="dns-prefetch" href="//i.scdn.co">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=11">
 </head>
