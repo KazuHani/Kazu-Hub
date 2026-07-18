@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=7"></script>
+  <script src="lib.js?v=8"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -171,6 +171,40 @@
         var r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', watched: -3, total: 'x' }] }));
         return r && [r[0].watched, r[0].total, r[0].pct, r[0].img];
       })(), [0, null, 0, '']);
+
+      // ---- forecastRows (weather modal 5-day strip) ----
+      var dailyBlock = {
+        time: ['2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22'],
+        weather_code: [2, 61, 3, 80, 1],
+        temperature_2m_max: [22.0, 19.4, 21.2, 18.7, 23.0],
+        temperature_2m_min: [13.1, 12.5, 11.0, 10.2, 14.4],
+        precipitation_probability_max: [63, 80, 20, 55, 10]
+      };
+      eq('forecastRows maps a full 5-day block (Today label, weekdays, rounding)', L.forecastRows(dailyBlock, 5), [
+        { label: 'Today', code: 2, maxC: 22, minC: 13, precipPct: 63 },
+        { label: 'Sun', code: 61, maxC: 19, minC: 13, precipPct: 80 },
+        { label: 'Mon', code: 3, maxC: 21, minC: 11, precipPct: 20 },
+        { label: 'Tue', code: 80, maxC: 19, minC: 10, precipPct: 55 },
+        { label: 'Wed', code: 1, maxC: 23, minC: 14, precipPct: 10 }
+      ]);
+      eq('forecastRows missing precip array → null pct', L.forecastRows({
+        time: ['2026-07-18'], weather_code: [2], temperature_2m_max: [20], temperature_2m_min: [10]
+      }, 5), [{ label: 'Today', code: 2, maxC: 20, minC: 10, precipPct: null }]);
+      eq('forecastRows missing temps → null temps', L.forecastRows({
+        time: ['2026-07-18'], weather_code: [2]
+      }, 5), [{ label: 'Today', code: 2, maxC: null, minC: null, precipPct: null }]);
+      eq('forecastRows missing weather_code → null code', L.forecastRows({
+        time: ['2026-07-18'], temperature_2m_max: [20], temperature_2m_min: [10], precipitation_probability_max: [5]
+      }, 5), [{ label: 'Today', code: null, maxC: 20, minC: 10, precipPct: 5 }]);
+      ok('forecastRows stops at available days when fewer than limit', (function () {
+        var r = L.forecastRows({
+          time: ['2026-07-18', '2026-07-19'], weather_code: [2, 3],
+          temperature_2m_max: [20, 21], temperature_2m_min: [10, 11], precipitation_probability_max: [5, 6]
+        }, 5);
+        return r.length === 2 && r[1].label === 'Sun';
+      })());
+      eq('forecastRows null daily → []', L.forecastRows(null, 5), []);
+      eq('forecastRows daily without time array → []', L.forecastRows({ weather_code: [2] }, 5), []);
 
       var s = document.getElementById('summary');
       s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');

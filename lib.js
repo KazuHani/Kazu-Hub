@@ -281,29 +281,6 @@
     return rows;
   }
 
-  // ---- Weather forecast rows ---
-  // Map the Open-Meteo `daily` block (parallel arrays) to a compact row list
-  // for the weather modal's forecast strip. First entry is labelled "Today".
-  function forecastRows(daily, limit) {
-    if (!daily || !Array.isArray(daily.time)) return [];
-    var n = Math.min(limit || 5, daily.time.length);
-    var out = [];
-    for (var i = 0; i < n; i++) {
-      var d = ukWallParts(String(daily.time[i]) + 'T12:00:00'); // midday: weekday is date-stable in any TZ
-      var maxC = daily.temperature_2m_max ? daily.temperature_2m_max[i] : null;
-      var minC = daily.temperature_2m_min ? daily.temperature_2m_min[i] : null;
-      var precip = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null;
-      out.push({
-        label: i === 0 ? 'Today' : d.weekdayShort,
-        code: daily.weather_code ? daily.weather_code[i] : null,
-        maxC: (maxC === null || maxC === undefined) ? null : Math.round(maxC),
-        minC: (minC === null || minC === undefined) ? null : Math.round(minC),
-        precipPct: (precip === null || precip === undefined) ? null : Math.round(precip)
-      });
-    }
-    return out;
-  }
-
   // ---- Steam store links ---------------------------------------------------
   // Extracts the appid from any Steam URL shape (store page, community /app/
   // page, or CDN image path) and builds the canonical store page URL.
@@ -389,5 +366,6 @@
     steamStoreUrl: steamStoreUrl,
     malRow: malRow,
     malCacheParse: malCacheParse,
+    forecastRows: forecastRows,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -141,11 +141,16 @@
     return { e: '🌡️', d: 'Cloudy' };
   }
 
+  let weatherDaily = null;   // Open-Meteo `daily` block for the modal forecast strip
+  let weatherDone = false;   // true once a fetch attempt has finished (ok or failed)
+
   async function loadWeather() {
+    weatherDone = false;
     try {
-      const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&timezone=Europe%2FLondon');
+      const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon');
       const j = await r.json();
       const w = j.current;
+      weatherDaily = j.daily || null;
       const info = weatherInfo(w.weather_code, w.is_day === 1);
       $('weatherBgIcon').textContent = info.e;
       $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
@@ -155,9 +160,13 @@
       $('weatherLoaded').classList.remove('hidden');
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.add('hidden');
+      weatherDone = true;
+      if (modalKey === 'weather') renderForecastStrip();
     } catch (e) {
+      weatherDone = true;
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.remove('hidden');
+      if (modalKey === 'weather') renderForecastStrip();
     }
   }
 
@@ -891,16 +900,45 @@
     set('mLocalTime', fmtTime.format(now));
   }
 
-  // ----- Weather: 3D wind globe -----
+  // ----- Weather: 3D wind globe + 5-day forecast -----
   function weatherModalHTML() {
     return ''
       + '<p class="modal-lead">Live surface wind, centred on the UK. Drag to spin the globe, scroll to zoom — the moving particles trace wind direction and speed in real time.</p>'
       + '<div class="globe-frame" id="globeFrame"></div>'
+      + '<div class="forecast-strip" id="forecastStrip"></div>'
       + '<div class="modal-actions">'
       +   '<a class="modal-btn" id="globeOpen" target="_blank" rel="noopener">Open full UK wind map ↗</a>'
       + '</div>'
       + '<p class="modal-credit">Source: earth.nullschool.net — global weather, forecast by supercomputer.</p>';
   }
+
+  // 5-day strip under the globe, from the Open-Meteo daily block cached by
+  // loadWeather. Rows are shaped by KazuLib.forecastRows (gate-tested); the
+  // strip shows an honest loading / unavailable note until data arrives.
+  function renderForecastStrip() {
+    const strip = $('forecastStrip');
+    if (!strip) return;
+    const rows = (KazuLib && KazuLib.forecastRows) ? KazuLib.forecastRows(weatherDaily, 5) : [];
+    if (!rows.length) {
+      strip.innerHTML = '<div class="forecast-empty">'
+        + (weatherDone ? 'Forecast unavailable right now.' : 'Loading forecast…')
+        + '</div>';
+      return;
+    }
+    strip.innerHTML = rows.map(function (r) {
+      const info = (typeof r.code === 'number') ? weatherInfo(r.code, true) : { e: '🌡️', d: 'Forecast' };
+      return '<div class="forecast-day">'
+        + '<div class="forecast-label">' + escapeHtml(r.label) + '</div>'
+        + '<div class="forecast-emoji" title="' + escapeHtml(info.d) + '">' + info.e + '</div>'
+        + '<div class="forecast-temps">'
+        +   (r.maxC === null ? '–' : r.maxC + '°')
+        +   ' <span class="forecast-min">' + (r.minC === null ? '–' : r.minC + '°') + '</span>'
+        + '</div>'
+        + (r.precipPct === null ? '' : '<div class="forecast-precip">💧 ' + r.precipPct + '%</div>')
+        + '</div>';
+    }).join('');
+  }
+
   function weatherModalAfter() {
     const url = KazuLib.nullschoolUrl({ lon: -2.5, lat: 54.5, zoom: 2800 });
     const open = $('globeOpen'); if (open) open.href = url;
@@ -913,6 +951,7 @@
       iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
       frame.appendChild(iframe);
     }
+    renderForecastStrip();
   }
 
   // ----- Age & life stats -----

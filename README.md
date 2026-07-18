@@ -9,8 +9,8 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
 
 - Live stat strip: UK time, Aberystwyth weather, age, next-birthday countdown.
   Each card opens a detail pop-up: timezone/DST explainer, an interactive 3D UK
-  wind globe, life stats with a "life in weeks" canvas, and a birthday
-  countdown with Google Calendar / .ics export.
+  wind globe with a 5-day forecast strip, life stats with a "life in weeks"
+  canvas, and a birthday countdown with Google Calendar / .ics export.
 - "Right now": live Discord presence (via [Lanyard](https://github.com/Phineas/lanyard),
   WebSocket-instant with a REST polling fallback), Steam status with recently
   played games, and MyAnimeList currently-watching with episode progress (via

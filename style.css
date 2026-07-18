@@ -751,6 +751,25 @@ body.modal-open { overflow: hidden; }
 }
 .globe-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 
+/* 5-day forecast strip (weather modal) */
+.forecast-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 16px; }
+.forecast-day {
+  background: rgba(140,170,210,.12); border-radius: 14px; padding: 10px 6px;
+  text-align: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.forecast-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.forecast-emoji { font-size: 24px; line-height: 1.2; margin-top: 5px; }
+.forecast-temps { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.forecast-min { color: var(--ink-soft); font-weight: 500; }
+.forecast-precip { font-size: 11px; font-weight: 700; color: #7db8f0; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.forecast-empty { grid-column: 1 / -1; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-soft); padding: 10px 0; }
+@media (max-width: 520px) {
+  .forecast-strip { gap: 6px; }
+  .forecast-day { padding: 8px 4px; }
+  .forecast-emoji { font-size: 20px; }
+  .forecast-temps { font-size: 13px; }
+}
+
 /* Age modal */
 .age-head { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(21px,5vw,28px); color: var(--ink); margin-bottom: 16px; }
 .age-head .age-sub { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 16px; color: var(--ink-soft); }
