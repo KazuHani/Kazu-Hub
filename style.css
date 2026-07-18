@@ -736,6 +736,23 @@ body.modal-open { overflow: hidden; }
 .modal-btn--ghost { background: rgba(140,170,210,.16); color: var(--ink); box-shadow: none; }
 .modal-btn--ghost:hover { background: rgba(140,170,210,.3); filter: none; }
 
+/* Hero share button: same gradient pill language as .modal-btn */
+.share-btn {
+  appearance: none; display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 14px; padding: 10px 20px; border: none; border-radius: 999px;
+  cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 800;
+  letter-spacing: .03em; color: #fff;
+  background: linear-gradient(150deg,#0ea5e9,#7c5cff);
+  box-shadow: 0 8px 20px rgba(80,110,230,.35);
+  transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease;
+}
+.share-btn:hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.08); box-shadow: 0 12px 26px rgba(80,110,230,.5); }
+.share-btn:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .share-btn { transition: none; }
+  .share-btn:hover, .share-btn:active { transform: none; }
+}
+
 /* Time modal */
 .tz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .tz-cell { background: rgba(140,170,210,.12); border-radius: 16px; padding: 15px 16px; }

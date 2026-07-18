@@ -345,6 +345,28 @@
     }
   }
 
+  // ---- Share this page (Web Share API, clipboard fallback) ----
+  function shareSite() {
+    const url = 'https://kazuhani.github.io/Kazu-Hub/';
+    if (navigator.share) {
+      // Native sheet (mobile + some desktops). A cancelled share rejects the
+      // promise; that is normal use, so swallow it quietly.
+      navigator.share({
+        title: 'Kazu Hani',
+        text: 'Arctic Dragon ❄️🐉 — socials, live Discord & Steam status, weather, and stories.',
+        url: url,
+      }).catch(() => {});
+      return;
+    }
+    const ok = () => showToast('Link copied — share it anywhere!');
+    const fallback = () => showToast((legacyCopy(url) ? 'Link copied' : 'My page: ' + url));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(ok).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
   // REST fallback: used for the first paint and whenever the socket is down.
   // While the socket is live it is the fresher source, so the poll no-ops.
   async function loadDiscord() {
@@ -670,6 +692,21 @@
       img,
     };
   };
+  const malListRow = (KazuLib && KazuLib.malListRow) || function (entry) {
+    if (!entry) return null;
+    const title = entry.anime_title_eng || entry.anime_title;
+    if (!title) return null;
+    const id = (typeof entry.anime_id === 'number' && entry.anime_id > 0) ? entry.anime_id : null;
+    const watched = (typeof entry.num_watched_episodes === 'number' && entry.num_watched_episodes >= 0) ? entry.num_watched_episodes : 0;
+    const total = (typeof entry.anime_num_episodes === 'number' && entry.anime_num_episodes > 0) ? entry.anime_num_episodes : null;
+    return {
+      url: id ? 'https://myanimelist.net/anime/' + id : 'https://myanimelist.net',
+      title,
+      watched, total,
+      pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
+      img: typeof entry.anime_image_path === 'string' ? entry.anime_image_path : '',
+    };
+  };
 
   // Last-good rows survive Jikan outages (its user endpoints 504 whenever MAL
   // refuses the scrape): written on every successful fetch, read on failure.
@@ -700,7 +737,13 @@
     try { return parse(localStorage.getItem(MAL_CACHE_KEY)); } catch (e) { return null; }
   }
 
-  async function loadMal() {
+  // Live rows come from the first source that answers. Jikan stays first
+  // because it is CORS-clean, but MAL has been refusing its scrape of the
+  // user endpoints for long stretches (they 504 while the rest of Jikan is
+  // fine). The fallback is MAL's own load.json — the endpoint myanimelist.net
+  // itself uses — reached through the same corsproxy.io the Steam card uses,
+  // because MAL sends no Access-Control-Allow-Origin.
+  async function fetchMalRows() {
     try {
       const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching');
       if (!r.ok) throw new Error('bad status ' + r.status);
@@ -708,11 +751,31 @@
       // ?status=watching does the filtering server-side; the extra client-side
       // check guards against the param being ignored, tolerating entries that
       // don't carry the field at all.
-      const rows = ((j && j.data) || [])
+      return ((j && j.data) || [])
         .filter((e) => !e || !e.watching_status || e.watching_status === 'watching')
         .map(malRow)
         .filter(Boolean)
         .slice(0, 3);
+    } catch (e) {
+      console.warn('Jikan failed, trying MAL load.json via proxy:', e);
+      const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
+      if (!r2.ok) throw new Error('proxy status ' + r2.status);
+      const list = await r2.json();
+      if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
+      // status 1 = watching; ?status=1 already filters server-side, same
+      // belt-and-braces guard as the Jikan path above.
+      return list
+        .filter((e) => !e || e.status == null || e.status === 1)
+        .map(malListRow)
+        .filter(Boolean)
+        .slice(0, 3);
+    }
+  }
+
+  async function loadMal() {
+    try {
+      const rows = await fetchMalRows();
 
       renderMalRows(rows);
       try { localStorage.setItem(MAL_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
@@ -1203,6 +1266,10 @@
   if (addMeLink) addMeLink.addEventListener('click', copyDiscordUsername);
   const usernameBtn = $('discordUsername');
   if (usernameBtn) usernameBtn.addEventListener('click', copyDiscordUsername);
+
+  // Hero share button: native share sheet where supported, clipboard otherwise
+  const shareBtn = $('shareBtn');
+  if (shareBtn) shareBtn.addEventListener('click', shareSite);
 
   // Retry buttons on the weather / Discord error states
   const weatherRetry = $('weatherRetry');
