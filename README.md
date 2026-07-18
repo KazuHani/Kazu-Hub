@@ -16,6 +16,9 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
   played games, and MyAnimeList currently-watching with episode progress (via
   [Jikan](https://jikan.moe/)).
 - YouTube Music playlist, socials, and in-progress stories.
+- Installable (PWA-lite): web app manifest + home-screen icons, so the page
+  can be added to a phone home screen with its own icon and name. No service
+  worker — nothing is cached offline.
 - Dark/light theme (saved to localStorage), seasonal modes (birthday,
   Christmas, pride), a weather-reactive atmosphere (rain streaks or heavier
   snow when the live forecast calls for it), and a liquid-glass refraction
