@@ -255,6 +255,32 @@
     return 'snow';
   }
 
+  // ---- 5-day forecast strip ------------------------------------------------
+  // Shapes an Open-Meteo `daily` block (day-aligned to Europe/London via the
+  // request's timezone param) into rows for the weather modal's strip. The
+  // first row is labelled 'Today'. Tolerant of missing arrays and values.
+  function forecastRows(daily, limit) {
+    if (!daily || !daily.time || !daily.time.length) return [];
+    var n = Math.min(limit || 5, daily.time.length);
+    var fmtDay = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
+    var rows = [];
+    for (var i = 0; i < n; i++) {
+      var p = String(daily.time[i]).split('-'); // 'YYYY-MM-DD': split, never Date-parse (TZ traps)
+      var code = daily.weather_code ? daily.weather_code[i] : null;
+      var max = daily.temperature_2m_max ? daily.temperature_2m_max[i] : null;
+      var min = daily.temperature_2m_min ? daily.temperature_2m_min[i] : null;
+      var precip = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null;
+      rows.push({
+        label: i === 0 ? 'Today' : fmtDay.format(new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]))),
+        code: (typeof code === 'number') ? code : null,
+        maxC: (typeof max === 'number') ? Math.round(max) : null,
+        minC: (typeof min === 'number') ? Math.round(min) : null,
+        precipPct: (typeof precip === 'number') ? Math.round(precip) : null,
+      });
+    }
+    return rows;
+  }
+
   // ---- Steam store links ---------------------------------------------------
   // Extracts the appid from any Steam URL shape (store page, community /app/
   // page, or CDN image path) and builds the canonical store page URL.
