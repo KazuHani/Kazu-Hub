@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=8"></script>
+  <script src="lib.js?v=9"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -138,6 +138,21 @@
       eq('steamAppId null → null', L.steamAppId(null), null);
       eq('steamStoreUrl builds store page', L.steamStoreUrl('https://steamcommunity.com/app/1091500'), 'https://store.steampowered.com/app/1091500');
       eq('steamStoreUrl garbage → null', L.steamStoreUrl('not a url'), null);
+
+      // ---- steamIsSoftware (recent-games software filter) ----
+      eq('steamIsSoftware flags SteamVR /app/ URL', L.steamIsSoftware('https://steamcommunity.com/app/250820'), true);
+      eq('steamIsSoftware flags Wallpaper Engine CDN URL', L.steamIsSoftware('https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/431960/abc/capsule_184x69.jpg'), true);
+      eq('steamIsSoftware leaves real games alone', L.steamIsSoftware('https://steamcommunity.com/app/1091500'), false);
+      eq('steamIsSoftware garbage → false', L.steamIsSoftware('not a url'), false);
+      eq('steamIsSoftware null → false', L.steamIsSoftware(null), false);
+
+      // ---- steamHoursText (recent-games hours line) ----
+      eq('recent + total both shown', L.steamHoursText(19.6, 62), '19.6 hrs last 2 wks · 62 hrs total');
+      eq('equal hours collapse to total', L.steamHoursText(6.7, 6.7), '6.7 hrs total');
+      eq('total only', L.steamHoursText(0, 47), '47 hrs total');
+      eq('recent only', L.steamHoursText(0.2, 0), '0.2 hrs last 2 wks');
+      eq('no hours → played', L.steamHoursText(0, 0), 'played');
+      eq('non-number hours treated as zero', L.steamHoursText('19.6', null), 'played');
 
       // ---- malRow (MyAnimeList card) ----
       var malEntry = {

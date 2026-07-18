@@ -293,6 +293,54 @@
     return id ? 'https://store.steampowered.com/app/' + id : null;
   }
 
+  // ---- Steam software filter + hours line ----------------------------------
+  // The profile XML carries no game/software flag, and Steam's own store API
+  // mislabels tools like SteamVR and Wallpaper Engine as type "game", so no
+  // remote lookup separates games from software. This hand-maintained
+  // denylist of well-known software appids (each verified against the store
+  // API) is the only reliable filter. steamIsSoftware accepts any Steam URL
+  // shape steamAppId understands.
+  var STEAM_SOFTWARE_IDS = {
+    '250820': 1,   // SteamVR
+    '431960': 1,   // Wallpaper Engine
+    '629520': 1,   // Soundpad
+    '1905180': 1,  // OBS Studio
+    '431730': 1,   // Aseprite
+    '365670': 1,   // Blender
+    '274920': 1,   // FaceRig
+    '363890': 1,   // RPG Maker MV
+    '220700': 1,   // RPG Maker VX Ace
+    '993090': 1,   // Lossless Scaling
+    '382110': 1,   // Virtual Desktop Classic
+    '908520': 1,   // fpsVR
+    '1009850': 1,  // OVR Advanced Settings
+    '1325860': 1,  // VTube Studio
+    '1068820': 1,  // OVR Toolkit
+    '1173510': 1,  // XSOverlay
+    '1494460': 1,  // Desktop+
+    '665300': 1,   // Stream Avatars
+  };
+  function steamIsSoftware(url) {
+    var id = steamAppId(url);
+    return id ? !!STEAM_SOFTWARE_IDS[id] : false;
+  }
+
+  // Steam's profile XML reports each mostPlayedGame's hoursPlayed (past two
+  // weeks — the only recent figure Steam publishes) and hoursOnRecord (all
+  // time). Renders both on one line; collapses to a single figure when they
+  // agree or only one is present.
+  function steamHoursText(hoursPlayed, hoursOnRecord) {
+    var recent = (typeof hoursPlayed === 'number' && hoursPlayed > 0) ? hoursPlayed : 0;
+    var total = (typeof hoursOnRecord === 'number' && hoursOnRecord > 0) ? hoursOnRecord : 0;
+    var fmt = function (n) { return n % 1 === 0 ? String(n) : n.toFixed(1); };
+    if (recent && total && Math.round(recent * 10) !== Math.round(total * 10)) {
+      return fmt(recent) + ' hrs last 2 wks · ' + fmt(total) + ' hrs total';
+    }
+    if (total) return fmt(total) + ' hrs total';
+    if (recent) return fmt(recent) + ' hrs last 2 wks';
+    return 'played';
+  }
+
   // ---- MyAnimeList (Jikan) -------------------------------------------------
   // Extracts one Jikan GET /users/{name}/animelist entry into the flat shape
   // the MAL card renders. Tolerant of missing fields (Jikan omits
@@ -402,6 +450,8 @@
     atmosphereMode: atmosphereMode,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
+    steamIsSoftware: steamIsSoftware,
+    steamHoursText: steamHoursText,
     malRow: malRow,
     malListRow: malListRow,
     malCacheParse: malCacheParse,

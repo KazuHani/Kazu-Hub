@@ -21,6 +21,24 @@
     const m = /\/apps?\/(\d{1,9})\b/.exec(String(url || ''));
     return m ? 'https://store.steampowered.com/app/' + m[1] : null;
   };
+  // Same for the software denylist (see lib.js for why a list is the only option).
+  const steamIsSoftware = (KazuLib && KazuLib.steamIsSoftware) || function (url) {
+    const IDS = { '250820': 1, '431960': 1, '629520': 1, '1905180': 1, '431730': 1, '365670': 1, '274920': 1, '363890': 1, '220700': 1, '993090': 1, '382110': 1, '908520': 1, '1009850': 1, '1325860': 1, '1068820': 1, '1173510': 1, '1494460': 1, '665300': 1 };
+    const m = /\/apps?\/(\d{1,9})\b/.exec(String(url || ''));
+    return m ? !!IDS[m[1]] : false;
+  };
+  // Same for the recent-games hours line (see lib.js).
+  const steamHoursText = (KazuLib && KazuLib.steamHoursText) || function (hoursPlayed, hoursOnRecord) {
+    const recent = (typeof hoursPlayed === 'number' && hoursPlayed > 0) ? hoursPlayed : 0;
+    const total = (typeof hoursOnRecord === 'number' && hoursOnRecord > 0) ? hoursOnRecord : 0;
+    const fmt = (n) => (n % 1 === 0 ? String(n) : n.toFixed(1));
+    if (recent && total && Math.round(recent * 10) !== Math.round(total * 10)) {
+      return fmt(recent) + ' hrs last 2 wks · ' + fmt(total) + ' hrs total';
+    }
+    if (total) return fmt(total) + ' hrs total';
+    if (recent) return fmt(recent) + ' hrs last 2 wks';
+    return 'played';
+  };
 
   // ---------- Seasons ----------
   // Preview any season on any date: ?season=birthday|christmas|pride|all (comma-combinable, e.g. ?season=birthday,christmas)
@@ -592,7 +610,8 @@
         const link = txt('gameLink', g);
         const hoursPlayed = parseFloat((txt('hoursPlayed', g) || '0').replace(/,/g, '')) || 0;
         const hoursOnRecord = parseFloat((txt('hoursOnRecord', g) || '0').replace(/,/g, '')) || 0;
-        if (name) games.push({ name, logo, link, hoursPlayed, hoursOnRecord });
+        // Skip software (SteamVR, Wallpaper Engine, …) — the list is games only.
+        if (name && !steamIsSoftware(link || logo)) games.push({ name, logo, link, hoursPlayed, hoursOnRecord });
       });
 
       sharedAvatarUrl = avatar;
@@ -623,7 +642,7 @@
         name: escapeHtml(g.name),
         logo: escapeHtml(g.logo),
         url: steamStoreUrl(g.link) || steamStoreUrl(g.logo) || '',
-        hoursStr: g.hoursPlayed > 0 ? g.hoursPlayed.toFixed(1) + ' hrs recently' : (g.hoursOnRecord > 0 ? g.hoursOnRecord.toFixed(1) + ' hrs total' : 'played'),
+        hoursStr: steamHoursText(g.hoursPlayed, g.hoursOnRecord),
       }));
       const listEl = $('recentGamesList');
       if (recent.length) {
