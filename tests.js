@@ -113,6 +113,15 @@ eq('fog 45 → snow', L.atmosphereMode(45), 'snow');
 eq('garbage → snow', L.atmosphereMode('abc'), 'snow');
 eq('null → snow', L.atmosphereMode(null), 'snow');
 
+// ---- Steam store links ----
+eq('steamAppId from CDN image URL', L.steamAppId('https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1091500/abc/capsule_184x69.jpg'), '1091500');
+eq('steamAppId from community /app/ URL', L.steamAppId('https://steamcommunity.com/app/250820'), '250820');
+eq('steamAppId from store URL', L.steamAppId('https://store.steampowered.com/app/2019620/GERONIMO/'), '2019620');
+eq('steamAppId no match → null', L.steamAppId('https://steamcommunity.com/id/Kazu-Hani/'), null);
+eq('steamAppId null → null', L.steamAppId(null), null);
+eq('steamStoreUrl builds store page', L.steamStoreUrl('https://steamcommunity.com/app/1091500'), 'https://store.steampowered.com/app/1091500');
+eq('steamStoreUrl garbage → null', L.steamStoreUrl('not a url'), null);
+
 // ---- malRow (MyAnimeList card) ----
 const malEntry = {
   watching_status: 'watching', episodes_watched: 7,

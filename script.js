@@ -16,6 +16,11 @@
   const escapeHtml = (KazuLib && KazuLib.escapeHtml) || function (s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   };
+  // Same for the Steam store-link helper (see lib.js).
+  const steamStoreUrl = (KazuLib && KazuLib.steamStoreUrl) || function (url) {
+    const m = /\/apps?\/(\d{1,9})\b/.exec(String(url || ''));
+    return m ? 'https://store.steampowered.com/app/' + m[1] : null;
+  };
 
   // ---------- Seasons ----------
   // Preview any season on any date: ?season=birthday|christmas|pride|all (comma-combinable, e.g. ?season=birthday,christmas)
@@ -438,9 +443,14 @@
       const ts = dc.spotify.timestamps;
       spotifyTimes = (ts && ts.start && ts.end) ? { start: ts.start, end: ts.end } : null;
       $('spotifyProgress').classList.toggle('hidden', !spotifyTimes);
-      $('discordSpotify').classList.remove('hidden');
+      // Click-through to the playing track (anchor without href stays inert)
+      const spotifyEl = $('discordSpotify');
+      if (dc.spotify.track_id) spotifyEl.setAttribute('href', 'https://open.spotify.com/track/' + dc.spotify.track_id);
+      else spotifyEl.removeAttribute('href');
+      spotifyEl.classList.remove('hidden');
     } else {
       spotifyTimes = null;
+      $('discordSpotify').removeAttribute('href');
       $('discordSpotify').classList.add('hidden');
     }
 
@@ -570,9 +580,10 @@
       doc.querySelectorAll('mostPlayedGame').forEach((g) => {
         const name = txt('gameName', g);
         const logo = txt('gameLogo', g) || txt('gameLogoSmall', g) || txt('gameIcon', g);
+        const link = txt('gameLink', g);
         const hoursPlayed = parseFloat((txt('hoursPlayed', g) || '0').replace(/,/g, '')) || 0;
         const hoursOnRecord = parseFloat((txt('hoursOnRecord', g) || '0').replace(/,/g, '')) || 0;
-        if (name) games.push({ name, logo, hoursPlayed, hoursOnRecord });
+        if (name) games.push({ name, logo, link, hoursPlayed, hoursOnRecord });
       });
 
       sharedAvatarUrl = avatar;
@@ -586,26 +597,35 @@
 
       if (currentGame) {
         $('steamGameName').textContent = currentGame;
-        $('steamGame').classList.remove('hidden');
+        // Click-through to the store page: gameLink when Steam includes it,
+        // else the appid recovered from the game's art URLs.
+        const steamGameEl = $('steamGame');
+        const gameUrl = steamStoreUrl(txt('gameLink', inGameEl)) ||
+          steamStoreUrl(txt('gameLogo', inGameEl) || txt('gameIcon', inGameEl));
+        if (gameUrl) steamGameEl.setAttribute('href', gameUrl);
+        else steamGameEl.removeAttribute('href');
+        steamGameEl.classList.remove('hidden');
       } else {
+        $('steamGame').removeAttribute('href');
         $('steamGame').classList.add('hidden');
       }
 
       const recent = games.slice(0, 3).map((g) => ({
         name: escapeHtml(g.name),
         logo: escapeHtml(g.logo),
+        url: steamStoreUrl(g.link) || steamStoreUrl(g.logo) || '',
         hoursStr: g.hoursPlayed > 0 ? g.hoursPlayed.toFixed(1) + ' hrs recently' : (g.hoursOnRecord > 0 ? g.hoursOnRecord.toFixed(1) + ' hrs total' : 'played'),
       }));
       const listEl = $('recentGamesList');
       if (recent.length) {
         listEl.innerHTML = recent.map((g) => (
-          '<div class="recent-game-row">' +
+          '<a class="recent-game-row"' + (g.url ? ' href="' + escapeHtml(g.url) + '" target="_blank" rel="noopener"' : '') + '>' +
             '<img class="recent-game-logo" src="' + g.logo + '" alt="' + g.name + '" loading="lazy">' +
             '<div style="min-width:0;flex:1;">' +
               '<div class="recent-game-name">' + g.name + '</div>' +
               '<div class="recent-game-hours">' + g.hoursStr + '</div>' +
             '</div>' +
-          '</div>'
+          '</a>'
         )).join('');
         $('steamRecent').classList.remove('hidden');
       } else {

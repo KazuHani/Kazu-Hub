@@ -255,6 +255,18 @@
     return 'snow';
   }
 
+  // ---- Steam store links ---------------------------------------------------
+  // Extracts the appid from any Steam URL shape (store page, community /app/
+  // page, or CDN image path) and builds the canonical store page URL.
+  function steamAppId(url) {
+    var m = /\/apps?\/(\d{1,9})\b/.exec(String(url || ''));
+    return m ? m[1] : null;
+  }
+  function steamStoreUrl(url) {
+    var id = steamAppId(url);
+    return id ? 'https://store.steampowered.com/app/' + id : null;
+  }
+
   // ---- MyAnimeList (Jikan) -------------------------------------------------
   // Extracts one Jikan GET /users/{name}/animelist entry into the flat shape
   // the MAL card renders. Tolerant of missing fields (Jikan omits
@@ -294,6 +306,8 @@
     googleCalendarUrl: googleCalendarUrl,
     nullschoolUrl: nullschoolUrl,
     atmosphereMode: atmosphereMode,
+    steamAppId: steamAppId,
+    steamStoreUrl: steamStoreUrl,
     malRow: malRow,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -306,6 +306,21 @@ body[data-theme="light"] .stat-bg-icon { opacity: .32; }
 .mal-progress .mal-eps:only-child { margin-left: 0; }
 @media (prefers-reduced-motion: reduce) { .mal-row { transition: none; } .mal-row:hover, .mal-row:active { transform: none; } }
 
+/* ---- Clickable presence pills + recent games ---- */
+/* These are <a> elements that only get an href when there's a real
+   destination (Spotify track, Steam store page). No href = inert. */
+a.info-pill { text-decoration: none; color: inherit; }
+a.info-pill[href] { cursor: pointer; transition: transform .25s ease, filter .25s ease; }
+a.info-pill[href]:hover { transform: translateY(-2px); filter: brightness(1.08); }
+a.info-pill[href]:active { transform: translateY(0) scale(.98); }
+a.info-pill:not([href]) { cursor: default; }
+a.recent-game-row { text-decoration: none; color: inherit; border-radius: 10px; padding: 7px 6px; margin: 0 -6px; transition: background .2s ease; }
+a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
+@media (prefers-reduced-motion: reduce) {
+  a.info-pill[href], a.recent-game-row { transition: none; }
+  a.info-pill[href]:hover, a.info-pill[href]:active { transform: none; }
+}
+
 /* ---- Music / YouTube Music playlist ---- */
 .music-grid { display: grid; grid-template-columns: minmax(0,1fr); }
 .music-card {

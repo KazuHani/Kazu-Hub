@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body data-theme="dark">
 
@@ -181,7 +181,7 @@
               </div>
             </div>
 
-            <div id="discordSpotify" class="info-pill info-pill--spotify hidden">
+            <a id="discordSpotify" class="info-pill info-pill--spotify hidden" target="_blank" rel="noopener">
               <img id="spotifyArt" class="spotify-art" alt="" loading="lazy">
               <div class="presence-text">
                 <div class="info-pill-label" style="color:#1db954;">Listening on Spotify 🎧</div>
@@ -192,7 +192,7 @@
                   <div class="spotify-times"><span id="spotifyElapsed">0:00</span><span id="spotifyDuration">0:00</span></div>
                 </div>
               </div>
-            </div>
+            </a>
 
             <div id="discordIdle" class="idle-banner hidden"></div>
           </div>
@@ -229,13 +229,13 @@
               </div>
             </div>
 
-            <div id="steamGame" class="info-pill info-pill--steam-game hidden">
+            <a id="steamGame" class="info-pill info-pill--steam-game hidden" target="_blank" rel="noopener">
               <div class="info-pill-emoji">🎮</div>
               <div class="presence-text">
                 <div class="info-pill-label" style="color:#66c0f4;">Playing now</div>
                 <div class="info-pill-value steam-game-name" id="steamGameName">—</div>
               </div>
-            </div>
+            </a>
 
             <div id="steamRecent" class="recent-games hidden">
               <div class="recent-games-label">Recently played</div>
@@ -414,7 +414,7 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=5"></script>
-<script src="script.js?v=7"></script>
+<script src="lib.js?v=6"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>
