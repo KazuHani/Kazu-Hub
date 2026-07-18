@@ -186,7 +186,7 @@ body[data-theme="light"] .stat-bg-icon { opacity: .32; }
 .pill-link:hover::after { opacity: 1; transition: opacity .5s ease; animation: pillSheen 1.4s ease forwards; }
 @keyframes pillSheen { from { background-position: 150% 0; } to { background-position: -50% 0; } }
 .steam-card .pill-link { padding: 5px 12px; }
-.steam-bg-icon, .discord-bg-icon { position: absolute; right: -20px; bottom: -26px; opacity: .12; }
+.steam-bg-icon, .discord-bg-icon, .mal-bg-icon { position: absolute; right: -20px; bottom: -26px; opacity: .12; }
 
 .presence-row { display: flex; align-items: center; gap: 14px; }
 .avatar-wrap { position: relative; flex: none; }
@@ -292,7 +292,7 @@ body[data-theme="light"] .stat-bg-icon { opacity: .32; }
 .mal-card .loading-row { color: #c7d4f7; }
 .mal-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
 .mal-card .idle-banner { background: rgba(255,255,255,.12); color: #c7d4f7; }
-.mal-head-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #2e51a2; color: #fff; font-size: 8px; font-weight: 900; letter-spacing: .02em; box-shadow: 0 0 0 1.5px rgba(255,255,255,.25); flex: none; }
+
 .mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 10px 12px; margin-top: 10px; text-decoration: none; transition: transform .25s ease, background .25s ease; }
 .mal-row:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
 .mal-row:active { transform: translateY(0) scale(.98); }
