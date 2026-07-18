@@ -39,7 +39,29 @@
 <link rel="dns-prefetch" href="//cdn.myanimelist.net">
 <link rel="dns-prefetch" href="//i.scdn.co">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Kazu Hani",
+  "alternateName": "Arctic Dragon",
+  "url": "https://kazuhani.github.io/Kazu-Hub/",
+  "image": "https://kazuhani.github.io/Kazu-Hub/assets/og.jpg",
+  "description": "Arctic Dragon ❄️🐉 — socials, live Discord & Steam status, weather, and stories.",
+  "sameAs": [
+    "https://x.com/Kazu_Hani",
+    "https://www.instagram.com/kazu_hani/",
+    "https://www.youtube.com/@Kazu_Hani",
+    "https://www.reddit.com/user/Korat24/",
+    "https://www.tiktok.com/@kazu_hani",
+    "https://myanimelist.net/animelist/Kazu_Hani",
+    "https://letterboxd.com/KazuHani/",
+    "https://steamcommunity.com/id/Kazu-Hani/",
+    "https://discord.com/users/346360416827473921"
+  ]
+}
+</script>
 </head>
 <body data-theme="dark">
 
@@ -102,7 +124,7 @@
         </div>
         <h1 class="title">Kazu&nbsp;Hani</h1>
 
-        <div id="quoteBox" class="quote-box">
+        <div id="quoteBox" class="quote-box" role="button" tabindex="0" title="New quote" aria-label="Show another quote">
           <p class="quote-text" id="quoteText"></p>
           <div class="quote-author" id="quoteAuthor"></div>
         </div>
@@ -285,7 +307,11 @@
 
           <div id="malLoaded" class="hidden" style="position:relative;">
             <div id="malList"></div>
-            <div id="malIdle" class="idle-banner hidden">Not watching anything right now ❄️</div>
+            <div id="malMangaSection" class="hidden">
+              <div class="mal-section-label">Also reading</div>
+              <div id="malMangaList"></div>
+            </div>
+            <div id="malIdle" class="idle-banner hidden">Not watching or reading anything right now ❄️</div>
           </div>
 
           <div id="malLoading" class="loading-row" style="position:relative;">
@@ -299,10 +325,39 @@
           </div>
         </div>
 
+        <!-- LETTERBOXD (latest diary entry, via the profile's RSS feed) -->
+        <div class="card lb-card scroll-reveal">
+          <div class="lb-bg-icon" aria-hidden="true">
+            <svg width="150" height="150" viewBox="0 0 24 24" fill="#ffffff"><circle cx="7" cy="12" r="4.2" fill="#ff8000"/><circle cx="12" cy="12" r="4.2" fill="#00e054" opacity=".85"/><circle cx="17" cy="12" r="4.2" fill="#40bcf4" opacity=".7"/></svg>
+          </div>
+          <div class="card-head" style="position:relative;">
+            <div class="card-head-title" style="color:#00e054;">
+              <svg width="22" height="22" viewBox="0 0 24 24"><circle cx="7" cy="12" r="4.2" fill="#ff8000"/><circle cx="12" cy="12" r="4.2" fill="#00e054"/><circle cx="17" cy="12" r="4.2" fill="#40bcf4"/></svg>
+              Letterboxd
+            </div>
+            <a class="pill-link" href="https://letterboxd.com/KazuHani/" target="_blank" rel="noopener">View profile →</a>
+          </div>
+
+          <div id="lbLoaded" class="hidden" style="position:relative;">
+            <div id="lbRow"></div>
+            <div id="lbIdle" class="idle-banner hidden">Nothing logged lately 🎬</div>
+          </div>
+
+          <div id="lbLoading" class="loading-row" style="position:relative;">
+            <span class="pulse-dot" style="background:#00e054;"></span>
+            Connecting to Letterboxd…
+          </div>
+
+          <div id="lbError" class="loading-row hidden" style="position:relative;">
+            ⚠️ Can't reach Letterboxd right now.
+            <button type="button" class="retry-btn" id="lbRetry">Retry</button>
+          </div>
+        </div>
+
       </section>
 
       <!-- ───────────────────────────────────────────────────────────────
-           YOUTUBE MUSIC PLAYLIST (static card)
+           YOUTUBE MUSIC PLAYLIST (static card + ListenBrainz recent tracks)
            ──────────────────────────────────────────────────────────── -->
       <h2 class="section-title scroll-reveal"><span class="section-emoji">🎧</span> My playlist</h2>
       <section class="music-grid">
@@ -324,6 +379,11 @@
               <div class="music-playlist-label">Playlist</div>
               <div class="music-playlist-name">Songs that SLAP 🐉</div>
               <div class="music-playlist-sub">On YouTube Music</div>
+              <!-- Recently played via ListenBrainz: hidden until LISTENBRAINZ_USER is set in script.js -->
+              <div id="musicRecent" class="music-recent hidden">
+                <div class="music-recent-label">Recently played</div>
+                <div id="musicTrackList"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -433,7 +493,16 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=9"></script>
-<script src="script.js?v=13"></script>
+<script src="lib.js?v=10"></script>
+<script src="script.js?v=14"></script>
+<script>
+  // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
+  // ever serves stale while online; the cache is only the offline fallback.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+</script>
 </body>
 </html>

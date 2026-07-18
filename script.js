@@ -58,14 +58,14 @@
   })();
 
   // Preview the weather-reactive atmosphere on demand:
-  // ?atmosphere=rain|snow|snow-heavy|none
+  // ?atmosphere=rain|snow|snow-heavy|aurora|none
   const ATMOSPHERE_OVERRIDE = (() => {
     try {
       const p = new URLSearchParams(location.search).get('atmosphere');
       if (!p) return null;
       const v = p.toLowerCase().trim();
       if (v === 'off') return 'none';
-      return ['rain', 'snow', 'snow-heavy', 'none'].includes(v) ? v : null;
+      return ['rain', 'snow', 'snow-heavy', 'aurora', 'none'].includes(v) ? v : null;
     } catch (e) { return null; }
   })();
 
@@ -90,7 +90,8 @@
   // ---------- Clock / age / birthday ----------
   function computeClock() {
     const now = new Date();
-    const timeStr = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
+    // en-GB 12-hour, matching the time modal (fmtTimeUK) — one format everywhere.
+    const timeStr = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
     const dateStr = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(now);
 
     let ageStr, bdayText, bdaySub;
@@ -160,21 +161,29 @@
   }
 
   let weatherDaily = null;   // Open-Meteo `daily` block for the modal forecast strip
+  let weatherCurrent = null; // last good `current` snapshot, reused by "compare with your sky"
   let weatherDone = false;   // true once a fetch attempt has finished (ok or failed)
 
   async function loadWeather() {
     weatherDone = false;
     try {
-      const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon');
+      const url = (KazuLib && KazuLib.openMeteoUrl)
+        ? KazuLib.openMeteoUrl(52.414, -4.081)
+        : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
+      const r = await fetch(url);
       const j = await r.json();
       const w = j.current;
       weatherDaily = j.daily || null;
+      weatherCurrent = {
+        code: w.weather_code, isDay: w.is_day === 1,
+        tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
+      };
       const info = weatherInfo(w.weather_code, w.is_day === 1);
       $('weatherBgIcon').textContent = info.e;
       $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
       $('liveWeatherDesc').textContent = info.d;
       $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
-      if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code));
+      if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
       $('weatherLoaded').classList.remove('hidden');
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.add('hidden');
@@ -199,6 +208,7 @@
     if (isNaN(c)) return 'snow';
     if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
     if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow-heavy';
+    if ((c === 0 || c === 1) && arguments[1] === false) return 'aurora';
     return 'snow';
   };
 
@@ -251,6 +261,17 @@
     if (mode === 'none') return;
     if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(46)); return; }
     if (mode === 'snow-heavy') { atmosphereEl.appendChild(buildFlakes(26, 10, 24)); return; }
+    if (mode === 'aurora') {
+      // Clear night sky: two drifting light ribbons over a static starfield.
+      // Pure CSS animation, no per-frame JS (see style.css).
+      const a = document.createElement('div');
+      a.className = 'aurora';
+      a.innerHTML = '<div class="aurora-stars"></div>' +
+        '<div class="aurora-ribbon aurora-ribbon--a"></div>' +
+        '<div class="aurora-ribbon aurora-ribbon--b"></div>';
+      atmosphereEl.appendChild(a);
+      return;
+    }
     atmosphereEl.appendChild(buildFlakes(12, 11, 22)); // arctic default
   }
 
@@ -302,6 +323,8 @@
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
   function fmtClock(ms) {
     const total = Math.max(0, Math.floor((ms || 0) / 1000));
+    const h = Math.floor(total / 3600);
+    if (h > 0) return h + ':' + pad2(Math.floor((total % 3600) / 60)) + ':' + pad2(total % 60);
     return Math.floor(total / 60) + ':' + pad2(total % 60);
   }
   function fmtElapsed(ms) {
@@ -584,12 +607,15 @@
     try {
       let xmlText;
       try {
-        const r = await fetch(STEAM_URL);
-        if (!r.ok) throw new Error('bad status');
+        // Proxy first: steamcommunity.com sends no Access-Control-Allow-Origin,
+        // so a direct browser fetch can never succeed. (Order flipped after the
+        // direct attempt wasted one doomed round trip on every 5-min poll.)
+        const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL));
+        if (!r.ok) throw new Error('proxy failed');
         xmlText = await r.text();
       } catch (e) {
-        const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL));
-        if (!r2.ok) throw new Error('proxy failed');
+        const r2 = await fetch(STEAM_URL);
+        if (!r2.ok) throw new Error('bad status');
         xmlText = await r2.text();
       }
       const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
@@ -708,8 +734,22 @@
   // Last-good rows survive Jikan outages (its user endpoints 504 whenever MAL
   // refuses the scrape): written on every successful fetch, read on failure.
   const MAL_CACHE_KEY = 'kazu-mal-cache';
+  const MAL_MANGA_CACHE_KEY = 'kazu-mal-manga-cache';
+
+  // Both lists feed the card's idle banner: it's only shown when there's
+  // nothing being watched AND nothing being read.
+  let malAnimeRows = [];
+  let malMangaRows = [];
+  function updateMalIdle() {
+    const idle = $('malIdle');
+    if (!idle) return;
+    const empty = malAnimeRows.length === 0 && malMangaRows.length === 0;
+    if (empty) idle.textContent = 'Not watching or reading anything right now ❄️';
+    idle.classList.toggle('hidden', !empty);
+  }
 
   function renderMalRows(rows) {
+    malAnimeRows = rows;
     $('malList').innerHTML = rows.map((x) => (
       '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
         (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy">' : '') +
@@ -722,11 +762,33 @@
         '</div>' +
       '</a>'
     )).join('');
-    $('malIdle').classList.toggle('hidden', rows.length > 0);
+    updateMalIdle();
 
     $('malLoaded').classList.remove('hidden');
     $('malLoading').classList.add('hidden');
     $('malError').classList.add('hidden');
+  }
+
+  function renderMalMangaRows(rows) {
+    malMangaRows = rows;
+    const section = $('malMangaSection');
+    const list = $('malMangaList');
+    if (section && list) {
+      list.innerHTML = rows.map((x) => (
+        '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+          (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy">' : '') +
+          '<div class="mal-info">' +
+            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+            '<div class="mal-progress">' +
+              (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
+              '<div class="mal-eps">Ch ' + x.read + ' / ' + (x.total || '?') + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</a>'
+      )).join('');
+      section.classList.toggle('hidden', rows.length === 0);
+    }
+    updateMalIdle();
   }
 
   function malCacheRead() {
@@ -787,6 +849,154 @@
     }
   }
 
+  // ---- Manga (currently reading, same Jikan → MAL load.json → cache ladder) ----
+  // Unlike the anime path these helpers aren't duplicated locally: if lib.js
+  // failed to load the section just stays hidden (the modals already degrade
+  // the same way).
+  async function fetchMalMangaRows() {
+    const mRow = KazuLib.malMangaRow;
+    const mListRow = KazuLib.malMangaListRow;
+    try {
+      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading');
+      if (!r.ok) throw new Error('bad status ' + r.status);
+      const j = await r.json();
+      return ((j && j.data) || [])
+        .filter((e) => !e || !e.reading_status || e.reading_status === 'reading')
+        .map(mRow)
+        .filter(Boolean)
+        .slice(0, 2);
+    } catch (e) {
+      console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
+      const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
+      if (!r2.ok) throw new Error('proxy status ' + r2.status);
+      const list = await r2.json();
+      if (!Array.isArray(list)) throw new Error('unexpected mangalist load.json payload');
+      return list
+        .filter((e) => !e || e.status == null || e.status === 1)
+        .map(mListRow)
+        .filter(Boolean)
+        .slice(0, 2);
+    }
+  }
+
+  function malMangaCacheRead() {
+    const parse = KazuLib && KazuLib.malMangaCacheParse;
+    if (!parse) return null;
+    try { return parse(localStorage.getItem(MAL_MANGA_CACHE_KEY)); } catch (e) { return null; }
+  }
+
+  // Manga failures never flip the whole card to its error state: the anime
+  // rows are the primary content, the reading section just hides.
+  async function loadMalManga() {
+    if (!KazuLib || !KazuLib.malMangaRow) return;
+    try {
+      const rows = await fetchMalMangaRows();
+      renderMalMangaRows(rows);
+      try { localStorage.setItem(MAL_MANGA_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
+    } catch (e) {
+      const cached = malMangaCacheRead();
+      if (cached) renderMalMangaRows(cached);
+    }
+  }
+
+  function loadMalAll() { loadMal(); loadMalManga(); }
+
+  // ---------- Letterboxd (latest diary entry via RSS) ----------
+  // Letterboxd has no public API, but every profile publishes a diary RSS
+  // feed. No Access-Control-Allow-Origin there either, so it rides the same
+  // corsproxy.io the Steam and MAL fallbacks use. Parsing lives in lib.js
+  // (regex-based, DOM-free, gate-tested); the last good entry is cached in
+  // localStorage exactly like the MAL rows.
+  const LB_USER = 'KazuHani';
+  const LB_CACHE_KEY = 'kazu-lb-cache';
+
+  function renderLetterboxd(entry) {
+    const row = $('lbRow');
+    if (!row) return;
+    if (!entry) {
+      row.innerHTML = '';
+      $('lbIdle').classList.remove('hidden');
+    } else {
+      $('lbIdle').classList.add('hidden');
+      row.innerHTML =
+        '<a class="lb-entry" href="' + escapeHtml(entry.link) + '" target="_blank" rel="noopener">' +
+          (entry.poster
+            ? '<img class="lb-poster" src="' + escapeHtml(entry.poster) + '" alt="" loading="lazy">'
+            : '<div class="lb-poster lb-poster--empty">🎬</div>') +
+          '<div class="lb-info">' +
+            '<div class="lb-label">Latest watch' + (entry.rewatch ? ' · rewatch' : '') + '</div>' +
+            '<div class="lb-title">' + escapeHtml(entry.title) + (entry.year ? ' <span class="lb-year">' + entry.year + '</span>' : '') + '</div>' +
+            (entry.stars ? '<div class="lb-stars">' + entry.stars + '</div>' : '') +
+            (entry.watched ? '<div class="lb-watched">' + escapeHtml(entry.watched) + '</div>' : '') +
+          '</div>' +
+        '</a>';
+    }
+    $('lbLoaded').classList.remove('hidden');
+    $('lbLoading').classList.add('hidden');
+    $('lbError').classList.add('hidden');
+  }
+
+  function lbCacheRead() {
+    const parse = KazuLib && KazuLib.letterboxdCacheParse;
+    if (!parse) return null;
+    try { return parse(localStorage.getItem(LB_CACHE_KEY)); } catch (e) { return null; }
+  }
+
+  async function loadLetterboxd() {
+    if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
+    try {
+      const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
+      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(rss));
+      if (!r.ok) throw new Error('proxy status ' + r.status);
+      const entry = KazuLib.parseLetterboxdRss(await r.text());
+      renderLetterboxd(entry);
+      try { localStorage.setItem(LB_CACHE_KEY, JSON.stringify({ at: Date.now(), entry })); } catch (e) {}
+    } catch (e) {
+      const cached = lbCacheRead();
+      if (cached) { renderLetterboxd(cached); return; }
+      $('lbLoading').classList.add('hidden');
+      $('lbError').classList.remove('hidden');
+    }
+  }
+
+  // ---------- ListenBrainz recent tracks (music card) ----------
+  // Set LISTENBRAINZ_USER to switch this on: the API is free, keyless and
+  // CORS-open. While it's empty the "recently played" block stays hidden and
+  // nothing is fetched — the static playlist card is the content.
+  const LISTENBRAINZ_USER = '';
+
+  async function loadMusicRecent() {
+    if (!LISTENBRAINZ_USER || !KazuLib || !KazuLib.listenbrainzRow) return;
+    try {
+      const r = await fetch('https://api.listenbrainz.org/1/user/' + encodeURIComponent(LISTENBRAINZ_USER) + '/listens?count=3');
+      if (!r.ok) throw new Error('status ' + r.status);
+      const j = await r.json();
+      const rows = ((((j || {}).payload) || {}).listens || [])
+        .map(KazuLib.listenbrainzRow)
+        .filter(Boolean)
+        .slice(0, 3);
+      const wrap = $('musicRecent');
+      const list = $('musicTrackList');
+      if (!wrap || !list) return;
+      if (!rows.length) { wrap.classList.add('hidden'); return; }
+      list.innerHTML = rows.map((t, i) => {
+        const inner =
+          '<div class="music-track-num">' + (t.playingNow ? '▶' : String(i + 1)) + '</div>' +
+          '<div class="music-track-text">' +
+            '<div class="music-track-name">' + escapeHtml(t.name) + '</div>' +
+            '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
+          '</div>';
+        return t.url
+          ? '<a class="music-track-row" href="' + escapeHtml(t.url) + '" target="_blank" rel="noopener">' + inner + '</a>'
+          : '<div class="music-track-row">' + inner + '</div>';
+      }).join('');
+      wrap.classList.remove('hidden');
+    } catch (e) {
+      // Keep the static card on failure; the playlist link is the fallback content.
+    }
+  }
+
   // ---------- Motivational quotes ----------
   const FALLBACK_QUOTES = [
     ['The only way to do great work is to love what you do.', 'Steve Jobs'],
@@ -801,7 +1011,6 @@
     ['You miss 100% of the shots you don’t take.', 'Wayne Gretzky'],
     ['Act as if what you do makes a difference. It does.', 'William James'],
     ['Success usually comes to those who are too busy to be looking for it.', 'Henry David Thoreau'],
-    ['The harder I work, the luckier I seem to get.', 'Coleman Cox'],
     ['Don’t watch the clock; do what it does. Keep going.', 'Sam Levenson'],
     ['Everything you’ve ever wanted is on the other side of fear.', 'George Addair'],
     ['Hard work beats talent when talent doesn’t work hard.', 'Tim Notke'],
@@ -833,7 +1042,6 @@
     ['You take your life in your own hands, and what happens? A terrible thing: no one to blame.', 'Erica Jong'],
     ['What’s money? A man is a success if he gets up in the morning and goes to bed at night and in between does what he wants.', 'Bob Dylan'],
     ['A successful man is one who can lay a firm foundation with the bricks others have thrown at him.', 'David Brinkley'],
-    ['I find that the harder I work, the more luck I seem to have.', 'Coleman Cox'],
     ['The road to success and the road to failure are almost exactly the same.', 'Colin R. Davis'],
     ['The only place where your dream becomes impossible is in your own thinking.', 'Robert H. Schuller'],
     ['All progress takes place outside the comfort zone.', 'Michael John Bobak'],
@@ -865,24 +1073,54 @@
     }
   }
 
+  // Click/Enter on the quote deals a new one. Debounced: zenquotes' free tier
+  // rate-limits per IP, and a hammered click shouldn't burn it.
+  let quoteLastShuffle = 0;
+  function reshuffleQuote() {
+    const now = Date.now();
+    if (now - quoteLastShuffle < 3000) return;
+    quoteLastShuffle = now;
+    loadQuote();
+  }
+
 
   // ---------- Theme toggle ----------
   const orb = $('theme-orb');
   const orbIcon = $('orb-icon');
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+  // Browser-chrome colour follows the active theme (and the Christmas palette,
+  // which applySeasons reapplies on top of this).
+  function setThemeColor(c) {
+    if (themeColorMeta && themeColorMeta.getAttribute('content') !== c) {
+      themeColorMeta.setAttribute('content', c);
+    }
+  }
 
   function applyTheme(dark) {
     document.body.dataset.theme = dark ? 'dark' : 'light';
     orb.dataset.dark = dark ? '1' : '0';
     orb.title = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    orb.setAttribute('aria-pressed', dark ? 'true' : 'false');
     orbIcon.textContent = dark ? '🌙' : '☀️';
+    if (!document.body.classList.contains('season-christmas')) {
+      setThemeColor(dark ? '#0d1b31' : '#eaf6ff');
+    }
   }
 
-  let isDark = true;
-  try {
-    const saved = localStorage.getItem('kazu-dark');
-    if (saved !== null) isDark = saved === '1';
-  } catch (e) {}
+  // No saved choice → follow the OS, and keep following it live until the
+  // visitor picks a side with the orb (an explicit choice always wins).
+  const themeMedia = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  let savedTheme = null;
+  try { savedTheme = localStorage.getItem('kazu-dark'); } catch (e) {}
+  let isDark = savedTheme !== null ? savedTheme === '1' : (themeMedia ? themeMedia.matches : true);
   applyTheme(isDark);
+
+  if (themeMedia && savedTheme === null) {
+    const onSystemTheme = (e) => { isDark = e.matches; applyTheme(isDark); };
+    if (themeMedia.addEventListener) themeMedia.addEventListener('change', onSystemTheme);
+    else if (themeMedia.addListener) themeMedia.addListener(onSystemTheme); // older Safari
+  }
 
   orb.addEventListener('click', () => {
     isDark = !isDark;
@@ -968,8 +1206,64 @@
       + '<div class="forecast-strip" id="forecastStrip"></div>'
       + '<div class="modal-actions">'
       +   '<a class="modal-btn" id="globeOpen" target="_blank" rel="noopener">Open full UK wind map ↗</a>'
+      +   '<button type="button" class="modal-btn modal-btn--ghost" id="skyCompare">📍 Compare with your sky</button>'
       + '</div>'
+      + '<div class="sky-compare hidden" id="skyCompareOut"></div>'
       + '<p class="modal-credit">Source: earth.nullschool.net — global weather, forecast by supercomputer.</p>';
+  }
+
+  // "Compare with your sky": opt-in geolocation (button click only — never
+  // prompted on modal open), then one current-block-only Open-Meteo call for
+  // the visitor's coordinates, rendered side by side with Aberystwyth.
+  function compareSkies() {
+    const out = $('skyCompareOut');
+    if (!out) return;
+    out.classList.remove('hidden');
+    if (!('geolocation' in navigator)) {
+      out.innerHTML = '<div class="forecast-empty">This browser can’t share your location.</div>';
+      return;
+    }
+    out.innerHTML = '<div class="forecast-empty">Asking for your sky…</div>';
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      try {
+        const lat = +pos.coords.latitude.toFixed(3);
+        const lon = +pos.coords.longitude.toFixed(3);
+        const r = await fetch(KazuLib.openMeteoUrl(lat, lon, false));
+        const j = await r.json();
+        const w = j.current;
+        if (!w) throw new Error('no current block');
+        renderSkyCompare(out, {
+          code: w.weather_code, isDay: w.is_day === 1,
+          tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
+        });
+      } catch (e) {
+        out.innerHTML = '<div class="forecast-empty">Couldn’t read your sky ☁️</div>';
+      }
+    }, () => {
+      out.innerHTML = '<div class="forecast-empty">Location off — your sky stays a mystery ❄️</div>';
+    }, { timeout: 10000, maximumAge: 300000 });
+  }
+
+  function renderSkyCompare(out, yours) {
+    if (!weatherCurrent) {
+      out.innerHTML = '<div class="forecast-empty">My sky hasn’t loaded yet — retry the weather card first.</div>';
+      return;
+    }
+    const mine = weatherCurrent;
+    const mineInfo = weatherInfo(mine.code, mine.isDay);
+    const yourInfo = weatherInfo(yours.code, yours.isDay);
+    const dt = Math.round(yours.tempC - mine.tempC);
+    const delta = dt === 0 ? 'Same temperature as you'
+      : Math.abs(dt) + '°C ' + (dt > 0 ? 'warmer where you are' : 'colder where you are');
+    out.innerHTML = '<div class="tz-grid">'
+      + '<div class="tz-cell"><div class="tz-label">🐉 Aberystwyth</div>'
+      +   '<div class="tz-time">' + mineInfo.e + ' ' + Math.round(mine.tempC) + '°C</div>'
+      +   '<div class="tz-meta">' + mineInfo.d + ' · wind ' + Math.round(mine.windKmh) + ' km/h</div></div>'
+      + '<div class="tz-cell"><div class="tz-label">📍 Your sky</div>'
+      +   '<div class="tz-time">' + yourInfo.e + ' ' + Math.round(yours.tempC) + '°C</div>'
+      +   '<div class="tz-meta">' + yourInfo.d + ' · wind ' + Math.round(yours.windKmh) + ' km/h</div></div>'
+      + '</div>'
+      + '<div class="modal-note"><div class="modal-row"><span>Difference</span><strong>' + delta + '</strong></div></div>';
   }
 
   // 5-day strip under the globe, from the Open-Meteo daily block cached by
@@ -1002,6 +1296,7 @@
   function weatherModalAfter() {
     const url = KazuLib.nullschoolUrl({ lon: -2.5, lat: 54.5, zoom: 2800 });
     const open = $('globeOpen'); if (open) open.href = url;
+    const cmp = $('skyCompare'); if (cmp) cmp.addEventListener('click', compareSkies);
     const frame = $('globeFrame');
     if (frame) {
       const iframe = document.createElement('iframe');
@@ -1201,6 +1496,9 @@
     body.classList.toggle('season-birthday', s.birthday);
     body.classList.toggle('season-christmas', s.christmas);
     body.classList.toggle('season-pride', s.pride);
+    // Christmas owns the palette (and hides the theme orb), so it owns the
+    // browser-chrome colour too; otherwise follow the active theme.
+    setThemeColor(s.christmas ? '#07251a' : (isDark ? '#0d1b31' : '#eaf6ff'));
     if (s.birthday && !bdayCelebrated) { bdayCelebrated = true; fireConfetti(); }
     if (!s.birthday) bdayCelebrated = false; // re-arm if it turns off (e.g. preview param removed)
   }
@@ -1334,28 +1632,53 @@
     $('malLoading').classList.remove('hidden');
     loadMal();
   });
+  const lbRetryBtn = $('lbRetry');
+  if (lbRetryBtn) lbRetryBtn.addEventListener('click', () => {
+    $('lbError').classList.add('hidden');
+    $('lbLoading').classList.remove('hidden');
+    loadLetterboxd();
+  });
+
+  // Quote box: click / Enter / Space deals a new quote (debounced in reshuffleQuote)
+  const quoteBox = $('quoteBox');
+  if (quoteBox) {
+    quoteBox.addEventListener('click', reshuffleQuote);
+    quoteBox.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reshuffleQuote(); }
+    });
+  }
 
   setAtmosphere(ATMOSPHERE_OVERRIDE || 'snow');
-  loadQuote();
 
   // ---------- Pause polling/ticking while the page isn't visible ----------
   // Saves battery/data when the tab is backgrounded or the phone screen is
   // locked/swiped away — covered by the Page Visibility API on both desktop
   // and mobile browsers (Chrome included).
+  //
+  // Each poller stamps its last run and startPolling only refetches what's
+  // actually stale. Before the stamp, every visibilitychange fired all five
+  // fetchers at once, so rapid tab-switching stormed the APIs (and the CORS
+  // proxy, which rate-limits).
   const POLLERS = [
-    { fn: tick, ms: 1000 },
-    { fn: loadWeather, ms: 10 * 60 * 1000 },
-    { fn: loadDiscord, ms: 20 * 1000 },
-    { fn: loadSteam, ms: 5 * 60 * 1000 },
-    { fn: loadMal, ms: 10 * 60 * 1000 },
+    { fn: tick, ms: 1000, last: 0 },
+    { fn: loadWeather, ms: 10 * 60 * 1000, last: 0 },
+    { fn: loadDiscord, ms: 20 * 1000, last: 0 },
+    { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
+    { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },
+    { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0 },
+    { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0 },
+    { fn: loadQuote, ms: 15 * 60 * 1000, last: 0 },
   ];
   let timers = [];
 
+  function runPoller(p) { p.last = Date.now(); p.fn(); }
+
   function startPolling() {
     if (timers.length) return; // already running
+    const now = Date.now();
     for (const p of POLLERS) {
-      p.fn(); // refresh immediately so data isn't stale after a pause
-      timers.push(setInterval(p.fn, p.ms));
+      if (now - p.last >= p.ms) runPoller(p); // stale → refresh now; fresh → wait for the interval
+      timers.push(setInterval(() => runPoller(p), p.ms));
     }
   }
   function stopPolling() {

@@ -15,6 +15,7 @@ body {
 
 /* ---- Theme variables ---- */
 body[data-theme="dark"] {
+  color-scheme: dark;
   --page-bg: radial-gradient(1200px 700px at 80% -10%, #15365c 0%, rgba(21,54,92,0) 55%), radial-gradient(1000px 600px at 0% 5%, #1b2a52 0%, rgba(27,42,82,0) 50%), linear-gradient(170deg,#0a1626 0%,#0d1b31 45%,#101a36 100%);
   --ink: #eaf4ff;
   --ink-soft: #9db8d4;
@@ -26,6 +27,7 @@ body[data-theme="dark"] {
   --card-shadow: 0 14px 34px rgba(3,10,24,.16);
 }
 body[data-theme="light"] {
+  color-scheme: light;
   --page-bg: radial-gradient(1200px 700px at 80% -10%, #c8ecff 0%, rgba(200,236,255,0) 55%), radial-gradient(1000px 600px at 0% 5%, #dfe4ff 0%, rgba(223,228,255,0) 50%), linear-gradient(170deg,#eaf7ff 0%,#f4f9ff 45%,#eef0ff 100%);
   --ink: #0b3a5c;
   --ink-soft: #5a7a96;
@@ -116,7 +118,7 @@ body[data-theme="light"] #theme-orb:hover > span {
 .quote-box {
   display: block; width: 100%; max-width: 560px; margin: 0 auto;
   padding: 0 26px; font-family: inherit;
-  border: none; background: none; cursor: default;
+  border: none; background: none; cursor: pointer;
   max-height: 0; opacity: 0; overflow: hidden;
   transition: max-height .5s ease, opacity .45s ease, padding .5s ease, margin .5s ease;
 }
@@ -835,3 +837,113 @@ body.modal-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .konami-dragon, .konami-flake { display: none; }
 }
+
+/* ============ AURORA ATMOSPHERE (clear nights) ============ */
+/* Injected by script.js setAtmosphere('aurora') when Open-Meteo says the sky
+   is clear or mainly clear after dark (?atmosphere=aurora previews it). Two
+   blurred gradient ribbons drift slowly over a static starfield. All motion
+   is CSS; there is no per-frame JS. */
+.aurora { position: absolute; inset: 0; overflow: hidden; }
+.aurora-stars {
+  position: absolute; left: 0; right: 0; top: 0; height: 55%;
+  background-image:
+    radial-gradient(1.6px 1.6px at 8% 30%, rgba(255,255,255,.95), rgba(255,255,255,0) 70%),
+    radial-gradient(1.2px 1.2px at 18% 12%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
+    radial-gradient(1.8px 1.8px at 27% 44%, rgba(255,255,255,.9), rgba(255,255,255,0) 70%),
+    radial-gradient(1.1px 1.1px at 36% 20%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
+    radial-gradient(1.5px 1.5px at 47% 8%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%),
+    radial-gradient(1.2px 1.2px at 58% 36%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
+    radial-gradient(1.7px 1.7px at 67% 14%, rgba(255,255,255,.9), rgba(255,255,255,0) 70%),
+    radial-gradient(1.1px 1.1px at 76% 42%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
+    radial-gradient(1.5px 1.5px at 85% 22%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%),
+    radial-gradient(1.3px 1.3px at 93% 38%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
+    radial-gradient(1.1px 1.1px at 14% 58%, rgba(255,255,255,.65), rgba(255,255,255,0) 70%),
+    radial-gradient(1.4px 1.4px at 52% 55%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
+    radial-gradient(1.1px 1.1px at 71% 62%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%),
+    radial-gradient(1.3px 1.3px at 89% 58%, rgba(255,255,255,.65), rgba(255,255,255,0) 70%);
+}
+.aurora-ribbon {
+  position: absolute; left: -25%; width: 150%; border-radius: 50%;
+  filter: blur(38px); pointer-events: none; will-change: transform;
+}
+.aurora-ribbon--a {
+  top: 3vh; height: 36vh; opacity: .55; transform: rotate(-8deg);
+  background: linear-gradient(100deg,
+    rgba(62,220,160,0) 0%, rgba(62,220,160,.55) 28%, rgba(92,198,255,.45) 52%,
+    rgba(160,92,255,.35) 74%, rgba(62,220,160,0) 100%);
+  animation: auroraDriftA 26s ease-in-out infinite alternate;
+}
+.aurora-ribbon--b {
+  top: 13vh; height: 28vh; opacity: .38; transform: rotate(-4deg);
+  background: linear-gradient(95deg,
+    rgba(92,198,255,0) 0%, rgba(92,198,255,.4) 32%, rgba(62,220,160,.5) 62%,
+    rgba(92,198,255,0) 100%);
+  animation: auroraDriftB 32s ease-in-out infinite alternate;
+}
+@keyframes auroraDriftA {
+  from { transform: rotate(-11deg) translateX(-6%) skewX(-8deg); }
+  to   { transform: rotate(-4deg)  translateX(6%)  skewX(6deg); }
+}
+@keyframes auroraDriftB {
+  from { transform: rotate(-3deg)  translateX(5%)  skewX(5deg); }
+  to   { transform: rotate(-10deg) translateX(-5%) skewX(-6deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-ribbon { animation: none; }
+}
+
+/* ============ LETTERBOXD CARD ============ */
+.lb-card {
+  border-radius: 24px; padding: 22px; position: relative; overflow: hidden;
+  background: linear-gradient(150deg,#14181c 0%,#2c343c 60%,#14181c 100%);
+  box-shadow: 0 16px 38px rgba(10,16,24,.4); backdrop-filter: none; border: none;
+}
+.lb-bg-icon { position: absolute; right: -20px; bottom: -26px; opacity: .12; }
+.lb-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
+.lb-card .loading-row { color: #b8c4cf; }
+.lb-card .idle-banner { background: rgba(255,255,255,.12); color: #b8c4cf; }
+.lb-entry {
+  display: flex; align-items: center; gap: 14px; text-decoration: none;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
+  border-radius: 14px; padding: 12px 14px;
+  transition: transform .25s ease, background .25s ease;
+}
+.lb-entry:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
+.lb-entry:active { transform: translateY(0) scale(.98); }
+.lb-poster {
+  width: 52px; height: 74px; border-radius: 8px; object-fit: cover; flex: none;
+  background: rgba(255,128,0,.15); box-shadow: 0 4px 12px rgba(0,0,0,.35);
+}
+.lb-poster--empty {
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+}
+.lb-info { min-width: 0; flex: 1; }
+.lb-label {
+  font-size: 11px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: #00e054;
+}
+.lb-title {
+  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px;
+  color: #fff; line-height: 1.2; margin-top: 3px;
+}
+.lb-year { color: #b8c4cf; font-weight: 500; font-size: 14px; }
+.lb-stars { color: #ff8000; font-size: 15px; letter-spacing: .08em; margin-top: 3px; }
+.lb-watched { font-size: 12px; font-weight: 700; color: #b8c4cf; margin-top: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .lb-entry { transition: none; }
+  .lb-entry:hover, .lb-entry:active { transform: none; }
+}
+
+/* ---- MAL card: "also reading" section label ---- */
+.mal-section-label {
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: #c7d4f7; margin-top: 16px; padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.14);
+}
+
+/* ---- Music card: ListenBrainz recent tracks ---- */
+a.music-track-row { text-decoration: none; color: inherit; border-radius: 10px; }
+a.music-track-row:hover { background: rgba(255,255,255,.08); }
+
+/* ---- Weather modal: "compare with your sky" output ---- */
+.sky-compare { margin-top: 16px; }

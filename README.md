@@ -9,22 +9,29 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
 
 - Live stat strip: UK time, Aberystwyth weather, age, next-birthday countdown.
   Each card opens a detail pop-up: timezone/DST explainer, an interactive 3D UK
-  wind globe with a 5-day forecast strip, life stats with a "life in weeks"
-  canvas, and a birthday countdown with Google Calendar / .ics export.
+  wind globe with a 5-day forecast strip and an opt-in "compare with your sky"
+  geolocation view, life stats with a "life in weeks" canvas, and a birthday
+  countdown with Google Calendar / .ics export.
 - "Right now": live Discord presence (via [Lanyard](https://github.com/Phineas/lanyard),
   WebSocket-instant with a REST polling fallback), Steam status with recently
-  played games, and MyAnimeList currently-watching with episode progress (via
-  [Jikan](https://jikan.moe/), falling back to MAL's own list endpoint through
-  a CORS proxy when Jikan's user endpoints are down).
-- YouTube Music playlist, socials, and in-progress stories.
-- Installable (PWA-lite): web app manifest + home-screen icons, so the page
-  can be added to a phone home screen with its own icon and name. No service
-  worker — nothing is cached offline.
+  played games, MyAnimeList currently-watching with episode progress plus
+  currently-reading manga (via [Jikan](https://jikan.moe/), falling back to
+  MAL's own list endpoints through a CORS proxy when Jikan's user endpoints
+  are down), and the latest Letterboxd diary entry (via the profile's RSS
+  feed through the same proxy).
+- YouTube Music playlist with a ListenBrainz "recently played" strip (set
+  `LISTENBRAINZ_USER` in `script.js` to switch it on), socials, and
+  in-progress stories.
+- Installable (PWA-lite): web app manifest + home-screen icons + a tiny
+  service worker (`sw.js`) that makes the shell open offline. Network-first
+  for pages and live APIs, so nothing ever serves stale while online.
+- The hero quote reshuffles every 15 min and on click. First visit follows
+  the OS dark/light preference until the theme orb is used.
 - Somewhere on the page there's a hidden easter egg. Bring a keyboard.
 - Dark/light theme (saved to localStorage), seasonal modes (birthday,
-  Christmas, pride), a weather-reactive atmosphere (rain streaks or heavier
-  snow when the live forecast calls for it), and a liquid-glass refraction
-  effect on Chromium.
+  Christmas, pride), a weather-reactive atmosphere (rain streaks, heavier
+  snow when the live forecast calls for it, and an aurora on clear nights),
+  and a liquid-glass refraction effect on Chromium.
 
 ## Run it locally
 
@@ -47,12 +54,14 @@ Force any seasonal theme on any date with a query param (comma-combinable):
 ## Atmosphere previews
 
 The ambient particles follow the live Aberystwyth weather: rain streaks when
-it's raining, heavier snowfall when it's actually snowing, gentle arctic snow
-otherwise. Force a mode with a query param:
+it's raining, heavier snowfall when it's actually snowing, an aurora over a
+starfield on clear nights, gentle arctic snow otherwise. Force a mode with a
+query param:
 
 - `?atmosphere=rain`
 - `?atmosphere=snow`
 - `?atmosphere=snow-heavy`
+- `?atmosphere=aurora`
 - `?atmosphere=none` (or `off`) — no particles
 
 ## Tests
@@ -72,7 +81,8 @@ machine-independent.
 
 - CSS/JS are cache-busted by query string — bump `?v=` in `index.html` (and
   `tests.html` for `lib.js`) after editing `style.css`, `script.js`, or
-  `lib.js`.
+  `lib.js`. Keep the matching `?v=` entries in `sw.js`'s precache list in
+  sync, and bump `CACHE` there if `sw.js` itself changes.
 - Timezone rule: anything birthday/age-related runs in the Europe/London
   wall-clock frame via `KazuLib.ukWallParts`. Don't reintroduce visitor-local
   `Date` getters for those paths.

@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=9"></script>
+  <script src="lib.js?v=10"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -129,6 +129,21 @@
       eq('fog 45 → snow', L.atmosphereMode(45), 'snow');
       eq('garbage → snow', L.atmosphereMode('abc'), 'snow');
       eq('null → snow', L.atmosphereMode(null), 'snow');
+      // aurora: clear or mainly clear, after dark only
+      eq('clear 0 + night → aurora', L.atmosphereMode(0, false), 'aurora');
+      eq('mainly clear 1 + night → aurora', L.atmosphereMode(1, false), 'aurora');
+      eq('clear 0 + day → snow', L.atmosphereMode(0, true), 'snow');
+      eq('clear 0 + isDay omitted → snow (legacy)', L.atmosphereMode(0), 'snow');
+      eq('rain 61 + night → still rain', L.atmosphereMode(61, false), 'rain');
+      eq('snow 71 + night → still snow-heavy', L.atmosphereMode(71, false), 'snow-heavy');
+      eq('overcast 3 + night → snow', L.atmosphereMode(3, false), 'snow');
+
+      // ---- openMeteoUrl (weather fetch URL builder) ----
+      ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);
+      ok('openMeteoUrl includes daily block by default', L.openMeteoUrl(52.414, -4.081).indexOf('daily=weather_code') > -1);
+      ok('openMeteoUrl includes daily block when true', L.openMeteoUrl(52.414, -4.081, true).indexOf('forecast_days=5') > -1);
+      ok('openMeteoUrl omits daily block when false', L.openMeteoUrl(51.5, -0.12, false).indexOf('daily=') === -1);
+      ok('openMeteoUrl always fetches current block', L.openMeteoUrl(51.5, -0.12, false).indexOf('current=temperature_2m,weather_code,wind_speed_10m,is_day') > -1);
 
       // ---- Steam store links ----
       eq('steamAppId from CDN image URL', L.steamAppId('https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1091500/abc/capsule_184x69.jpg'), '1091500');
@@ -206,6 +221,123 @@
         var r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', watched: -3, total: 'x' }] }));
         return r && [r[0].watched, r[0].total, r[0].pct, r[0].img];
       })(), [0, null, 0, '']);
+
+      // ---- malMangaRow (Jikan mangalist) ----
+      var mangaEntry = {
+        reading_status: 'reading', chapters_read: 42,
+        manga: { mal_id: 2, url: 'https://myanimelist.net/manga/2/x', title: 'Berserk', title_english: 'Berserk', chapters: null, images: { jpg: { small_image_url: 'https://img/m.jpg', image_url: 'https://img/ml.jpg' } } },
+      };
+      var mangaRowFull = L.malMangaRow(mangaEntry);
+      eq('malMangaRow title', mangaRowFull.title, 'Berserk');
+      eq('malMangaRow ongoing: read 42, total null, pct 0', [mangaRowFull.read, mangaRowFull.total, mangaRowFull.pct], [42, null, 0]);
+      eq('malMangaRow prefers small image', mangaRowFull.img, 'https://img/m.jpg');
+      eq('malMangaRow pct when total known', L.malMangaRow({ chapters_read: 50, manga: { mal_id: 3, title: 'Finished', chapters: 100 } }).pct, 50);
+      eq('malMangaRow builds url from mal_id', L.malMangaRow({ chapters_read: 1, manga: { mal_id: 9, title: 'Solo' } }).url, 'https://myanimelist.net/manga/9');
+      eq('malMangaRow falls back to title', L.malMangaRow({ chapters_read: 1, manga: { title: 'Romaji Only', title_english: null } }).title, 'Romaji Only');
+      eq('malMangaRow no title → null', L.malMangaRow({ chapters_read: 1, manga: { mal_id: 1 } }), null);
+      eq('malMangaRow null → null', L.malMangaRow(null), null);
+
+      // ---- malMangaListRow (MAL mangalist load.json fallback) ----
+      var mangaListEntry = {
+        status: 1, manga_id: 656, manga_title: 'Vagabond',
+        num_read_chapters: 100, manga_num_chapters: 327, manga_image_path: 'https://cdn.myanimelist.net/r/192x272/images/manga/1/259070.jpg',
+      };
+      var mangaListFull = L.malMangaListRow(mangaListEntry);
+      eq('malMangaListRow title', mangaListFull.title, 'Vagabond');
+      eq('malMangaListRow progress 100/327 → 31%', [mangaListFull.read, mangaListFull.total, mangaListFull.pct], [100, 327, 31]);
+      eq('malMangaListRow builds url from manga_id', mangaListFull.url, 'https://myanimelist.net/manga/656');
+      eq('malMangaListRow keeps cover path', mangaListFull.img, 'https://cdn.myanimelist.net/r/192x272/images/manga/1/259070.jpg');
+      var mangaListNoTotal = L.malMangaListRow({ manga_id: 5, manga_title: 'Ongoing', manga_num_chapters: 0 });
+      ok('malMangaListRow unknown total: pct 0, total null', mangaListNoTotal.total === null && mangaListNoTotal.pct === 0, JSON.stringify(mangaListNoTotal));
+      eq('malMangaListRow no title → null', L.malMangaListRow({ manga_id: 5 }), null);
+      eq('malMangaListRow null → null', L.malMangaListRow(null), null);
+      eq('malMangaListRow coerces bad read/img', (function () {
+        var r = L.malMangaListRow({ manga_id: 2, manga_title: 'M', num_read_chapters: -1, manga_image_path: 7 });
+        return [r.read, r.img];
+      })(), [0, '']);
+
+      // ---- malMangaCacheParse ----
+      var mangaCacheRow = { url: 'https://myanimelist.net/manga/2/x', title: 'Berserk', read: 42, total: null, pct: 0, img: 'https://img/m.jpg' };
+      eq('malMangaCacheParse round-trips a written payload', L.malMangaCacheParse(JSON.stringify({ at: 1752700000000, rows: [mangaCacheRow] })), [mangaCacheRow]);
+      ok('malMangaCacheParse recomputes pct', (function () {
+        var r = L.malMangaCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', read: 1, total: 4, pct: 99, img: '' }] }));
+        return r && r[0].pct === 25;
+      })());
+      eq('malMangaCacheParse valid empty list → []', L.malMangaCacheParse(JSON.stringify({ at: 1, rows: [] })), []);
+      eq('malMangaCacheParse bad JSON → null', L.malMangaCacheParse('{nope'), null);
+      eq('malMangaCacheParse null → null', L.malMangaCacheParse(null), null);
+      eq('malMangaCacheParse missing rows → null', L.malMangaCacheParse(JSON.stringify({ at: 1 })), null);
+      eq('malMangaCacheParse row without url → null', L.malMangaCacheParse(JSON.stringify({ rows: [{ title: 't', url: '' }] })), null);
+
+      // ---- ratingStars / letterboxdWatchedLabel ----
+      eq('ratingStars 3.5 → ★★★½', L.ratingStars(3.5), '★★★½');
+      eq('ratingStars 5 → ★★★★★', L.ratingStars(5), '★★★★★');
+      eq('ratingStars 4 → ★★★★', L.ratingStars(4), '★★★★');
+      eq('ratingStars 0.5 → ½', L.ratingStars(0.5), '½');
+      eq('ratingStars 0 → empty', L.ratingStars(0), '');
+      eq('ratingStars NaN → empty', L.ratingStars('x'), '');
+      eq('watched label ISO → d Mmm yyyy', L.letterboxdWatchedLabel('2026-07-13'), '13 Jul 2026');
+      eq('watched label non-ISO passthrough', L.letterboxdWatchedLabel('someday'), 'someday');
+      eq('watched label empty', L.letterboxdWatchedLabel(''), '');
+
+      // ---- parseLetterboxdRss ----
+      var LB_RSS = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<rss version="2.0" xmlns:letterboxd="https://letterboxd.com">\n<channel>\n' +
+        '<title>Letterboxd - KazuHani</title>\n' +
+        '<item>\n' +
+        '<title>Superman, 2025 - ★★★½</title>\n' +
+        '<link>https://letterboxd.com/kazuhani/film/superman-2025/</link>\n' +
+        '<letterboxd:watchedDate>2026-07-13</letterboxd:watchedDate>\n' +
+        '<letterboxd:rewatch>No</letterboxd:rewatch>\n' +
+        '<letterboxd:filmTitle>Superman</letterboxd:filmTitle>\n' +
+        '<letterboxd:filmYear>2025</letterboxd:filmYear>\n' +
+        '<letterboxd:memberRating>3.5</letterboxd:memberRating>\n' +
+        '<description><![CDATA[ <p><img src="https://a.ltrbxd.com/resized/film-poster/superman-2025.jpg"/></p> <p>Watched on Monday July 13, 2026.</p> ]]></description>\n' +
+        '</item>\n' +
+        '<item>\n' +
+        '<title>Older Film, 1999</title>\n' +
+        '<link>https://letterboxd.com/kazuhani/film/older-film/</link>\n' +
+        '<letterboxd:watchedDate>2026-07-01</letterboxd:watchedDate>\n' +
+        '</item>\n' +
+        '</channel>\n</rss>';
+      var lbEntry = L.parseLetterboxdRss(LB_RSS);
+      eq('parseLetterboxdRss picks the FIRST item', lbEntry.title, 'Superman');
+      eq('parseLetterboxdRss year', lbEntry.year, '2025');
+      eq('parseLetterboxdRss rating + stars', [lbEntry.rating, lbEntry.stars], [3.5, '★★★½']);
+      eq('parseLetterboxdRss link', lbEntry.link, 'https://letterboxd.com/kazuhani/film/superman-2025/');
+      eq('parseLetterboxdRss poster from description img', lbEntry.poster, 'https://a.ltrbxd.com/resized/film-poster/superman-2025.jpg');
+      eq('parseLetterboxdRss watched label', lbEntry.watched, '13 Jul 2026');
+      eq('parseLetterboxdRss rewatch No → false', lbEntry.rewatch, false);
+      var lbOld = L.parseLetterboxdRss(LB_RSS.replace(/<item>[\s\S]*?<\/item>/, '')); // strip first item
+      eq('parseLetterboxdRss falls back to item title without extension tags', lbOld.title, 'Older Film');
+      eq('parseLetterboxdRss title-fallback year', lbOld.year, '1999');
+      eq('parseLetterboxdRss no rating → null rating, empty stars', [lbOld.rating, lbOld.stars], [null, '']);
+      var lbRewatch = L.parseLetterboxdRss(LB_RSS.replace('<letterboxd:rewatch>No</letterboxd:rewatch>', '<letterboxd:rewatch>Yes</letterboxd:rewatch>'));
+      eq('parseLetterboxdRss rewatch Yes → true', lbRewatch.rewatch, true);
+      eq('parseLetterboxdRss no items → null', L.parseLetterboxdRss('<rss><channel></channel></rss>'), null);
+      eq('parseLetterboxdRss garbage → null', L.parseLetterboxdRss('not xml'), null);
+      eq('parseLetterboxdRss null → null', L.parseLetterboxdRss(null), null);
+
+      // ---- letterboxdCacheParse ----
+      eq('letterboxdCacheParse round-trips a written entry', L.letterboxdCacheParse(JSON.stringify({ at: 1, entry: lbEntry })), lbEntry);
+      eq('letterboxdCacheParse bad JSON → null', L.letterboxdCacheParse('{nope'), null);
+      eq('letterboxdCacheParse null → null', L.letterboxdCacheParse(null), null);
+      eq('letterboxdCacheParse entry without title → null', L.letterboxdCacheParse(JSON.stringify({ entry: { link: 'u' } })), null);
+      ok('letterboxdCacheParse recomputes stars from rating', (function () {
+        var r = L.letterboxdCacheParse(JSON.stringify({ entry: { title: 't', link: 'u', rating: 4.5, stars: 'wrong' } }));
+        return r && r.stars === '★★★★½';
+      })());
+
+      // ---- listenbrainzRow ----
+      var lbListen = {
+        playing_now: true,
+        track_metadata: { track_name: 'Sisu', artist_name: 'Dragon Band', additional_info: { spotify_id: 'https://open.spotify.com/track/abc123' } },
+      };
+      var lbRow = L.listenbrainzRow(lbListen);
+      eq('listenbrainzRow shapes a full listen', lbRow, { name: 'Sisu', artist: 'Dragon Band', playingNow: true, url: 'https://open.spotify.com/track/abc123' });
+      eq('listenbrainzRow missing artist/spotify → blanks', L.listenbrainzRow({ track_metadata: { track_name: 'X' } }), { name: 'X', artist: '', playingNow: false, url: '' });
+      eq('listenbrainzRow no track name → null', L.listenbrainzRow({ track_metadata: { artist_name: 'A' } }), null);
+      eq('listenbrainzRow null → null', L.listenbrainzRow(null), null);
 
       // ---- forecastRows (weather modal 5-day strip) ----
       var dailyBlock = {

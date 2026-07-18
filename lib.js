@@ -242,16 +242,36 @@
       lon.toFixed(2) + ',' + lat.toFixed(2) + ',' + zoom;
   }
 
+  // ---- Open-Meteo request URL ----------------------------------------------
+  // One builder for both weather fetches (card + "your sky" compare), so the
+  // param list lives in exactly one place. includeDaily=false fetches the
+  // current block only (used by the visitor-side compare call, which needs no
+  // 5-day strip).
+  function openMeteoUrl(lat, lon, includeDaily) {
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+      '&current=temperature_2m,weather_code,wind_speed_10m,is_day';
+    if (includeDaily !== false) {
+      url += '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+        '&forecast_days=5&timezone=Europe%2FLondon';
+    }
+    return url;
+  }
+
   // ---- Weather-reactive atmosphere ----------------------------------------
   // Maps an Open-Meteo weather code to the ambient particle mode:
   //   'rain'       drizzle / rain / showers / thunderstorm
   //   'snow-heavy' actually snowing right now (heavier than the default)
+  //   'aurora'     clear or mainly clear AFTER DARK (northern lights + stars)
   //   'snow'       the arctic default for everything else
-  function atmosphereMode(weatherCode) {
+  // isDay comes from Open-Meteo's is_day flag (true/false); when omitted the
+  // day/night split is skipped and clear skies stay on plain snow, matching
+  // the pre-aurora behaviour.
+  function atmosphereMode(weatherCode, isDay) {
     var c = +weatherCode;
     if (isNaN(c)) return 'snow';
     if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
     if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow-heavy';
+    if ((c === 0 || c === 1) && isDay === false) return 'aurora';
     return 'snow';
   }
 
@@ -415,6 +435,183 @@
     return rows;
   }
 
+  // ---- MyAnimeList manga (Jikan) -------------------------------------------
+  // Same shape as malRow but for the mangalist: chapters instead of episodes.
+  // `read` mirrors malRow's `watched` so the card renderer can treat both
+  // kinds of rows alike.
+  function malMangaRow(entry) {
+    var m = entry && entry.manga;
+    if (!m || !(m.title_english || m.title)) return null;
+    var read = (typeof entry.chapters_read === 'number' && entry.chapters_read >= 0) ? entry.chapters_read : 0;
+    var total = (typeof m.chapters === 'number' && m.chapters > 0) ? m.chapters : null;
+    var img = (m.images && m.images.jpg && (m.images.jpg.small_image_url || m.images.jpg.image_url)) || '';
+    return {
+      url: m.url || (m.mal_id ? 'https://myanimelist.net/manga/' + m.mal_id : 'https://myanimelist.net'),
+      title: m.title_english || m.title,
+      read: read,
+      total: total, // null = chapter count unknown (usually still publishing)
+      pct: total ? Math.min(100, Math.round((read / total) * 100)) : 0,
+      img: img,
+    };
+  }
+
+  // MAL's own GET /mangalist/{user}/load.json fallback (see malListRow for why
+  // this endpoint exists). Manga entries carry no *_title_eng field, so the
+  // romaji title is the only one available.
+  function malMangaListRow(entry) {
+    if (!entry) return null;
+    var title = entry.manga_title;
+    if (!title) return null;
+    var id = (typeof entry.manga_id === 'number' && entry.manga_id > 0) ? entry.manga_id : null;
+    var read = (typeof entry.num_read_chapters === 'number' && entry.num_read_chapters >= 0) ? entry.num_read_chapters : 0;
+    var total = (typeof entry.manga_num_chapters === 'number' && entry.manga_num_chapters > 0) ? entry.manga_num_chapters : null;
+    return {
+      url: id ? 'https://myanimelist.net/manga/' + id : 'https://myanimelist.net',
+      title: title,
+      read: read,
+      total: total,
+      pct: total ? Math.min(100, Math.round((read / total) * 100)) : 0,
+      img: typeof entry.manga_image_path === 'string' ? entry.manga_image_path : '',
+    };
+  }
+
+  // localStorage fallback copy of the manga rows (separate key from the anime
+  // cache so a corrupt hand edit in one can't take out the other). Same
+  // contract as malCacheParse: sanitized rows array, or null for anything
+  // malformed.
+  function malMangaCacheParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    if (!payload || !Array.isArray(payload.rows)) return null;
+    var rows = [];
+    for (var i = 0; i < payload.rows.length; i++) {
+      var r = payload.rows[i];
+      if (!r || typeof r.title !== 'string' || !r.title) return null;
+      if (typeof r.url !== 'string' || !r.url) return null;
+      var total = (typeof r.total === 'number' && r.total > 0) ? r.total : null;
+      var read = (typeof r.read === 'number' && r.read >= 0) ? r.read : 0;
+      rows.push({
+        url: r.url,
+        title: r.title,
+        read: read,
+        total: total,
+        pct: total ? Math.min(100, Math.round((read / total) * 100)) : 0,
+        img: typeof r.img === 'string' ? r.img : '',
+      });
+    }
+    return rows;
+  }
+
+  // ---- Letterboxd (diary RSS) ----------------------------------------------
+  // Letterboxd publishes a diary RSS feed at /{user}/rss/ with one <item> per
+  // logged film, carrying letterboxd:* extension tags with the structured
+  // bits (film title, year, member rating 0.5-5, watched date, rewatch flag).
+  // The feed is parsed with regexes, not DOMParser: lib.js stays DOM-free so
+  // these tests run headless in Node.
+
+  // Numeric member rating → star glyphs: 3.5 → '★★★½'. 0/null/NaN → ''.
+  function ratingStars(n) {
+    n = +n;
+    if (!(n > 0)) return '';
+    var full = Math.floor(n);
+    var s = '';
+    for (var i = 0; i < full; i++) s += '★';
+    if (n - full >= 0.5) s += '½';
+    return s;
+  }
+
+  // '2026-07-13' → '13 Jul 2026'. String-split only (Date-parsing an ISO day
+  // is a timezone trap). Anything not ISO-shaped comes back unchanged.
+  var MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function letterboxdWatchedLabel(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) return String(iso || '');
+    return String(+m[3]) + ' ' + MONTH_SHORT[+m[2] - 1] + ' ' + m[1];
+  }
+
+  // First-tag-content helper tolerating both plain text and CDATA wrappers.
+  function rssPick(item, tag) {
+    var m = new RegExp('<' + tag + '[^>]*>([\\s\\S]*?)</' + tag + '>').exec(item);
+    if (!m) return '';
+    return m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim();
+  }
+
+  // Extracts the most recent diary entry (first <item>) from a Letterboxd RSS
+  // document. Returns null when the feed has no usable entry. Poster comes
+  // from the first <img> inside the description CDATA (Letterboxd always puts
+  // the film poster there); missing poster → ''.
+  function parseLetterboxdRss(xml) {
+    if (typeof xml !== 'string' || xml.indexOf('<item>') === -1) return null;
+    var item = /<item>([\s\S]*?)<\/item>/.exec(xml)[1];
+    var title = rssPick(item, 'letterboxd:filmTitle');
+    var year = rssPick(item, 'letterboxd:filmYear');
+    var rating = parseFloat(rssPick(item, 'letterboxd:memberRating'));
+    // Older entries predate the extension tags: fall back to the item <title>,
+    // shaped like "Some Film, 2024 - ★★★½" (rating suffix optional).
+    if (!title) {
+      var raw = rssPick(item, 'title');
+      var tm = /^(.*), (\d{4})(?: - [★½]+)?$/.exec(raw);
+      if (!tm) return null;
+      title = tm[1];
+      if (!year) year = tm[2];
+    }
+    if (!title) return null;
+    var link = rssPick(item, 'link');
+    if (!link) return null;
+    var desc = rssPick(item, 'description');
+    var imgM = /<img[^>]+src="([^"]+)"/.exec(desc);
+    var watchedRaw = rssPick(item, 'letterboxd:watchedDate');
+    return {
+      title: title,
+      year: /^\d{4}$/.test(year) ? year : null,
+      rating: (rating > 0 && rating <= 5) ? rating : null,
+      stars: ratingStars(rating),
+      link: link,
+      poster: imgM ? imgM[1] : '',
+      watched: watchedRaw ? letterboxdWatchedLabel(watchedRaw) : '',
+      rewatch: /^yes$/i.test(rssPick(item, 'letterboxd:rewatch')),
+    };
+  }
+
+  // localStorage fallback copy of the Letterboxd row, same contract as
+  // malCacheParse: sanitized entry or null.
+  function letterboxdCacheParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    var e2 = payload && payload.entry;
+    if (!e2 || typeof e2.title !== 'string' || !e2.title) return null;
+    if (typeof e2.link !== 'string' || !e2.link) return null;
+    var rating = (typeof e2.rating === 'number' && e2.rating > 0 && e2.rating <= 5) ? e2.rating : null;
+    return {
+      title: e2.title,
+      year: (typeof e2.year === 'string' && /^\d{4}$/.test(e2.year)) ? e2.year : null,
+      rating: rating,
+      stars: ratingStars(rating),
+      link: e2.link,
+      poster: typeof e2.poster === 'string' ? e2.poster : '',
+      watched: typeof e2.watched === 'string' ? e2.watched : '',
+      rewatch: e2.rewatch === true,
+    };
+  }
+
+  // ---- ListenBrainz (music card recent tracks) ------------------------------
+  // Shapes one GET /1/user/{user}/listens entry into a flat row. Tolerant of
+  // missing metadata; returns null when there's no track name. `url` prefers
+  // the Spotify track link ListenBrainz attaches when it can match one.
+  function listenbrainzRow(listen) {
+    var tm = listen && listen.track_metadata;
+    if (!tm || typeof tm.track_name !== 'string' || !tm.track_name) return null;
+    var info = tm.additional_info || {};
+    return {
+      name: tm.track_name,
+      artist: typeof tm.artist_name === 'string' ? tm.artist_name : '',
+      playingNow: listen.playing_now === true,
+      url: typeof info.spotify_id === 'string' ? info.spotify_id : '',
+    };
+  }
+
   // ---- Konami code easter egg ----------------------------------------------
   // The classic ↑↑↓↓←→←→BA. script.js keeps a rolling window of recent keys
   // and asks this whether the window ENDS with the code, so junk typed before
@@ -447,6 +644,7 @@
     buildBirthdayICS: buildBirthdayICS,
     googleCalendarUrl: googleCalendarUrl,
     nullschoolUrl: nullschoolUrl,
+    openMeteoUrl: openMeteoUrl,
     atmosphereMode: atmosphereMode,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
@@ -455,6 +653,14 @@
     malRow: malRow,
     malListRow: malListRow,
     malCacheParse: malCacheParse,
+    malMangaRow: malMangaRow,
+    malMangaListRow: malMangaListRow,
+    malMangaCacheParse: malMangaCacheParse,
+    ratingStars: ratingStars,
+    letterboxdWatchedLabel: letterboxdWatchedLabel,
+    parseLetterboxdRss: parseLetterboxdRss,
+    letterboxdCacheParse: letterboxdCacheParse,
+    listenbrainzRow: listenbrainzRow,
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
   };
