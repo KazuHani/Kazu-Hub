@@ -69,8 +69,47 @@
     } catch (e) { return null; }
   })();
 
+  // ---------- Dev settings (secret code: kazudev) ----------
+  // Typing the code opens a floating panel with per-season Auto/On/Off
+  // overrides, for previewing the event themes (and iterating on their CSS)
+  // on any date. Overrides persist in localStorage across reloads. Matching
+  // and override maths live in lib.js (gate-tested); the local copies keep
+  // the panel working if lib.js fails to load.
+  const devCodeMatch = (KazuLib && KazuLib.devCodeMatch) || function (recent) {
+    const CODE = 'kazudev';
+    if (!recent || recent.length < CODE.length) return false;
+    const off = recent.length - CODE.length;
+    for (let i = 0; i < CODE.length; i++) {
+      const k = recent[off + i];
+      if (typeof k !== 'string' || k.toLowerCase() !== CODE.charAt(i)) return false;
+    }
+    return true;
+  };
+  const seasonDevApply = (KazuLib && KazuLib.seasonDevApply) || function (state, overrides) {
+    const s = state || {};
+    const out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride };
+    overrides = overrides || {};
+    ['birthday', 'christmas', 'pride'].forEach((k) => {
+      if (overrides[k] === 'on') out[k] = true;
+      else if (overrides[k] === 'off') out[k] = false;
+    });
+    return out;
+  };
+  const seasonDevParse = (KazuLib && KazuLib.seasonDevParse) || function () { return null; };
+
+  const DEV_KEY = 'kazu-dev-seasons';
+  let devSeasons = {}; // { birthday|christmas|pride: 'on'|'off' } — 'auto' is the absence of a key
+  try { devSeasons = seasonDevParse(localStorage.getItem(DEV_KEY)) || {}; } catch (e) {}
+
+  function saveDevSeasons() {
+    try {
+      if (Object.keys(devSeasons).length) localStorage.setItem(DEV_KEY, JSON.stringify(devSeasons));
+      else localStorage.removeItem(DEV_KEY); // all-auto: leave no trace
+    } catch (e) {}
+  }
+
   function seasonState(now) {
-    if (SEASON_OVERRIDE) return SEASON_OVERRIDE;
+    if (SEASON_OVERRIDE) return SEASON_OVERRIDE; // the ?season= param beats even the dev panel
     const m = now.getMonth(), d = now.getDate(); // visitor-local: Christmas & pride are ambient
     // The birthday season follows the UK wall clock: it's Kazu's day, in the UK.
     let bM = m, bD = d;
@@ -78,11 +117,11 @@
       const w = KazuLib.ukWallParts(now);
       bM = w.month; bD = w.day;
     }
-    return {
+    return seasonDevApply({
       birthday: (bM === BIRTH_MONTH && bD === BIRTH_DAY), // Nov 9, UK time
       christmas: (m === 11 && d === 25),                  // Dec 25
       pride: (m === 5),                                   // all of June
-    };
+    }, devSeasons);
   }
 
   let bdayCelebrated = false; // latch so confetti fires once per OFF->ON birthday transition
@@ -1498,9 +1537,11 @@
     body.classList.toggle('season-pride', s.pride);
     // Christmas owns the palette (and hides the theme orb), so it owns the
     // browser-chrome colour too; otherwise follow the active theme.
-    setThemeColor(s.christmas ? '#07251a' : (isDark ? '#0d1b31' : '#eaf6ff'));
+    setThemeColor(s.christmas ? '#071f16' : (isDark ? '#0d1b31' : '#eaf6ff'));
     if (s.birthday && !bdayCelebrated) { bdayCelebrated = true; fireConfetti(); }
     if (!s.birthday) bdayCelebrated = false; // re-arm if it turns off (e.g. preview param removed)
+    syncDevPanel(s); // keep the dev panel's live badges / pressed buttons current
+    setBalloons(s.birthday); // balloon canvas runs only while the birthday season is live
   }
 
   function fireConfetti() {
@@ -1537,6 +1578,128 @@
     }
     requestAnimationFrame(frame);
   }
+
+  // ---------- Birthday balloons (canvas physics) ----------
+  // Six balloons drift up behind the content while the birthday season is
+  // live. The physics core is KazuLib.balloonDriftStep / ropeStep
+  // (gate-tested): buoyant drift with deterministic wind gusts for the body,
+  // a verlet rope for the string, so the trailing wiggle is real physics,
+  // not a keyframe. No local fallback: if lib.js failed to load the balloons
+  // sit this one out, same as the manga rows.
+  const BALLOON_COLORS = ['#ff5ea8', '#a05cff', '#5cc6ff', '#ffd34d', '#3ddc97', '#ff7a59']; // confetti palette
+  const BALLOON_COUNT = 8, BALLOON_SEGS = 7, BALLOON_SEGLEN = 9;
+  let balloonCanvas = null, balloonCtx = null, balloonRaf = 0, balloonLast = 0, balloonT = 0;
+  let balloons = [];
+
+  function knotPos(b) {
+    return { x: b.x - Math.sin(b.tilt) * b.ry, y: b.y + Math.cos(b.tilt) * b.ry };
+  }
+
+  function initRope(b) {
+    const knot = knotPos(b);
+    b.rope = [];
+    for (let i = 0; i < BALLOON_SEGS; i++) {
+      b.rope.push({ x: knot.x, y: knot.y + i * BALLOON_SEGLEN, px: knot.x, py: knot.y + i * BALLOON_SEGLEN });
+    }
+  }
+
+  function spawnBalloon(w, h, midAir) {
+    const r = 24 + Math.random() * 12;
+    const b = {
+      x: w * (0.08 + Math.random() * 0.84),
+      // Spawn off-screen below the viewport and float in, rather than popping
+      // in mid-air. Re-entry after leaving the top also comes from below.
+      y: midAir ? h + 80 + Math.random() * 420 : h + 120 + Math.random() * 160,
+      vx: 0, vy: 0, tilt: 0,
+      r, rx: r * 0.82, ry: r,
+      buoy: 15 + Math.random() * 8,       // terminal rise ≈ buoy/drag: 80-130 px/s
+      drag: 0.18,
+      windAmp: 8 + Math.random() * 8,      // stronger gusts match the quicker pace
+      phase: Math.random() * 7,
+      color: BALLOON_COLORS[(Math.random() * BALLOON_COLORS.length) | 0],
+      rope: [],
+    };
+    initRope(b);
+    return b;
+  }
+
+  function sizeBalloonCanvas() {
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    balloonCanvas.width = innerWidth * DPR;
+    balloonCanvas.height = innerHeight * DPR;
+    balloonCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  function balloonFrame(now) {
+    balloonRaf = requestAnimationFrame(balloonFrame);
+    const dt = Math.min((now - balloonLast) / 1000, 0.05); // tab-switch gaps can't teleport
+    balloonLast = now;
+    balloonT += dt;
+    const w = innerWidth, h = innerHeight;
+    for (let i = 0; i < balloons.length; i++) {
+      let b = balloons[i];
+      KazuLib.balloonDriftStep(b, { dt, t: balloonT, buoy: b.buoy, drag: b.drag, windAmp: b.windAmp, phase: b.phase });
+      // Soft wall: gusts may never carry a balloon off-screen sideways.
+      const M = 50;
+      if (b.x < M) b.vx += (M - b.x) * 0.9 * dt;
+      else if (b.x > w - M) b.vx -= (b.x - (w - M)) * 0.9 * dt;
+      b.tilt = Math.max(-0.3, Math.min(0.3, b.vx * 0.0022)); // lean into the drift
+      if (b.y < -(b.ry + 140)) { balloons[i] = b = spawnBalloon(w, h, false); continue; }
+      KazuLib.ropeStep(b.rope, knotPos(b), { dt, gravity: 1400, segLen: BALLOON_SEGLEN });
+    }
+    const c = balloonCtx;
+    c.clearRect(0, 0, w, h);
+    for (const b of balloons) {
+      const pts = b.rope;
+      // String first (behind the body): a smooth curve through the rope.
+      c.strokeStyle = 'rgba(255,255,255,.55)';
+      c.lineWidth = 1.4;
+      c.beginPath();
+      c.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        c.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2);
+      }
+      c.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+      c.stroke();
+      c.save();
+      c.translate(b.x, b.y);
+      c.rotate(b.tilt);
+      c.fillStyle = b.color;
+      c.beginPath(); c.ellipse(0, 0, b.rx, b.ry, 0, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.moveTo(-5, b.ry - 2); c.lineTo(5, b.ry - 2); c.lineTo(0, b.ry + 7); c.closePath(); c.fill(); // knot
+      c.fillStyle = 'rgba(255,255,255,.35)'; // shine
+      c.beginPath(); c.ellipse(-b.rx * 0.32, -b.ry * 0.38, b.rx * 0.28, b.ry * 0.34, -0.5, 0, Math.PI * 2); c.fill();
+      c.restore();
+    }
+  }
+
+  function startBalloons() {
+    if (balloonCanvas) return; // applySeasons re-calls every second: stay idempotent
+    if (!KazuLib || !KazuLib.balloonDriftStep || !KazuLib.ropeStep) return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    balloonCanvas = document.createElement('canvas');
+    balloonCanvas.id = 'balloon-canvas';
+    balloonCanvas.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(balloonCanvas);
+    balloonCtx = balloonCanvas.getContext('2d');
+    sizeBalloonCanvas();
+    balloons = [];
+    for (let i = 0; i < BALLOON_COUNT; i++) balloons.push(spawnBalloon(innerWidth, innerHeight, true));
+    balloonT = 0;
+    balloonLast = performance.now();
+    window.addEventListener('resize', sizeBalloonCanvas, { passive: true });
+    balloonRaf = requestAnimationFrame(balloonFrame);
+  }
+
+  function stopBalloons() {
+    if (!balloonCanvas) return;
+    cancelAnimationFrame(balloonRaf); balloonRaf = 0;
+    window.removeEventListener('resize', sizeBalloonCanvas);
+    balloonCanvas.remove();
+    balloonCanvas = null; balloonCtx = null; balloons = [];
+  }
+
+  function setBalloons(on) { if (on) startBalloons(); else stopBalloons(); }
 
   // ---------- Page-load reveal cascade ----------
   // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css)
@@ -1604,7 +1767,105 @@
     konamiRecent.push(e.key);
     if (konamiRecent.length > 10) konamiRecent.shift();
     if (konamiMatch(konamiRecent)) { konamiRecent.length = 0; dragonFly(); }
+    // Dev panel code: only single-character keys count, so held modifiers
+    // (Shift for capitals, etc.) never pollute the rolling window.
+    if (e.key && e.key.length === 1) {
+      devRecent.push(e.key);
+      if (devRecent.length > 7) devRecent.shift(); // 'kazudev'.length
+      if (devCodeMatch(devRecent)) { devRecent.length = 0; toggleDevPanel(); }
+    }
+    if (e.key === 'Escape') closeDevPanel();
   });
+
+  // ---------- Dev settings panel (secret code: kazudev) ----------
+  // A floating panel for previewing the seasonal event themes on any date:
+  // each season gets Auto (follow the clock) / On / Off. Built once on first
+  // use; styles live in style.css ("DEV SETTINGS PANEL").
+  const DEV_SEASON_ROWS = [
+    ['birthday', '🎂 Birthday'],
+    ['christmas', '🎄 Christmas'],
+    ['pride', '🏳️‍🌈 Pride'],
+  ];
+  const devRecent = [];
+  let devPanel = null;
+
+  function buildDevPanel() {
+    const el = document.createElement('div');
+    el.id = 'devPanel';
+    el.className = 'dev-panel';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Developer settings');
+    el.hidden = true;
+    let html = '<div class="dev-panel-head">' +
+        '<span class="dev-panel-title">🛠 Dev settings</span>' +
+        '<button type="button" class="dev-panel-close" aria-label="Close developer settings">✕</button>' +
+      '</div>' +
+      '<div class="dev-panel-sub">Season triggers — preview the event themes on any date:</div>';
+    DEV_SEASON_ROWS.forEach((row) => {
+      html += '<div class="dev-row" data-season="' + row[0] + '">' +
+          '<span class="dev-row-label">' + row[1] + ' <span class="dev-live" hidden>live</span></span>' +
+          '<span class="dev-seg" role="group" aria-label="' + row[1] + ' season override">' +
+            '<button type="button" data-mode="auto">Auto</button>' +
+            '<button type="button" data-mode="on">On</button>' +
+            '<button type="button" data-mode="off">Off</button>' +
+          '</span>' +
+        '</div>';
+    });
+    html += '<button type="button" class="dev-reset">Reset all to auto</button>' +
+      '<div class="dev-hint">type <kbd>kazudev</kbd> to toggle · Esc to close</div>';
+    el.innerHTML = html;
+
+    el.querySelector('.dev-panel-close').addEventListener('click', closeDevPanel);
+    el.querySelector('.dev-reset').addEventListener('click', () => {
+      devSeasons = {};
+      saveDevSeasons();
+      applySeasons();
+      showToast('Season overrides cleared — back to the real clock');
+    });
+    el.querySelectorAll('.dev-seg button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const season = btn.closest('.dev-row').dataset.season;
+        if (btn.dataset.mode === 'auto') delete devSeasons[season];
+        else devSeasons[season] = btn.dataset.mode;
+        saveDevSeasons();
+        applySeasons(); // repaint now; the per-second tick keeps it honest
+      });
+    });
+    document.body.appendChild(el);
+    return el;
+  }
+
+  // Reflects the effective season state into the open panel: which rows are
+  // live right now, and which override (if any) is armed on each. Called by
+  // applySeasons (every second) and on open.
+  function syncDevPanel(s) {
+    if (!devPanel || devPanel.hidden) return;
+    DEV_SEASON_ROWS.forEach((row) => {
+      const key = row[0];
+      const rowEl = devPanel.querySelector('.dev-row[data-season="' + key + '"]');
+      if (!rowEl) return;
+      const live = rowEl.querySelector('.dev-live');
+      if (live) live.hidden = !s[key];
+      const mode = devSeasons[key] || 'auto';
+      rowEl.querySelectorAll('.dev-seg button').forEach((b) => {
+        const on = b.dataset.mode === mode;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  }
+
+  function toggleDevPanel() {
+    if (!devPanel) devPanel = buildDevPanel();
+    if (!devPanel.hidden) { closeDevPanel(); return; } // re-typing the code closes it
+    devPanel.hidden = false;
+    syncDevPanel(seasonState(new Date()));
+    showToast('🛠 Dev settings unlocked');
+  }
+
+  function closeDevPanel() {
+    if (devPanel) devPanel.hidden = true;
+  }
 
   // ---------- Boot ----------
   // "Add me" pill + the @username line both copy my Discord username to the clipboard
@@ -1807,12 +2068,12 @@
     card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
   }
 
-  // Matches the translucent selector list in style.css, minus .social-card and
-  // .music-card: the refracted rim read as a drawn-on blue outline on the
-  // social tiles, and the music card's own cover art would hide the refraction
-  // entirely — those keep the plain frosted look (CSS blur + glint) instead.
+  // Matches the translucent selector list in style.css, minus .social-card:
+  // the refracted rim read as a drawn-on blue outline on the social tiles, so
+  // those keep the plain frosted look (CSS blur + glint) instead. The music
+  // card now joins the set so its rim refracts the page behind it too.
   const cards = Array.from(
-    document.querySelectorAll('.stat-card:not(.stat-card--bday), .toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card'),
+    document.querySelectorAll('.stat-card:not(.stat-card--bday), .toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card, .music-card'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
 
   function refreshAll() { cards.forEach(refresh); }

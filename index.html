@@ -39,7 +39,7 @@
 <link rel="dns-prefetch" href="//cdn.myanimelist.net">
 <link rel="dns-prefetch" href="//i.scdn.co">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=22">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -79,14 +79,66 @@
   <!-- christmas tree: revealed only on body.season-christmas, desktop/tablet only -->
   <div class="xmas-scene" aria-hidden="true">
     <svg class="xmas-tree" viewBox="0 0 200 260" focusable="false">
-      <path d="M100 6 l7 18 19 2 -14 13 4 19 -16 -10 -16 10 4 -19 -14 -13 19 -2 Z" fill="#ffd54a"/>
-      <path d="M100 26 L150 110 L50 110 Z"  fill="#0f7a3d"/>
-      <path d="M100 70 L160 165 L40 165 Z"  fill="#0c6c35"/>
-      <path d="M100 120 L172 220 L28 220 Z" fill="#0a5e2e"/>
-      <rect x="88" y="220" width="24" height="30" rx="3" fill="#6b4423"/>
-      <circle cx="92" cy="96" r="5" fill="#e23b4e"/><circle cx="118" cy="140" r="5" fill="#f2b705"/>
-      <circle cx="78" cy="150" r="5" fill="#5cc6ff"/><circle cx="128" cy="195" r="5" fill="#e23b4e"/>
-      <circle cx="72" cy="200" r="5" fill="#f2b705"/><circle cx="100" cy="180" r="5" fill="#ffffff"/>
+      <defs>
+        <linearGradient id="xmasG1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1a9b52"/><stop offset="1" stop-color="#0d5c2e"/>
+        </linearGradient>
+        <linearGradient id="xmasG2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#148545"/><stop offset="1" stop-color="#0a4e27"/>
+        </linearGradient>
+        <linearGradient id="xmasG3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0f7a3d"/><stop offset="1" stop-color="#083f1f"/>
+        </linearGradient>
+        <linearGradient id="xmasStar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#f5b301"/>
+        </linearGradient>
+      </defs>
+      <!-- warm ground glow + soft shadow -->
+      <ellipse cx="100" cy="248" rx="72" ry="10" fill="rgba(255,190,80,.14)"/>
+      <ellipse cx="100" cy="248" rx="46" ry="6" fill="rgba(0,0,0,.28)"/>
+      <!-- trunk (behind the bottom branch layer) -->
+      <rect x="88" y="218" width="24" height="30" rx="3" fill="#5a3a22"/>
+      <!-- glowing star -->
+      <path d="M100 4 l6.5 17 18 1.6 -13.6 12 3.8 17.6 -14.7 -9.2 -14.7 9.2 3.8 -17.6 -13.6 -12 18 -1.6 Z"
+            fill="url(#xmasStar)" style="filter:drop-shadow(0 0 7px rgba(255,213,74,.95))"/>
+      <!-- branch layers -->
+      <path d="M100 24 L152 112 L48 112 Z" fill="url(#xmasG1)"/>
+      <path d="M100 68 L162 166 L38 166 Z" fill="url(#xmasG2)"/>
+      <path d="M100 118 L174 222 L26 222 Z" fill="url(#xmasG3)"/>
+      <!-- snow blobs on the branch tips -->
+      <ellipse cx="49" cy="111" rx="9" ry="5" fill="#eaf6ff" opacity=".8"/>
+      <ellipse cx="151" cy="111" rx="9" ry="5" fill="#eaf6ff" opacity=".8"/>
+      <ellipse cx="39" cy="165" rx="10" ry="5.5" fill="#eaf6ff" opacity=".8"/>
+      <ellipse cx="161" cy="165" rx="10" ry="5.5" fill="#eaf6ff" opacity=".8"/>
+      <ellipse cx="27" cy="221" rx="11" ry="6" fill="#eaf6ff" opacity=".8"/>
+      <ellipse cx="173" cy="221" rx="11" ry="6" fill="#eaf6ff" opacity=".8"/>
+      <!-- ornaments: cranberry, gold, warm white -->
+      <circle cx="94" cy="70" r="5" fill="#e23b4e"/>
+      <circle cx="110" cy="100" r="5" fill="#ffd166"/>
+      <circle cx="86" cy="122" r="5" fill="#fff3d6"/>
+      <circle cx="120" cy="132" r="5" fill="#e23b4e"/>
+      <circle cx="70" cy="158" r="5" fill="#ffd166"/>
+      <circle cx="102" cy="176" r="5" fill="#e23b4e"/>
+      <circle cx="136" cy="178" r="5" fill="#fff3d6"/>
+      <circle cx="86" cy="206" r="5" fill="#ffd166"/>
+      <circle cx="118" cy="210" r="5" fill="#e23b4e"/>
+      <!-- twinkling light string (CSS animates opacity) -->
+      <g class="xmas-lights" fill="#ffe08a" style="filter:drop-shadow(0 0 4px rgba(255,224,138,.9))">
+        <circle cx="84" cy="86" r="3.2"/><circle cx="100" cy="94" r="3.2"/><circle cx="116" cy="86" r="3.2"/>
+        <circle cx="72" cy="140" r="3.2"/><circle cx="92" cy="148" r="3.2"/><circle cx="112" cy="140" r="3.2"/><circle cx="130" cy="148" r="3.2"/>
+        <circle cx="60" cy="196" r="3.2"/><circle cx="82" cy="204" r="3.2"/><circle cx="104" cy="196" r="3.2"/><circle cx="126" cy="204" r="3.2"/><circle cx="144" cy="196" r="3.2"/>
+      </g>
+      <!-- presents at the base -->
+      <g>
+        <rect x="34" y="228" width="26" height="20" rx="3" fill="#c22f47"/>
+        <rect x="45" y="228" width="4" height="20" fill="#ffd166"/>
+        <rect x="34" y="236" width="26" height="4" fill="#ffd166"/>
+      </g>
+      <g>
+        <rect x="142" y="230" width="22" height="18" rx="3" fill="#0f7a3d"/>
+        <rect x="151" y="230" width="4" height="18" fill="#e23b4e"/>
+        <rect x="142" y="237" width="22" height="4" fill="#e23b4e"/>
+      </g>
     </svg>
   </div>
 
@@ -103,7 +155,7 @@
         <div class="pfp-ring">
           <img class="pfp" src="assets/profile.webp" alt="Kazu Hani" width="181" height="181" fetchpriority="high">
           <!-- party hat: revealed only on body.season-birthday -->
-          <svg class="party-hat" viewBox="0 0 100 120" aria-hidden="true" focusable="false">
+          <svg class="party-hat" viewBox="0 -4 100 124" aria-hidden="true" focusable="false">
             <defs>
               <linearGradient id="hatCone" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0" stop-color="#ff5ea8"/>
@@ -540,8 +592,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=11"></script>
-<script src="script.js?v=18"></script>
+<script src="lib.js?v=13"></script>
+<script src="script.js?v=22"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

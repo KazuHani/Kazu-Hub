@@ -57,6 +57,12 @@ Force any seasonal theme on any date with a query param (comma-combinable):
 - `?season=pride` — aro-ace halo
 - `?season=all` or `?season=birthday,christmas`
 
+Or type `kazudev` anywhere on the page to open the dev settings panel: an
+Auto / On / Off override per season, saved to localStorage so it survives
+reloads while you iterate on the CSS. Typing the code again (or Esc) closes
+it, and "Reset all to auto" hands the seasons back to the real clock. The
+`?season=` param still wins over the panel.
+
 ## Atmosphere previews
 
 The ambient particles follow the live Aberystwyth weather: rain streaks when

@@ -365,6 +365,68 @@ ok('konamiMatch wrong final key → false', !L.konamiMatch(KONAMI.slice(0, 9).co
 ok('konamiMatch code not at the end → false', !L.konamiMatch(KONAMI.concat(['c'])));
 eq('konamiMatch null → false', L.konamiMatch(null), false);
 
+// ---- devCodeMatch (dev settings panel secret code) ----
+const DEV = 'kazudev'.split('');
+ok('devCodeMatch exact code → true', L.devCodeMatch(DEV));
+ok('devCodeMatch code after junk keys → true', L.devCodeMatch(['x', 'ArrowUp', '1'].concat(DEV)));
+ok('devCodeMatch case-insensitive (Caps Lock)', L.devCodeMatch('KAZUDEV'.split('')));
+ok('devCodeMatch mixed case → true', L.devCodeMatch('KaZuDeV'.split('')));
+ok('devCodeMatch short window → false', !L.devCodeMatch(DEV.slice(0, 6)));
+ok('devCodeMatch wrong final key → false', !L.devCodeMatch(DEV.slice(0, 6).concat(['x'])));
+ok('devCodeMatch code not at the end → false', !L.devCodeMatch(DEV.concat(['c'])));
+ok('devCodeMatch non-string key → false', !L.devCodeMatch(['k', 'a', 'z', 'u', 'd', 'e', 7]));
+eq('devCodeMatch null → false', L.devCodeMatch(null), false);
+
+// ---- seasonDevApply (dev panel season-trigger overrides) ----
+const clockState = { birthday: false, christmas: false, pride: true };
+eq('auto passes the clock state through untouched', L.seasonDevApply(clockState, {}), clockState);
+eq('on forces a season live', L.seasonDevApply(clockState, { christmas: 'on' }).christmas, true);
+eq('off forces a live season dark', L.seasonDevApply(clockState, { pride: 'off' }).pride, false);
+eq('mixed overrides compose', L.seasonDevApply({ birthday: true, christmas: false, pride: false }, { birthday: 'off', christmas: 'on' }), { birthday: false, christmas: true, pride: false });
+eq('junk values + unknown keys are ignored', L.seasonDevApply(clockState, { birthday: 'yes', wat: 'on' }), clockState);
+eq('null overrides → passthrough', L.seasonDevApply(clockState, null), clockState);
+eq('null state → all seasons false', L.seasonDevApply(null, null), { birthday: false, christmas: false, pride: false });
+ok('input state object is not mutated', (function () { const s = { birthday: true }; L.seasonDevApply(s, { birthday: 'off' }); return s.birthday === true; })());
+
+// ---- seasonDevParse (localStorage copy of the overrides) ----
+eq('seasonDevParse round-trips stored overrides', L.seasonDevParse('{"birthday":"on","pride":"off"}'), { birthday: 'on', pride: 'off' });
+eq('seasonDevParse strips auto + junk values + unknown keys', L.seasonDevParse('{"birthday":"auto","christmas":"yes","pride":"on","wat":"off"}'), { pride: 'on' });
+eq('seasonDevParse all-auto → {}', L.seasonDevParse('{}'), {});
+eq('seasonDevParse bad JSON → null', L.seasonDevParse('{nope'), null);
+eq('seasonDevParse null → null', L.seasonDevParse(null), null);
+eq('seasonDevParse empty string → null', L.seasonDevParse(''), null);
+eq('seasonDevParse array payload → null', L.seasonDevParse('["on"]'), null);
+eq('seasonDevParse scalar payload → null', L.seasonDevParse('"on"'), null);
+
+// ---- balloonDriftStep (birthday balloon body physics) ----
+const bb = { x: 100, y: 500, vx: 0, vy: 0 };
+for (let bi = 0; bi < 1200; bi++) L.balloonDriftStep(bb, { dt: 0.016, t: bi * 0.016, buoy: 9, drag: 0.22, windAmp: 0, phase: 0 });
+ok('balloon rises and settles near terminal velocity buoy/drag', bb.y < 500 && Math.abs(bb.vy + 9 / 0.22) < 2, JSON.stringify(bb));
+eq('no wind → zero horizontal drift', bb.vx, 0);
+const bw1 = { x: 0, y: 0, vx: 0, vy: 0 }, bw2 = { x: 0, y: 0, vx: 0, vy: 0 };
+L.balloonDriftStep(bw1, { dt: 0.016, t: 3.7, buoy: 8, drag: 0.2, windAmp: 9, phase: 1.3 });
+L.balloonDriftStep(bw2, { dt: 0.016, t: 3.7, buoy: 8, drag: 0.2, windAmp: 9, phase: 1.3 });
+eq('wind gusts are deterministic', bw1, bw2);
+const bClamped = { x: 0, y: 0, vx: 0, vy: 0 };
+L.balloonDriftStep(bClamped, { dt: 999, t: 0, buoy: 9, drag: 0.22, windAmp: 40, phase: 0 });
+ok('huge dt (tab switch) is clamped, no slingshot', Math.abs(bClamped.vy) <= 9 * 0.05 + 1e-9 && Math.abs(bClamped.y) < 1, JSON.stringify(bClamped));
+const bNull = { x: 0, y: 0, vx: 0, vy: 0 };
+L.balloonDriftStep(bNull, null);
+ok('null opts → sane default frame', isFinite(bNull.x) && isFinite(bNull.y));
+
+// ---- ropeStep (balloon string verlet physics) ----
+const mkRope = (n, seg, off) => Array.from({ length: n }, (_, i) => ({ x: 100 + off, y: 100 + i * seg, px: 100 + off, py: 100 + i * seg }));
+const rope = mkRope(7, 9, 60);
+for (let ri = 0; ri < 400; ri++) L.ropeStep(rope, { x: 100, y: 100 }, { dt: 0.016, gravity: 1400, segLen: 9 });
+ok('knot stays pinned to the anchor', rope[0].x === 100 && rope[0].y === 100);
+ok('string settles hanging straight below the balloon', Math.abs(rope[6].x - 100) < 3 && Math.abs(rope[6].y - (100 + 6 * 9)) < 3, JSON.stringify(rope[6]));
+ok('segment lengths hold ≈ segLen', rope.slice(1).every((p, i) => Math.abs(Math.hypot(p.x - rope[i].x, p.y - rope[i].y) - 9) < 1.5));
+const rope2 = mkRope(5, 8, 0);
+const anchor = { x: 40, y: 30 };
+L.ropeStep(rope2, anchor, { dt: 0.016, gravity: 1400, segLen: 8 });
+eq('anchor is re-pinned every step', [rope2[0].x, rope2[0].y, rope2[0].px, rope2[0].py], [40, 30, 40, 30]);
+ok('rope points stay finite under zero dt', L.ropeStep(mkRope(4, 8, 5), { x: 0, y: 0 }, { dt: 0, gravity: 1400, segLen: 8 }).every((p) => isFinite(p.x) && isFinite(p.y)));
+
 // ---- scrollThumbGeometry / scrollThumbScrollY (custom page scroller) ----
 // Half-full document: thumb is half the track and travels the other half.
 const gHalf = L.scrollThumbGeometry({ viewportH: 500, contentH: 1000, trackH: 400, scrollY: 0 });
@@ -450,6 +512,41 @@ ok('scroll-reveal section renamed to load cascade', cssFlat.includes('PAGE-LOAD 
 ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));
 ok('.music-side spreads cover + info', cssFlat.includes('.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }'));
 ok('cover enlarged to fill the zone', cssFlat.includes('width: 152px; height: 152px;'));
+
+// ---- Dev settings panel (secret code: kazudev) ----
+// Static wiring: the code word + matcher in the keydown listener, the
+// override hook inside seasonState, localStorage persistence, and the styles.
+ok('dev code wired in the keydown listener', scriptSrc.includes('devCodeMatch') && scriptSrc.includes("'kazudev'"));
+ok('seasonState consults the dev overrides', scriptSrc.includes('seasonDevApply({'));
+ok('dev overrides persist under kazu-dev-seasons', scriptSrc.includes("DEV_KEY = 'kazu-dev-seasons'"));
+ok('panel applies changes through applySeasons', scriptSrc.includes('syncDevPanel(s)'));
+ok('dev panel styles present', cssFlat.includes('.dev-panel {') && cssFlat.includes('.dev-seg button.is-active'));
+
+// ---- Christmas theme (cozy classic: pine + cranberry + gold) ----
+// The palette vars moved to a pine base with a warm gold accent, and every
+// brand-coloured component gets a scoped repaint. Base rules stay untouched
+// (the glass-shadow checks above guard that); these guard the overrides.
+ok('christmas palette is pine-based, brown mud gone', cssFlat.includes('#071f16') && !cssFlat.includes('#14110f'));
+ok('christmas accent is warm gold', cssFlat.includes('--accent: #ffd166;'));
+ok('hero title repainted for christmas', cssFlat.includes('body.season-christmas .title {'));
+ok('bday card repainted cranberry for christmas', cssFlat.includes('body.season-christmas .stat-card--bday {'));
+ok('presence cards repainted pine for christmas', cssFlat.includes('body.season-christmas .discord-card,') && cssFlat.includes('body.season-christmas .steam-card,') && cssFlat.includes('body.season-christmas .mal-card {'));
+ok('profile ring glows gold for christmas', cssFlat.includes('body.season-christmas .pfp-ring {'));
+ok('tree lights twinkle with a reduced-motion kill switch', cssFlat.includes('@keyframes xmasTwinkle') && cssFlat.includes('.xmas-lights circle { animation: none; }'));
+ok('tree SVG upgraded: gradients, light string, presents', htmlSrc.includes('id="xmasG1"') && htmlSrc.includes('class="xmas-lights"') && htmlSrc.includes('id="xmasStar"'));
+ok('browser-chrome colour matches the new palette', scriptSrc.includes("'#071f16'") && !scriptSrc.includes("'#07251a'"));
+
+// ---- Birthday theme (party palette, aligned hat, balloons) ----
+// The day gets the hat's pink/purple/blue set across the hero + bday card,
+// balloons drifting behind the content, and a hat that sits ON the avatar.
+ok('birthday repaints the hero title', cssFlat.includes('body.season-birthday .title {'));
+ok('birthday repaints the bday card in party pink', cssFlat.includes('body.season-birthday .stat-card--bday {'));
+ok('party hat centred on the avatar top', cssFlat.includes('.party-hat {') && cssFlat.includes('left: 50%; margin-left: -30px;'));
+ok('hat pom not clipped (taller viewBox)', htmlSrc.includes('class="party-hat" viewBox="0 -4 100 124"'));
+ok('balloon physics wired into applySeasons', scriptSrc.includes('setBalloons(s.birthday)'));
+ok('balloon canvas styled behind the content', cssFlat.includes('#balloon-canvas {') && cssFlat.includes('z-index: 0'));
+ok('reduced motion skips the balloon canvas', scriptSrc.includes('function startBalloons()') && scriptSrc.includes("prefers-reduced-motion: reduce"));
+ok('emoji balloons replaced by the physics canvas', !htmlSrc.includes('bday-balloons') && !cssFlat.includes('balloonRise'));
 
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +

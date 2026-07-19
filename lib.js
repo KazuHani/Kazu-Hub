@@ -627,6 +627,122 @@
     return true;
   }
 
+  // ---- Dev settings panel (secret code + season overrides) -----------------
+  // Typing the code word anywhere on the page opens the floating dev panel
+  // (see script.js). Like konamiMatch, script.js keeps a rolling window of
+  // recent single-character keys and asks whether the window ENDS with the
+  // word; matching is case-insensitive so Caps Lock doesn't lock anyone out.
+  var DEV_CODE = 'kazudev';
+  function devCodeMatch(recentKeys) {
+    if (!recentKeys || recentKeys.length < DEV_CODE.length) return false;
+    var start = recentKeys.length - DEV_CODE.length;
+    for (var i = 0; i < DEV_CODE.length; i++) {
+      var k = recentKeys[start + i];
+      if (typeof k !== 'string' || k.toLowerCase() !== DEV_CODE.charAt(i)) return false;
+    }
+    return true;
+  }
+
+  // Season-trigger overrides from the dev panel. Each season is 'auto'
+  // (follow the clock — the default, never stored), 'on' (forced live), or
+  // 'off' (forced dark). Unknown keys and values are ignored, so a
+  // hand-edited localStorage blob can never wedge the seasons.
+  var DEV_SEASON_KEYS = ['birthday', 'christmas', 'pride'];
+  function seasonDevApply(state, overrides) {
+    var s = state || {};
+    var out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride };
+    overrides = overrides || {};
+    for (var i = 0; i < DEV_SEASON_KEYS.length; i++) {
+      var k = DEV_SEASON_KEYS[i];
+      if (overrides[k] === 'on') out[k] = true;
+      else if (overrides[k] === 'off') out[k] = false;
+    }
+    return out;
+  }
+
+  // Reads the localStorage copy of the dev-panel overrides (only 'on'/'off'
+  // values are ever stored). Same contract as the other cache parsers: a
+  // sanitized object (possibly empty) for a well-formed payload, null for
+  // anything malformed.
+  function seasonDevParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var p;
+    try { p = JSON.parse(raw); } catch (e) { return null; }
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+    var out = {};
+    for (var i = 0; i < DEV_SEASON_KEYS.length; i++) {
+      var k = DEV_SEASON_KEYS[i];
+      if (p[k] === 'on' || p[k] === 'off') out[k] = p[k];
+    }
+    return out;
+  }
+
+  // ---- Birthday balloons (canvas physics core) ------------------------------
+  // Pure physics for the balloon canvas; all rendering lives in script.js.
+  // The balloon body is a semi-implicit Euler particle (buoyancy + drag +
+  // deterministic wind gusts); the string is a verlet rope pinned at the
+  // knot. DOM-free so the gate tests can pin the exact behaviour.
+
+  // Advances the balloon one frame. b: {x, y, vx, vy} (mutated, returned).
+  // o: {dt (s), t (s since activation), buoy (px/s^2), drag (1/s), windAmp
+  // (px/s^2), phase}. Wind is a two-sine gust, fully deterministic: the same
+  // inputs always produce the same sky. dt is clamped so a backgrounded tab
+  // can't slingshot the balloon on resume. Terminal rise is buoy/drag.
+  function balloonDriftStep(b, o) {
+    o = o || {};
+    var dt = Math.min(Math.max(+o.dt || 0.016, 0), 0.05);
+    var t = +o.t || 0;
+    var phase = +o.phase || 0;
+    var wind = (+o.windAmp || 0) * (Math.sin(2 * Math.PI * 0.11 * t + phase) + 0.5 * Math.sin(2 * Math.PI * 0.23 * t + phase * 1.7));
+    b.vx += wind * dt;
+    b.vy -= (+o.buoy || 0) * dt; // screen y points down: buoyancy lifts
+    var damp = Math.max(0, 1 - (+o.drag || 0) * dt);
+    b.vx *= damp; b.vy *= damp;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    return b;
+  }
+
+  // Advances the string one frame. pts: [{x, y, px, py}, ...] where pts[0] is
+  // the knot (pinned to anchor, the balloon's bottom tip). o: {dt (s),
+  // gravity (px/s^2), damping (default .985), iterations (default 3),
+  // segLen}. Standard verlet: free points integrate from their own history,
+  // the knot is re-pinned, then the segment-length constraint relaxes a few
+  // times. The trailing wiggle falls out of the physics, no keyframes needed.
+  function ropeStep(pts, anchor, o) {
+    o = o || {};
+    var dt = Math.min(Math.max(+o.dt || 0.016, 0), 0.05);
+    var grav = +o.gravity || 0;
+    var damp = o.damping == null ? 0.985 : +o.damping;
+    var seg = +o.segLen || 9;
+    var i, p;
+    for (i = 1; i < pts.length; i++) {
+      p = pts[i];
+      var nx = p.x + (p.x - p.px) * damp;
+      var ny = p.y + (p.y - p.py) * damp + grav * dt * dt;
+      p.px = p.x; p.py = p.y;
+      p.x = nx; p.y = ny;
+    }
+    pts[0].x = anchor.x; pts[0].y = anchor.y;
+    pts[0].px = anchor.x; pts[0].py = anchor.y;
+    var it = o.iterations || 3;
+    for (var k = 0; k < it; k++) {
+      for (i = 0; i < pts.length - 1; i++) {
+        var a = pts[i], c = pts[i + 1];
+        var dx = c.x - a.x, dy = c.y - a.y;
+        var d = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        var diff = (d - seg) / d;
+        if (i === 0) { // pinned knot: the free end absorbs the full correction
+          c.x -= dx * diff; c.y -= dy * diff;
+        } else {
+          var half = diff * 0.5;
+          a.x += dx * half; a.y += dy * half;
+          c.x -= dx * half; c.y -= dy * half;
+        }
+      }
+    }
+    return pts;
+  }
+
   // ---- Custom scrollbar geometry -------------------------------------------
   // Pure maths behind the JS-built page scroller (see the custom-scrollbar
   // IIFE in script.js). scrollThumbGeometry maps the document's scroll state
@@ -702,6 +818,11 @@
     listenbrainzRow: listenbrainzRow,
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
+    devCodeMatch: devCodeMatch,
+    seasonDevApply: seasonDevApply,
+    seasonDevParse: seasonDevParse,
+    balloonDriftStep: balloonDriftStep,
+    ropeStep: ropeStep,
     scrollThumbGeometry: scrollThumbGeometry,
     scrollThumbScrollY: scrollThumbScrollY,
   };
