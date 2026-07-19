@@ -627,6 +627,45 @@
     return true;
   }
 
+  // ---- Custom scrollbar geometry -------------------------------------------
+  // Pure maths behind the JS-built page scroller (see the custom-scrollbar
+  // IIFE in script.js). scrollThumbGeometry maps the document's scroll state
+  // onto the on-screen track; scrollThumbScrollY is the inverse mapping used
+  // while dragging the thumb. Kept DOM-free so the gate tests can pin the
+  // edge cases (min thumb size, clamping, "nothing to scroll").
+  var SCROLL_MIN_THUMB = 28; // px: below this the thumb gets too fiddly to grab
+
+  // o: { viewportH, contentH, trackH, scrollY, minThumbH? }
+  // → { shown, thumbH, thumbTop, maxScroll } (thumb metrics in track px)
+  function scrollThumbGeometry(o) {
+    o = o || {};
+    var viewportH = Math.max(0, +o.viewportH || 0);
+    var contentH = Math.max(0, +o.contentH || 0);
+    var trackH = Math.max(0, +o.trackH || 0);
+    var maxScroll = contentH - viewportH;
+    if (maxScroll <= 1 || trackH <= 0) {
+      return { shown: false, thumbH: 0, thumbTop: 0, maxScroll: 0 };
+    }
+    var minThumbH = Math.max(10, +o.minThumbH || SCROLL_MIN_THUMB);
+    var thumbH = Math.round(trackH * (viewportH / contentH));
+    thumbH = Math.min(trackH, Math.max(minThumbH, thumbH));
+    var scrollY = Math.min(Math.max(+o.scrollY || 0, 0), maxScroll);
+    var thumbTop = Math.round((scrollY / maxScroll) * (trackH - thumbH));
+    return { shown: true, thumbH: thumbH, thumbTop: thumbTop, maxScroll: maxScroll };
+  }
+
+  // o: { trackH, thumbH, thumbTop, maxScroll } → document scrollY (px),
+  // clamped to the scrollable range. Dragging the thumb is the inverse of
+  // rendering it, so both functions must agree on the same travel distance.
+  function scrollThumbScrollY(o) {
+    o = o || {};
+    var maxScroll = Math.max(0, +o.maxScroll || 0);
+    var travel = Math.max(0, (+o.trackH || 0) - (+o.thumbH || 0));
+    if (travel <= 0 || maxScroll <= 0) return 0;
+    var thumbTop = Math.min(Math.max(+o.thumbTop || 0, 0), travel);
+    return (thumbTop / travel) * maxScroll;
+  }
+
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -663,5 +702,7 @@
     listenbrainzRow: listenbrainzRow,
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
+    scrollThumbGeometry: scrollThumbGeometry,
+    scrollThumbScrollY: scrollThumbScrollY,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

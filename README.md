@@ -32,6 +32,12 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
   Christmas, pride), a weather-reactive atmosphere (rain streaks, heavier
   snow when the live forecast calls for it, and an aurora on clear nights),
   and a liquid-glass refraction effect on Chromium.
+- Custom scrollbars on mouse-driven devices, site-wide: the window scroller
+  plus any inner overflow container (the card detail modal today; future
+  `overflow-y: auto` elements are auto-discovered). Frosted track, light
+  thumb, and hold-to-glide up/down steppers replace the native bars, which
+  touch devices and no-JS keep. Thumb geometry lives in `lib.js` and is
+  covered by the gate tests.
 
 ## Run it locally
 
