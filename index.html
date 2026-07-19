@@ -39,7 +39,7 @@
 <link rel="dns-prefetch" href="//cdn.myanimelist.net">
 <link rel="dns-prefetch" href="//i.scdn.co">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=15">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -133,14 +133,12 @@
       <!-- LIVE STAT STRIP — each tile opens a detail pop-up (see script.js / lib.js) -->
       <section class="stat-grid">
         <div class="card stat-card" data-modal="time" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Time and timezones — open details">
-          <div class="stat-bg-icon">🕒</div>
           <div class="stat-label">UK time</div>
           <div class="stat-value" id="liveTime">--:--:--</div>
           <div class="stat-sub" id="liveDate">—</div>
         </div>
 
         <div class="card stat-card" data-modal="weather" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Weather — open the interactive UK wind globe">
-          <div class="stat-bg-icon" id="weatherBgIcon">❄️</div>
           <div class="stat-label">Weather</div>
           <div id="weatherLoaded" class="hidden">
             <div class="stat-value" id="liveTemp">—</div>
@@ -157,14 +155,12 @@
         </div>
 
         <div class="card stat-card" data-modal="age" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Age and life stats — open details">
-          <div class="stat-bg-icon">🎂</div>
           <div class="stat-label">Age</div>
           <div class="stat-value" id="liveAge">—</div>
           <div class="stat-sub">years young</div>
         </div>
 
         <div class="card stat-card stat-card--bday" data-modal="bday" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Next birthday — open countdown and add to calendar">
-          <div class="stat-bg-icon">🎉</div>
           <div class="stat-label stat-label--onbrand">Next birthday</div>
           <div class="stat-value" id="liveBday">—</div>
           <div class="stat-sub stat-sub--onbrand" id="liveBdaySub">—</div>
@@ -172,7 +168,7 @@
       </section>
 
       <!-- RIGHT NOW -->
-      <h2 class="section-title scroll-reveal"><span class="section-emoji">📡</span> Right now</h2>
+      <h2 class="section-title scroll-reveal">Right now</h2>
       <section class="right-now-grid">
 
         <!-- DISCORD -->
@@ -359,7 +355,7 @@
       <!-- ───────────────────────────────────────────────────────────────
            YOUTUBE MUSIC PLAYLIST (static card + ListenBrainz recent tracks)
            ──────────────────────────────────────────────────────────── -->
-      <h2 class="section-title scroll-reveal"><span class="section-emoji">🎧</span> My playlist</h2>
+      <h2 class="section-title scroll-reveal">My playlist</h2>
       <section class="music-grid">
         <div class="card music-card scroll-reveal">
           <div class="card-head">
@@ -379,6 +375,11 @@
               <div class="music-playlist-label">Playlist</div>
               <div class="music-playlist-name">Songs that SLAP 🐉</div>
               <div class="music-playlist-sub">On YouTube Music</div>
+              <!-- Equalizer bars: fade in + animate only while the card is
+                   hovered on desktop (hover + fine pointer). Decorative. -->
+              <div class="music-viz" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
               <!-- Recently played via ListenBrainz: hidden until LISTENBRAINZ_USER is set in script.js -->
               <div id="musicRecent" class="music-recent hidden">
                 <div class="music-recent-label">Recently played</div>
@@ -390,7 +391,7 @@
       </section>
 
       <!-- SOCIALS -->
-      <h2 class="section-title scroll-reveal"><span class="section-emoji">🌐</span>Socials</h2>
+      <h2 class="section-title scroll-reveal">Socials</h2>
       <section class="socials-grid">
 
         <a class="card social-card scroll-reveal" href="https://x.com/Kazu_Hani" target="_blank" rel="noopener">
@@ -445,12 +446,11 @@
       </section>
 
       <!-- STORIES -->
-      <h2 class="section-title scroll-reveal"><span class="section-emoji">✍️</span> What I'm writing</h2>
+      <h2 class="section-title scroll-reveal">What I'm writing</h2>
       <section class="stories-grid">
 
         <a class="story-link scroll-reveal" href="https://docs.google.com/document/d/e/2PACX-1vSYd2SLW1AjBMfKZj0DC-ZMMDWYSeDYPykYspUuKiUDFkVE3dfnfR9Hhw6XBhwYezjVZCnSMTflJVuW/pub" target="_blank" rel="noopener">
           <div class="story-card" style="background:linear-gradient(150deg,#7c1d2b 0%,#b3324a 55%,#d9536b 100%);box-shadow:0 16px 38px rgba(140,30,55,.32);">
-            <div class="story-bg-emoji">🩸</div>
             <h3 class="story-title">The Legend That Bleeds</h3>
             <p class="story-desc">A tale forged in blood and old legend — read the latest chapters on Google Docs.</p>
             <div class="story-cta" style="color:#7c1d2b;">📖 Read now →</div>
@@ -459,7 +459,6 @@
 
         <a class="story-link scroll-reveal" href="https://docs.google.com/document/d/e/2PACX-1vS0rxLFpamMCc8gcZNW0NZ9NTNwmg24VTAWUC2zQ6IRoCdTrtBa_juI9_ta7IOW1r-prRyiqDkdjQ65/pub" target="_blank" rel="noopener">
           <div class="story-card" style="background:linear-gradient(150deg,#0e5e54 0%,#13877a 55%,#27b3a0 100%);box-shadow:0 16px 38px rgba(15,95,85,.32);">
-            <div class="story-bg-emoji">🐍</div>
             <h3 class="story-title">Divine Intervention</h3>
             <p class="story-desc">Where serpent-kind and humanity collide — follow the story as it unfolds on Google Docs.</p>
             <div class="story-cta" style="color:#0e5e54;">📖 Read now →</div>
@@ -493,8 +492,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=10"></script>
-<script src="script.js?v=14"></script>
+<script src="lib.js?v=11"></script>
+<script src="script.js?v=17"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

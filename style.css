@@ -144,8 +144,6 @@ body[data-theme="light"] #theme-orb:hover > span {
 /* ---- Stat strip ---- */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 16px; margin-top: 34px; }
 .stat-card { border-radius: 22px; padding: 20px 22px; }
-.stat-bg-icon { position: absolute; right: -6px; top: -8px; font-size: 64px; opacity: .10; }
-body[data-theme="light"] .stat-bg-icon { opacity: .32; }
 .stat-label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(26px, 7vw, 38px); line-height: 1.05; margin-top: 6px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stat-sub { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
@@ -163,7 +161,6 @@ body[data-theme="light"] .stat-bg-icon { opacity: .32; }
   font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 26px; margin: 46px 0 16px;
   color: var(--ink); display: flex; align-items: center; gap: 10px;
 }
-.section-emoji { font-size: 22px; }
 
 /* ---- Right now ---- */
 .right-now-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
@@ -367,6 +364,54 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .music-track-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #ff4d4d; width: 16px; text-align: center; flex: none; }
 .music-track-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .music-track-artist { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
+
+/* ---- Music card hover: expand/bounce + equalizer (desktop only) ---- */
+/* The whole effect is gated behind @media (hover: hover) and (pointer: fine)
+   so touch devices never see it, and killed under prefers-reduced-motion at
+   the bottom of this block. Bars sit invisible and paused until hover, so
+   the animation only ever runs while the mouse is over the card. */
+.music-viz {
+  display: flex; align-items: flex-end; gap: 3px; height: 22px; margin-top: 12px;
+  opacity: 0; transition: opacity .35s ease;
+}
+.music-viz span {
+  width: 4px; height: 100%; border-radius: 2px;
+  transform: scaleY(.22); transform-origin: bottom;
+  background: linear-gradient(180deg,#ff8a8a,#ff1a1a);
+  animation: music-viz-bounce 1.1s ease-in-out infinite;
+  animation-play-state: paused;
+}
+/* Varied durations/delays so the bars move out of sync, like a real meter. */
+.music-viz span:nth-child(2) { animation-duration: .85s; animation-delay: .14s; }
+.music-viz span:nth-child(3) { animation-duration: 1.25s; animation-delay: .3s; }
+.music-viz span:nth-child(4) { animation-duration: .75s; animation-delay: .06s; }
+.music-viz span:nth-child(5) { animation-duration: 1.05s; animation-delay: .22s; }
+.music-viz span:nth-child(6) { animation-duration: .9s; animation-delay: .38s; }
+.music-viz span:nth-child(7) { animation-duration: 1.2s; animation-delay: .1s; }
+@keyframes music-viz-bounce {
+  0%, 100% { transform: scaleY(.22); }
+  50% { transform: scaleY(1); }
+}
+@media (hover: hover) and (pointer: fine) {
+  /* .music-card also carries .scroll-reveal — same fix as .social-card above:
+     restate the transition at higher specificity so the reveal transition
+     doesn't clobber the bouncier hover one. */
+  .music-card.scroll-reveal {
+    transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .45s cubic-bezier(.34,1.56,.64,1), box-shadow .45s ease;
+  }
+  /* .scroll-reveal.is-visible pins transform: translateY(0) after reveal and
+     would win on source order, so restate the hover transform at higher
+     specificity. The overshoot easing makes the expand bounce. */
+  .music-card.scroll-reveal.is-visible:hover {
+    transform: scale(1.03);
+    box-shadow: 0 22px 46px rgba(255,26,26,.3);
+  }
+  .music-card:hover .music-viz { opacity: 1; }
+  .music-card:hover .music-viz span { animation-play-state: running; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .music-viz { display: none; }
+}
 @media (max-width: 560px) {
   .music-card-inner { flex-direction: column; align-items: center; text-align: center; }
   .music-cover-wrap { width: 120px; height: 120px; }
@@ -378,6 +423,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .socials-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(168px,1fr)); gap: 14px; }
 .social-card {
   text-decoration: none; color: inherit; border-radius: 20px; padding: 18px;
+  -webkit-tap-highlight-color: transparent;
   display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1;
   transition: transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, border-color .3s ease, z-index .3s;
 }
@@ -394,13 +440,14 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .social-icon--dots span { width: 12px; height: 12px; border-radius: 50%; display: block; }
 .social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); }
 .social-handle { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.social-card:focus { outline: none; }
+.social-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* ---- Stories ---- */
 .stories-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
 .story-link { text-decoration: none; color: inherit; display: block; }
 .story-card { position: relative; border-radius: 24px; padding: 26px; overflow: hidden; height: 100%; transition: transform .2s ease, box-shadow .2s ease; }
 .story-link:hover .story-card { transform: translateY(-4px); }
-.story-bg-emoji { position: absolute; right: -14px; top: -18px; font-size: 130px; opacity: .13; }
 .story-title { position: relative; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 30px; color: #fff; line-height: 1.05; margin: 16px 0 8px; }
 .story-desc { position: relative; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.85); line-height: 1.55; max-width: 300px; }
 .story-cta {
@@ -416,16 +463,18 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    so the transition can actually run; .to-top.hidden overrides the generic
    .hidden{display:none!important} rule (two classes beats one at equal
    !important weight) and drives the hidden state with opacity/transform/
-   pointer-events instead. */
+   pointer-events instead. right: 28px (not 20px) because the custom page
+   scrollbar (.cscroll) ends flush at 20px from the screen edge (4px offset
+   + 16px wide) — 28px leaves an 8px gap instead of touching it. No hover
+   state by design; only :active gives press feedback. */
 .to-top {
-  position: fixed; right: 20px; bottom: 20px; z-index: 50; width: 52px; height: 52px;
+  position: fixed; right: 28px; bottom: 20px; z-index: 50; width: 52px; height: 52px;
   border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: 23px; line-height: 1;
   box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
   opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
-  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.6,.55,1), box-shadow .3s ease;
+  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.6,.55,1);
 }
-.to-top:hover { transform: translateY(-5px) scale(1.08) rotate(-8deg); box-shadow: 0 16px 36px rgba(80,110,230,.55); }
 .to-top:active { transform: translateY(-1px) scale(.96); }
 .to-top.hidden {
   display: flex !important;
@@ -775,7 +824,10 @@ body.modal-open { overflow: hidden; }
 /* Age modal */
 .age-head { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(21px,5vw,28px); color: var(--ink); margin-bottom: 16px; }
 .age-head .age-sub { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 16px; color: var(--ink-soft); }
-.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px,1fr)); gap: 12px; }
+/* minmax(min(200px,100%),1fr): the heartbeats count is 12 chars at 23px (~160px),
+   so 4-across 118px tiles clipped it against the panel edge. 200px minimum wraps
+   the row to 2x2 in the 512px modal and 1-up on phones. */
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px,100%),1fr)); gap: 12px; }
 .stat-tile { background: rgba(140,170,210,.12); border-radius: 16px; padding: 14px 16px; }
 .stat-tile-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
 .stat-tile-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 6px; }
@@ -947,3 +999,90 @@ a.music-track-row:hover { background: rgba(255,255,255,.08); }
 
 /* ---- Weather modal: "compare with your sky" output ---- */
 .sky-compare { margin-top: 16px; }
+
+/* ============ CUSTOM SCROLLBAR ============ */
+/* JS-built page scroller (see the custom-scrollbar IIFE in script.js). The
+   native bar is hidden only once script.js sets html.has-cscroll — which it
+   does solely on fine-pointer devices — so touch and no-JS keep the real
+   thing. Geometry lives in lib.js; this block is purely cosmetic. */
+html.has-cscroll { scrollbar-width: none; }
+html.has-cscroll::-webkit-scrollbar { display: none; }
+
+.cscroll {
+  position: fixed; top: 10px; bottom: 10px; right: 4px; width: 16px;
+  display: flex; flex-direction: column; z-index: 80;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+}
+.cscroll--hidden { display: none; }
+
+.cscroll-track {
+  position: relative; flex: 1; margin: 2px 1px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.09);
+  cursor: pointer;
+}
+.cscroll-thumb {
+  position: absolute; left: 0; right: 0; top: 0; min-height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f5faff 0%, #d3e9fc 100%);
+  box-shadow: 0 1px 6px rgba(3,10,24,.45), inset 0 0 0 1px rgba(255,255,255,.55);
+  cursor: grab;
+  transition: box-shadow .2s ease;
+}
+.cscroll-thumb:hover {
+  box-shadow: 0 1px 8px rgba(3,10,24,.5), 0 0 10px rgba(92,198,255,.55), inset 0 0 0 1px rgba(255,255,255,.7);
+}
+.cscroll-dragging .cscroll-thumb,
+.cscroll-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 1px 8px rgba(3,10,24,.5), 0 0 14px rgba(92,198,255,.75), inset 0 0 0 1px rgba(255,255,255,.8);
+}
+/* No text selection or cursor flicker while the thumb is dragged. */
+html.cscroll-dragging, html.cscroll-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important; -webkit-user-select: none !important;
+}
+
+.cscroll-btn {
+  flex: none; height: 18px; display: flex; align-items: center; justify-content: center;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  color: var(--ink-faint);
+  transition: color .2s ease, transform .15s ease;
+}
+.cscroll-btn:hover { color: var(--accent); }
+.cscroll-btn:active { transform: scale(.82); color: var(--accent); }
+.cscroll-btn svg { width: 10px; height: 10px; display: block; fill: currentColor; }
+
+/* Light theme: the frosted track needs a navy tint to stay visible. */
+body[data-theme="light"] .cscroll-track {
+  background: rgba(11,58,92,.08);
+  border-color: rgba(11,58,92,.12);
+}
+body[data-theme="light"] .cscroll-thumb {
+  box-shadow: 0 1px 6px rgba(27,80,130,.3), inset 0 0 0 1px rgba(255,255,255,.65);
+}
+
+/* Inner scrollers (card modal, any overflow container found by the DOM scan
+   in script.js): a zero-height sticky wrapper is the host's first in-flow
+   child and sticks to the scrollport ON THE COMPOSITOR, so the bar rides the
+   host's own clipping and border radius WITHOUT lagging behind fast
+   composited scrolls — the old absolute bar, re-pinned by a JS transform
+   each frame, trailed a frame behind. The bar is absolute inside the
+   wrapper; script.js sets its height (the host's content-box height, so the
+   modal panel's own padding keeps the arrows clear of its 26px corner
+   radius) and right offset (4px in from the host's inner edge) per measure.
+   Slimmer than the window bar to fit tight panels. Assumes a block-flow
+   host. */
+.cscroll-stick { position: sticky; top: 0; height: 0; z-index: 5; }
+.cscroll--inner { position: absolute; top: 0; right: 4px; bottom: auto; width: 12px; }
+.cscroll--inner .cscroll-btn { height: 14px; }
+.cscroll--inner .cscroll-btn svg { width: 8px; height: 8px; }
+
+/* Native bars are hidden only where a custom bar is active. */
+.cscroll-host { scrollbar-width: none; }
+.cscroll-host::-webkit-scrollbar { display: none; }
+
+/* Page scroll is locked while a modal is open (body.modal-open) — the window
+   bar would be a dead control, so it goes away until the modal closes. */
+body.modal-open > .cscroll { display: none; }

@@ -365,6 +365,58 @@ ok('konamiMatch wrong final key → false', !L.konamiMatch(KONAMI.slice(0, 9).co
 ok('konamiMatch code not at the end → false', !L.konamiMatch(KONAMI.concat(['c'])));
 eq('konamiMatch null → false', L.konamiMatch(null), false);
 
+// ---- scrollThumbGeometry / scrollThumbScrollY (custom page scroller) ----
+// Half-full document: thumb is half the track and travels the other half.
+const gHalf = L.scrollThumbGeometry({ viewportH: 500, contentH: 1000, trackH: 400, scrollY: 0 });
+eq('half-full page: thumb half the track, parked at top', [gHalf.shown, gHalf.thumbH, gHalf.thumbTop, gHalf.maxScroll], [true, 200, 0, 500]);
+eq('half-full page, scrolled halfway', L.scrollThumbGeometry({ viewportH: 500, contentH: 1000, trackH: 400, scrollY: 250 }).thumbTop, 100);
+eq('half-full page, scrolled to bottom', L.scrollThumbGeometry({ viewportH: 500, contentH: 1000, trackH: 400, scrollY: 500 }).thumbTop, 200);
+// Nothing to scroll (or no track rendered yet): hidden, zeroed.
+eq('content fits viewport → hidden', L.scrollThumbGeometry({ viewportH: 1000, contentH: 900, trackH: 400, scrollY: 0 }), { shown: false, thumbH: 0, thumbTop: 0, maxScroll: 0 });
+ok('1px of overflow still counts as nothing to scroll', L.scrollThumbGeometry({ viewportH: 1000, contentH: 1001, trackH: 400, scrollY: 0 }).shown === false);
+eq('zero-height track → hidden', L.scrollThumbGeometry({ viewportH: 500, contentH: 1000, trackH: 0, scrollY: 0 }).shown, false);
+eq('null input → hidden', L.scrollThumbGeometry(null).shown, false);
+// Very long page: the raw proportional thumb would be sub-pixel, so it clamps
+// to the minimum and the travel shrinks to match.
+const gLong = L.scrollThumbGeometry({ viewportH: 100, contentH: 100000, trackH: 200, scrollY: 0 });
+ok('huge page: thumb clamps to the 28px minimum', gLong.thumbH === 28, gLong.thumbH);
+eq('huge page, bottom: thumbTop = track - min thumb', L.scrollThumbGeometry({ viewportH: 100, contentH: 100000, trackH: 200, scrollY: 99900 }).thumbTop, 172);
+// Nearly-full page: thumb never exceeds the track itself.
+ok('barely-scrollable page: thumb capped at track height', L.scrollThumbGeometry({ viewportH: 999, contentH: 1001, trackH: 400, scrollY: 0 }).thumbH <= 400);
+// Out-of-range scrollY is clamped both ways (bounce-back on touch platforms).
+eq('negative scrollY clamps to top', L.scrollThumbGeometry({ viewportH: 500, contentH: 1000, trackH: 400, scrollY: -50 }).thumbTop, 0);
+eq('over-max scrollY clamps to bottom', L.scrollThumbGeometry({ viewportH: 500, contentH: 1000, trackH: 400, scrollY: 9999 }).thumbTop, 200);
+// Custom minimum thumb size wins over the default.
+eq('custom minThumbH respected', L.scrollThumbGeometry({ viewportH: 100, contentH: 100000, trackH: 200, scrollY: 0, minThumbH: 50 }).thumbH, 50);
+
+// Inverse mapping (dragging): thumb position → document scrollY.
+eq('inverse: thumb at top → scrollY 0', L.scrollThumbScrollY({ trackH: 400, thumbH: 200, thumbTop: 0, maxScroll: 500 }), 0);
+eq('inverse: thumb at bottom → maxScroll', L.scrollThumbScrollY({ trackH: 400, thumbH: 200, thumbTop: 200, maxScroll: 500 }), 500);
+eq('inverse: halfway → half maxScroll', L.scrollThumbScrollY({ trackH: 400, thumbH: 200, thumbTop: 100, maxScroll: 500 }), 250);
+eq('inverse: thumbTop beyond travel clamps', L.scrollThumbScrollY({ trackH: 400, thumbH: 200, thumbTop: 999, maxScroll: 500 }), 500);
+eq('inverse: negative thumbTop clamps to 0', L.scrollThumbScrollY({ trackH: 400, thumbH: 200, thumbTop: -10, maxScroll: 500 }), 0);
+eq('inverse: no travel → 0 (no NaN)', L.scrollThumbScrollY({ trackH: 200, thumbH: 200, thumbTop: 5, maxScroll: 500 }), 0);
+eq('inverse: null input → 0', L.scrollThumbScrollY(null), 0);
+// Round-trip: geometry then inverse returns the original scroll position,
+// give or take the integer rounding of thumbTop (≤ half a thumb pixel's
+// worth of document px: (934/265)/2 ≈ 1.8 here).
+const rt = L.scrollThumbGeometry({ viewportH: 300, contentH: 1234, trackH: 350, scrollY: 700 });
+ok('round-trip geometry → inverse ≈ original scrollY', Math.abs(L.scrollThumbScrollY({ trackH: 350, thumbH: rt.thumbH, thumbTop: rt.thumbTop, maxScroll: rt.maxScroll }) - 700) <= 2);
+
+// ---- Music card hover visualizer (static wiring checks) ----
+// Pure CSS/HTML feature, so the gate asserts the wiring is present: the
+// markup in the card, the desktop-only hover gate, bars paused until hover,
+// and the reduced-motion kill switch.
+const fs = require('fs');
+const htmlSrc = fs.readFileSync(__dirname + '/index.html', 'utf8');
+const cssSrc = fs.readFileSync(__dirname + '/style.css', 'utf8');
+ok('viz markup lives in the music card', htmlSrc.includes('Songs that SLAP') && htmlSrc.includes('class="music-viz" aria-hidden="true"'));
+ok('hover effect gated to desktop (hover + fine pointer)', cssSrc.includes('@media (hover: hover) and (pointer: fine)') && cssSrc.includes('.music-card:hover .music-viz'));
+ok('bars paused until hover, run on hover', cssSrc.includes('animation-play-state: paused') && cssSrc.includes('.music-card:hover .music-viz span { animation-play-state: running; }'));
+ok('equalizer bounce keyframes exist', cssSrc.includes('@keyframes music-viz-bounce'));
+ok('hover transform restated to beat .scroll-reveal.is-visible', cssSrc.includes('.music-card.scroll-reveal.is-visible:hover'));
+ok('reduced motion hides the visualizer', cssSrc.includes('.music-viz { display: none; }'));
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));
