@@ -416,6 +416,10 @@ ok('bars paused until hover, run on hover', cssSrc.includes('animation-play-stat
 ok('equalizer bounce keyframes exist', cssSrc.includes('@keyframes music-viz-bounce'));
 ok('hover transform restated to beat .scroll-reveal.is-visible', cssSrc.includes('.music-card.scroll-reveal.is-visible:hover'));
 ok('reduced motion hides the visualizer', cssSrc.includes('.music-viz { display: none; }'));
+// Featured tracks fill the card's formerly empty right side: 5 real songs
+// from the playlist, each linking to the track on YouTube Music.
+eq('featured tracks: 5 real playlist links', htmlSrc.split('class="music-track-row" href="https://music.youtube.com/watch?v=').length - 1, 5);
+ok('featured column styled (fills space, stacks on mobile)', cssSrc.includes('.music-featured {'));
 
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +

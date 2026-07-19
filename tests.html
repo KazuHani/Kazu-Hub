@@ -440,6 +440,8 @@
         ok('equalizer bounce keyframes exist', cssSrc.indexOf('@keyframes music-viz-bounce') !== -1);
         ok('hover transform restated to beat .scroll-reveal.is-visible', cssSrc.indexOf('.music-card.scroll-reveal.is-visible:hover') !== -1);
         ok('reduced motion hides the visualizer', cssSrc.indexOf('.music-viz { display: none; }') !== -1);
+        eq('featured tracks: 5 real playlist links', htmlSrc.split('class="music-track-row" href="https://music.youtube.com/watch?v=').length - 1, 5);
+        ok('featured column styled (fills space, stacks on mobile)', cssSrc.indexOf('.music-featured {') !== -1);
         s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
         s.className = fail === 0 ? 'pass' : 'fail';
       }).catch(function () {

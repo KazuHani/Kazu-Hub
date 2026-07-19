@@ -39,7 +39,7 @@
 <link rel="dns-prefetch" href="//cdn.myanimelist.net">
 <link rel="dns-prefetch" href="//i.scdn.co">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -380,11 +380,55 @@
               <div class="music-viz" aria-hidden="true">
                 <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
               </div>
-              <!-- Recently played via ListenBrainz: hidden until LISTENBRAINZ_USER is set in script.js -->
+              <!-- Recently played via ListenBrainz: stays hidden while the
+                   account (LISTENBRAINZ_USER in script.js) has no listens -->
               <div id="musicRecent" class="music-recent hidden">
                 <div class="music-recent-label">Recently played</div>
                 <div id="musicTrackList"></div>
               </div>
+            </div>
+
+            <!-- Featured tracks: static snapshot of the top of the playlist,
+                 pulled from the YouTube Music browse API on 2026-07-19. Each
+                 row opens the track inside the playlist. Edit by hand when
+                 the playlist's top changes. -->
+            <div class="music-featured">
+              <div class="music-recent-label">From the playlist</div>
+              <a class="music-track-row" href="https://music.youtube.com/watch?v=ejUr_Uunvjc&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
+                <div class="music-track-num">1</div>
+                <div class="music-track-text">
+                  <div class="music-track-name">Fly Through the Fire</div>
+                  <div class="music-track-artist">Christina Perri</div>
+                </div>
+              </a>
+              <a class="music-track-row" href="https://music.youtube.com/watch?v=DFBvS_fuSqY&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
+                <div class="music-track-num">2</div>
+                <div class="music-track-text">
+                  <div class="music-track-name">Dale Lento</div>
+                  <div class="music-track-artist">MONYX</div>
+                </div>
+              </a>
+              <a class="music-track-row" href="https://music.youtube.com/watch?v=Skbzy3BBTcM&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
+                <div class="music-track-num">3</div>
+                <div class="music-track-text">
+                  <div class="music-track-name">Rocketeer (feat. Ryan Tedder)</div>
+                  <div class="music-track-artist">Far East Movement</div>
+                </div>
+              </a>
+              <a class="music-track-row" href="https://music.youtube.com/watch?v=4IcAIrPCerA&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
+                <div class="music-track-num">4</div>
+                <div class="music-track-text">
+                  <div class="music-track-name">Light It Up</div>
+                  <div class="music-track-artist">Robin Hustin, Tobimorrow &amp; Jex</div>
+                </div>
+              </a>
+              <a class="music-track-row" href="https://music.youtube.com/watch?v=yqsJsO8H-oA&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
+                <div class="music-track-num">5</div>
+                <div class="music-track-text">
+                  <div class="music-track-name">DJ Got Us Fallin' In Love (feat. Pitbull)</div>
+                  <div class="music-track-artist">Usher</div>
+                </div>
+              </a>
             </div>
           </div>
         </div>
