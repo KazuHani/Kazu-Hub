@@ -418,8 +418,33 @@ ok('hover transform restated to beat .scroll-reveal.is-visible', cssSrc.includes
 ok('reduced motion hides the visualizer', cssSrc.includes('.music-viz { display: none; }'));
 // Featured tracks fill the card's formerly empty right side: 5 real songs
 // from the playlist, each linking to the track on YouTube Music.
-eq('featured tracks: 5 real playlist links', htmlSrc.split('class="music-track-row" href="https://music.youtube.com/watch?v=').length - 1, 5);
+ok('featured tracks: 5 real playlist links', htmlSrc.split('class="music-track-row" href="https://music.youtube.com/watch?v=').length - 1, 5);
 ok('featured column styled (fills space, stacks on mobile)', cssSrc.includes('.music-featured {'));
+
+// ---- Liquid glass on the content cards (static wiring checks) ----
+// The presence/music/story cards joined the glass set: translucent fills,
+// glint rims, frosted backdrop, and the Chromium refraction list in script.js.
+const cssFlat = cssSrc.replace(/\r/g, '');
+const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8');
+['rgba(40,40,110,.32), var(--glint)',   // discord
+ 'rgba(20,40,70,.32), var(--glint)',    // steam
+ 'rgba(20,40,100,.32), var(--glint)',   // myanimelist
+ 'rgba(10,16,24,.4), var(--glint)',     // letterboxd
+ 'rgba(255,26,26,.16), var(--glint)',   // music
+ 'rgba(255,26,26,.3), var(--glint)',    // music hover keeps the glint
+].forEach((shadow) => ok('glass shadow wired: ' + shadow, cssFlat.includes(shadow)));
+ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
+ok('story card gradients made translucent', htmlSrc.includes('rgba(124,29,43,.66)') && htmlSrc.includes('rgba(14,94,84,.66)'));
+ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);'));
+ok('refraction list covers the new glass cards', scriptSrc.includes(".toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card"));
+
+// ---- Page-load reveal cascade (static wiring checks) ----
+// Everything .scroll-reveal waves in on load with a stagger; the old
+// scroll-triggered IntersectionObserver is gone.
+ok('load cascade staggers the reveal', scriptSrc.includes('REVEAL_STAGGER') && scriptSrc.includes('REVEAL_MAX_DELAY'));
+ok('cascade still resolves via .is-visible', scriptSrc.includes("classList.add('is-visible')"));
+ok('IntersectionObserver reveal removed', !scriptSrc.includes('IntersectionObserver'));
+ok('scroll-reveal section renamed to load cascade', cssFlat.includes('PAGE-LOAD REVEAL CASCADE'));
 
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +

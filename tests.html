@@ -431,9 +431,10 @@
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
         fetch('index.html').then(function (r) { return r.text(); }),
-        fetch('style.css').then(function (r) { return r.text(); })
+        fetch('style.css').then(function (r) { return r.text(); }),
+        fetch('script.js').then(function (r) { return r.text(); })
       ]).then(function (src) {
-        var htmlSrc = src[0], cssSrc = src[1];
+        var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2];
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
         ok('hover effect gated to desktop (hover + fine pointer)', cssSrc.indexOf('@media (hover: hover) and (pointer: fine)') !== -1 && cssSrc.indexOf('.music-card:hover .music-viz') !== -1);
         ok('bars paused until hover, run on hover', cssSrc.indexOf('animation-play-state: paused') !== -1 && cssSrc.indexOf('.music-card:hover .music-viz span { animation-play-state: running; }') !== -1);
@@ -442,6 +443,27 @@
         ok('reduced motion hides the visualizer', cssSrc.indexOf('.music-viz { display: none; }') !== -1);
         eq('featured tracks: 5 real playlist links', htmlSrc.split('class="music-track-row" href="https://music.youtube.com/watch?v=').length - 1, 5);
         ok('featured column styled (fills space, stacks on mobile)', cssSrc.indexOf('.music-featured {') !== -1);
+
+        // ---- Liquid glass on the content cards ----
+        var cssFlat = cssSrc.replace(/\r/g, '');
+        [
+          'rgba(40,40,110,.32), var(--glint)',   // discord
+          'rgba(20,40,70,.32), var(--glint)',    // steam
+          'rgba(20,40,100,.32), var(--glint)',   // myanimelist
+          'rgba(10,16,24,.4), var(--glint)',     // letterboxd
+          'rgba(255,26,26,.16), var(--glint)',   // music
+          'rgba(255,26,26,.3), var(--glint)'     // music hover keeps the glint
+        ].forEach(function (shadow) { ok('glass shadow wired: ' + shadow, cssFlat.indexOf(shadow) !== -1); });
+        ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
+        ok('story card gradients made translucent', htmlSrc.indexOf('rgba(124,29,43,.66)') !== -1 && htmlSrc.indexOf('rgba(14,94,84,.66)') !== -1);
+        ok('presence + story cards get the frosted backdrop', cssFlat.indexOf('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);') !== -1);
+        ok('refraction list covers the new glass cards', scriptSrc.indexOf('.toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card') !== -1);
+
+        // ---- Page-load reveal cascade ----
+        ok('load cascade staggers the reveal', scriptSrc.indexOf('REVEAL_STAGGER') !== -1 && scriptSrc.indexOf('REVEAL_MAX_DELAY') !== -1);
+        ok('cascade still resolves via .is-visible', scriptSrc.indexOf("classList.add('is-visible')") !== -1);
+        ok('IntersectionObserver reveal removed', scriptSrc.indexOf('IntersectionObserver') === -1);
+        ok('scroll-reveal section renamed to load cascade', cssFlat.indexOf('PAGE-LOAD REVEAL CASCADE') !== -1);
         s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
         s.className = fail === 0 ? 'pass' : 'fail';
       }).catch(function () {

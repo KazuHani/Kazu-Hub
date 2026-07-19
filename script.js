@@ -179,7 +179,6 @@
         tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
       };
       const info = weatherInfo(w.weather_code, w.is_day === 1);
-      $('weatherBgIcon').textContent = info.e;
       $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
       $('liveWeatherDesc').textContent = info.d;
       $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
@@ -1539,22 +1538,23 @@
     requestAnimationFrame(frame);
   }
 
-  // ---------- Scroll reveal ----------
-  // Elements below the hero/stat strip start hidden (.scroll-reveal in
-  // style.css) and fade + slide in once they enter the viewport.
-  if ('IntersectionObserver' in window) {
-    const revealObserver = new IntersectionObserver((entries, observer) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
-      }
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-    document.querySelectorAll('.scroll-reveal').forEach((el) => revealObserver.observe(el));
-  } else {
-    document.querySelectorAll('.scroll-reveal').forEach((el) => el.classList.add('is-visible'));
-  }
+  // ---------- Page-load reveal cascade ----------
+  // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css)
+  // and the whole set waves in on load: fade + slide with a document-order
+  // stagger, so a refresh plays the entrance across the entire page rather
+  // than only as things scroll into view. The inline delay is cleared once
+  // each transition has run, so hover motion stays delay-free afterwards
+  // (see the social-card note in style.css).
+  const revealEls = Array.from(document.querySelectorAll('.scroll-reveal'));
+  const REVEAL_STAGGER = 60, REVEAL_MAX_DELAY = 1100;
+  revealEls.forEach((el, i) => {
+    const delay = Math.min(i * REVEAL_STAGGER, REVEAL_MAX_DELAY);
+    el.style.transitionDelay = delay + 'ms';
+    setTimeout(() => { el.style.transitionDelay = ''; }, delay + 900);
+  });
+  requestAnimationFrame(() => {
+    revealEls.forEach((el) => el.classList.add('is-visible'));
+  });
 
   // ---------- Konami code easter egg ----------
   // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.
@@ -1807,9 +1807,12 @@
     card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
   }
 
-  // Matches the translucent selector list in style.css.
+  // Matches the translucent selector list in style.css, minus .social-card and
+  // .music-card: the refracted rim read as a drawn-on blue outline on the
+  // social tiles, and the music card's own cover art would hide the refraction
+  // entirely — those keep the plain frosted look (CSS blur + glint) instead.
   const cards = Array.from(
-    document.querySelectorAll('.stat-card:not(.stat-card--bday), .social-card, .toast'),
+    document.querySelectorAll('.stat-card:not(.stat-card--bday), .toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
 
   function refreshAll() { cards.forEach(refresh); }
@@ -1830,4 +1833,301 @@
   refreshAll();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshAll);
   window.addEventListener('load', refreshAll);
+})();
+
+/* ============================================================================
+   Custom scrollbars, site-wide (fine pointers only)
+   ----------------------------------------------------------------------------
+   Every vertical scroller gets the site-styled bar (frosted track, light
+   thumb, up/down steppers): the window itself, plus any inner overflow
+   container found by a DOM scan — today that's the card detail modal, and any
+   future `overflow-y: auto/scroll` element is picked up automatically by the
+   MutationObserver. Native bars are hidden only where a custom bar is active
+   (html.has-cscroll for the window, .cscroll-host for inner hosts), so touch
+   devices and no-JS keep the real thing everywhere. Wheel and keyboard
+   scrolling are untouched — each bar is a visual mirror plus pointer controls.
+   Geometry comes from KazuLib (lib.js, pinned by tests.js / tests.html);
+   local fallbacks keep it alive if lib.js fails.
+   ========================================================================== */
+(() => {
+  if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return;
+
+  const KazuLib = window.KazuLib;
+  // Owned by lib.js (single source of truth, gate-tested); local copies below.
+  const thumbGeometry = (KazuLib && KazuLib.scrollThumbGeometry) || function (o) {
+    o = o || {};
+    const viewportH = Math.max(0, +o.viewportH || 0);
+    const contentH = Math.max(0, +o.contentH || 0);
+    const trackH = Math.max(0, +o.trackH || 0);
+    const maxScroll = contentH - viewportH;
+    if (maxScroll <= 1 || trackH <= 0) return { shown: false, thumbH: 0, thumbTop: 0, maxScroll: 0 };
+    const minThumbH = Math.max(10, +o.minThumbH || 28);
+    let thumbH = Math.round(trackH * (viewportH / contentH));
+    thumbH = Math.min(trackH, Math.max(minThumbH, thumbH));
+    const scrollY = Math.min(Math.max(+o.scrollY || 0, 0), maxScroll);
+    return { shown: true, thumbH, thumbTop: Math.round((scrollY / maxScroll) * (trackH - thumbH)), maxScroll };
+  };
+  const thumbScrollY = (KazuLib && KazuLib.scrollThumbScrollY) || function (o) {
+    o = o || {};
+    const maxScroll = Math.max(0, +o.maxScroll || 0);
+    const travel = Math.max(0, (+o.trackH || 0) - (+o.thumbH || 0));
+    if (travel <= 0 || maxScroll <= 0) return 0;
+    return (Math.min(Math.max(+o.thumbTop || 0, 0), travel) / travel) * maxScroll;
+  };
+
+  const rootEl = document.documentElement;
+  const STEP = 56;        // px per click, about a text line and a half
+  const HOLD_DELAY = 350; // ms before holding turns into a glide (OS-like)
+  const GLIDE = 1500;     // px/s while held
+
+  // Visual mirror only: aria-hidden, no tab stop — native keyboard scrolling
+  // still works, so the buttons never need focus. Starts visible: a
+  // display:none track measures 0px tall and could never unhide itself;
+  // render() hides it synchronously when there's nothing to scroll.
+  function buildBar(inner) {
+    const bar = document.createElement('div');
+    bar.className = inner ? 'cscroll cscroll--inner' : 'cscroll';
+    bar.setAttribute('aria-hidden', 'true');
+    bar.innerHTML =
+      '<button class="cscroll-btn cscroll-btn--up" type="button" tabindex="-1">' +
+        '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1.2 9.2 8H0.8Z"/></svg>' +
+      '</button>' +
+      '<div class="cscroll-track"><div class="cscroll-thumb"></div></div>' +
+      '<button class="cscroll-btn cscroll-btn--down" type="button" tabindex="-1">' +
+        '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 8.8 0.8 2h8.4Z"/></svg>' +
+      '</button>';
+    return bar;
+  }
+
+  // One scroller = one vertical scroll target. `host` null means the window
+  // (fixed bar on <body>); otherwise the bar mounts inside a zero-height
+  // STICKY WRAPPER, prepended as the host's first in-flow child. An
+  // absolutely-placed bar would scroll away with the content and need a JS
+  // re-pin every frame — but a composited (fast wheel) scroll repaints the
+  // content before the pin lands, so the whole bar visibly trails.
+  // position:fixed doesn't help either: a fixed child still rides its own
+  // scroller's content (verified in Edge). The sticky wrapper sticks to the
+  // scrollport ON THE COMPOSITOR, lag-free by construction, and height:0
+  // gives it no flow footprint so prepending shifts no content. The bar is
+  // absolute inside it: sticky boxes compute auto margins to 0 and ignore
+  // over-constrained negative margins, so the bar could not right-align or
+  // poke past the host's padding on its own (see render() for geometry).
+  // opts: { host, viewportH(), contentH(), scroll(), scrollTo(y) }
+  function createScroller(opts) {
+    const host = opts.host || null;
+    const bar = buildBar(!!host);
+    let mount = bar;
+    if (host) {
+      const stick = document.createElement('div');
+      stick.className = 'cscroll-stick';
+      stick.setAttribute('aria-hidden', 'true');
+      stick.appendChild(bar);
+      host.prepend(stick);
+      mount = stick;
+      host.classList.add('cscroll-host'); // style.css hides the host's native bar
+    } else {
+      document.body.appendChild(bar);
+    }
+
+    const track = bar.querySelector('.cscroll-track');
+    const thumb = bar.querySelector('.cscroll-thumb');
+    const btnUp = bar.querySelector('.cscroll-btn--up');
+    const btnDown = bar.querySelector('.cscroll-btn--down');
+
+    let trackH = 0, thumbH = 0, travel = 0, maxScroll = 0;
+    let rafId = 0, needMeasure = true, destroyed = false;
+
+    function render() {
+      rafId = 0;
+      if (destroyed) return;
+      if (host && !host.isConnected) { destroy(); return; }
+      if (needMeasure) {
+        needMeasure = false;
+        bar.classList.remove('cscroll--hidden'); // display:none measures 0px
+        if (host) {
+          // Bar geometry inside the sticky wrapper (style.css owns
+          // position/top/width): height = the host's content-box height, so
+          // the bar's insets equal the host's own padding — the modal
+          // panel's 26/28px padding also keeps the arrow buttons clear of
+          // its 26px corner radius, which clipped them when the bar hugged
+          // the edges. right compensates the host's right padding so the
+          // bar sits 4px off the host's inner edge.
+          const hcs = getComputedStyle(host);
+          const padT = parseFloat(hcs.paddingTop) || 0;
+          const padB = parseFloat(hcs.paddingBottom) || 0;
+          const padR = parseFloat(hcs.paddingRight) || 0;
+          bar.style.height = Math.max(0, host.clientHeight - padT - padB) + 'px';
+          bar.style.right = (4 - padR) + 'px';
+        }
+        trackH = track.getBoundingClientRect().height;
+      }
+      const g = thumbGeometry({ viewportH: opts.viewportH(), contentH: opts.contentH(), trackH, scrollY: opts.scroll() });
+      bar.classList.toggle('cscroll--hidden', !g.shown);
+      if (!g.shown) return;
+      maxScroll = g.maxScroll;
+      thumbH = g.thumbH;
+      travel = trackH - thumbH;
+      thumb.style.height = thumbH + 'px';
+      thumb.style.transform = 'translateY(' + g.thumbTop + 'px)';
+    }
+    // Plain scrolls only need a repaint; resizes and content changes can also
+    // change the track height, so those re-measure first.
+    const schedule = (withMeasure) => {
+      if (destroyed) return;
+      if (withMeasure) needMeasure = true;
+      if (!rafId) rafId = requestAnimationFrame(render);
+    };
+
+    (host || window).addEventListener('scroll', () => schedule(false), { passive: true });
+    let ro = null, mo = null;
+    if ('ResizeObserver' in window) {
+      ro = new ResizeObserver(() => schedule(true));
+      ro.observe(host || document.body);
+    }
+    // Inner hosts change CONTENT without changing size (modal bodies are
+    // injected into a fixed-height panel) — scrollHeight shifts never fire
+    // ResizeObserver on the host, so watch the subtree too.
+    if (host && 'MutationObserver' in window) {
+      mo = new MutationObserver(() => schedule(false));
+      mo.observe(host, { childList: true, subtree: true, characterData: true });
+    }
+
+    function destroy() {
+      destroyed = true;
+      cancelAnimationFrame(rafId); rafId = 0;
+      if (ro) ro.disconnect();
+      if (mo) mo.disconnect();
+      mount.remove();
+      if (host) host.classList.remove('cscroll-host');
+    }
+
+    // ---- Thumb dragging ----
+    let drag = null;
+    thumb.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || maxScroll <= 0) return;
+      e.preventDefault();
+      try { thumb.setPointerCapture(e.pointerId); } catch (_) { /* synthetic pointers have no id */ }
+      drag = { pointerY: e.clientY, startThumbTop: (opts.scroll() / maxScroll) * travel };
+      rootEl.classList.add('cscroll-dragging');
+    });
+    thumb.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      opts.scrollTo(thumbScrollY({ trackH, thumbH, thumbTop: drag.startThumbTop + (e.clientY - drag.pointerY), maxScroll }));
+    });
+    const endDrag = () => { drag = null; rootEl.classList.remove('cscroll-dragging'); };
+    thumb.addEventListener('pointerup', endDrag);
+    thumb.addEventListener('pointercancel', endDrag);
+
+    // ---- Steppers: one line-step per click; hold to glide. ----
+    function bindStepper(btn, dir) {
+      let delayT = 0, glideRaf = 0, lastT = 0;
+      const stop = () => {
+        clearTimeout(delayT); delayT = 0;
+        cancelAnimationFrame(glideRaf); glideRaf = 0;
+      };
+      btn.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        try { btn.setPointerCapture(e.pointerId); } catch (_) { /* synthetic pointers have no id */ }
+        opts.scrollTo(opts.scroll() + dir * STEP);
+        delayT = setTimeout(() => {
+          lastT = performance.now();
+          const tick = (t) => {
+            const dt = Math.min(64, t - lastT); // tab-switch gaps shouldn't teleport
+            lastT = t;
+            opts.scrollTo(opts.scroll() + dir * GLIDE * dt / 1000);
+            glideRaf = requestAnimationFrame(tick);
+          };
+          glideRaf = requestAnimationFrame(tick);
+        }, HOLD_DELAY);
+      });
+      btn.addEventListener('pointerup', stop);
+      btn.addEventListener('pointercancel', stop);
+      btn.addEventListener('lostpointercapture', stop);
+    }
+    bindStepper(btnUp, -1);
+    bindStepper(btnDown, 1);
+
+    // ---- Track: page toward the click; hold to keep paging. Stops once the
+    // thumb edge reaches the pointer, like a native bar. ----
+    let pageTimer = 0, pageDelay = 0;
+    const stopPaging = () => {
+      clearTimeout(pageDelay); pageDelay = 0;
+      clearInterval(pageTimer); pageTimer = 0;
+    };
+    track.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || e.target !== track) return;
+      e.preventDefault();
+      try { track.setPointerCapture(e.pointerId); } catch (_) { /* synthetic pointers have no id */ }
+      const page = () => {
+        const r = thumb.getBoundingClientRect();
+        if (e.clientY < r.top) opts.scrollTo(opts.scroll() - opts.viewportH() * 0.9);
+        else if (e.clientY > r.bottom) opts.scrollTo(opts.scroll() + opts.viewportH() * 0.9);
+        else stopPaging(); // thumb arrived under the pointer
+      };
+      page();
+      pageDelay = setTimeout(() => { pageTimer = setInterval(page, 90); }, HOLD_DELAY);
+    });
+    track.addEventListener('pointerup', stopPaging);
+    track.addEventListener('pointercancel', stopPaging);
+    track.addEventListener('lostpointercapture', stopPaging);
+
+    render();
+    return { schedule, destroy };
+  }
+
+  // ---- The window scroller ----
+  // 'instant' per call: the stylesheet's `scroll-behavior: smooth` would
+  // otherwise make drag and stepper scrolls trail behind the pointer.
+  const winScroller = createScroller({
+    host: null,
+    viewportH: () => window.innerHeight,
+    contentH: () => Math.max(rootEl.scrollHeight, document.body ? document.body.scrollHeight : 0),
+    scroll: () => window.scrollY,
+    scrollTo: (y) => window.scrollTo({ top: y, behavior: 'instant' }),
+  });
+  rootEl.classList.add('has-cscroll'); // style.css hides the native window bar
+  window.addEventListener('resize', () => winScroller.schedule(true), { passive: true });
+  window.addEventListener('load', () => winScroller.schedule(true));
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => winScroller.schedule(true));
+  // body.modal-open hides the window bar (style.css) while the modal locks
+  // page scroll — re-measure when it toggles so the bar never goes stale.
+  if ('MutationObserver' in window) {
+    new MutationObserver(() => winScroller.schedule(true))
+      .observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // ---- Inner scrollers: auto-discovered, now and as the DOM changes ----
+  // Any element styled overflow-y: auto/scroll gets a bar — the card detail
+  // modal today, anything future automatically. Bars inside bars are skipped.
+  const attached = new WeakSet();
+  let scanRaf = 0;
+  function scan() {
+    scanRaf = 0;
+    document.querySelectorAll('*').forEach((el) => {
+      if (attached.has(el) || el.closest('.cscroll')) return;
+      const oy = getComputedStyle(el).overflowY;
+      if (oy !== 'auto' && oy !== 'scroll') return;
+      attached.add(el);
+      createScroller({
+        host: el,
+        viewportH: () => el.clientHeight,
+        contentH: () => el.scrollHeight,
+        scroll: () => el.scrollTop,
+        // Inline style beats any stylesheet scroll-behavior for the duration
+        // of the write, so drags and steppers stay 1:1 on smooth-styled hosts.
+        scrollTo: (y) => {
+          el.style.scrollBehavior = 'auto';
+          el.scrollTop = y;
+          el.style.scrollBehavior = '';
+        },
+      });
+    });
+  }
+  const scheduleScan = () => { if (!scanRaf) scanRaf = requestAnimationFrame(scan); };
+  if ('MutationObserver' in window) {
+    new MutationObserver(scheduleScan).observe(document.body, { childList: true, subtree: true });
+  }
+  scan();
+  window.addEventListener('load', scheduleScan);
 })();
