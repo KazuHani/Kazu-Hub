@@ -343,16 +343,19 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .music-card .music-playlist-sub,
 .music-card .music-recent-label,
 .music-card .music-track-name { color: #fff; }
-.music-card-inner { display: flex; gap: 20px; align-items: flex-start; }
+.music-card-inner { display: flex; gap: 20px; align-items: stretch; }
+/* Left zone column: spreads the cover + playlist info across the card's full
+   height so no dead space sits under the text. */
+.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }
 .music-cover-wrap {
-  position: relative; width: 132px; height: 132px; border-radius: 18px; flex: none; overflow: hidden;
+  position: relative; width: 152px; height: 152px; border-radius: 18px; flex: none; overflow: hidden;
   text-decoration: none; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(150deg,#ff1a1a,#7c1d2b);
   box-shadow: 0 10px 24px rgba(255,0,0,.22);
 }
 .music-cover-wrap::after { content: "🎵"; position: absolute; font-size: 46px; opacity: .92; }
 .music-cover { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block; }
-.music-body { flex: 1; min-width: 0; }
+.music-body { min-width: 0; }
 .music-playlist-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ff4d4d; }
 .music-playlist-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(22px,4vw,28px); color: var(--ink); line-height: 1.08; margin-top: 4px; }
 .music-playlist-sub { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
@@ -421,6 +424,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   .music-body { width: 100%; }
   .music-recent { text-align: left; }
   .music-viz { justify-content: center; }
+  .music-side { align-items: center; }
   .music-featured {
     width: 100%; text-align: left; margin-top: 18px;
     border-left: none; padding-left: 0;

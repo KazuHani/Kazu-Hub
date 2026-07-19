@@ -446,6 +446,11 @@ ok('cascade still resolves via .is-visible', scriptSrc.includes("classList.add('
 ok('IntersectionObserver reveal removed', !scriptSrc.includes('IntersectionObserver'));
 ok('scroll-reveal section renamed to load cascade', cssFlat.includes('PAGE-LOAD REVEAL CASCADE'));
 
+// ---- Music card left zone fills the card height ----
+ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));
+ok('.music-side spreads cover + info', cssFlat.includes('.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }'));
+ok('cover enlarged to fill the zone', cssFlat.includes('width: 152px; height: 152px;'));
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));

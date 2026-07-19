@@ -464,6 +464,11 @@
         ok('cascade still resolves via .is-visible', scriptSrc.indexOf("classList.add('is-visible')") !== -1);
         ok('IntersectionObserver reveal removed', scriptSrc.indexOf('IntersectionObserver') === -1);
         ok('scroll-reveal section renamed to load cascade', cssFlat.indexOf('PAGE-LOAD REVEAL CASCADE') !== -1);
+
+        // ---- Music card left zone fills the card height ----
+        ok('left zone wrapped in .music-side', htmlSrc.indexOf('<div class="music-side">') !== -1);
+        ok('.music-side spreads cover + info', cssFlat.indexOf('.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }') !== -1);
+        ok('cover enlarged to fill the zone', cssFlat.indexOf('width: 152px; height: 152px;') !== -1);
         s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
         s.className = fail === 0 ? 'pass' : 'fail';
       }).catch(function () {
