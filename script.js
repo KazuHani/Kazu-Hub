@@ -256,6 +256,20 @@
   const SNOW_COLORS = ['#bfe3ff', '#a9d6ff', '#cde8ff', '#b9deff'];
   const randRange = (min, max) => min + Math.random() * (max - min);
 
+  // Particle density follows the hardware (see KazuLib.particleCount): every
+  // flake/drop animates under the glass cards and keeps their backdrop-filter
+  // busy, so phones get a lighter flurry. Flags are stable for a session.
+  const PARTICLE_FLAGS = {
+    coarsePointer: !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches),
+    smallScreen: Math.min(window.innerWidth, window.innerHeight) < 500,
+    lowConcurrency: !!(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4),
+    saveData: !!(navigator.connection && navigator.connection.saveData),
+  };
+  const particleCount = (KazuLib && KazuLib.particleCount) || function (n, o) {
+    const light = o && (o.coarsePointer || o.smallScreen || o.lowConcurrency || o.saveData);
+    return Math.min(64, Math.max(8, light ? Math.round(n * 0.6) : n));
+  };
+
   function buildFlakes(count, sizeMin, sizeMax) {
     const frag = document.createDocumentFragment();
     for (let i = 0; i < count; i++) {
@@ -297,8 +311,8 @@
     atmosphereCurrent = mode;
     atmosphereEl.innerHTML = '';
     if (mode === 'none') return;
-    if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(46)); return; }
-    if (mode === 'snow-heavy') { atmosphereEl.appendChild(buildFlakes(26, 10, 24)); return; }
+    if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(particleCount(46, PARTICLE_FLAGS))); return; }
+    if (mode === 'snow-heavy') { atmosphereEl.appendChild(buildFlakes(particleCount(26, PARTICLE_FLAGS), 10, 24)); return; }
     if (mode === 'aurora') {
       // Clear night sky: two drifting light ribbons over a static starfield.
       // Pure CSS animation, no per-frame JS (see style.css).
@@ -310,7 +324,7 @@
       atmosphereEl.appendChild(a);
       return;
     }
-    atmosphereEl.appendChild(buildFlakes(12, 11, 22)); // arctic default
+    atmosphereEl.appendChild(buildFlakes(particleCount(12, PARTICLE_FLAGS), 11, 22)); // arctic default
   }
 
   // ---------- Discord (Lanyard) ----------
@@ -2094,6 +2108,22 @@
   refreshAll();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshAll);
   window.addEventListener('load', refreshAll);
+
+  // Scroll-idle refraction: re-running every card's SVG displacement filter
+  // against a moving backdrop is the desktop scroll stutter, so while the
+  // page is actively scrolling html.glass-scrolling swaps the cards back to
+  // the stylesheet's plain frosted blur (the look Safari/Firefox always
+  // render). The refractive rims return ~120ms after the scroll stops. The
+  // handler only toggles a class — no layout reads, no per-card work.
+  let scrollIdleTimer = null;
+  window.addEventListener('scroll', () => {
+    document.documentElement.classList.add('glass-scrolling');
+    if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+    scrollIdleTimer = setTimeout(() => {
+      scrollIdleTimer = null;
+      document.documentElement.classList.remove('glass-scrolling');
+    }, 120);
+  }, { passive: true });
 })();
 
 /* ============================================================================

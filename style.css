@@ -1118,7 +1118,14 @@ body.modal-open { overflow: hidden; }
 }
 .aurora-ribbon {
   position: absolute; left: -25%; width: 150%; border-radius: 50%;
-  filter: blur(38px); pointer-events: none; will-change: transform;
+  /* The blur that softened these bands used to force a full re-raster of two
+     ~150%-wide elements every animation frame (and kept waking the glass
+     cards' backdrop-filter). The softness is baked in instead: the gradient
+     stops fade the long edges and this mask fades the short ones, so the
+     drift animation is pure compositor transform work. */
+  pointer-events: none; will-change: transform;
+  -webkit-mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0));
+          mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0));
 }
 .aurora-ribbon--a {
   top: 3vh; height: 36vh; opacity: .55; transform: rotate(-8deg);
@@ -1288,3 +1295,50 @@ body[data-theme="light"] .cscroll-thumb {
 /* Page scroll is locked while a modal is open (body.modal-open) — the window
    bar would be a dead control, so it goes away until the modal closes. */
 body.modal-open > .cscroll { display: none; }
+
+/* ============ SCROLL PERFORMANCE ============ */
+/* Render containment: below-the-fold glass cards skip layout/paint entirely
+   until they approach the viewport. Each of these carries a backdrop-filter,
+   and every filtered card on screen re-filters its backdrop on every scroll
+   frame — capping how many are "live" at once is what keeps scrolling smooth
+   on mobile GPUs. contain-intrinsic-size holds an estimated size so the
+   scrollbar/page height stays stable before first render; once rendered, the
+   `auto` keyword remembers the real size. No visual change. */
+.discord-card,
+.steam-card,
+.mal-card,
+.lb-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+.music-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}
+.story-link {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 220px;
+}
+.footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 80px;
+}
+
+/* Scroll-idle refraction: while the page is actively scrolling, script.js
+   sets html.glass-scrolling and the Chromium cards rest their inline SVG
+   displacement-map filter, falling back to this frosted blur — the exact
+   look Safari/Firefox render full-time. Re-running nine SVG filters against
+   a moving backdrop was the desktop scroll stutter; the refractive rims
+   return ~120ms after the scroll stops. (!important beats the inline
+   backdrop-filter the refraction code sets.) */
+html.glass-scrolling .stat-card:not(.stat-card--bday),
+html.glass-scrolling .toast,
+html.glass-scrolling .discord-card,
+html.glass-scrolling .steam-card,
+html.glass-scrolling .mal-card,
+html.glass-scrolling .lb-card,
+html.glass-scrolling .story-card,
+html.glass-scrolling .music-card {
+  -webkit-backdrop-filter: blur(6px) saturate(1.7) !important;
+          backdrop-filter: blur(6px) saturate(1.7) !important;
+}

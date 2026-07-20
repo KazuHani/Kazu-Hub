@@ -275,6 +275,21 @@
     return 'snow';
   }
 
+  // Ambient particle density, scaled to the device. Every flake/drop animates
+  // UNDER the liquid-glass cards, so each one keeps waking their
+  // backdrop-filter — fine on a desktop GPU, real frame time on a phone. The
+  // feature is untouched (it still rains/snows); weak devices just get a
+  // lighter flurry. `o` flags: coarsePointer, smallScreen, lowConcurrency,
+  // saveData — any true flag picks the reduced count.
+  function particleCount(base, o) {
+    var n = Math.round(+base);
+    if (isNaN(n) || n <= 0) return 0;
+    o = o || {};
+    var light = !!(o.coarsePointer || o.smallScreen || o.lowConcurrency || o.saveData);
+    if (light) n = Math.round(n * 0.6);
+    return Math.min(64, Math.max(8, n));
+  }
+
   // ---- 5-day forecast strip ------------------------------------------------
   // Shapes an Open-Meteo `daily` block (day-aligned to Europe/London via the
   // request's timezone param) into rows for the weather modal's strip. The
@@ -801,6 +816,7 @@
     nullschoolUrl: nullschoolUrl,
     openMeteoUrl: openMeteoUrl,
     atmosphereMode: atmosphereMode,
+    particleCount: particleCount,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,

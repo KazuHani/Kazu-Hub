@@ -548,6 +548,23 @@ ok('balloon canvas styled behind the content', cssFlat.includes('#balloon-canvas
 ok('reduced motion skips the balloon canvas', scriptSrc.includes('function startBalloons()') && scriptSrc.includes("prefers-reduced-motion: reduce"));
 ok('emoji balloons replaced by the physics canvas', !htmlSrc.includes('bday-balloons') && !cssFlat.includes('balloonRise'));
 
+// ---- Scroll performance (static wiring checks) ----
+// The liquid glass stays; the work around it shrank: render containment on
+// the below-fold glass cards, aurora softness baked into the ribbons (no live
+// filter), device-scaled particle density, and the Chromium refraction
+// resting while the page scrolls.
+eq('particleCount: desktop keeps full density', L.particleCount(46, {}), 46);
+eq('particleCount: coarse pointer lightens the load', L.particleCount(46, { coarsePointer: true }), 28);
+eq('particleCount: snow-heavy scales to 16', L.particleCount(26, { saveData: true }), 16);
+eq('particleCount: small screens floor at 8', L.particleCount(12, { smallScreen: true }), 8);
+eq('particleCount: junk input yields nothing', L.particleCount('nope', {}), 0);
+ok('particleCount exported + used with device flags', scriptSrc.includes('particleCount(46, PARTICLE_FLAGS)') && scriptSrc.includes('particleCount(12, PARTICLE_FLAGS)'));
+ok('below-fold glass cards render-contained', cssFlat.includes('content-visibility: auto') && cssFlat.includes('contain-intrinsic-size: auto 420px'));
+ok('aurora live blur removed', !cssFlat.includes('filter: blur(38px)'));
+ok('aurora softness baked into a mask', cssFlat.includes('mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0))'));
+ok('refraction rests while scrolling', scriptSrc.includes("classList.add('glass-scrolling')") && cssFlat.includes('html.glass-scrolling .music-card {'));
+ok('scroll-idle swap restores the frosted base', cssFlat.includes('html.glass-scrolling .stat-card:not(.stat-card--bday),'));
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));
