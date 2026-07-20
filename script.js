@@ -2082,12 +2082,13 @@
     card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
   }
 
-  // Matches the translucent selector list in style.css, minus .social-card:
-  // the refracted rim read as a drawn-on blue outline on the social tiles, so
-  // those keep the plain frosted look (CSS blur + glint) instead. The music
-  // card now joins the set so its rim refracts the page behind it too.
+  // Every .card refracts by default — the birthday tile is the one opt-out
+  // (solid brand gradient, nothing to refract through). The toast joins too.
+  // Keying the selector off .card means any future card gets the rim
+  // automatically. (The social tiles used to be excluded — the rim read as a
+  // drawn-on outline on them — but they're full glass citizens now.)
   const cards = Array.from(
-    document.querySelectorAll('.stat-card:not(.stat-card--bday), .toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card, .music-card'),
+    document.querySelectorAll('.card:not(.stat-card--bday), .toast'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
 
   function refreshAll() { cards.forEach(refresh); }

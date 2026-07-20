@@ -498,7 +498,8 @@ const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8');
 ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
 ok('story card gradients made translucent', htmlSrc.includes('rgba(124,29,43,.66)') && htmlSrc.includes('rgba(14,94,84,.66)'));
 ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);'));
-ok('refraction list covers the new glass cards', scriptSrc.includes(".toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card"));
+ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
+ok('social tiles are full glass citizens (rim refraction included)', !scriptSrc.includes(':not(.social-card)') && !cssFlat.includes(':not(.social-card)'));
 
 // ---- Page-load reveal cascade (static wiring checks) ----
 // Everything .scroll-reveal waves in on load with a stagger; the old
@@ -562,8 +563,24 @@ ok('particleCount exported + used with device flags', scriptSrc.includes('partic
 ok('below-fold glass cards render-contained', cssFlat.includes('content-visibility: auto') && cssFlat.includes('contain-intrinsic-size: auto 420px'));
 ok('aurora live blur removed', !cssFlat.includes('filter: blur(38px)'));
 ok('aurora softness baked into a mask', cssFlat.includes('mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0))'));
-ok('refraction rests while scrolling', scriptSrc.includes("classList.add('glass-scrolling')") && cssFlat.includes('html.glass-scrolling .music-card {'));
-ok('scroll-idle swap restores the frosted base', cssFlat.includes('html.glass-scrolling .stat-card:not(.stat-card--bday),'));
+ok('refraction rests while scrolling', scriptSrc.includes("classList.add('glass-scrolling')") && cssFlat.includes('html.glass-scrolling .card:not(.stat-card--bday),'));
+ok('scroll-idle swap restores the frosted base', cssFlat.includes('html.glass-scrolling .toast {'));
+
+// ---- Liquid glass: default-on + the LB ordering bug (regression guards) ----
+// The effect is the .card default: any future class="card ..." section gets
+// the glint rim, frosted backdrop and glint shadow with no extra CSS.
+ok('glass is the .card default (bday is the opt-out)', cssFlat.includes('.card:not(.stat-card--bday) {\n  --glint:'));
+ok('glint shadow defaults onto .card, bday re-pinned solid', cssFlat.includes('.card { box-shadow: var(--card-shadow), var(--glint); }') && cssFlat.includes('.stat-card--bday { box-shadow: 0 16px 34px rgba(80,110,230,.3); }'));
+// The LB base rule must sit BEFORE the liquid-glass section or it overrides
+// the translucent fill/glint/frost on source order — the bug that left the
+// Letterboxd card solid.
+const lbBase = cssFlat.indexOf('.lb-card { border-radius: 24px;');
+ok('lb base rule sits before the glass section', lbBase > -1 && lbBase < cssFlat.indexOf('LIQUID GLASS'));
+// Story cards are first-class .card citizens now.
+ok('story cards carry the .card class', htmlSrc.split('class="card story-card"').length - 1 === 2);
+// Paint containment on .story-link clipped the hover-lifted card's top edge —
+// the story cards stay uncontained on purpose.
+ok('story links are not paint-contained (hover-lift clips)', !/\.story-link\s*\{\s*content-visibility/.test(cssFlat));
 
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +

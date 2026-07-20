@@ -288,6 +288,13 @@ body[data-theme="light"] #theme-orb:hover > span {
 
 /* ---- MyAnimeList (currently watching, via Jikan) ---- */
 .mal-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; background: linear-gradient(150deg,#16213e 0%,#2e51a2 60%,#16213e 100%); box-shadow: 0 16px 38px rgba(20,40,100,.32); backdrop-filter: none; border: none; }
+
+/* ---- Letterboxd (latest film watched) ---- */
+/* Base rule sits with the other card bases, BEFORE the liquid-glass section,
+   so the glass overrides win on source order (and this stays the fallback
+   where color-mix is unsupported). It used to live after the glass section,
+   which silently cancelled the LB card's glass. */
+.lb-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; background: linear-gradient(150deg,#14181c 0%,#2c343c 60%,#14181c 100%); box-shadow: 0 16px 38px rgba(10,16,24,.4); backdrop-filter: none; border: none; }
 .mal-card .loading-row { color: #c7d4f7; }
 .mal-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
 .mal-card .idle-banner { background: rgba(255,255,255,.12); color: #c7d4f7; }
@@ -795,6 +802,30 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
    contrast in both themes; only the birthday tile keeps its solid brand
    gradient. Placed after the .card / .toast rules so it wins on source order
    at equal specificity. */
+
+
+/* Default: EVERY .card is liquid glass — the birthday tile is the one opt-out
+   (it keeps its solid brand gradient). This is what makes the effect
+   automatic for future sections: a new card with class="card your-card" gets
+   the glint rim, frosted backdrop and glint shadow with zero extra CSS; add
+   a translucent fill override further down only if it needs its own brand
+   hue. Placed first in this section so every per-card rule below still wins.
+   (.card keeps its themed translucent base as the default fill — a background
+   here would clobber the music card's red tint via the :not() specificity.) */
+.card:not(.stat-card--bday) {
+  --glint:
+    inset 0 1.5px 0.5px rgba(255, 255, 255, .55),   /* crisp top-edge light-catch */
+    inset 2px 3px 4px rgba(255, 255, 255, .18),     /* soft top-left sheen */
+    inset -2px -3px 8px rgba(0, 0, 0, .24);         /* lower-right depth */
+  border: none;
+  -webkit-backdrop-filter: blur(6px) saturate(1.7);
+          backdrop-filter: blur(6px) saturate(1.7);
+}
+/* The glint shadow goes on plain .card (specificity 0-1-0, before the per-card
+   shadows below) so brand shadows still win; the birthday tile is re-pinned
+   right after since it would otherwise pick the glint up. */
+.card { box-shadow: var(--card-shadow), var(--glint); }
+.stat-card--bday { box-shadow: 0 16px 34px rgba(80,110,230,.3); }
 .stat-card:not(.stat-card--bday),
 .social-card,
 .toast {
@@ -1154,11 +1185,10 @@ body.modal-open { overflow: hidden; }
 }
 
 /* ============ LETTERBOXD CARD ============ */
-.lb-card {
-  border-radius: 24px; padding: 22px; position: relative; overflow: hidden;
-  background: linear-gradient(150deg,#14181c 0%,#2c343c 60%,#14181c 100%);
-  box-shadow: 0 16px 38px rgba(10,16,24,.4); backdrop-filter: none; border: none;
-}
+/* The .lb-card base rule lives up with the other card bases (next to
+   .mal-card). It must come BEFORE the liquid-glass section: down here it
+   overrode the translucent fill, glint shadow and frosted backdrop on source
+   order, which is why the LB card used to render solid instead of glass. */
 .lb-bg-icon { position: absolute; right: -20px; bottom: -26px; opacity: .12; }
 .lb-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
 .lb-card .loading-row { color: #b8c4cf; }
@@ -1315,10 +1345,10 @@ body.modal-open > .cscroll { display: none; }
   content-visibility: auto;
   contain-intrinsic-size: auto 340px;
 }
-.story-link {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 220px;
-}
+/* The story cards are deliberately NOT contained: .story-link:hover lifts the
+   inner .story-card by 4px, which overflows the link's border box — with
+   content-visibility's paint containment that clipped the card's top edge on
+   hover. Two small cards aren't worth the containment anyway. */
 .footer {
   content-visibility: auto;
   contain-intrinsic-size: auto 80px;
@@ -1330,15 +1360,11 @@ body.modal-open > .cscroll { display: none; }
    look Safari/Firefox render full-time. Re-running nine SVG filters against
    a moving backdrop was the desktop scroll stutter; the refractive rims
    return ~120ms after the scroll stops. (!important beats the inline
-   backdrop-filter the refraction code sets.) */
-html.glass-scrolling .stat-card:not(.stat-card--bday),
-html.glass-scrolling .toast,
-html.glass-scrolling .discord-card,
-html.glass-scrolling .steam-card,
-html.glass-scrolling .mal-card,
-html.glass-scrolling .lb-card,
-html.glass-scrolling .story-card,
-html.glass-scrolling .music-card {
+   backdrop-filter the refraction code sets.) Selector mirrors the refraction
+   list in script.js: every refracting .card (the birthday tile stays solid),
+   plus the toast. */
+html.glass-scrolling .card:not(.stat-card--bday),
+html.glass-scrolling .toast {
   -webkit-backdrop-filter: blur(6px) saturate(1.7) !important;
           backdrop-filter: blur(6px) saturate(1.7) !important;
 }
