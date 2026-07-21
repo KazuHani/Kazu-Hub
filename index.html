@@ -32,11 +32,18 @@
 <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
 <link rel="preconnect" href="https://api.lanyard.rest" crossorigin>
 <link rel="preconnect" href="https://api.jikan.moe" crossorigin>
-<link rel="preconnect" href="https://api.allorigins.win" crossorigin>
-<link rel="preconnect" href="https://dummyjson.com" crossorigin>
-<!-- Cheaper DNS-only hints for the image CDNs -->
-<link rel="dns-prefetch" href="//cdn.discordapp.com">
+<link rel="preconnect" href="https://corsproxy.io" crossorigin>
+<link rel="preconnect" href="https://zenquotes.io" crossorigin>
+<link rel="preconnect" href="https://api.listenbrainz.org" crossorigin>
+<!-- The Discord avatar is one of the first images painted: full handshake
+     (no crossorigin — plain <img> loads aren't CORS-mode). -->
+<link rel="preconnect" href="https://cdn.discordapp.com">
+<!-- Cheaper DNS-only hints for the other image CDNs -->
 <link rel="dns-prefetch" href="//cdn.myanimelist.net">
+<link rel="dns-prefetch" href="//media.discordapp.net">
+<link rel="dns-prefetch" href="//i.scdn.co">
+<link rel="dns-prefetch" href="//avatars.steamstatic.com">
+<link rel="dns-prefetch" href="//a.ltrbxd.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=28">
 <script type="application/ld+json">
@@ -238,7 +245,7 @@
           <div id="discordLoaded" class="hidden">
             <div class="presence-row">
               <div class="avatar-wrap">
-                <img id="discordAvatar" class="avatar-img" alt="avatar" loading="lazy">
+                <img id="discordAvatar" class="avatar-img" alt="avatar" loading="lazy" decoding="async">
                 <span id="discordStatusDot" class="status-dot"></span>
               </div>
               <div class="presence-text">
@@ -257,7 +264,7 @@
 
             <div id="discordGame" class="info-pill info-pill--game hidden">
               <div class="info-pill-emoji" id="discordGameEmoji">🎮</div>
-              <img id="discordGameIcon" class="info-pill-icon hidden" alt="" loading="lazy">
+              <img id="discordGameIcon" class="info-pill-icon hidden" alt="" loading="lazy" decoding="async">
               <div class="presence-text">
                 <div class="info-pill-label" style="color:#7c5cff;">Playing now</div>
                 <div class="info-pill-value" id="discordGameName">—</div>
@@ -267,7 +274,7 @@
             </div>
 
             <a id="discordSpotify" class="info-pill info-pill--spotify hidden" target="_blank" rel="noopener">
-              <img id="spotifyArt" class="spotify-art" alt="" loading="lazy">
+              <img id="spotifyArt" class="spotify-art" alt="" loading="lazy" decoding="async">
               <div class="presence-text">
                 <div class="info-pill-label" style="color:#1db954;">Listening on Spotify 🎧</div>
                 <div class="spotify-song" id="spotifySong">—</div>
@@ -307,7 +314,7 @@
 
           <div id="steamLoaded" class="hidden" style="position:relative;">
             <div class="presence-row" style="margin-bottom:16px;">
-              <img id="steamAvatar" class="steam-avatar" alt="Steam avatar" loading="lazy">
+              <img id="steamAvatar" class="steam-avatar" alt="Steam avatar" loading="lazy" decoding="async">
               <div class="presence-text">
                 <div class="presence-name" style="color:#fff;">Kazu Hani</div>
                 <div class="presence-status" id="steamStatusText">●  —</div>
@@ -411,7 +418,7 @@
         <div class="card music-card scroll-reveal">
           <div class="card-head">
             <div class="card-head-title" style="color:#ff0000;">
-              <img src="assets/youtube-music.png" alt="YouTube Music" width="22" height="22" style="display:block;">
+              <img src="assets/youtube-music.png" alt="YouTube Music" width="22" height="22" style="display:block;" loading="lazy" decoding="async">
               YouTube Music
             </div>
             <a class="pill-link" href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=SloJG31P-_wVFS1G" target="_blank" rel="noopener" style="color:#ff0000;background:rgba(255,0,0,.1);">Open →</a>
@@ -422,7 +429,7 @@
                  height (.music-side) so no dead space sits under the text. -->
             <div class="music-side">
               <a class="music-cover-wrap" href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=SloJG31P-_wVFS1G" target="_blank" rel="noopener" aria-label="Open playlist on YouTube Music">
-                <img class="music-cover" src="assets/Sisu.jpg" alt="Playlist cover" loading="lazy" onerror="this.style.display='none'">
+                <img class="music-cover" src="assets/Sisu.jpg" alt="Playlist cover" loading="lazy" decoding="async" onerror="this.style.display='none'">
               </a>
 
               <div class="music-body">
@@ -586,7 +593,7 @@
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
 <script src="lib.js?v=15"></script>
-<script src="script.js?v=29"></script>
+<script src="script.js?v=30"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

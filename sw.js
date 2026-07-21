@@ -13,12 +13,12 @@
    ========================================================================== */
 'use strict';
 
-const CACHE = 'kazu-shell-v17';
+const CACHE = 'kazu-shell-v18';
 const PRECACHE = [
   './',
   './index.html',
   './style.css?v=28',
-  './script.js?v=29',
+  './script.js?v=30',
   './lib.js?v=15',
   './assets/favicon.png',
   './assets/profile.webp',
@@ -38,6 +38,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      // Navigation preload lets a navigation's network request start in
+      // parallel with this worker's boot instead of queuing behind it
+      // (worst on Android, where SW startup can cost 100ms+).
+      .then(() => self.registration.navigationPreload && self.registration.navigationPreload.enable())
       .then(() => self.clients.claim())
   );
 });
@@ -50,11 +54,14 @@ self.addEventListener('fetch', (event) => {
 
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      // Still strictly network-first: the preloaded response IS the network
+      // response; fetch(req) is the fallback where preload is unsupported.
+      Promise.resolve(event.preloadResponse)
+        .then((preloaded) => preloaded || fetch(req))
         .then((res) => {
           if (res.ok) {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put('./index.html', copy));
+            event.waitUntil(caches.open(CACHE).then((c) => c.put('./index.html', copy)));
           }
           return res;
         })

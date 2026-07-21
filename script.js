@@ -127,11 +127,15 @@
   let bdayCelebrated = false; // latch so confetti fires once per OFF->ON birthday transition
 
   // ---------- Clock / age / birthday ----------
+  // Intl.DateTimeFormat construction is one of the priciest built-ins there
+  // is, and these two used to be rebuilt on every per-second tick. Construct
+  // once, reuse forever. en-GB 12-hour, matching the time modal (fmtTimeUK).
+  const fmtClockTime = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  const fmtClockDate = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   function computeClock() {
     const now = new Date();
-    // en-GB 12-hour, matching the time modal (fmtTimeUK) — one format everywhere.
-    const timeStr = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
-    const dateStr = new Intl.DateTimeFormat('en-GB', { timeZone: TIMEZONE, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(now);
+    const timeStr = fmtClockTime.format(now);
+    const dateStr = fmtClockDate.format(now);
 
     let ageStr, bdayText, bdaySub;
     if (KazuLib) {
@@ -183,6 +187,29 @@
     applySeasons(); // re-evaluate every second so a page left open crosses midnight correctly
   }
 
+  // ---------- Fetch timeout wrapper ----------
+  // A hung API or proxy (corsproxy.io on a bad day) used to pin a card on its
+  // loading line forever. AbortSignal.timeout fails the fetch fast instead,
+  // landing in each loader's existing catch (error card / localStorage cache
+  // / fallback quotes) — no new failure modes. Older browsers without it get
+  // exactly today's behaviour.
+  function fetchT(url, opts) {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      return fetch(url, Object.assign({}, opts, { signal: AbortSignal.timeout(12000) }));
+    }
+    return fetch(url, opts);
+  }
+
+  // ---------- Render dedup signatures ----------
+  // Polls regularly return the same data as the previous cycle. Each renderer
+  // compares a JSON signature and skips the DOM rewrite when nothing changed,
+  // so an unchanged list costs no re-created <img> nodes, no style/layout pass.
+  let lastSteamRecentSig = '';
+  let lastMalAnimeSig = '';
+  let lastMalMangaSig = '';
+  let lastLbSig = '';
+  let lastMusicSig = '';
+
   // ---------- Weather ----------
   function weatherInfo(code, isDay) {
     if (code === 0) return { e: isDay ? '☀️' : '🌙', d: 'Clear sky' };
@@ -209,7 +236,7 @@
       const url = (KazuLib && KazuLib.openMeteoUrl)
         ? KazuLib.openMeteoUrl(52.414, -4.081)
         : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
-      const r = await fetch(url);
+      const r = await fetchT(url);
       const j = await r.json();
       const w = j.current;
       weatherDaily = j.daily || null;
@@ -265,6 +292,11 @@
     lowConcurrency: !!(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4),
     saveData: !!(navigator.connection && navigator.connection.saveData),
   };
+  // particleCount() clamps to a minimum of 8 (it's sized for flakes/drops);
+  // the one-off canvas bursts (confetti, balloons) scale smaller counts off
+  // the same hardware flags directly.
+  const lightDevice = PARTICLE_FLAGS.coarsePointer || PARTICLE_FLAGS.smallScreen ||
+    PARTICLE_FLAGS.lowConcurrency || PARTICLE_FLAGS.saveData;
   const particleCount = (KazuLib && KazuLib.particleCount) || function (n, o) {
     const light = o && (o.coarsePointer || o.smallScreen || o.lowConcurrency || o.saveData);
     return Math.min(64, Math.max(8, light ? Math.round(n * 0.6) : n));
@@ -444,7 +476,7 @@
   async function loadDiscord() {
     if (lanyardWsLive) return;
     try {
-      const r = await fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID, { cache: 'no-store' });
+      const r = await fetchT('https://api.lanyard.rest/v1/users/' + DISCORD_ID, { cache: 'no-store' });
       const j = await r.json();
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
       if (lanyardWsLive) return; // a socket update beat this response
@@ -664,11 +696,11 @@
         // so a direct browser fetch can never succeed. (Order flipped after the
         // direct attempt wasted one doomed round trip on every 5-min poll.)
         // no-store: status must track the server, not the browser HTTP cache.
-        const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL), { cache: 'no-store' });
+        const r = await fetchT('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL), { cache: 'no-store' });
         if (!r.ok) throw new Error('proxy failed');
         xmlText = await r.text();
       } catch (e) {
-        const r2 = await fetch(STEAM_URL, { cache: 'no-store' });
+        const r2 = await fetchT(STEAM_URL, { cache: 'no-store' });
         if (!r2.ok) throw new Error('bad status');
         xmlText = await r2.text();
       }
@@ -725,18 +757,23 @@
         hoursStr: steamHoursText(g.hoursPlayed, g.hoursOnRecord),
       }));
       const listEl = $('recentGamesList');
+      const recentSig = JSON.stringify(recent);
       if (recent.length) {
-        listEl.innerHTML = recent.map((g) => (
-          '<a class="recent-game-row"' + (g.url ? ' href="' + escapeHtml(g.url) + '" target="_blank" rel="noopener"' : '') + '>' +
-            '<img class="recent-game-logo" src="' + g.logo + '" alt="' + g.name + '" loading="lazy">' +
-            '<div style="min-width:0;flex:1;">' +
-              '<div class="recent-game-name">' + g.name + '</div>' +
-              '<div class="recent-game-hours">' + g.hoursStr + '</div>' +
-            '</div>' +
-          '</a>'
-        )).join('');
+        if (recentSig !== lastSteamRecentSig) {
+          lastSteamRecentSig = recentSig;
+          listEl.innerHTML = recent.map((g) => (
+            '<a class="recent-game-row"' + (g.url ? ' href="' + escapeHtml(g.url) + '" target="_blank" rel="noopener"' : '') + '>' +
+              '<img class="recent-game-logo" src="' + g.logo + '" alt="' + g.name + '" loading="lazy" decoding="async">' +
+              '<div style="min-width:0;flex:1;">' +
+                '<div class="recent-game-name">' + g.name + '</div>' +
+                '<div class="recent-game-hours">' + g.hoursStr + '</div>' +
+              '</div>' +
+            '</a>'
+          )).join('');
+        }
         $('steamRecent').classList.remove('hidden');
       } else {
+        lastSteamRecentSig = recentSig;
         $('steamRecent').classList.add('hidden');
       }
 
@@ -804,18 +841,22 @@
 
   function renderMalRows(rows) {
     malAnimeRows = rows;
-    $('malList').innerHTML = rows.map((x) => (
-      '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
-        (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy">' : '') +
-        '<div class="mal-info">' +
-          '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
-          '<div class="mal-progress">' +
-            (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
-            '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
+    const sig = JSON.stringify(rows);
+    if (sig !== lastMalAnimeSig) {
+      lastMalAnimeSig = sig;
+      $('malList').innerHTML = rows.map((x) => (
+        '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+          (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
+          '<div class="mal-info">' +
+            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+            '<div class="mal-progress">' +
+              (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
+              '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
+            '</div>' +
           '</div>' +
-        '</div>' +
-      '</a>'
-    )).join('');
+        '</a>'
+      )).join('');
+    }
     updateMalIdle();
 
     $('malLoaded').classList.remove('hidden');
@@ -828,18 +869,22 @@
     const section = $('malMangaSection');
     const list = $('malMangaList');
     if (section && list) {
-      list.innerHTML = rows.map((x) => (
-        '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
-          (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy">' : '') +
-          '<div class="mal-info">' +
-            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
-            '<div class="mal-progress">' +
-              (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
-              '<div class="mal-eps">Ch ' + x.read + ' / ' + (x.total || '?') + '</div>' +
+      const sig = JSON.stringify(rows);
+      if (sig !== lastMalMangaSig) {
+        lastMalMangaSig = sig;
+        list.innerHTML = rows.map((x) => (
+          '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+            (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
+            '<div class="mal-info">' +
+              '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+              '<div class="mal-progress">' +
+                (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
+                '<div class="mal-eps">Ch ' + x.read + ' / ' + (x.total || '?') + '</div>' +
+              '</div>' +
             '</div>' +
-          '</div>' +
-        '</a>'
-      )).join('');
+          '</a>'
+        )).join('');
+      }
       section.classList.toggle('hidden', rows.length === 0);
     }
     updateMalIdle();
@@ -858,7 +903,7 @@
   // because MAL sends no Access-Control-Allow-Origin.
   async function fetchMalRows() {
     try {
-      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' });
+      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' });
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
       // ?status=watching does the filtering server-side; the extra client-side
@@ -872,7 +917,7 @@
     } catch (e) {
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
+      const r2 = await fetchT('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
@@ -911,7 +956,7 @@
     const mRow = KazuLib.malMangaRow;
     const mListRow = KazuLib.malMangaListRow;
     try {
-      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' });
+      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' });
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
       return ((j && j.data) || [])
@@ -922,7 +967,7 @@
     } catch (e) {
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
+      const r2 = await fetchT('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected mangalist load.json payload');
@@ -968,23 +1013,27 @@
   function renderLetterboxd(entry) {
     const row = $('lbRow');
     if (!row) return;
-    if (!entry) {
-      row.innerHTML = '';
-      $('lbIdle').classList.remove('hidden');
-    } else {
-      $('lbIdle').classList.add('hidden');
-      row.innerHTML =
-        '<a class="lb-entry" href="' + escapeHtml(entry.link) + '" target="_blank" rel="noopener">' +
-          (entry.poster
-            ? '<img class="lb-poster" src="' + escapeHtml(entry.poster) + '" alt="" loading="lazy">'
-            : '<div class="lb-poster lb-poster--empty">🎬</div>') +
-          '<div class="lb-info">' +
-            '<div class="lb-label">Latest watch' + (entry.rewatch ? ' · rewatch' : '') + '</div>' +
-            '<div class="lb-title">' + escapeHtml(entry.title) + (entry.year ? ' <span class="lb-year">' + entry.year + '</span>' : '') + '</div>' +
-            (entry.stars ? '<div class="lb-stars">' + entry.stars + '</div>' : '') +
-            (entry.watched ? '<div class="lb-watched">' + escapeHtml(entry.watched) + '</div>' : '') +
-          '</div>' +
-        '</a>';
+    const sig = JSON.stringify(entry);
+    if (sig !== lastLbSig) {
+      lastLbSig = sig;
+      if (!entry) {
+        row.innerHTML = '';
+        $('lbIdle').classList.remove('hidden');
+      } else {
+        $('lbIdle').classList.add('hidden');
+        row.innerHTML =
+          '<a class="lb-entry" href="' + escapeHtml(entry.link) + '" target="_blank" rel="noopener">' +
+            (entry.poster
+              ? '<img class="lb-poster" src="' + escapeHtml(entry.poster) + '" alt="" loading="lazy" decoding="async">'
+              : '<div class="lb-poster lb-poster--empty">🎬</div>') +
+            '<div class="lb-info">' +
+              '<div class="lb-label">Latest watch' + (entry.rewatch ? ' · rewatch' : '') + '</div>' +
+              '<div class="lb-title">' + escapeHtml(entry.title) + (entry.year ? ' <span class="lb-year">' + entry.year + '</span>' : '') + '</div>' +
+              (entry.stars ? '<div class="lb-stars">' + entry.stars + '</div>' : '') +
+              (entry.watched ? '<div class="lb-watched">' + escapeHtml(entry.watched) + '</div>' : '') +
+            '</div>' +
+          '</a>';
+      }
     }
     $('lbLoaded').classList.remove('hidden');
     $('lbLoading').classList.add('hidden');
@@ -1001,7 +1050,7 @@
     if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
-      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(rss), { cache: 'no-store' });
+      const r = await fetchT('https://corsproxy.io/?' + encodeURIComponent(rss), { cache: 'no-store' });
       if (!r.ok) throw new Error('proxy status ' + r.status);
       const entry = KazuLib.parseLetterboxdRss(await r.text());
       renderLetterboxd(entry);
@@ -1024,7 +1073,7 @@
   async function loadMusicRecent() {
     if (!LISTENBRAINZ_USER || !KazuLib || !KazuLib.listenbrainzRow) return;
     try {
-      const r = await fetch('https://api.listenbrainz.org/1/user/' + encodeURIComponent(LISTENBRAINZ_USER) + '/listens?count=3');
+      const r = await fetchT('https://api.listenbrainz.org/1/user/' + encodeURIComponent(LISTENBRAINZ_USER) + '/listens?count=3');
       if (!r.ok) throw new Error('status ' + r.status);
       const j = await r.json();
       const rows = ((((j || {}).payload) || {}).listens || [])
@@ -1035,17 +1084,21 @@
       const list = $('musicTrackList');
       if (!wrap || !list) return;
       if (!rows.length) { wrap.classList.add('hidden'); return; }
-      list.innerHTML = rows.map((t, i) => {
-        const inner =
-          '<div class="music-track-num">' + (t.playingNow ? '▶' : String(i + 1)) + '</div>' +
-          '<div class="music-track-text">' +
-            '<div class="music-track-name">' + escapeHtml(t.name) + '</div>' +
-            '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
-          '</div>';
-        return t.url
-          ? '<a class="music-track-row" href="' + escapeHtml(t.url) + '" target="_blank" rel="noopener">' + inner + '</a>'
-          : '<div class="music-track-row">' + inner + '</div>';
-      }).join('');
+      const sig = JSON.stringify(rows);
+      if (sig !== lastMusicSig) {
+        lastMusicSig = sig;
+        list.innerHTML = rows.map((t, i) => {
+          const inner =
+            '<div class="music-track-num">' + (t.playingNow ? '▶' : String(i + 1)) + '</div>' +
+            '<div class="music-track-text">' +
+              '<div class="music-track-name">' + escapeHtml(t.name) + '</div>' +
+              '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
+            '</div>';
+          return t.url
+            ? '<a class="music-track-row" href="' + escapeHtml(t.url) + '" target="_blank" rel="noopener">' + inner + '</a>'
+            : '<div class="music-track-row">' + inner + '</div>';
+        }).join('');
+      }
       wrap.classList.remove('hidden');
     } catch (e) {
       // Keep the static card on failure; the playlist link is the fallback content.
@@ -1116,7 +1169,7 @@
 
   async function loadQuote() {
     try {
-      const r = await fetch('https://zenquotes.io/api/random');
+      const r = await fetchT('https://zenquotes.io/api/random');
       const j = await r.json();
       const q = j && j[0];
       if (!q || !q.q) throw new Error('bad payload');
@@ -1283,7 +1336,7 @@
       try {
         const lat = +pos.coords.latitude.toFixed(3);
         const lon = +pos.coords.longitude.toFixed(3);
-        const r = await fetch(KazuLib.openMeteoUrl(lat, lon, false));
+        const r = await fetchT(KazuLib.openMeteoUrl(lat, lon, false));
         const j = await r.json();
         const w = j.current;
         if (!w) throw new Error('no current block');
@@ -1394,15 +1447,6 @@
       +   '<canvas id="lifeWeeksCanvas"></canvas>'
       + '</div>';
   }
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
   function drawLifeWeeks() {
     const canvas = $('lifeWeeksCanvas');
     if (!canvas) return;
@@ -1422,11 +1466,24 @@
     ctx.clearRect(0, 0, W, H);
     const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#5cc6ff';
     const r = Math.max(1, cell * 0.28);
+    // Two batched paths instead of 4,680 beginPath/fill cycles: one for the
+    // weeks lived, one for the rest — identical dots, two fills total.
+    const livedPath = new Path2D();
+    const restPath = new Path2D();
     for (let i = 0; i < YEARS * WEEKS; i++) {
       const x = (i % WEEKS) * (cell + gap), y = Math.floor(i / WEEKS) * (cell + gap);
-      ctx.fillStyle = i < lived ? accent : 'rgba(140,170,210,.18)';
-      roundRect(ctx, x, y, cell, cell, r); ctx.fill();
+      const p = i < lived ? livedPath : restPath;
+      p.moveTo(x + r, y);
+      p.arcTo(x + cell, y, x + cell, y + cell, r);
+      p.arcTo(x + cell, y + cell, x, y + cell, r);
+      p.arcTo(x, y + cell, x, y, r);
+      p.arcTo(x, y, x + cell, y, r);
+      p.closePath();
     }
+    ctx.fillStyle = accent;
+    ctx.fill(livedPath);
+    ctx.fillStyle = 'rgba(140,170,210,.18)';
+    ctx.fill(restPath);
   }
 
   // ----- Next birthday: countdown + calendar export -----
@@ -1545,8 +1602,22 @@
   }
 
   // ---------- Seasonal effects ----------
+  // Seasons only depend on the calendar date (visitor-local for Christmas and
+  // pride, UK wall clock for the birthday) plus the dev-panel overrides, so the
+  // per-second tick skips all re-evaluation until one of those flips — midnight
+  // crossover is still caught within a second, and dev-panel clicks apply
+  // instantly (they mutate devSeasons, which changes the key).
+  let lastSeasonKey = null;
   function applySeasons() {
-    const s = seasonState(new Date());
+    const now = new Date();
+    let key = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate() + '|' + JSON.stringify(devSeasons);
+    if (KazuLib && KazuLib.ukWallParts) {
+      const w = KazuLib.ukWallParts(now);
+      key = w.year + '-' + w.month + '-' + w.day + '|' + key;
+    }
+    if (key === lastSeasonKey) return;
+    lastSeasonKey = key;
+    const s = seasonState(now);
     const body = document.body;
     body.classList.toggle('season-birthday', s.birthday);
     body.classList.toggle('season-christmas', s.christmas);
@@ -1572,7 +1643,8 @@
     size();
     const COLORS = ['#ff5ea8', '#a05cff', '#5cc6ff', '#ffd34d', '#3ddc97', '#ff7a59'];
     const parts = [];
-    for (let i = 0; i < 140; i++) parts.push({
+    const COUNT = lightDevice ? 84 : 140; // lighter burst on weak hardware
+    for (let i = 0; i < COUNT; i++) parts.push({
       x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight * 0.32 + (Math.random() - 0.5) * 60,
       vx: (Math.random() - 0.5) * 11, vy: Math.random() * -13 - 4, g: 0.28 + Math.random() * 0.12,
       size: 5 + Math.random() * 6, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
@@ -1582,10 +1654,10 @@
     function frame(t) {
       const e = t - start;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = Math.max(0, 1 - e / DURATION); // one fade value for the whole frame
       for (const p of parts) {
         p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.rot += p.vr;
         ctx.save();
-        ctx.globalAlpha = Math.max(0, 1 - e / DURATION);
         ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
         ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
         ctx.restore();
@@ -1700,7 +1772,8 @@
     balloonCtx = balloonCanvas.getContext('2d');
     sizeBalloonCanvas();
     balloons = [];
-    for (let i = 0; i < BALLOON_COUNT; i++) balloons.push(spawnBalloon(innerWidth, innerHeight, true));
+    const count = lightDevice ? 5 : BALLOON_COUNT; // smaller fleet on weak hardware
+    for (let i = 0; i < count; i++) balloons.push(spawnBalloon(innerWidth, innerHeight, true));
     balloonT = 0;
     balloonLast = performance.now();
     window.addEventListener('resize', sizeBalloonCanvas, { passive: true });
@@ -1966,8 +2039,11 @@
     { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },
     { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0 },
-    { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0 },
-    { fn: loadQuote, ms: 15 * 60 * 1000, last: 0 },
+    // firstDelay: the two lowest-priority cards yield their FIRST fetch to the
+    // critical load-time resources (fonts, hero image, weather, Discord)
+    // instead of joining the eight-way burst. Intervals/payloads unchanged.
+    { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0, firstDelay: 1000 },
+    { fn: loadQuote, ms: 15 * 60 * 1000, last: 0, firstDelay: 1500 },
   ];
   let timers = [];
 
@@ -1977,7 +2053,13 @@
     if (timers.length) return; // already running
     const now = Date.now();
     for (const p of POLLERS) {
-      if (now - p.last >= p.ms) runPoller(p); // stale → refresh now; fresh → wait for the interval
+      if (now - p.last >= p.ms) {
+        // The delayed first run's id lands in the same timers array —
+        // clearTimeout and clearInterval are interchangeable — so the
+        // visibility pause cancels it like everything else.
+        if (p.firstDelay && !p.last) timers.push(setTimeout(() => runPoller(p), p.firstDelay));
+        else runPoller(p); // stale → refresh now; fresh → wait for the interval
+      }
       timers.push(setInterval(() => runPoller(p), p.ms));
     }
   }
@@ -2081,7 +2163,13 @@
   }
 
   const filters = new Map(); // id -> <filter> markup, all re-rendered into the housing
+  let housingDirty = false;
+  // The whole <defs> is a single innerHTML rewrite, so batch it: refresh()
+  // just marks it dirty and refreshAll() writes once at the end, instead of
+  // re-rendering the full defs once per card during a resize storm.
   function renderHousing() {
+    if (!housingDirty) return;
+    housingDirty = false;
     housing.innerHTML = '<defs>' + Array.from(filters.values()).join('') + '</defs>';
   }
 
@@ -2101,7 +2189,7 @@
       '" height="' + h + '" preserveAspectRatio="none" result="map"/>' +
       '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + DEPTH +
       '" xChannelSelector="R" yChannelSelector="G"/></filter>');
-    renderHousing();
+    housingDirty = true;
     const f = 'blur(' + BLUR + 'px) saturate(' + SAT + ') url(#' + card.id + ')';
     card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
   }
@@ -2115,7 +2203,7 @@
     document.querySelectorAll('.card:not(.stat-card--bday), .toast'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
 
-  function refreshAll() { cards.forEach(refresh); }
+  function refreshAll() { cards.forEach(refresh); renderHousing(); }
 
   let pending = false;
   function schedule() {
@@ -2422,6 +2510,15 @@
     scanRaf = 0;
     document.querySelectorAll('*').forEach((el) => {
       if (attached.has(el) || el.closest('.cscroll')) return;
+      // Cheap reject first: only an overflowing element can need a bar. The
+      // scrollHeight/clientHeight reads batch into a single layout pass (no
+      // writes between them), while getComputedStyle forces a style recalc
+      // PER ELEMENT — so the expensive check now runs on a handful of
+      // candidates instead of the whole DOM. Elements that only start
+      // overflowing later are caught by the next mutation/load/resize scan;
+      // until then they'd have shown a self-hidden bar anyway, so nothing
+      // visible changes.
+      if (el.scrollHeight <= el.clientHeight + 1) return;
       const oy = getComputedStyle(el).overflowY;
       if (oy !== 'auto' && oy !== 'scroll') return;
       attached.add(el);
@@ -2446,4 +2543,5 @@
   }
   scan();
   window.addEventListener('load', scheduleScan);
+  window.addEventListener('resize', scheduleScan, { passive: true });
 })();

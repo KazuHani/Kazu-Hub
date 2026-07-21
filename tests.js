@@ -518,10 +518,14 @@ ok('scroll-reveal section present in the stylesheet', cssFlat.includes('========
 // requests entirely (no second cache layer in front of the APIs).
 const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
 ok('discord REST bypasses the HTTP cache', scriptSrc.includes("DISCORD_ID, { cache: 'no-store' }"));
-ok('steam fetches bypass the HTTP cache', scriptSrc.includes("encodeURIComponent(STEAM_URL), { cache: 'no-store' }") && scriptSrc.includes("fetch(STEAM_URL, { cache: 'no-store' })"));
+ok('steam fetches bypass the HTTP cache', scriptSrc.includes("encodeURIComponent(STEAM_URL), { cache: 'no-store' }") && scriptSrc.includes("fetchT(STEAM_URL, { cache: 'no-store' })"));
 ok('jikan anime + manga bypass the HTTP cache', scriptSrc.includes("'/animelist?status=watching', { cache: 'no-store' }") && scriptSrc.includes("'/mangalist?status=reading', { cache: 'no-store' }"));
 ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split("encodeURIComponent(listUrl), { cache: 'no-store' }").length - 1 === 2);
 ok('letterboxd RSS bypasses the HTTP cache', scriptSrc.includes("encodeURIComponent(rss), { cache: 'no-store' }"));
+// Every live fetch rides fetchT (script.js): a 12s AbortSignal.timeout so a
+// hung API/proxy fails into the loader's existing catch instead of pinning
+// the card on its loading line forever.
+ok('live fetches ride the timeout wrapper', !/await fetch\(/.test(scriptSrc));
 ok('service worker never intercepts the live APIs', swSrc.includes('if (url.origin !== location.origin) return;'));
 
 // ---- Music card left zone fills the card height ----
