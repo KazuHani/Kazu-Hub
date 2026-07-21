@@ -311,17 +311,6 @@ ok('letterboxdCacheParse recomputes stars from rating', (function () {
   return r && r.stars === '★★★★½';
 })());
 
-// ---- listenbrainzRow ----
-const lbListen = {
-  playing_now: true,
-  track_metadata: { track_name: 'Sisu', artist_name: 'Dragon Band', additional_info: { spotify_id: 'https://open.spotify.com/track/abc123' } },
-};
-const lbRow = L.listenbrainzRow(lbListen);
-eq('listenbrainzRow shapes a full listen', lbRow, { name: 'Sisu', artist: 'Dragon Band', playingNow: true, url: 'https://open.spotify.com/track/abc123' });
-eq('listenbrainzRow missing artist/spotify → blanks', L.listenbrainzRow({ track_metadata: { track_name: 'X' } }), { name: 'X', artist: '', playingNow: false, url: '' });
-eq('listenbrainzRow no track name → null', L.listenbrainzRow({ track_metadata: { artist_name: 'A' } }), null);
-eq('listenbrainzRow null → null', L.listenbrainzRow(null), null);
-
 // ---- forecastRows (weather modal 5-day strip) ----
 const dailyBlock = {
   time: ['2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22'],

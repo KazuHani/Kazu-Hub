@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=13"></script>
+  <script src="lib.js?v=15"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -327,17 +327,6 @@
         var r = L.letterboxdCacheParse(JSON.stringify({ entry: { title: 't', link: 'u', rating: 4.5, stars: 'wrong' } }));
         return r && r.stars === '★★★★½';
       })());
-
-      // ---- listenbrainzRow ----
-      var lbListen = {
-        playing_now: true,
-        track_metadata: { track_name: 'Sisu', artist_name: 'Dragon Band', additional_info: { spotify_id: 'https://open.spotify.com/track/abc123' } },
-      };
-      var lbRow = L.listenbrainzRow(lbListen);
-      eq('listenbrainzRow shapes a full listen', lbRow, { name: 'Sisu', artist: 'Dragon Band', playingNow: true, url: 'https://open.spotify.com/track/abc123' });
-      eq('listenbrainzRow missing artist/spotify → blanks', L.listenbrainzRow({ track_metadata: { track_name: 'X' } }), { name: 'X', artist: '', playingNow: false, url: '' });
-      eq('listenbrainzRow no track name → null', L.listenbrainzRow({ track_metadata: { artist_name: 'A' } }), null);
-      eq('listenbrainzRow null → null', L.listenbrainzRow(null), null);
 
       // ---- forecastRows (weather modal 5-day strip) ----
       var dailyBlock = {

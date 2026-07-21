@@ -646,6 +646,28 @@
     }, wait);
   }
 
+  // ---------- CORS proxy ladder ----------
+  // Steam, MAL's load.json and Letterboxd's RSS send no
+  // Access-Control-Allow-Origin, so they only reach the page through a proxy.
+  // corsproxy.io went paid (it 403s every request now), so each fetch walks
+  // this ladder of free proxies and settles for the first one that answers.
+  const CORS_PROXIES = [
+    (url) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+    (url) => 'https://api.cors.lol/?url=' + encodeURIComponent(url),
+    (url) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+  ];
+  async function fetchViaProxy(url) {
+    let lastErr = null;
+    for (const wrap of CORS_PROXIES) {
+      try {
+        const r = await fetch(wrap(url));
+        if (!r.ok) throw new Error('proxy status ' + r.status);
+        return r;
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error('all proxies failed');
+  }
+
   // ---------- Steam ----------
   function steamStatusInfo(state) {
     if (state === 'in-game') return ['In-Game', '#90c040'];
@@ -662,9 +684,7 @@
         // Proxy first: steamcommunity.com sends no Access-Control-Allow-Origin,
         // so a direct browser fetch can never succeed. (Order flipped after the
         // direct attempt wasted one doomed round trip on every 5-min poll.)
-        const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL));
-        if (!r.ok) throw new Error('proxy failed');
-        xmlText = await r.text();
+        xmlText = await (await fetchViaProxy(STEAM_URL)).text();
       } catch (e) {
         const r2 = await fetch(STEAM_URL);
         if (!r2.ok) throw new Error('bad status');
@@ -852,7 +872,7 @@
   // because it is CORS-clean, but MAL has been refusing its scrape of the
   // user endpoints for long stretches (they 504 while the rest of Jikan is
   // fine). The fallback is MAL's own load.json — the endpoint myanimelist.net
-  // itself uses — reached through the same corsproxy.io the Steam card uses,
+  // itself uses — reached through the same proxy ladder the Steam card uses,
   // because MAL sends no Access-Control-Allow-Origin.
   async function fetchMalRows() {
     try {
@@ -870,9 +890,7 @@
     } catch (e) {
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
-      if (!r2.ok) throw new Error('proxy status ' + r2.status);
-      const list = await r2.json();
+      const list = await (await fetchViaProxy(listUrl)).json();
       if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
       // status 1 = watching; ?status=1 already filters server-side, same
       // belt-and-braces guard as the Jikan path above.
@@ -920,9 +938,7 @@
     } catch (e) {
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
-      if (!r2.ok) throw new Error('proxy status ' + r2.status);
-      const list = await r2.json();
+      const list = await (await fetchViaProxy(listUrl)).json();
       if (!Array.isArray(list)) throw new Error('unexpected mangalist load.json payload');
       return list
         .filter((e) => !e || e.status == null || e.status === 1)
@@ -957,7 +973,7 @@
   // ---------- Letterboxd (latest diary entry via RSS) ----------
   // Letterboxd has no public API, but every profile publishes a diary RSS
   // feed. No Access-Control-Allow-Origin there either, so it rides the same
-  // corsproxy.io the Steam and MAL fallbacks use. Parsing lives in lib.js
+  // proxy ladder the Steam and MAL fallbacks use. Parsing lives in lib.js
   // (regex-based, DOM-free, gate-tested); the last good entry is cached in
   // localStorage exactly like the MAL rows.
   const LB_USER = 'KazuHani';
@@ -999,9 +1015,7 @@
     if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
-      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(rss));
-      if (!r.ok) throw new Error('proxy status ' + r.status);
-      const entry = KazuLib.parseLetterboxdRss(await r.text());
+      const entry = KazuLib.parseLetterboxdRss(await (await fetchViaProxy(rss)).text());
       renderLetterboxd(entry);
       try { localStorage.setItem(LB_CACHE_KEY, JSON.stringify({ at: Date.now(), entry })); } catch (e) {}
     } catch (e) {
@@ -1009,44 +1023,6 @@
       if (cached) { renderLetterboxd(cached); return; }
       $('lbLoading').classList.add('hidden');
       $('lbError').classList.remove('hidden');
-    }
-  }
-
-  // ---------- ListenBrainz recent tracks (music card) ----------
-  // Free, keyless, CORS-open API. While the account 404s (or a fetch fails)
-  // the "recently played" block stays hidden and the static playlist card is
-  // the content — so this switches itself on once listens exist, no deploy
-  // needed.
-  const LISTENBRAINZ_USER = 'Kazu_Hani';
-
-  async function loadMusicRecent() {
-    if (!LISTENBRAINZ_USER || !KazuLib || !KazuLib.listenbrainzRow) return;
-    try {
-      const r = await fetch('https://api.listenbrainz.org/1/user/' + encodeURIComponent(LISTENBRAINZ_USER) + '/listens?count=3');
-      if (!r.ok) throw new Error('status ' + r.status);
-      const j = await r.json();
-      const rows = ((((j || {}).payload) || {}).listens || [])
-        .map(KazuLib.listenbrainzRow)
-        .filter(Boolean)
-        .slice(0, 3);
-      const wrap = $('musicRecent');
-      const list = $('musicTrackList');
-      if (!wrap || !list) return;
-      if (!rows.length) { wrap.classList.add('hidden'); return; }
-      list.innerHTML = rows.map((t, i) => {
-        const inner =
-          '<div class="music-track-num">' + (t.playingNow ? '▶' : String(i + 1)) + '</div>' +
-          '<div class="music-track-text">' +
-            '<div class="music-track-name">' + escapeHtml(t.name) + '</div>' +
-            '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
-          '</div>';
-        return t.url
-          ? '<a class="music-track-row" href="' + escapeHtml(t.url) + '" target="_blank" rel="noopener">' + inner + '</a>'
-          : '<div class="music-track-row">' + inner + '</div>';
-      }).join('');
-      wrap.classList.remove('hidden');
-    } catch (e) {
-      // Keep the static card on failure; the playlist link is the fallback content.
     }
   }
 
@@ -1114,19 +1090,20 @@
 
   async function loadQuote() {
     try {
-      const r = await fetch('https://zenquotes.io/api/random');
+      // DummyJSON: free, keyless and CORS-open. (zenquotes.io, the previous
+      // source, sends no Access-Control-Allow-Origin so browsers block it.)
+      const r = await fetch('https://dummyjson.com/quotes/random');
       const j = await r.json();
-      const q = j && j[0];
-      if (!q || !q.q) throw new Error('bad payload');
-      $('quoteText').textContent = q.q;
-      $('quoteAuthor').textContent = '— ' + (q.a || 'Unknown');
+      if (!j || !j.quote) throw new Error('bad payload');
+      $('quoteText').textContent = j.quote;
+      $('quoteAuthor').textContent = '— ' + (j.author || 'Unknown');
       $('quoteBox').classList.add('visible');
     } catch (e) {
       showFallbackQuote();
     }
   }
 
-  // Click/Enter on the quote deals a new one. Debounced: zenquotes' free tier
+  // Click/Enter on the quote deals a new one. Debounced: the quote API
   // rate-limits per IP, and a hammered click shouldn't burn it.
   let quoteLastShuffle = 0;
   function reshuffleQuote() {
@@ -1942,7 +1919,6 @@
     { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },
     { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0 },
-    { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0 },
     { fn: loadQuote, ms: 15 * 60 * 1000, last: 0 },
   ];
   let timers = [];

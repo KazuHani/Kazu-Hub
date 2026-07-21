@@ -19,9 +19,8 @@ Vanilla HTML/CSS/JS. No framework, no build step, no dependencies.
   MAL's own list endpoints through a CORS proxy when Jikan's user endpoints
   are down), and the latest Letterboxd diary entry (via the profile's RSS
   feed through the same proxy).
-- YouTube Music playlist with a ListenBrainz "recently played" strip (set
-  `LISTENBRAINZ_USER` in `script.js` to switch it on), socials, and
-  in-progress stories.
+- YouTube Music playlist card (static snapshot of the playlist's top tracks),
+  socials, and in-progress stories.
 - Installable (PWA-lite): web app manifest + home-screen icons + a tiny
   service worker (`sw.js`) that makes the shell open offline. Network-first
   for pages and live APIs, so nothing ever serves stale while online.
