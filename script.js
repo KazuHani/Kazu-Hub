@@ -646,41 +646,6 @@
     }, wait);
   }
 
-  // ---------- CORS proxy ladder ----------
-  // Steam, MAL's load.json and Letterboxd's RSS send no
-  // Access-Control-Allow-Origin, so they only reach the page through a proxy.
-  // corsproxy.io went paid (it 403s every request now), so each fetch races
-  // this list of free proxies and settles for the first one that answers.
-  const CORS_PROXIES = [
-    (url) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-    (url) => 'https://api.cors.lol/?url=' + encodeURIComponent(url),
-    (url) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
-  ];
-  async function fetchViaProxy(url) {
-    // Race, don't walk: trying proxies one at a time let a hung or
-    // rate-limited one hold the card at "Connecting…" for its whole
-    // timeout before the next was even attempted. Promise.any settles
-    // with the first success and only rejects when every proxy failed.
-    const attempt = (wrap) => {
-      // …and a proxy that never answers can't hold the race open either:
-      // 8s per attempt, then it's counted out.
-      const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;
-      return fetch(wrap(url), ctrl ? { signal: ctrl.signal } : {})
-        .then((r) => {
-          if (!r.ok) throw new Error('proxy status ' + r.status);
-          return r;
-        })
-        .finally(() => { if (timer) clearTimeout(timer); });
-    };
-    if (typeof Promise.any === 'function') return Promise.any(CORS_PROXIES.map(attempt));
-    let lastErr = null;
-    for (const wrap of CORS_PROXIES) {
-      try { return await attempt(wrap); } catch (e) { lastErr = e; }
-    }
-    throw lastErr || new Error('all proxies failed');
-  }
-
   // ---------- Steam ----------
   function steamStatusInfo(state) {
     if (state === 'in-game') return ['In-Game', '#90c040'];
@@ -697,7 +662,9 @@
         // Proxy first: steamcommunity.com sends no Access-Control-Allow-Origin,
         // so a direct browser fetch can never succeed. (Order flipped after the
         // direct attempt wasted one doomed round trip on every 5-min poll.)
-        xmlText = await (await fetchViaProxy(STEAM_URL)).text();
+        const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL));
+        if (!r.ok) throw new Error('proxy failed');
+        xmlText = await r.text();
       } catch (e) {
         const r2 = await fetch(STEAM_URL);
         if (!r2.ok) throw new Error('bad status');
@@ -817,8 +784,7 @@
   };
 
   // Last-good rows survive Jikan outages (its user endpoints 504 whenever MAL
-  // refuses the scrape): written on every successful fetch, shown instantly
-  // while the next live fetch runs (stale-while-revalidate).
+  // refuses the scrape): written on every successful fetch, read on failure.
   const MAL_CACHE_KEY = 'kazu-mal-cache';
   const MAL_MANGA_CACHE_KEY = 'kazu-mal-manga-cache';
 
@@ -886,7 +852,7 @@
   // because it is CORS-clean, but MAL has been refusing its scrape of the
   // user endpoints for long stretches (they 504 while the rest of Jikan is
   // fine). The fallback is MAL's own load.json — the endpoint myanimelist.net
-  // itself uses — reached through the same proxy ladder the Steam card uses,
+  // itself uses — reached through the same corsproxy.io the Steam card uses,
   // because MAL sends no Access-Control-Allow-Origin.
   async function fetchMalRows() {
     try {
@@ -904,7 +870,9 @@
     } catch (e) {
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
-      const list = await (await fetchViaProxy(listUrl)).json();
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
+      if (!r2.ok) throw new Error('proxy status ' + r2.status);
+      const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
       // status 1 = watching; ?status=1 already filters server-side, same
       // belt-and-braces guard as the Jikan path above.
@@ -917,18 +885,17 @@
   }
 
   async function loadMal() {
-    // Stale-while-revalidate: last-good rows go up instantly so returning
-    // visitors never stare at "Connecting…" over data we already have,
-    // then the live fetch replaces them (proxies can take seconds).
-    const cached = malCacheRead();
-    if (cached) renderMalRows(cached);
     try {
       const rows = await fetchMalRows();
 
       renderMalRows(rows);
       try { localStorage.setItem(MAL_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
     } catch (e) {
-      if (cached) return; // the stale rows are already on screen
+      const cached = malCacheRead();
+      if (cached) {
+        renderMalRows(cached);
+        return;
+      }
       $('malLoading').classList.add('hidden');
       $('malError').classList.remove('hidden');
     }
@@ -953,7 +920,9 @@
     } catch (e) {
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
-      const list = await (await fetchViaProxy(listUrl)).json();
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
+      if (!r2.ok) throw new Error('proxy status ' + r2.status);
+      const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected mangalist load.json payload');
       return list
         .filter((e) => !e || e.status == null || e.status === 1)
@@ -973,16 +942,13 @@
   // rows are the primary content, the reading section just hides.
   async function loadMalManga() {
     if (!KazuLib || !KazuLib.malMangaRow) return;
-    // Same stale-while-revalidate as the anime rows above.
-    const cached = malMangaCacheRead();
-    if (cached) renderMalMangaRows(cached);
     try {
       const rows = await fetchMalMangaRows();
       renderMalMangaRows(rows);
       try { localStorage.setItem(MAL_MANGA_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
     } catch (e) {
-      // No error state: the stale rows (if any) are already on screen,
-      // otherwise the section just stays hidden.
+      const cached = malMangaCacheRead();
+      if (cached) renderMalMangaRows(cached);
     }
   }
 
@@ -991,7 +957,7 @@
   // ---------- Letterboxd (latest diary entry via RSS) ----------
   // Letterboxd has no public API, but every profile publishes a diary RSS
   // feed. No Access-Control-Allow-Origin there either, so it rides the same
-  // proxy ladder the Steam and MAL fallbacks use. Parsing lives in lib.js
+  // corsproxy.io the Steam and MAL fallbacks use. Parsing lives in lib.js
   // (regex-based, DOM-free, gate-tested); the last good entry is cached in
   // localStorage exactly like the MAL rows.
   const LB_USER = 'KazuHani';
@@ -1031,19 +997,56 @@
 
   async function loadLetterboxd() {
     if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
-    // Stale-while-revalidate like the MAL card: last-good entry instantly,
-    // replaced by the live one when the fetch lands.
-    const cached = lbCacheRead();
-    if (cached) renderLetterboxd(cached);
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
-      const entry = KazuLib.parseLetterboxdRss(await (await fetchViaProxy(rss)).text());
+      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(rss));
+      if (!r.ok) throw new Error('proxy status ' + r.status);
+      const entry = KazuLib.parseLetterboxdRss(await r.text());
       renderLetterboxd(entry);
       try { localStorage.setItem(LB_CACHE_KEY, JSON.stringify({ at: Date.now(), entry })); } catch (e) {}
     } catch (e) {
-      if (cached) return; // the stale entry is already on screen
+      const cached = lbCacheRead();
+      if (cached) { renderLetterboxd(cached); return; }
       $('lbLoading').classList.add('hidden');
       $('lbError').classList.remove('hidden');
+    }
+  }
+
+  // ---------- ListenBrainz recent tracks (music card) ----------
+  // Free, keyless, CORS-open API. While the account 404s (or a fetch fails)
+  // the "recently played" block stays hidden and the static playlist card is
+  // the content — so this switches itself on once listens exist, no deploy
+  // needed.
+  const LISTENBRAINZ_USER = 'Kazu_Hani';
+
+  async function loadMusicRecent() {
+    if (!LISTENBRAINZ_USER || !KazuLib || !KazuLib.listenbrainzRow) return;
+    try {
+      const r = await fetch('https://api.listenbrainz.org/1/user/' + encodeURIComponent(LISTENBRAINZ_USER) + '/listens?count=3');
+      if (!r.ok) throw new Error('status ' + r.status);
+      const j = await r.json();
+      const rows = ((((j || {}).payload) || {}).listens || [])
+        .map(KazuLib.listenbrainzRow)
+        .filter(Boolean)
+        .slice(0, 3);
+      const wrap = $('musicRecent');
+      const list = $('musicTrackList');
+      if (!wrap || !list) return;
+      if (!rows.length) { wrap.classList.add('hidden'); return; }
+      list.innerHTML = rows.map((t, i) => {
+        const inner =
+          '<div class="music-track-num">' + (t.playingNow ? '▶' : String(i + 1)) + '</div>' +
+          '<div class="music-track-text">' +
+            '<div class="music-track-name">' + escapeHtml(t.name) + '</div>' +
+            '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
+          '</div>';
+        return t.url
+          ? '<a class="music-track-row" href="' + escapeHtml(t.url) + '" target="_blank" rel="noopener">' + inner + '</a>'
+          : '<div class="music-track-row">' + inner + '</div>';
+      }).join('');
+      wrap.classList.remove('hidden');
+    } catch (e) {
+      // Keep the static card on failure; the playlist link is the fallback content.
     }
   }
 
@@ -1111,20 +1114,19 @@
 
   async function loadQuote() {
     try {
-      // DummyJSON: free, keyless and CORS-open. (zenquotes.io, the previous
-      // source, sends no Access-Control-Allow-Origin so browsers block it.)
-      const r = await fetch('https://dummyjson.com/quotes/random');
+      const r = await fetch('https://zenquotes.io/api/random');
       const j = await r.json();
-      if (!j || !j.quote) throw new Error('bad payload');
-      $('quoteText').textContent = j.quote;
-      $('quoteAuthor').textContent = '— ' + (j.author || 'Unknown');
+      const q = j && j[0];
+      if (!q || !q.q) throw new Error('bad payload');
+      $('quoteText').textContent = q.q;
+      $('quoteAuthor').textContent = '— ' + (q.a || 'Unknown');
       $('quoteBox').classList.add('visible');
     } catch (e) {
       showFallbackQuote();
     }
   }
 
-  // Click/Enter on the quote deals a new one. Debounced: the quote API
+  // Click/Enter on the quote deals a new one. Debounced: zenquotes' free tier
   // rate-limits per IP, and a hammered click shouldn't burn it.
   let quoteLastShuffle = 0;
   function reshuffleQuote() {
@@ -1713,43 +1715,23 @@
 
   function setBalloons(on) { if (on) startBalloons(); else stopBalloons(); }
 
-  // ---------- Scroll reveal ----------
-  // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css).
-  // Whatever is already on screen waves in on load with a document-order
-  // stagger; everything further down fades + slides in as it scrolls into
-  // view (one-shot IntersectionObserver). The inline delay is cleared once
+  // ---------- Page-load reveal cascade ----------
+  // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css)
+  // and the whole set waves in on load: fade + slide with a document-order
+  // stagger, so a refresh plays the entrance across the entire page rather
+  // than only as things scroll into view. The inline delay is cleared once
   // each transition has run, so hover motion stays delay-free afterwards
   // (see the social-card note in style.css).
   const revealEls = Array.from(document.querySelectorAll('.scroll-reveal'));
   const REVEAL_STAGGER = 60, REVEAL_MAX_DELAY = 1100;
-  const showReveal = (el, delay) => {
+  revealEls.forEach((el, i) => {
+    const delay = Math.min(i * REVEAL_STAGGER, REVEAL_MAX_DELAY);
     el.style.transitionDelay = delay + 'ms';
     setTimeout(() => { el.style.transitionDelay = ''; }, delay + 900);
-    requestAnimationFrame(() => el.classList.add('is-visible'));
-  };
-  if ('IntersectionObserver' in window) {
-    // Bottom margin pulls the trigger line up a touch, so the fade starts
-    // just before the element is fully in view rather than at the fold.
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        revealObserver.unobserve(entry.target);
-        showReveal(entry.target, 0);
-      });
-    }, { rootMargin: '0px 0px -8% 0px' });
-    let loadIndex = 0;
-    revealEls.forEach((el) => {
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight && r.bottom > 0) {
-        showReveal(el, Math.min(loadIndex++ * REVEAL_STAGGER, REVEAL_MAX_DELAY));
-      } else {
-        revealObserver.observe(el);
-      }
-    });
-  } else {
-    // No observer support: keep the old everything-on-load cascade.
-    revealEls.forEach((el, i) => showReveal(el, Math.min(i * REVEAL_STAGGER, REVEAL_MAX_DELAY)));
-  }
+  });
+  requestAnimationFrame(() => {
+    revealEls.forEach((el) => el.classList.add('is-visible'));
+  });
 
   // ---------- Konami code easter egg ----------
   // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.
@@ -1960,6 +1942,7 @@
     { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },
     { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0 },
+    { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0 },
     { fn: loadQuote, ms: 15 * 60 * 1000, last: 0 },
   ];
   let timers = [];

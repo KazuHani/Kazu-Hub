@@ -374,6 +374,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .music-playlist-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ff4d4d; }
 .music-playlist-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(22px,4vw,28px); color: var(--ink); line-height: 1.08; margin-top: 4px; }
 .music-playlist-sub { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
+.music-recent { margin-top: 16px; border-top: 1px solid rgba(255,90,90,.18); padding-top: 12px; }
 /* Featured tracks: fills the card's empty right side on wide screens,
    split off by a hairline. Stacks below the playlist info on mobile. */
 .music-featured { flex: 1.1; min-width: 0; border-left: 1px solid rgba(255,90,90,.18); padding-left: 20px; }
@@ -436,6 +437,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   .music-card-inner { flex-direction: column; align-items: center; text-align: center; }
   .music-cover-wrap { width: 120px; height: 120px; }
   .music-body { width: 100%; }
+  .music-recent { text-align: left; }
   .music-viz { justify-content: center; }
   .music-side { align-items: center; }
   .music-featured {
@@ -738,11 +740,12 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
   }
 }
 
-/* ============ SCROLL REVEAL ============ */
+/* ============ PAGE-LOAD REVEAL CASCADE ============ */
 /* Everything marked .scroll-reveal starts hidden and fades + slides into
-   place: script.js reveals on-screen elements on load with a document-order
-   stagger, and below-the-fold ones as they scroll into view
-   (IntersectionObserver). Skipped entirely under prefers-reduced-motion. */
+   place on page load: script.js adds .is-visible to all of them with a
+   document-order stagger, so a refresh waves the whole page in at once
+   (the snow layer joins in with its own ambientFade, defined above).
+   Skipped entirely under prefers-reduced-motion. */
 .scroll-reveal {
   opacity: 0;
   transform: translateY(28px);
@@ -1229,7 +1232,7 @@ body.modal-open { overflow: hidden; }
   border-top: 1px solid rgba(255,255,255,.14);
 }
 
-/* ---- Music card: featured track rows ---- */
+/* ---- Music card: ListenBrainz recent tracks ---- */
 a.music-track-row { text-decoration: none; color: inherit; border-radius: 10px; }
 a.music-track-row:hover { background: rgba(255,255,255,.08); }
 

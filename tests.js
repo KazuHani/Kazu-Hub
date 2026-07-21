@@ -311,6 +311,17 @@ ok('letterboxdCacheParse recomputes stars from rating', (function () {
   return r && r.stars === '★★★★½';
 })());
 
+// ---- listenbrainzRow ----
+const lbListen = {
+  playing_now: true,
+  track_metadata: { track_name: 'Sisu', artist_name: 'Dragon Band', additional_info: { spotify_id: 'https://open.spotify.com/track/abc123' } },
+};
+const lbRow = L.listenbrainzRow(lbListen);
+eq('listenbrainzRow shapes a full listen', lbRow, { name: 'Sisu', artist: 'Dragon Band', playingNow: true, url: 'https://open.spotify.com/track/abc123' });
+eq('listenbrainzRow missing artist/spotify → blanks', L.listenbrainzRow({ track_metadata: { track_name: 'X' } }), { name: 'X', artist: '', playingNow: false, url: '' });
+eq('listenbrainzRow no track name → null', L.listenbrainzRow({ track_metadata: { artist_name: 'A' } }), null);
+eq('listenbrainzRow null → null', L.listenbrainzRow(null), null);
+
 // ---- forecastRows (weather modal 5-day strip) ----
 const dailyBlock = {
   time: ['2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22'],
@@ -490,13 +501,13 @@ ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card
 ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
 ok('social tiles are full glass citizens (rim refraction included)', !scriptSrc.includes(':not(.social-card)') && !cssFlat.includes(':not(.social-card)'));
 
-// ---- Scroll reveal (static wiring checks) ----
-// .scroll-reveal elements on screen wave in on load with a stagger;
-// everything below the fold fades in on scroll, one-shot per element.
+// ---- Page-load reveal cascade (static wiring checks) ----
+// Everything .scroll-reveal waves in on load with a stagger; the old
+// scroll-triggered IntersectionObserver is gone.
 ok('load cascade staggers the reveal', scriptSrc.includes('REVEAL_STAGGER') && scriptSrc.includes('REVEAL_MAX_DELAY'));
 ok('cascade still resolves via .is-visible', scriptSrc.includes("classList.add('is-visible')"));
-ok('below-fold reveals are scroll-triggered', scriptSrc.includes('IntersectionObserver'));
-ok('scroll reveal section present in css', cssFlat.includes('SCROLL REVEAL'));
+ok('IntersectionObserver reveal removed', !scriptSrc.includes('IntersectionObserver'));
+ok('scroll-reveal section renamed to load cascade', cssFlat.includes('PAGE-LOAD REVEAL CASCADE'));
 
 // ---- Music card left zone fills the card height ----
 ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));

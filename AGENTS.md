@@ -16,9 +16,9 @@ run the headless test file) and a static file server for local preview.
 The page shows: live stat cards (UK time, Aberystwyth weather, age, birthday
 countdown) with detail pop-ups; a "right now" section with live Discord
 presence (Lanyard, WebSocket + REST fallback), Steam status, MyAnimeList
-watching/reading (Jikan, falling back to MAL list endpoints through a ladder
-of free CORS proxies — `fetchViaProxy` in `script.js`), and the latest
-Letterboxd diary entry (RSS via the same ladder); a YouTube Music playlist;
+watching/reading (Jikan, falling back to MAL list endpoints through
+`corsproxy.io`), and the latest Letterboxd diary entry (RSS via the same
+proxy); a YouTube Music playlist with a ListenBrainz "recently played" strip;
 socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 `sw.js` offline shell), has dark/light theme, seasonal themes (birthday,
 Christmas, pride), a weather-reactive particle atmosphere, and custom
@@ -26,8 +26,8 @@ scrollbars.
 
 ## Code layout
 
-- `index.html` (~600 lines) — the whole page. Loads `style.css?v=27`,
-  `lib.js?v=15`, `script.js?v=27` (version query strings; see cache-busting
+- `index.html` (~600 lines) — the whole page. Loads `style.css?v=25`,
+  `lib.js?v=14`, `script.js?v=25` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~845 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
@@ -37,11 +37,11 @@ scrollbars.
   Steam/MAL data shaping, dev-code matching, and scrollbar thumb geometry.
 - `script.js` (~2400 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
-  Steam, Jikan/MAL, Letterboxd, DummyJSON quotes), custom scrollbars,
+  Steam, Jikan/MAL, Letterboxd, ListenBrainz, ZenQuotes), custom scrollbars,
   the `kazudev` dev panel. It consumes `KazuLib` but keeps inline fallbacks
   for the lib helpers it needs, so the page still works if `lib.js` fails to
-  load. User-facing IDs (`DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`, `LB_USER`)
-  are constants near the top of each section.
+  load. User-facing IDs (`DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`, `LB_USER`,
+  `LISTENBRAINZ_USER`) are constants near the top of each section.
 - `style.css` (~1370 lines) — all styling, including seasonal and
   weather-atmosphere variants.
 - `sw.js` — service worker. Network-first for navigations, cache-first for

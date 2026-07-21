@@ -611,6 +611,22 @@
     };
   }
 
+  // ---- ListenBrainz (music card recent tracks) ------------------------------
+  // Shapes one GET /1/user/{user}/listens entry into a flat row. Tolerant of
+  // missing metadata; returns null when there's no track name. `url` prefers
+  // the Spotify track link ListenBrainz attaches when it can match one.
+  function listenbrainzRow(listen) {
+    var tm = listen && listen.track_metadata;
+    if (!tm || typeof tm.track_name !== 'string' || !tm.track_name) return null;
+    var info = tm.additional_info || {};
+    return {
+      name: tm.track_name,
+      artist: typeof tm.artist_name === 'string' ? tm.artist_name : '',
+      playingNow: listen.playing_now === true,
+      url: typeof info.spotify_id === 'string' ? info.spotify_id : '',
+    };
+  }
+
   // ---- Konami code easter egg ----------------------------------------------
   // The classic ↑↑↓↓←→←→BA. script.js keeps a rolling window of recent keys
   // and asks this whether the window ENDS with the code, so junk typed before
@@ -815,6 +831,7 @@
     letterboxdWatchedLabel: letterboxdWatchedLabel,
     parseLetterboxdRss: parseLetterboxdRss,
     letterboxdCacheParse: letterboxdCacheParse,
+    listenbrainzRow: listenbrainzRow,
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
