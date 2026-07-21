@@ -490,13 +490,13 @@ ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card
 ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
 ok('social tiles are full glass citizens (rim refraction included)', !scriptSrc.includes(':not(.social-card)') && !cssFlat.includes(':not(.social-card)'));
 
-// ---- Page-load reveal cascade (static wiring checks) ----
-// Everything .scroll-reveal waves in on load with a stagger; the old
-// scroll-triggered IntersectionObserver is gone.
+// ---- Scroll reveal (static wiring checks) ----
+// .scroll-reveal elements on screen wave in on load with a stagger;
+// everything below the fold fades in on scroll, one-shot per element.
 ok('load cascade staggers the reveal', scriptSrc.includes('REVEAL_STAGGER') && scriptSrc.includes('REVEAL_MAX_DELAY'));
 ok('cascade still resolves via .is-visible', scriptSrc.includes("classList.add('is-visible')"));
-ok('IntersectionObserver reveal removed', !scriptSrc.includes('IntersectionObserver'));
-ok('scroll-reveal section renamed to load cascade', cssFlat.includes('PAGE-LOAD REVEAL CASCADE'));
+ok('below-fold reveals are scroll-triggered', scriptSrc.includes('IntersectionObserver'));
+ok('scroll reveal section present in css', cssFlat.includes('SCROLL REVEAL'));
 
 // ---- Music card left zone fills the card height ----
 ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));

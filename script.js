@@ -649,21 +649,34 @@
   // ---------- CORS proxy ladder ----------
   // Steam, MAL's load.json and Letterboxd's RSS send no
   // Access-Control-Allow-Origin, so they only reach the page through a proxy.
-  // corsproxy.io went paid (it 403s every request now), so each fetch walks
-  // this ladder of free proxies and settles for the first one that answers.
+  // corsproxy.io went paid (it 403s every request now), so each fetch races
+  // this list of free proxies and settles for the first one that answers.
   const CORS_PROXIES = [
     (url) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
     (url) => 'https://api.cors.lol/?url=' + encodeURIComponent(url),
     (url) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
   ];
   async function fetchViaProxy(url) {
+    // Race, don't walk: trying proxies one at a time let a hung or
+    // rate-limited one hold the card at "Connecting…" for its whole
+    // timeout before the next was even attempted. Promise.any settles
+    // with the first success and only rejects when every proxy failed.
+    const attempt = (wrap) => {
+      // …and a proxy that never answers can't hold the race open either:
+      // 8s per attempt, then it's counted out.
+      const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 8000) : null;
+      return fetch(wrap(url), ctrl ? { signal: ctrl.signal } : {})
+        .then((r) => {
+          if (!r.ok) throw new Error('proxy status ' + r.status);
+          return r;
+        })
+        .finally(() => { if (timer) clearTimeout(timer); });
+    };
+    if (typeof Promise.any === 'function') return Promise.any(CORS_PROXIES.map(attempt));
     let lastErr = null;
     for (const wrap of CORS_PROXIES) {
-      try {
-        const r = await fetch(wrap(url));
-        if (!r.ok) throw new Error('proxy status ' + r.status);
-        return r;
-      } catch (e) { lastErr = e; }
+      try { return await attempt(wrap); } catch (e) { lastErr = e; }
     }
     throw lastErr || new Error('all proxies failed');
   }
@@ -804,7 +817,8 @@
   };
 
   // Last-good rows survive Jikan outages (its user endpoints 504 whenever MAL
-  // refuses the scrape): written on every successful fetch, read on failure.
+  // refuses the scrape): written on every successful fetch, shown instantly
+  // while the next live fetch runs (stale-while-revalidate).
   const MAL_CACHE_KEY = 'kazu-mal-cache';
   const MAL_MANGA_CACHE_KEY = 'kazu-mal-manga-cache';
 
@@ -903,17 +917,18 @@
   }
 
   async function loadMal() {
+    // Stale-while-revalidate: last-good rows go up instantly so returning
+    // visitors never stare at "Connecting…" over data we already have,
+    // then the live fetch replaces them (proxies can take seconds).
+    const cached = malCacheRead();
+    if (cached) renderMalRows(cached);
     try {
       const rows = await fetchMalRows();
 
       renderMalRows(rows);
       try { localStorage.setItem(MAL_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
     } catch (e) {
-      const cached = malCacheRead();
-      if (cached) {
-        renderMalRows(cached);
-        return;
-      }
+      if (cached) return; // the stale rows are already on screen
       $('malLoading').classList.add('hidden');
       $('malError').classList.remove('hidden');
     }
@@ -958,13 +973,16 @@
   // rows are the primary content, the reading section just hides.
   async function loadMalManga() {
     if (!KazuLib || !KazuLib.malMangaRow) return;
+    // Same stale-while-revalidate as the anime rows above.
+    const cached = malMangaCacheRead();
+    if (cached) renderMalMangaRows(cached);
     try {
       const rows = await fetchMalMangaRows();
       renderMalMangaRows(rows);
       try { localStorage.setItem(MAL_MANGA_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
     } catch (e) {
-      const cached = malMangaCacheRead();
-      if (cached) renderMalMangaRows(cached);
+      // No error state: the stale rows (if any) are already on screen,
+      // otherwise the section just stays hidden.
     }
   }
 
@@ -1013,14 +1031,17 @@
 
   async function loadLetterboxd() {
     if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
+    // Stale-while-revalidate like the MAL card: last-good entry instantly,
+    // replaced by the live one when the fetch lands.
+    const cached = lbCacheRead();
+    if (cached) renderLetterboxd(cached);
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
       const entry = KazuLib.parseLetterboxdRss(await (await fetchViaProxy(rss)).text());
       renderLetterboxd(entry);
       try { localStorage.setItem(LB_CACHE_KEY, JSON.stringify({ at: Date.now(), entry })); } catch (e) {}
     } catch (e) {
-      const cached = lbCacheRead();
-      if (cached) { renderLetterboxd(cached); return; }
+      if (cached) return; // the stale entry is already on screen
       $('lbLoading').classList.add('hidden');
       $('lbError').classList.remove('hidden');
     }
@@ -1692,23 +1713,43 @@
 
   function setBalloons(on) { if (on) startBalloons(); else stopBalloons(); }
 
-  // ---------- Page-load reveal cascade ----------
-  // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css)
-  // and the whole set waves in on load: fade + slide with a document-order
-  // stagger, so a refresh plays the entrance across the entire page rather
-  // than only as things scroll into view. The inline delay is cleared once
+  // ---------- Scroll reveal ----------
+  // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css).
+  // Whatever is already on screen waves in on load with a document-order
+  // stagger; everything further down fades + slides in as it scrolls into
+  // view (one-shot IntersectionObserver). The inline delay is cleared once
   // each transition has run, so hover motion stays delay-free afterwards
   // (see the social-card note in style.css).
   const revealEls = Array.from(document.querySelectorAll('.scroll-reveal'));
   const REVEAL_STAGGER = 60, REVEAL_MAX_DELAY = 1100;
-  revealEls.forEach((el, i) => {
-    const delay = Math.min(i * REVEAL_STAGGER, REVEAL_MAX_DELAY);
+  const showReveal = (el, delay) => {
     el.style.transitionDelay = delay + 'ms';
     setTimeout(() => { el.style.transitionDelay = ''; }, delay + 900);
-  });
-  requestAnimationFrame(() => {
-    revealEls.forEach((el) => el.classList.add('is-visible'));
-  });
+    requestAnimationFrame(() => el.classList.add('is-visible'));
+  };
+  if ('IntersectionObserver' in window) {
+    // Bottom margin pulls the trigger line up a touch, so the fade starts
+    // just before the element is fully in view rather than at the fold.
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        revealObserver.unobserve(entry.target);
+        showReveal(entry.target, 0);
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    let loadIndex = 0;
+    revealEls.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight && r.bottom > 0) {
+        showReveal(el, Math.min(loadIndex++ * REVEAL_STAGGER, REVEAL_MAX_DELAY));
+      } else {
+        revealObserver.observe(el);
+      }
+    });
+  } else {
+    // No observer support: keep the old everything-on-load cascade.
+    revealEls.forEach((el, i) => showReveal(el, Math.min(i * REVEAL_STAGGER, REVEAL_MAX_DELAY)));
+  }
 
   // ---------- Konami code easter egg ----------
   // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.
