@@ -1715,23 +1715,39 @@
 
   function setBalloons(on) { if (on) startBalloons(); else stopBalloons(); }
 
-  // ---------- Page-load reveal cascade ----------
+  // ---------- Scroll reveal ----------
   // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css)
-  // and the whole set waves in on load: fade + slide with a document-order
-  // stagger, so a refresh plays the entrance across the entire page rather
-  // than only as things scroll into view. The inline delay is cleared once
+  // and fades + slides into place the first time it enters the viewport: an
+  // IntersectionObserver adds .is-visible, then stops watching (one-shot, so
+  // nothing ever hides again once shown). Elements already on screen on load
+  // intersect immediately, so the top of the page still waves in on refresh.
+  // Entries arriving in the same batch get a small stagger so grids ripple
+  // rather than popping in as one block; the inline delay is cleared once
   // each transition has run, so hover motion stays delay-free afterwards
   // (see the social-card note in style.css).
   const revealEls = Array.from(document.querySelectorAll('.scroll-reveal'));
-  const REVEAL_STAGGER = 60, REVEAL_MAX_DELAY = 1100;
-  revealEls.forEach((el, i) => {
-    const delay = Math.min(i * REVEAL_STAGGER, REVEAL_MAX_DELAY);
-    el.style.transitionDelay = delay + 'ms';
-    setTimeout(() => { el.style.transitionDelay = ''; }, delay + 900);
-  });
-  requestAnimationFrame(() => {
-    revealEls.forEach((el) => el.classList.add('is-visible'));
-  });
+  const REVEAL_STAGGER = 70, REVEAL_MAX_DELAY = 350;
+  const revealEl = (el, delay) => {
+    if (delay > 0) {
+      el.style.transitionDelay = delay + 'ms';
+      setTimeout(() => { el.style.transitionDelay = ''; }, delay + 900);
+    }
+    el.classList.add('is-visible');
+  };
+  if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+      let batch = 0;
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        revealObserver.unobserve(entry.target);
+        revealEl(entry.target, Math.min(batch++ * REVEAL_STAGGER, REVEAL_MAX_DELAY));
+      });
+    }, { rootMargin: '0px 0px -10% 0px' });
+    revealEls.forEach((el) => revealObserver.observe(el));
+  } else {
+    // No observer support: everything is simply present.
+    revealEls.forEach((el) => revealEl(el, 0));
+  }
 
   // ---------- Konami code easter egg ----------
   // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.

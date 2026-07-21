@@ -524,11 +524,13 @@
         ok('presence + story cards get the frosted backdrop', cssFlat.indexOf('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);') !== -1);
         ok('refraction list covers the new glass cards', scriptSrc.indexOf('.toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card') !== -1);
 
-        // ---- Page-load reveal cascade ----
-        ok('load cascade staggers the reveal', scriptSrc.indexOf('REVEAL_STAGGER') !== -1 && scriptSrc.indexOf('REVEAL_MAX_DELAY') !== -1);
-        ok('cascade still resolves via .is-visible', scriptSrc.indexOf("classList.add('is-visible')") !== -1);
-        ok('IntersectionObserver reveal removed', scriptSrc.indexOf('IntersectionObserver') === -1);
-        ok('scroll-reveal section renamed to load cascade', cssFlat.indexOf('PAGE-LOAD REVEAL CASCADE') !== -1);
+        // ---- Scroll reveal ----
+        ok('scroll reveal uses an IntersectionObserver', scriptSrc.indexOf('IntersectionObserver') !== -1);
+        ok('same-batch reveals stagger', scriptSrc.indexOf('REVEAL_STAGGER') !== -1 && scriptSrc.indexOf('REVEAL_MAX_DELAY') !== -1);
+        ok('reveal resolves via .is-visible', scriptSrc.indexOf("classList.add('is-visible')") !== -1);
+        ok('reveal is one-shot (unobserve after showing)', scriptSrc.indexOf('unobserve') !== -1);
+        ok('no-observer fallback reveals everything', scriptSrc.indexOf("'IntersectionObserver' in window") !== -1);
+        ok('scroll-reveal section present in the stylesheet', cssFlat.indexOf('============ SCROLL REVEAL ============') !== -1);
 
         // ---- Music card left zone fills the card height ----
         ok('left zone wrapped in .music-side', htmlSrc.indexOf('<div class="music-side">') !== -1);

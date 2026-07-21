@@ -740,11 +740,13 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
   }
 }
 
-/* ============ PAGE-LOAD REVEAL CASCADE ============ */
+/* ============ SCROLL REVEAL ============ */
 /* Everything marked .scroll-reveal starts hidden and fades + slides into
-   place on page load: script.js adds .is-visible to all of them with a
-   document-order stagger, so a refresh waves the whole page in at once
-   (the snow layer joins in with its own ambientFade, defined above).
+   place the first time it scrolls into view: script.js watches the set with
+   an IntersectionObserver and adds .is-visible (one-shot, with a small
+   per-batch stagger so grids ripple in together). Elements already on screen
+   on load intersect immediately, so a refresh still waves the top of the page
+   in (the snow layer joins in with its own ambientFade, defined above).
    Skipped entirely under prefers-reduced-motion. */
 .scroll-reveal {
   opacity: 0;
