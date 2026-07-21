@@ -511,6 +511,19 @@ ok('reveal is one-shot (unobserve after showing)', scriptSrc.includes('unobserve
 ok('no-observer fallback reveals everything', scriptSrc.includes("'IntersectionObserver' in window"));
 ok('scroll-reveal section present in the stylesheet', cssFlat.includes('============ SCROLL REVEAL ============'));
 
+// ---- Live API freshness (static wiring checks) ----
+// Discord, Steam, MAL and Letterboxd must always reflect the server end:
+// every live fetch passes cache: 'no-store' so the browser HTTP cache can
+// never answer for them, and the service worker ignores cross-origin
+// requests entirely (no second cache layer in front of the APIs).
+const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
+ok('discord REST bypasses the HTTP cache', scriptSrc.includes("DISCORD_ID, { cache: 'no-store' }"));
+ok('steam fetches bypass the HTTP cache', scriptSrc.includes("encodeURIComponent(STEAM_URL), { cache: 'no-store' }") && scriptSrc.includes("fetch(STEAM_URL, { cache: 'no-store' })"));
+ok('jikan anime + manga bypass the HTTP cache', scriptSrc.includes("'/animelist?status=watching', { cache: 'no-store' }") && scriptSrc.includes("'/mangalist?status=reading', { cache: 'no-store' }"));
+ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split("encodeURIComponent(listUrl), { cache: 'no-store' }").length - 1 === 2);
+ok('letterboxd RSS bypasses the HTTP cache', scriptSrc.includes("encodeURIComponent(rss), { cache: 'no-store' }"));
+ok('service worker never intercepts the live APIs', swSrc.includes('if (url.origin !== location.origin) return;'));
+
 // ---- Music card left zone fills the card height ----
 ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));
 ok('.music-side spreads cover + info', cssFlat.includes('.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }'));

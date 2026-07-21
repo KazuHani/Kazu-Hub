@@ -440,10 +440,11 @@
 
   // REST fallback: used for the first paint and whenever the socket is down.
   // While the socket is live it is the fresher source, so the poll no-ops.
+  // cache: 'no-store' — presence must never come from the browser HTTP cache.
   async function loadDiscord() {
     if (lanyardWsLive) return;
     try {
-      const r = await fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID);
+      const r = await fetch('https://api.lanyard.rest/v1/users/' + DISCORD_ID, { cache: 'no-store' });
       const j = await r.json();
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
       if (lanyardWsLive) return; // a socket update beat this response
@@ -662,11 +663,12 @@
         // Proxy first: steamcommunity.com sends no Access-Control-Allow-Origin,
         // so a direct browser fetch can never succeed. (Order flipped after the
         // direct attempt wasted one doomed round trip on every 5-min poll.)
-        const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL));
+        // no-store: status must track the server, not the browser HTTP cache.
+        const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL), { cache: 'no-store' });
         if (!r.ok) throw new Error('proxy failed');
         xmlText = await r.text();
       } catch (e) {
-        const r2 = await fetch(STEAM_URL);
+        const r2 = await fetch(STEAM_URL, { cache: 'no-store' });
         if (!r2.ok) throw new Error('bad status');
         xmlText = await r2.text();
       }
@@ -856,7 +858,7 @@
   // because MAL sends no Access-Control-Allow-Origin.
   async function fetchMalRows() {
     try {
-      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching');
+      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' });
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
       // ?status=watching does the filtering server-side; the extra client-side
@@ -870,7 +872,7 @@
     } catch (e) {
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
@@ -909,7 +911,7 @@
     const mRow = KazuLib.malMangaRow;
     const mListRow = KazuLib.malMangaListRow;
     try {
-      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading');
+      const r = await fetch('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' });
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
       return ((j && j.data) || [])
@@ -920,7 +922,7 @@
     } catch (e) {
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl));
+      const r2 = await fetch('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected mangalist load.json payload');
@@ -999,7 +1001,7 @@
     if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
-      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(rss));
+      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(rss), { cache: 'no-store' });
       if (!r.ok) throw new Error('proxy status ' + r.status);
       const entry = KazuLib.parseLetterboxdRss(await r.text());
       renderLetterboxd(entry);
@@ -1951,6 +1953,12 @@
   // actually stale. Before the stamp, every visibilitychange fired all five
   // fetchers at once, so rapid tab-switching stormed the APIs (and the CORS
   // proxy, which rate-limits).
+  //
+  // Every live-API fetch passes { cache: 'no-store' }, so the browser HTTP
+  // cache can never answer for Discord/Steam/MAL/Letterboxd: each poll and
+  // each reload goes straight to the network and the cards track the server
+  // end. (The service worker ignores cross-origin requests entirely — see
+  // sw.js — so there is no second cache layer in front of them either.)
   const POLLERS = [
     { fn: tick, ms: 1000, last: 0 },
     { fn: loadWeather, ms: 10 * 60 * 1000, last: 0 },
