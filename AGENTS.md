@@ -27,7 +27,7 @@ scrollbars.
 ## Code layout
 
 - `index.html` (~600 lines) — the whole page. Loads `style.css?v=30`,
-  `lib.js?v=17`, `script.js?v=32` (version query strings; see cache-busting
+  `lib.js?v=17`, `script.js?v=33` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~845 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth

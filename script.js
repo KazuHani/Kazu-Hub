@@ -2581,10 +2581,10 @@
     return Math.abs(diff) <= s ? t : c + diff * e;
   };
 
-  // Fraction of the remaining gap closed per frame: lower = heavier. 0.085
-  // lands a wheel notch in ~12 frames with a soft tail; the 0.5px snap lets
-  // the loop stop instead of trailing forever.
-  const SMOOTH_EASE = 0.085;
+  // Fraction of the remaining gap closed per frame: lower = heavier. 0.05
+  // gives a long, buttery glide with a soft tail; the 0.5px snap lets the
+  // loop stop instead of trailing forever.
+  const SMOOTH_EASE = 0.05;
 
   let targetY = window.scrollY;
   let lastWritten = window.scrollY; // loop's last write; scroll events matching it are our own
