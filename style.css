@@ -43,7 +43,7 @@ body[data-theme="light"] {
 
 /* ---- Atmosphere: cherry-blossom petals ---- */
 .atmosphere { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-.petal { position: absolute; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+.petal { position: absolute; filter: blur(2px); animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
 /* Rain streaks: injected by script.js when live weather says it's raining.
    Same pattern as .petal: timing in the class, duration/delay inline per drop. */
 .drop { position: absolute; width: 1.5px; height: clamp(60px, 12vh, 110px); border-radius: 1px; background: linear-gradient(to bottom, rgba(170,210,255,0), rgba(170,210,255,.6)); animation-name: rainfall; animation-timing-function: linear; animation-iteration-count: infinite; }
