@@ -41,13 +41,13 @@ body[data-theme="light"] {
 
 .hidden { display: none !important; }
 
-/* ---- Atmosphere: snowfall ---- */
+/* ---- Atmosphere: cherry-blossom petals ---- */
 .atmosphere { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-.flake { position: absolute; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+.petal { position: absolute; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
 /* Rain streaks: injected by script.js when live weather says it's raining.
-   Same pattern as .flake: timing in the class, duration/delay inline per drop. */
+   Same pattern as .petal: timing in the class, duration/delay inline per drop. */
 .drop { position: absolute; width: 1.5px; height: clamp(60px, 12vh, 110px); border-radius: 1px; background: linear-gradient(to bottom, rgba(170,210,255,0), rgba(170,210,255,.6)); animation-name: rainfall; animation-timing-function: linear; animation-iteration-count: infinite; }
-@media (prefers-reduced-motion: reduce) { .flake, .drop { animation: none; display: none; } }
+@media (prefers-reduced-motion: reduce) { .petal, .drop { animation: none; display: none; } }
 @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); } 100% { transform: translateY(110vh) rotate(360deg); } }
 @keyframes rainfall { 0% { transform: translateY(-15vh) rotate(9deg); } 100% { transform: translateY(115vh) rotate(9deg); } }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
@@ -713,7 +713,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
   to   { opacity: 1; }
 }
 
-/* Ambient snow layer eases in instead of popping */
+/* Ambient petal layer eases in instead of popping */
 .atmosphere { animation: ambientFade 1.6s ease both; }
 
 /* Hero accents */
@@ -746,7 +746,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
    an IntersectionObserver and adds .is-visible (one-shot, with a small
    per-batch stagger so grids ripple in together). Elements already on screen
    on load intersect immediately, so a refresh still waves the top of the page
-   in (the snow layer joins in with its own ambientFade, defined above).
+   in (the petal layer joins in with its own ambientFade, defined above).
    Skipped entirely under prefers-reduced-motion. */
 .scroll-reveal {
   opacity: 0;
@@ -888,7 +888,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 }
 /* Brand hues as translucent fills over a mostly-dark base: the page leaks
    only ~10% through, so the cards keep their colour identity and the white
-   text its contrast in both themes, while the snow/refraction still reads at
+   text its contrast in both themes, while the petals/refraction still read at
    the rim. Where color-mix is unsupported the whole declaration is dropped
    and the original opaque gradient (further up) remains. */
 .discord-card {

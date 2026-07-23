@@ -58,14 +58,14 @@
   })();
 
   // Preview the weather-reactive atmosphere on demand:
-  // ?atmosphere=rain|snow|snow-heavy|aurora|none
+  // ?atmosphere=rain|blossom|blossom-heavy|aurora|none
   const ATMOSPHERE_OVERRIDE = (() => {
     try {
       const p = new URLSearchParams(location.search).get('atmosphere');
       if (!p) return null;
       const v = p.toLowerCase().trim();
       if (v === 'off') return 'none';
-      return ['rain', 'snow', 'snow-heavy', 'aurora', 'none'].includes(v) ? v : null;
+      return ['rain', 'blossom', 'blossom-heavy', 'aurora', 'none'].includes(v) ? v : null;
     } catch (e) { return null; }
   })();
 
@@ -264,35 +264,35 @@
 
   // ---------- Weather-reactive atmosphere ----------
   // Ambient particles follow the live weather: rain streaks when it's
-  // raining, a heavier snowfall when it's actually snowing, and the arctic
-  // default snow otherwise. The mode mapping lives in lib.js
+  // raining, a heavier petal shower when it's actually snowing, and the
+  // cherry-blossom default otherwise. The mode mapping lives in lib.js
   // (KazuLib.atmosphereMode) so it's gate-tested; the local copy keeps the
   // page working if lib.js fails to load.
   const atmosphereMode = (KazuLib && KazuLib.atmosphereMode) || function (code) {
     const c = +code;
-    if (isNaN(c)) return 'snow';
+    if (isNaN(c)) return 'blossom';
     if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
-    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow-heavy';
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'blossom-heavy';
     if ((c === 0 || c === 1) && arguments[1] === false) return 'aurora';
-    return 'snow';
+    return 'blossom';
   };
 
   const atmosphereEl = document.querySelector('.atmosphere');
   let atmosphereCurrent = null;
-  const SNOW_GLYPHS = ['❄', '❅'];
-  const SNOW_COLORS = ['#bfe3ff', '#a9d6ff', '#cde8ff', '#b9deff'];
+  const BLOSSOM_GLYPHS = ['🌸'];
+  const SNOW_COLORS = ['#bfe3ff', '#a9d6ff', '#cde8ff', '#b9deff']; // Konami dragon burst only
   const randRange = (min, max) => min + Math.random() * (max - min);
 
   // Particle density follows the hardware (see KazuLib.particleCount): every
-  // flake/drop animates under the glass cards and keeps their backdrop-filter
-  // busy, so phones get a lighter flurry. Flags are stable for a session.
+  // petal/drop animates under the glass cards and keeps their backdrop-filter
+  // busy, so phones get a lighter drift. Flags are stable for a session.
   const PARTICLE_FLAGS = {
     coarsePointer: !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches),
     smallScreen: Math.min(window.innerWidth, window.innerHeight) < 500,
     lowConcurrency: !!(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4),
     saveData: !!(navigator.connection && navigator.connection.saveData),
   };
-  // particleCount() clamps to a minimum of 8 (it's sized for flakes/drops);
+  // particleCount() clamps to a minimum of 8 (it's sized for petals/drops);
   // the one-off canvas bursts (confetti, balloons) scale smaller counts off
   // the same hardware flags directly.
   const lightDevice = PARTICLE_FLAGS.coarsePointer || PARTICLE_FLAGS.smallScreen ||
@@ -302,17 +302,16 @@
     return Math.min(64, Math.max(8, light ? Math.round(n * 0.6) : n));
   };
 
-  function buildFlakes(count, sizeMin, sizeMax) {
+  function buildPetals(count, sizeMin, sizeMax) {
     const frag = document.createDocumentFragment();
     for (let i = 0; i < count; i++) {
       const s = document.createElement('span');
-      s.className = 'flake';
-      s.textContent = SNOW_GLYPHS[(Math.random() * SNOW_GLYPHS.length) | 0];
+      s.className = 'petal';
+      s.textContent = BLOSSOM_GLYPHS[(Math.random() * BLOSSOM_GLYPHS.length) | 0];
       s.style.left = randRange(0, 100).toFixed(1) + '%';
       s.style.top = '-5%';
       s.style.fontSize = randRange(sizeMin, sizeMax).toFixed(0) + 'px';
-      s.style.color = SNOW_COLORS[(Math.random() * SNOW_COLORS.length) | 0];
-      s.style.opacity = randRange(0.45, 0.75).toFixed(2);
+      s.style.opacity = randRange(0.5, 0.85).toFixed(2);
       s.style.animationDuration = randRange(13, 24).toFixed(1) + 's';
       s.style.animationDelay = randRange(0, 8).toFixed(1) + 's';
       frag.appendChild(s);
@@ -336,7 +335,7 @@
   }
 
   // Rebuilds .atmosphere for the given mode (no-op when the mode hasn't
-  // changed). The hardcoded flakes in index.html are the no-JS fallback;
+  // changed). The hardcoded petals in index.html are the no-JS fallback;
   // the first call replaces them.
   function setAtmosphere(mode) {
     if (!atmosphereEl || mode === atmosphereCurrent) return;
@@ -344,7 +343,7 @@
     atmosphereEl.innerHTML = '';
     if (mode === 'none') return;
     if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(particleCount(46, PARTICLE_FLAGS))); return; }
-    if (mode === 'snow-heavy') { atmosphereEl.appendChild(buildFlakes(particleCount(26, PARTICLE_FLAGS), 10, 24)); return; }
+    if (mode === 'blossom-heavy') { atmosphereEl.appendChild(buildPetals(particleCount(48, PARTICLE_FLAGS), 12, 26)); return; }
     if (mode === 'aurora') {
       // Clear night sky: two drifting light ribbons over a static starfield.
       // Pure CSS animation, no per-frame JS (see style.css).
@@ -356,7 +355,7 @@
       atmosphereEl.appendChild(a);
       return;
     }
-    atmosphereEl.appendChild(buildFlakes(particleCount(12, PARTICLE_FLAGS), 11, 22)); // arctic default
+    atmosphereEl.appendChild(buildPetals(particleCount(30, PARTICLE_FLAGS), 13, 24)); // cherry-blossom default
   }
 
   // ---------- Discord (Lanyard) ----------
@@ -2015,7 +2014,7 @@
     });
   }
 
-  setAtmosphere(ATMOSPHERE_OVERRIDE || 'snow');
+  setAtmosphere(ATMOSPHERE_OVERRIDE || 'blossom');
 
   // ---------- Pause polling/ticking while the page isn't visible ----------
   // Saves battery/data when the tab is backgrounded or the phone screen is

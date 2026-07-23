@@ -21,13 +21,13 @@ watching/reading (Jikan, falling back to MAL list endpoints through
 proxy); a YouTube Music playlist with a ListenBrainz "recently played" strip;
 socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 `sw.js` offline shell), has dark/light theme, seasonal themes (birthday,
-Christmas, pride), a weather-reactive particle atmosphere, and custom
+Christmas, pride), a weather-reactive cherry-blossom atmosphere, and custom
 scrollbars.
 
 ## Code layout
 
-- `index.html` (~600 lines) — the whole page. Loads `style.css?v=28`,
-  `lib.js?v=15`, `script.js?v=30` (version query strings; see cache-busting
+- `index.html` (~600 lines) — the whole page. Loads `style.css?v=29`,
+  `lib.js?v=16`, `script.js?v=31` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~845 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
@@ -66,7 +66,7 @@ Preview/dev affordances built into the page:
 
 - `?season=birthday|christmas|pride|all` (comma-combinable) forces seasonal
   themes on any date. The `?season=` param wins over the dev panel.
-- `?atmosphere=rain|snow|snow-heavy|aurora|none` forces the particle mode.
+- `?atmosphere=rain|blossom|blossom-heavy|aurora|none` forces the particle mode.
 - Typing `kazudev` anywhere on the page opens a dev settings panel with
   per-season Auto/On/Off overrides persisted to localStorage. Typing it again
   or Esc closes it.

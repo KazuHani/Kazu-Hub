@@ -104,22 +104,22 @@ eq('drizzle 51 → rain', L.atmosphereMode(51), 'rain');
 eq('rain 61 → rain', L.atmosphereMode(61), 'rain');
 eq('showers 80 → rain', L.atmosphereMode(80), 'rain');
 eq('thunderstorm 95 → rain', L.atmosphereMode(95), 'rain');
-eq('snow 71 → snow-heavy', L.atmosphereMode(71), 'snow-heavy');
-eq('heavy snow 75 → snow-heavy', L.atmosphereMode(75), 'snow-heavy');
-eq('snow showers 86 → snow-heavy', L.atmosphereMode(86), 'snow-heavy');
-eq('clear 0 → snow', L.atmosphereMode(0), 'snow');
-eq('overcast 3 → snow', L.atmosphereMode(3), 'snow');
-eq('fog 45 → snow', L.atmosphereMode(45), 'snow');
-eq('garbage → snow', L.atmosphereMode('abc'), 'snow');
-eq('null → snow', L.atmosphereMode(null), 'snow');
+eq('snow 71 → blossom-heavy', L.atmosphereMode(71), 'blossom-heavy');
+eq('heavy snow 75 → blossom-heavy', L.atmosphereMode(75), 'blossom-heavy');
+eq('snow showers 86 → blossom-heavy', L.atmosphereMode(86), 'blossom-heavy');
+eq('clear 0 → blossom', L.atmosphereMode(0), 'blossom');
+eq('overcast 3 → blossom', L.atmosphereMode(3), 'blossom');
+eq('fog 45 → blossom', L.atmosphereMode(45), 'blossom');
+eq('garbage → blossom', L.atmosphereMode('abc'), 'blossom');
+eq('null → blossom', L.atmosphereMode(null), 'blossom');
 // aurora: clear or mainly clear, after dark only
 eq('clear 0 + night → aurora', L.atmosphereMode(0, false), 'aurora');
 eq('mainly clear 1 + night → aurora', L.atmosphereMode(1, false), 'aurora');
-eq('clear 0 + day → snow', L.atmosphereMode(0, true), 'snow');
-eq('clear 0 + isDay omitted → snow (legacy)', L.atmosphereMode(0), 'snow');
+eq('clear 0 + day → blossom', L.atmosphereMode(0, true), 'blossom');
+eq('clear 0 + isDay omitted → blossom (legacy)', L.atmosphereMode(0), 'blossom');
 eq('rain 61 + night → still rain', L.atmosphereMode(61, false), 'rain');
-eq('snow 71 + night → still snow-heavy', L.atmosphereMode(71, false), 'snow-heavy');
-eq('overcast 3 + night → snow', L.atmosphereMode(3, false), 'snow');
+eq('snow 71 + night → still blossom-heavy', L.atmosphereMode(71, false), 'blossom-heavy');
+eq('overcast 3 + night → blossom', L.atmosphereMode(3, false), 'blossom');
 
 // ---- openMeteoUrl (weather fetch URL builder) ----
 ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);
@@ -575,10 +575,10 @@ ok('emoji balloons replaced by the physics canvas', !htmlSrc.includes('bday-ball
 // resting while the page scrolls.
 eq('particleCount: desktop keeps full density', L.particleCount(46, {}), 46);
 eq('particleCount: coarse pointer lightens the load', L.particleCount(46, { coarsePointer: true }), 28);
-eq('particleCount: snow-heavy scales to 16', L.particleCount(26, { saveData: true }), 16);
+eq('particleCount: blossom-heavy scales to 29', L.particleCount(48, { saveData: true }), 29);
 eq('particleCount: small screens floor at 8', L.particleCount(12, { smallScreen: true }), 8);
 eq('particleCount: junk input yields nothing', L.particleCount('nope', {}), 0);
-ok('particleCount exported + used with device flags', scriptSrc.includes('particleCount(46, PARTICLE_FLAGS)') && scriptSrc.includes('particleCount(12, PARTICLE_FLAGS)'));
+ok('particleCount exported + used with device flags', scriptSrc.includes('particleCount(46, PARTICLE_FLAGS)') && scriptSrc.includes('particleCount(30, PARTICLE_FLAGS)'));
 ok('below-fold glass cards render-contained', cssFlat.includes('content-visibility: auto') && cssFlat.includes('contain-intrinsic-size: auto 420px'));
 ok('aurora live blur removed', !cssFlat.includes('filter: blur(38px)'));
 ok('aurora softness baked into a mask', cssFlat.includes('mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0))'));

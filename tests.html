@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=13"></script>
+  <script src="lib.js?v=16"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -121,22 +121,22 @@
       eq('rain 61 → rain', L.atmosphereMode(61), 'rain');
       eq('showers 80 → rain', L.atmosphereMode(80), 'rain');
       eq('thunderstorm 95 → rain', L.atmosphereMode(95), 'rain');
-      eq('snow 71 → snow-heavy', L.atmosphereMode(71), 'snow-heavy');
-      eq('heavy snow 75 → snow-heavy', L.atmosphereMode(75), 'snow-heavy');
-      eq('snow showers 86 → snow-heavy', L.atmosphereMode(86), 'snow-heavy');
-      eq('clear 0 → snow', L.atmosphereMode(0), 'snow');
-      eq('overcast 3 → snow', L.atmosphereMode(3), 'snow');
-      eq('fog 45 → snow', L.atmosphereMode(45), 'snow');
-      eq('garbage → snow', L.atmosphereMode('abc'), 'snow');
-      eq('null → snow', L.atmosphereMode(null), 'snow');
+      eq('snow 71 → blossom-heavy', L.atmosphereMode(71), 'blossom-heavy');
+      eq('heavy snow 75 → blossom-heavy', L.atmosphereMode(75), 'blossom-heavy');
+      eq('snow showers 86 → blossom-heavy', L.atmosphereMode(86), 'blossom-heavy');
+      eq('clear 0 → blossom', L.atmosphereMode(0), 'blossom');
+      eq('overcast 3 → blossom', L.atmosphereMode(3), 'blossom');
+      eq('fog 45 → blossom', L.atmosphereMode(45), 'blossom');
+      eq('garbage → blossom', L.atmosphereMode('abc'), 'blossom');
+      eq('null → blossom', L.atmosphereMode(null), 'blossom');
       // aurora: clear or mainly clear, after dark only
       eq('clear 0 + night → aurora', L.atmosphereMode(0, false), 'aurora');
       eq('mainly clear 1 + night → aurora', L.atmosphereMode(1, false), 'aurora');
-      eq('clear 0 + day → snow', L.atmosphereMode(0, true), 'snow');
-      eq('clear 0 + isDay omitted → snow (legacy)', L.atmosphereMode(0), 'snow');
+      eq('clear 0 + day → blossom', L.atmosphereMode(0, true), 'blossom');
+      eq('clear 0 + isDay omitted → blossom (legacy)', L.atmosphereMode(0), 'blossom');
       eq('rain 61 + night → still rain', L.atmosphereMode(61, false), 'rain');
-      eq('snow 71 + night → still snow-heavy', L.atmosphereMode(71, false), 'snow-heavy');
-      eq('overcast 3 + night → snow', L.atmosphereMode(3, false), 'snow');
+      eq('snow 71 + night → still blossom-heavy', L.atmosphereMode(71, false), 'blossom-heavy');
+      eq('overcast 3 + night → blossom', L.atmosphereMode(3, false), 'blossom');
 
       // ---- openMeteoUrl (weather fetch URL builder) ----
       ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);

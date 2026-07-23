@@ -259,28 +259,28 @@
 
   // ---- Weather-reactive atmosphere ----------------------------------------
   // Maps an Open-Meteo weather code to the ambient particle mode:
-  //   'rain'       drizzle / rain / showers / thunderstorm
-  //   'snow-heavy' actually snowing right now (heavier than the default)
-  //   'aurora'     clear or mainly clear AFTER DARK (northern lights + stars)
-  //   'snow'       the arctic default for everything else
+  //   'rain'          drizzle / rain / showers / thunderstorm
+  //   'blossom-heavy' actually snowing right now (heavier than the default)
+  //   'aurora'        clear or mainly clear AFTER DARK (northern lights + stars)
+  //   'blossom'       the cherry-blossom default for everything else
   // isDay comes from Open-Meteo's is_day flag (true/false); when omitted the
-  // day/night split is skipped and clear skies stay on plain snow, matching
-  // the pre-aurora behaviour.
+  // day/night split is skipped and clear skies stay on plain blossoms,
+  // matching the pre-aurora behaviour.
   function atmosphereMode(weatherCode, isDay) {
     var c = +weatherCode;
-    if (isNaN(c)) return 'snow';
+    if (isNaN(c)) return 'blossom';
     if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
-    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow-heavy';
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'blossom-heavy';
     if ((c === 0 || c === 1) && isDay === false) return 'aurora';
-    return 'snow';
+    return 'blossom';
   }
 
-  // Ambient particle density, scaled to the device. Every flake/drop animates
+  // Ambient particle density, scaled to the device. Every petal/drop animates
   // UNDER the liquid-glass cards, so each one keeps waking their
   // backdrop-filter — fine on a desktop GPU, real frame time on a phone. The
-  // feature is untouched (it still rains/snows); weak devices just get a
-  // lighter flurry. `o` flags: coarsePointer, smallScreen, lowConcurrency,
-  // saveData — any true flag picks the reduced count.
+  // feature is untouched (it still rains/drifts petals); weak devices just
+  // get a lighter drift. `o` flags: coarsePointer, smallScreen,
+  // lowConcurrency, saveData — any true flag picks the reduced count.
   function particleCount(base, o) {
     var n = Math.round(+base);
     if (isNaN(n) || n <= 0) return 0;
