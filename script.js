@@ -2544,3 +2544,80 @@
   window.addEventListener('load', scheduleScan);
   window.addEventListener('resize', scheduleScan, { passive: true });
 })();
+
+/* ============================================================================
+   Heavy smooth scroll (wheel lerp)
+   ----------------------------------------------------------------------------
+   "Lazy" scrolling: wheel input no longer jumps the page in notches — each
+   turn of the wheel accumulates into a target position and a rAF loop eases
+   the real scroll toward it (a fraction of the remaining gap per frame), so
+   the page feels weighted, like it has momentum and mass. Wheel-only: touch
+   flings keep their native inertia, and everything else that moves the real
+   scroll position — keyboard, the custom scrollbar's drag/steppers, the
+   to-top button, anchor jumps — is adopted via the scroll listener (any
+   scroll the loop didn't write itself is external input: resync and yield).
+   Skipped entirely under prefers-reduced-motion. The maths lives in lib.js
+   (wheelDeltaPx, smoothScrollStep, gate-tested); local fallbacks keep it
+   alive if lib.js fails to load.
+   ========================================================================== */
+(() => {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const KazuLib = window.KazuLib;
+  // Owned by lib.js (single source of truth, gate-tested); local copies below.
+  const wheelDeltaPx = (KazuLib && KazuLib.wheelDeltaPx) || function (deltaY, deltaMode) {
+    const d = +deltaY;
+    if (isNaN(d)) return 0;
+    if (deltaMode === 1) return d * 16;
+    if (deltaMode === 2) return d * 800;
+    return d;
+  };
+  const smoothScrollStep = (KazuLib && KazuLib.smoothScrollStep) || function (current, target, ease, snap) {
+    let c = +current, t = +target;
+    if (isNaN(c) || isNaN(t)) return 0;
+    let e = +ease; if (isNaN(e) || e <= 0 || e > 1) e = 0.1;
+    let s = +snap; if (isNaN(s) || s <= 0) s = 0.5;
+    const diff = t - c;
+    return Math.abs(diff) <= s ? t : c + diff * e;
+  };
+
+  // Fraction of the remaining gap closed per frame: lower = heavier. 0.085
+  // lands a wheel notch in ~12 frames with a soft tail; the 0.5px snap lets
+  // the loop stop instead of trailing forever.
+  const SMOOTH_EASE = 0.085;
+
+  let targetY = window.scrollY;
+  let lastWritten = window.scrollY; // loop's last write; scroll events matching it are our own
+  let rafId = null;
+  const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+
+  const tick = () => {
+    rafId = null;
+    targetY = Math.min(Math.max(targetY, 0), maxScroll()); // content can shrink mid-glide
+    const next = Math.min(Math.max(smoothScrollStep(window.scrollY, targetY, SMOOTH_EASE, 0.5), 0), maxScroll());
+    lastWritten = next;
+    window.scrollTo({ top: next, behavior: 'instant' });
+    if (next !== targetY) rafId = requestAnimationFrame(tick);
+  };
+
+  window.addEventListener('wheel', (e) => {
+    if (e.ctrlKey) return; // pinch-zoom gesture, not a scroll
+    // An open modal owns the wheel: its panel scrolls natively (with its own
+    // custom scrollbar) and the window behind it is scroll-locked anyway.
+    if (e.target && e.target.closest && e.target.closest('.modal-overlay')) return;
+    e.preventDefault();
+    targetY = Math.min(Math.max(targetY + wheelDeltaPx(e.deltaY, e.deltaMode), 0), maxScroll());
+    if (rafId === null) rafId = requestAnimationFrame(tick);
+  }, { passive: false });
+
+  // Any scroll the loop didn't write is external (keyboard, scrollbar drag,
+  // to-top button, anchor jump): adopt it as the new resting point so the
+  // loop never fights back.
+  window.addEventListener('scroll', () => {
+    if (rafId === null || Math.abs(window.scrollY - lastWritten) > 2) {
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+      targetY = window.scrollY;
+      lastWritten = window.scrollY;
+    }
+  }, { passive: true });
+})();

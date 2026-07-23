@@ -797,6 +797,33 @@
     return (thumbTop / travel) * maxScroll;
   }
 
+  // ---- Heavy smooth scroll ------------------------------------------------
+  // Pure maths behind the wheel-lerp scroller (see the smooth-scroll IIFE in
+  // script.js). wheelDeltaPx normalizes a WheelEvent delta into pixels —
+  // browsers report deltaY in pixels (mode 0), lines (mode 1, Firefox), or
+  // pages (mode 2). smoothScrollStep is one frame of the ease: `current`
+  // closes `ease` of the remaining gap to `target`, snapping the last
+  // sub-`snap` px so the rAF loop can terminate. Lower ease = heavier feel.
+  function wheelDeltaPx(deltaY, deltaMode) {
+    var d = +deltaY;
+    if (isNaN(d)) return 0;
+    if (deltaMode === 1) return d * 16;
+    if (deltaMode === 2) return d * 800;
+    return d;
+  }
+
+  function smoothScrollStep(current, target, ease, snap) {
+    var c = +current, t = +target;
+    if (isNaN(c) || isNaN(t)) return 0;
+    var e = +ease;
+    if (isNaN(e) || e <= 0 || e > 1) e = 0.1;
+    var s = +snap;
+    if (isNaN(s) || s <= 0) s = 0.5;
+    var diff = t - c;
+    if (Math.abs(diff) <= s) return t;
+    return c + diff * e;
+  }
+
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -841,5 +868,7 @@
     ropeStep: ropeStep,
     scrollThumbGeometry: scrollThumbGeometry,
     scrollThumbScrollY: scrollThumbScrollY,
+    wheelDeltaPx: wheelDeltaPx,
+    smoothScrollStep: smoothScrollStep,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

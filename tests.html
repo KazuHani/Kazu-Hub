@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=16"></script>
+  <script src="lib.js?v=17"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -485,6 +485,17 @@
       var rt = L.scrollThumbGeometry({ viewportH: 300, contentH: 1234, trackH: 350, scrollY: 700 });
       ok('round-trip geometry → inverse ≈ original scrollY', Math.abs(L.scrollThumbScrollY({ trackH: 350, thumbH: rt.thumbH, thumbTop: rt.thumbTop, maxScroll: rt.maxScroll }) - 700) <= 2);
 
+      // ---- heavy smooth scroll (wheel lerp) ----
+      eq('wheel pixels pass through', L.wheelDeltaPx(120, 0), 120);
+      eq('wheel lines → px (Firefox)', L.wheelDeltaPx(3, 1), 48);
+      eq('wheel pages → px', L.wheelDeltaPx(1, 2), 800);
+      eq('wheel junk → 0', L.wheelDeltaPx('nope', 0), 0);
+      eq('smooth step closes ease of the gap', L.smoothScrollStep(0, 100, 0.1, 0.5), 10);
+      eq('smooth step snaps inside the threshold', L.smoothScrollStep(99.7, 100, 0.1, 0.5), 100);
+      eq('smooth step eases upward too', L.smoothScrollStep(100, 0, 0.1, 0.5), 90);
+      eq('smooth step bad ease falls back', L.smoothScrollStep(0, 100, 'x', 0.5), 10);
+      eq('smooth step junk input → 0', L.smoothScrollStep('a', 1, 0.1, 0.5), 0);
+
       var s = document.getElementById('summary');
       s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
       s.className = fail === 0 ? 'pass' : 'fail';
@@ -532,6 +543,8 @@
         ok('reveal is one-shot (unobserve after showing)', scriptSrc.indexOf('unobserve') !== -1);
         ok('no-observer fallback reveals everything', scriptSrc.indexOf("'IntersectionObserver' in window") !== -1);
         ok('scroll-reveal section present in the stylesheet', cssFlat.indexOf('============ SCROLL REVEAL ============') !== -1);
+        ok('wheel hijacked non-passively', scriptSrc.indexOf("addEventListener('wheel'") !== -1 && scriptSrc.indexOf('{ passive: false }') !== -1);
+        ok('heavy scroll gated on reduced motion + KazuLib', scriptSrc.indexOf('KazuLib.wheelDeltaPx') !== -1 && scriptSrc.indexOf('KazuLib.smoothScrollStep') !== -1 && scriptSrc.indexOf('prefers-reduced-motion') !== -1);
 
         // ---- Live API freshness ----
         ok('discord REST bypasses the HTTP cache', scriptSrc.indexOf("DISCORD_ID, { cache: 'no-store' }") !== -1);

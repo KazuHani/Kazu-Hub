@@ -465,6 +465,17 @@ eq('inverse: null input → 0', L.scrollThumbScrollY(null), 0);
 const rt = L.scrollThumbGeometry({ viewportH: 300, contentH: 1234, trackH: 350, scrollY: 700 });
 ok('round-trip geometry → inverse ≈ original scrollY', Math.abs(L.scrollThumbScrollY({ trackH: 350, thumbH: rt.thumbH, thumbTop: rt.thumbTop, maxScroll: rt.maxScroll }) - 700) <= 2);
 
+// ---- heavy smooth scroll (wheel lerp) ----
+eq('wheel pixels pass through', L.wheelDeltaPx(120, 0), 120);
+eq('wheel lines → px (Firefox)', L.wheelDeltaPx(3, 1), 48);
+eq('wheel pages → px', L.wheelDeltaPx(1, 2), 800);
+eq('wheel junk → 0', L.wheelDeltaPx('nope', 0), 0);
+eq('smooth step closes ease of the gap', L.smoothScrollStep(0, 100, 0.1, 0.5), 10);
+eq('smooth step snaps inside the threshold', L.smoothScrollStep(99.7, 100, 0.1, 0.5), 100);
+eq('smooth step eases upward too', L.smoothScrollStep(100, 0, 0.1, 0.5), 90);
+eq('smooth step bad ease falls back', L.smoothScrollStep(0, 100, 'x', 0.5), 10);
+eq('smooth step junk input → 0', L.smoothScrollStep('a', 1, 0.1, 0.5), 0);
+
 // ---- Music card hover visualizer (static wiring checks) ----
 // Pure CSS/HTML feature, so the gate asserts the wiring is present: the
 // markup in the card, the desktop-only hover gate, bars paused until hover,
@@ -579,6 +590,8 @@ eq('particleCount: blossom-heavy scales to 29', L.particleCount(48, { saveData: 
 eq('particleCount: small screens floor at 8', L.particleCount(12, { smallScreen: true }), 8);
 eq('particleCount: junk input yields nothing', L.particleCount('nope', {}), 0);
 ok('particleCount exported + used with device flags', scriptSrc.includes('particleCount(46, PARTICLE_FLAGS)') && scriptSrc.includes('particleCount(30, PARTICLE_FLAGS)'));
+ok('wheel hijacked non-passively', scriptSrc.includes("addEventListener('wheel'") && scriptSrc.includes('{ passive: false }'));
+ok('heavy scroll gated on reduced motion + KazuLib', scriptSrc.includes('KazuLib.wheelDeltaPx') && scriptSrc.includes('KazuLib.smoothScrollStep') && scriptSrc.includes('prefers-reduced-motion'));
 ok('below-fold glass cards render-contained', cssFlat.includes('content-visibility: auto') && cssFlat.includes('contain-intrinsic-size: auto 420px'));
 ok('aurora live blur removed', !cssFlat.includes('filter: blur(38px)'));
 ok('aurora softness baked into a mask', cssFlat.includes('mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0))'));
