@@ -545,6 +545,7 @@
         ok('scroll-reveal section present in the stylesheet', cssFlat.indexOf('============ SCROLL REVEAL ============') !== -1);
         ok('wheel hijacked non-passively', scriptSrc.indexOf("addEventListener('wheel'") !== -1 && scriptSrc.indexOf('{ passive: false }') !== -1);
         ok('heavy scroll gated on reduced motion + KazuLib', scriptSrc.indexOf('KazuLib.wheelDeltaPx') !== -1 && scriptSrc.indexOf('KazuLib.smoothScrollStep') !== -1 && scriptSrc.indexOf('prefers-reduced-motion') !== -1);
+        ok('to-top rides the heavy scroll loop', scriptSrc.indexOf('window.kazuSmoothScrollTo') !== -1);
 
         // ---- Live API freshness ----
         ok('discord REST bypasses the HTTP cache', scriptSrc.indexOf("DISCORD_ID, { cache: 'no-store' }") !== -1);

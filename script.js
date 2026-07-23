@@ -1240,7 +1240,13 @@
   window.addEventListener('scroll', () => {
     toTopBtn.classList.toggle('hidden', window.scrollY <= 420);
   }, { passive: true });
-  toTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  // Ride the heavy-scroll loop when it's active — its per-frame instant
+  // writes would otherwise stomp this native smooth scroll mid-glide.
+  // (Reduced motion: the hook is absent and the old native glide stays.)
+  toTopBtn.addEventListener('click', () => {
+    if (window.kazuSmoothScrollTo) { window.kazuSmoothScrollTo(0); return; }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   // ---------- Card detail modals ----------
   // Click/Enter on any .stat-card[data-modal] opens one reusable glass pop-up.
@@ -2584,7 +2590,7 @@
   // Fraction of the remaining gap closed per frame: lower = heavier. 0.05
   // gives a long, buttery glide with a soft tail; the 0.5px snap lets the
   // loop stop instead of trailing forever.
-  const SMOOTH_EASE = 0.05;
+  const SMOOTH_EASE = 0.03;
 
   let targetY = window.scrollY;
   let lastWritten = window.scrollY; // loop's last write; scroll events matching it are our own
@@ -2598,6 +2604,13 @@
     lastWritten = next;
     window.scrollTo({ top: next, behavior: 'instant' });
     if (next !== targetY) rafId = requestAnimationFrame(tick);
+  };
+
+  // Programmatic glides (the back-to-top button) ride the same loop — a
+  // native smooth scrollTo would be stomped by the loop's per-frame writes.
+  window.kazuSmoothScrollTo = (y) => {
+    targetY = Math.min(Math.max(+y || 0, 0), maxScroll());
+    if (rafId === null) rafId = requestAnimationFrame(tick);
   };
 
   window.addEventListener('wheel', (e) => {
