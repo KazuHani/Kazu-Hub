@@ -121,6 +121,21 @@ eq('rain 61 + night → still rain', L.atmosphereMode(61, false), 'rain');
 eq('snow 71 + night → still blossom-heavy', L.atmosphereMode(71, false), 'blossom-heavy');
 eq('overcast 3 + night → blossom', L.atmosphereMode(3, false), 'blossom');
 
+// ---- sunTimesUK + skyBodyState (sun/moon arc on UK wall time) ----
+eq('summer solstice sun times', L.sunTimesUK(172), { rise: 300, set: 1290 });
+eq('winter solstice sun times', L.sunTimesUK(355), { rise: 495, set: 960 });
+eq('junk day → solstice default', L.sunTimesUK('nope'), { rise: 300, set: 1290 });
+eq('out-of-range day → solstice default', L.sunTimesUK(400), { rise: 300, set: 1290 });
+eq('summer 1pm: sun near the top of the arc', L.skyBodyState(780, 172), { body: 'sun', x: 48.67, y: 12.05, alt: 0.999, low: false });
+eq('summer midnight: moon a third along the arc', L.skyBodyState(0, 172), { body: 'moon', x: 35.33, y: 17.36, alt: 0.866, low: false });
+eq('sunrise: left horizon, golden', L.skyBodyState(300, 172), { body: 'sun', x: 6, y: 52, alt: 0, low: true });
+eq('just before sunset: right horizon, golden', L.skyBodyState(1289, 172), { body: 'sun', x: 93.91, y: 51.87, alt: 0.003, low: true });
+eq('winter midday is still the sun', L.skyBodyState(727, 355), { body: 'sun', x: 49.91, y: 12, alt: 1, low: false });
+eq('winter 1am: moon past the top', L.skyBodyState(60, 355), { body: 'moon', x: 54.74, y: 12.57, alt: 0.986, low: false });
+ok('arc travels left → right through the day', L.skyBodyState(600, 172).x < L.skyBodyState(900, 172).x);
+eq('junk time → null', L.skyBodyState('abc'), null);
+eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
+
 // ---- openMeteoUrl (weather fetch URL builder) ----
 ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);
 ok('openMeteoUrl includes daily block by default', L.openMeteoUrl(52.414, -4.081).indexOf('daily=weather_code') > -1);
@@ -523,11 +538,18 @@ eq('wheel pixels pass through', L.wheelDeltaPx(120, 0), 120);
 eq('wheel lines → px (Firefox)', L.wheelDeltaPx(3, 1), 48);
 eq('wheel pages → px', L.wheelDeltaPx(1, 2), 800);
 eq('wheel junk → 0', L.wheelDeltaPx('nope', 0), 0);
-eq('smooth step closes ease of the gap', L.smoothScrollStep(0, 100, 0.1, 0.5), 10);
-eq('smooth step snaps inside the threshold', L.smoothScrollStep(99.7, 100, 0.1, 0.5), 100);
-eq('smooth step eases upward too', L.smoothScrollStep(100, 0, 0.1, 0.5), 90);
-eq('smooth step bad ease falls back', L.smoothScrollStep(0, 100, 'x', 0.5), 10);
-eq('smooth step junk input → 0', L.smoothScrollStep('a', 1, 0.1, 0.5), 0);
+ok('smooth step closes ease of the gap in one 60fps frame', Math.abs(L.smoothScrollStep(0, 100, 0.1, 1000 / 60, 0.5) - 10) < 1e-9);
+ok('smooth step missing dt behaves like one 60fps frame', Math.abs(L.smoothScrollStep(0, 100, 0.1) - 10) < 1e-9);
+eq('smooth step snaps inside the threshold', L.smoothScrollStep(99.7, 100, 0.1, 1000 / 60, 0.5), 100);
+ok('smooth step eases upward too', Math.abs(L.smoothScrollStep(100, 0, 0.1, 1000 / 60, 0.5) - 90) < 1e-9);
+ok('smooth step bad ease falls back', Math.abs(L.smoothScrollStep(0, 100, 'x', 1000 / 60, 0.5) - 10) < 1e-9);
+eq('smooth step junk input → 0', L.smoothScrollStep('a', 1, 0.1, 1000 / 60, 0.5), 0);
+// Frame-rate independence: two 120Hz frames must close exactly the gap one
+// 60Hz frame closes — the regression guard for the glide's soft stop.
+const halfFrame = L.smoothScrollStep(0, 100, 0.1, 1000 / 120, 0.5);
+ok('two half-rate frames equal one full-rate frame', Math.abs(L.smoothScrollStep(halfFrame, 100, 0.1, 1000 / 120, 0.5) - 10) < 1e-9);
+// A hidden-tab rAF gap is clamped to 100ms, not applied in full.
+eq('smooth step clamps a hidden-tab gap to 100ms', L.smoothScrollStep(0, 100, 0.1, 5000, 0.5), L.smoothScrollStep(0, 100, 0.1, 100, 0.5));
 
 // ---- Music card hover visualizer (static wiring checks) ----
 // Pure CSS/HTML feature, so the gate asserts the wiring is present: the
@@ -648,6 +670,7 @@ eq('particleCount: junk input yields nothing', L.particleCount('nope', {}), 0);
 ok('particleCount exported + used with device flags', scriptSrc.includes('particleCount(46, PARTICLE_FLAGS)') && scriptSrc.includes('particleCount(30, PARTICLE_FLAGS)'));
 ok('wheel hijacked non-passively', scriptSrc.includes("addEventListener('wheel'") && scriptSrc.includes('{ passive: false }'));
 ok('heavy scroll gated on reduced motion + KazuLib', scriptSrc.includes('KazuLib.wheelDeltaPx') && scriptSrc.includes('KazuLib.smoothScrollStep') && scriptSrc.includes('prefers-reduced-motion'));
+ok('heavy scroll feeds the real frame delta to the step', scriptSrc.includes('smoothScrollStep(window.scrollY, targetY, SMOOTH_EASE, dt, 0.5)'));
 ok('to-top rides the heavy scroll loop', scriptSrc.includes('window.kazuSmoothScrollTo'));
 ok('below-fold glass cards render-contained', cssFlat.includes('content-visibility: auto') && cssFlat.includes('contain-intrinsic-size: auto 420px'));
 ok('aurora live blur removed', !cssFlat.includes('filter: blur(38px)'));

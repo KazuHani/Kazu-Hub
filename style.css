@@ -16,7 +16,10 @@ body {
 /* ---- Theme variables ---- */
 body[data-theme="dark"] {
   color-scheme: dark;
-  --page-bg: radial-gradient(1200px 700px at 80% -10%, #15365c 0%, rgba(21,54,92,0) 55%), radial-gradient(1000px 600px at 0% 5%, #1b2a52 0%, rgba(27,42,82,0) 50%), linear-gradient(170deg,#0a1626 0%,#0d1b31 45%,#101a36 100%);
+  /* Night sky: the two original corner blooms, now joined by a cool moonlit
+     glow upper-right (seats .sakura-moon) and a faint sakura-pink bloom
+     low-left that ties the sky to the blossom branches. */
+  --page-bg: radial-gradient(720px 520px at 72% 8%, rgba(214,228,255,.07) 0%, rgba(214,228,255,0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.06) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, #15365c 0%, rgba(21,54,92,0) 55%), radial-gradient(1000px 600px at 0% 5%, #1b2a52 0%, rgba(27,42,82,0) 50%), linear-gradient(170deg,#0a1626 0%,#0d1b31 45%,#101a36 100%);
   --ink: #eaf4ff;
   --ink-soft: #9db8d4;
   --ink-faint: #6f8aac;
@@ -28,7 +31,8 @@ body[data-theme="dark"] {
 }
 body[data-theme="light"] {
   color-scheme: light;
-  --page-bg: radial-gradient(1200px 700px at 80% -10%, #c8ecff 0%, rgba(200,236,255,0) 55%), radial-gradient(1000px 600px at 0% 5%, #dfe4ff 0%, rgba(223,228,255,0) 50%), linear-gradient(170deg,#eaf7ff 0%,#f4f9ff 45%,#eef0ff 100%);
+  /* Day version: warm hazy glow upper-right, the same pink bloom, softened. */
+  --page-bg: radial-gradient(760px 540px at 72% 8%, rgba(255,240,200,.5) 0%, rgba(255,240,200,0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.14) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, #c8ecff 0%, rgba(200,236,255,0) 55%), radial-gradient(1000px 600px at 0% 5%, #dfe4ff 0%, rgba(223,228,255,0) 50%), linear-gradient(170deg,#eaf7ff 0%,#f4f9ff 45%,#eef0ff 100%);
   --ink: #0b3a5c;
   --ink-soft: #5a7a96;
   --ink-faint: #8aa6bd;
@@ -42,17 +46,137 @@ body[data-theme="light"] {
 .hidden { display: none !important; }
 
 /* ---- Atmosphere: cherry-blossom petals ---- */
-.atmosphere { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-.petal { position: absolute; filter: blur(2px); animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+/* Anchored to the top of the page (absolute, not fixed): the whole ambience
+   scrolls away with the hero and returns when you scroll back up — same
+   anchoring as the sakura scene it sits on top of. */
+.atmosphere { position: absolute; top: 0; left: 0; right: 0; height: 100vh; overflow: hidden; pointer-events: none; z-index: 0; }
+/* Petal physics: three animations compose the drift — fallY on `transform`
+   (linear = terminal velocity), petalSway on the `translate` property and
+   petalRock on `rotate` (both ease-in-out alternate = smooth harmonic
+   motion, never a zigzag). The individual transform properties compose WITH
+   `transform`, which is what lets the three layers stack. Opacity comes
+   from --po (inline per petal) so fallY can fade petals in as they detach
+   from the branches; blur(2px) is the no-JS default and script.js stamps a
+   per-petal depth blur + the durations/delays inline. */
+.petal {
+  position: absolute; filter: blur(2px);
+  animation-name: fallY, petalSway, petalRock;
+  animation-timing-function: linear, ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite, infinite;
+  animation-direction: normal, alternate, alternate;
+}
 /* Rain streaks: injected by script.js when live weather says it's raining.
    Same pattern as .petal: timing in the class, duration/delay inline per drop. */
 .drop { position: absolute; width: 1.5px; height: clamp(60px, 12vh, 110px); border-radius: 1px; background: linear-gradient(to bottom, rgba(170,210,255,0), rgba(170,210,255,.6)); animation-name: rainfall; animation-timing-function: linear; animation-iteration-count: infinite; }
 @media (prefers-reduced-motion: reduce) { .petal, .drop { animation: none; display: none; } }
-@keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); } 100% { transform: translateY(110vh) rotate(360deg); } }
+@keyframes fallY {
+  /* --y0 lets branch-spawned petals start exactly on their blossom (0vh);
+     top-spawned ones keep the default above-screen lead-in. --dx is the
+     total sideways wind drift across the whole fall (away from the branch),
+     so a petal visibly TRAVELS down and away instead of hovering in place. */
+  0%   { transform: translate(0, var(--y0, -12vh)); opacity: 0; }
+  7%   { opacity: var(--po, .7); }
+  100% { transform: translate(var(--dx, 0vw), 112vh); opacity: var(--po, .7); }
+}
+/* Flutter: the only oscillation — kept tight so it reads as a wobble on top
+   of the wind drift, never a shuttle back and forth. */
+@keyframes petalSway {
+  from { translate: -0.9vw 0; }
+  to   { translate: 0.9vw 0; }
+}
+@keyframes petalRock {
+  from { rotate: -14deg; }
+  to   { rotate: 16deg; }
+}
 @keyframes rainfall { 0% { transform: translateY(-15vh) rotate(9deg); } 100% { transform: translateY(115vh) rotate(9deg); } }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
 @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 @keyframes shimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+/* ---- Sakura scenery: moon + overhanging branches ---- */
+/* Anchored to the top of the page (absolute, not fixed): it scrolls away
+   with the hero and comes back when you scroll back up. z-index 0, same as
+   .atmosphere; it sits earlier in the DOM so petals fall in front of the
+   branches. All motion is transform-only; the moon is a static gradient so
+   it never repaints under the glass cards' backdrop-filter. Colours come
+   from the --sakura-* custom properties so the light theme can restyle
+   the SVGs. */
+.sakura-scene {
+  position: absolute; top: 0; left: 0; right: 0; height: 100vh; overflow: hidden;
+  z-index: 0; pointer-events: none;
+  --sakura-branch: #3e2a3c;
+  --sakura-branch-rim: rgba(244,180,205,.22);
+  --sakura-petal: #f4a8c4;
+  --sakura-petal-deep: #e2709c;
+  --sakura-bud: #d95f8f;
+  --sakura-stamen: #ffe9f2;
+  animation: ambientFade 2.2s ease both;
+}
+body[data-theme="light"] .sakura-scene {
+  --sakura-branch: #6d4a57;
+  --sakura-branch-rim: rgba(255,255,255,.35);
+  --sakura-petal: #f7b9d2;
+  --sakura-petal-deep: #e58ab0;
+  --sakura-bud: #dd7ba6;
+  --sakura-stamen: #fff3f8;
+}
+/* Sky body: the sun by day, the moon by night, riding an arc across the
+   scenery layer (script.js positions it from the UK clock once a minute;
+   the transition glides each step). The no-JS pose is the moon upper-right. */
+.sky-body {
+  position: absolute; left: 78%; top: 16%; transform: translate(-50%, -50%);
+  width: clamp(92px, 10vw, 148px); aspect-ratio: 1; border-radius: 50%;
+  transition: left 1.8s ease, top 1.8s ease;
+}
+.sky-body--moon {
+  background: radial-gradient(circle at 38% 34%, #fffdf6 0%, #f8eed6 46%, #eedcae 74%, rgba(238,220,174,0) 78%);
+  box-shadow: 0 0 46px 22px rgba(255,240,205,.12), 0 0 130px 64px rgba(186,212,255,.07);
+  opacity: .92;
+}
+.sky-body--sun {
+  background: radial-gradient(circle at 38% 34%, #fffbe8 0%, #ffeda8 42%, #ffcf52 74%, rgba(255,207,82,0) 80%);
+  box-shadow: 0 0 60px 30px rgba(255,214,90,.32), 0 0 170px 84px rgba(255,190,60,.15);
+  opacity: .95;
+}
+/* Near either horizon (rising/setting): golden-hour sun, dimmer amber moon. */
+.sky-body--sun.sky-body--low {
+  background: radial-gradient(circle at 38% 34%, #fff3d0 0%, #ffcf7a 45%, #ff9a3d 76%, rgba(255,154,61,0) 82%);
+  box-shadow: 0 0 70px 34px rgba(255,160,60,.38), 0 0 180px 90px rgba(255,120,40,.16);
+}
+.sky-body--moon.sky-body--low { opacity: .7; }
+/* Light theme: the moon becomes a hazy glow so it reads on the pale sky. */
+body[data-theme="light"] .sky-body--moon {
+  background: radial-gradient(circle at 38% 34%, #fff9e6 0%, #ffefd0 50%, rgba(255,239,208,0) 76%);
+  box-shadow: 0 0 50px 26px rgba(255,224,160,.35), 0 0 120px 60px rgba(255,214,150,.18);
+  opacity: .55;
+}
+body[data-theme="light"] .sky-body--sun { opacity: .8; }
+.sakura-branch { position: absolute; display: block; height: auto; }
+.sakura-branch--a {
+  top: 0; right: 0; width: clamp(270px, 30vw, 440px);
+  transform-origin: 100% 0;
+  animation: sakuraSwayA 9s ease-in-out infinite alternate;
+}
+.sakura-branch--b {
+  left: 0; top: 46%; width: clamp(190px, 21vw, 300px);
+  transform-origin: 0 80%;
+  animation: sakuraSwayB 11s ease-in-out infinite alternate;
+}
+@keyframes sakuraSwayA { from { transform: rotate(-1.1deg); } to { transform: rotate(1.3deg); } }
+@keyframes sakuraSwayB { from { transform: rotate(1deg); } to { transform: rotate(-1.3deg); } }
+/* Christmas owns a pine/cranberry/gold palette + its own tree scene; the
+   pink branches would clash, so they sit the season out. */
+body.season-christmas .sakura-scene { display: none; }
+/* Phones: no left branch (no horizontal room), smaller corner branch, and no
+   sky body — it just reads as a smudge behind the hero avatar. */
+@media (max-width: 768px) {
+  .sakura-branch--b { display: none; }
+  .sakura-branch--a { width: clamp(180px, 50vw, 260px); }
+  .sky-body { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sakura-scene, .sakura-branch--a, .sakura-branch--b { animation: none; }
+}
 
 /* ---- Theme orb ---- */
 #theme-orb {
@@ -735,7 +859,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 
 /* Reduced motion: skip the whole entrance — everything is simply present. */
 @media (prefers-reduced-motion: reduce) {
-  .atmosphere, #theme-orb, .hero .pfp, .title, .stat-card {
+  .atmosphere, .sakura-scene, #theme-orb, .hero .pfp, .title, .stat-card {
     animation: none !important;
   }
 }

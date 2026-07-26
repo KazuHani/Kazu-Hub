@@ -290,6 +290,50 @@
     return Math.min(64, Math.max(8, n));
   }
 
+  // ---- Sky body (sun/moon arc) ---------------------------------------------
+  // The scenery layer's celestial body: the sun by day, the moon by night,
+  // both travelling the same arc — rising at the left edge of the page,
+  // climbing to the top of the sky, setting at the right edge. Timed to the
+  // Europe/London wall clock (script.js feeds in ukWallParts).
+
+  // Approximate Aberystwyth sunrise/sunset in UK wall minutes from the day of
+  // year: a sinusoid between the solstices (21 Jun ≈ 05:00–21:30, 21 Dec ≈
+  // 08:15–16:00). Ambience, not an ephemeris — always within ~20 min of the
+  // real almanac times. Junk input falls back to the summer solstice.
+  function sunTimesUK(dayOfYear) {
+    var d = Math.round(+dayOfYear);
+    if (isNaN(d) || d < 1 || d > 366) d = 172;
+    var w = 2 * Math.PI * (d - 172) / 365;
+    return {
+      rise: Math.round(397.5 - 97.5 * Math.cos(w)),
+      set: Math.round(1125 + 165 * Math.cos(w)),
+    };
+  }
+
+  // Where the sky body sits at `ukMinutes` (minutes since UK midnight).
+  // Returns { body, x, y, alt, low }: x/y are % offsets inside the scenery
+  // layer, alt the 0..1 height along the arc (1 = top of the sky), low flags
+  // near-horizon positions for golden-hour styling. Junk time input yields
+  // null so the page keeps whatever it is already showing.
+  function skyBodyState(ukMinutes, dayOfYear) {
+    var t = +ukMinutes;
+    if (isNaN(t)) return null;
+    t = ((t % 1440) + 1440) % 1440;
+    var st = sunTimesUK(dayOfYear);
+    var dayLen = st.set - st.rise;
+    var isSun = t >= st.rise && t < st.set;
+    var p = isSun ? (t - st.rise) / dayLen
+                  : ((((t - st.set) % 1440) + 1440) % 1440) / (1440 - dayLen);
+    var alt = Math.sin(Math.PI * p);
+    return {
+      body: isSun ? 'sun' : 'moon',
+      x: +(6 + p * 88).toFixed(2),
+      y: +(52 - alt * 40).toFixed(2),
+      alt: +alt.toFixed(3),
+      low: alt < 0.28,
+    };
+  }
+
   // ---- 5-day forecast strip ------------------------------------------------
   // Shapes an Open-Meteo `daily` block (day-aligned to Europe/London via the
   // request's timezone param) into rows for the weather modal's strip. The
@@ -862,8 +906,13 @@
   // script.js). wheelDeltaPx normalizes a WheelEvent delta into pixels —
   // browsers report deltaY in pixels (mode 0), lines (mode 1, Firefox), or
   // pages (mode 2). smoothScrollStep is one frame of the ease: `current`
-  // closes `ease` of the remaining gap to `target`, snapping the last
-  // sub-`snap` px so the rAF loop can terminate. Lower ease = heavier feel.
+  // closes `ease` of the remaining gap to `target` per 60fps frame, scaled
+  // by the real frame delta `dtMs` so the glide's time constant is the same
+  // at any refresh rate — without that, a 144Hz+ display burns through the
+  // tail 2-4x faster and the scroll stops dead instead of slowing to a stop.
+  // Snapping the last sub-`snap` px lets the rAF loop terminate. dtMs is
+  // clamped to 100ms so a hidden-tab rAF gap can't teleport the page through
+  // the whole remaining gap in one frame. Lower ease = heavier feel.
   function wheelDeltaPx(deltaY, deltaMode) {
     var d = +deltaY;
     if (isNaN(d)) return 0;
@@ -872,16 +921,21 @@
     return d;
   }
 
-  function smoothScrollStep(current, target, ease, snap) {
+  function smoothScrollStep(current, target, ease, dtMs, snap) {
     var c = +current, t = +target;
     if (isNaN(c) || isNaN(t)) return 0;
     var e = +ease;
     if (isNaN(e) || e <= 0 || e > 1) e = 0.1;
+    var dt = +dtMs;
+    if (isNaN(dt) || dt <= 0) dt = 1000 / 60;
+    if (dt > 100) dt = 100;
     var s = +snap;
     if (isNaN(s) || s <= 0) s = 0.5;
     var diff = t - c;
     if (Math.abs(diff) <= s) return t;
-    return c + diff * e;
+    // Fraction of the gap closed in dt ms when `ease` is the per-60fps rate:
+    // two half-length frames compose to exactly one full-length frame.
+    return c + diff * (1 - Math.pow(1 - e, dt / (1000 / 60)));
   }
 
   global.KazuLib = {
@@ -904,6 +958,8 @@
     openMeteoUrl: openMeteoUrl,
     atmosphereMode: atmosphereMode,
     particleCount: particleCount,
+    sunTimesUK: sunTimesUK,
+    skyBodyState: skyBodyState,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,

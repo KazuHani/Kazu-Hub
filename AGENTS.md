@@ -23,20 +23,25 @@ themselves from the playlist's Atom feed (`feeds/videos.xml`, via the same
 proxy, newest additions first), plus a ListenBrainz "recently played" strip;
 socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 `sw.js` offline shell), has dark/light theme, seasonal themes (birthday,
-Christmas, pride), a weather-reactive cherry-blossom atmosphere, and custom
-scrollbars.
+Christmas, pride), a weather-reactive cherry-blossom atmosphere (petals
+detach from the branches and drift down-wind; the layer is anchored to the
+top of the page, so it scrolls away with the hero), a "moonlit sakura"
+scenery layer (SVG branches from the page edges plus a sun-by-day /
+moon-by-night sky body arcing left→right on the UK clock; hidden during
+the Christmas season), and custom scrollbars.
 
 ## Code layout
 
-- `index.html` (~600 lines) — the whole page. Loads `style.css?v=30`,
-  `lib.js?v=17`, `script.js?v=34` (version query strings; see cache-busting
+- `index.html` (~750 lines) — the whole page. Loads `style.css?v=34`,
+  `lib.js?v=19`, `script.js?v=41` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
-- `lib.js` (~845 lines) — **pure, DOM-free helpers**, exposed as the global
+- `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
   Europe/London wall-clock frame, UK DST maths, age/birthday/life-in-weeks
   calculations, calendar export (`.ics`, Google Calendar URL), HTML escaping,
-  Steam/MAL data shaping, dev-code matching, and scrollbar thumb geometry.
+  Steam/MAL data shaping, dev-code matching, scrollbar thumb geometry, and
+  the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
 - `script.js` (~2400 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,
@@ -45,8 +50,8 @@ scrollbars.
   for the lib helpers it needs, so the page still works if `lib.js` fails to
   load. User-facing IDs (`DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`, `LB_USER`,
   `LISTENBRAINZ_USER`) are constants near the top of each section.
-- `style.css` (~1370 lines) — all styling, including seasonal and
-  weather-atmosphere variants.
+- `style.css` (~1440 lines) — all styling, including seasonal and
+  weather-atmosphere variants and the sakura scenery layer.
 - `sw.js` — service worker. Network-first for navigations, cache-first for
   same-origin versioned assets, cross-origin requests (live APIs, fonts)
   untouched. Precache list mirrors the `?v=` URLs from `index.html`.

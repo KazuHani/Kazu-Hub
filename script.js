@@ -303,18 +303,74 @@
     return Math.min(64, Math.max(8, light ? Math.round(n * 0.6) : n));
   };
 
-  function buildPetals(count, sizeMin, sizeMax) {
+  // Petal physics: fallY carries each petal down a steady wind-drifted path
+  // (--dx = total sideways travel across the fall, AWAY from its branch), a
+  // tight flutter wobbles on top and a slow tumble rocks it (keyframes in
+  // style.css). Blossom mode spawns petals
+  // AT the branches: the anchors below are blossom positions in each SVG's
+  // viewBox, projected through the branch's live on-screen rect, so a petal
+  // starts exactly where a drawn blossom sits at any viewport width. It
+  // fades in on the spot (fallY), then drifts down and AWAY from its edge,
+  // so the shower visibly comes out of the trees. blossom-heavy stays a
+  // plain top-down shower, and with no branch on screen (narrow phones
+  // aside, e.g. mid-scroll rebuilds) blossom mode falls back to the top edge.
+  const BRANCH_A = document.querySelector('.sakura-branch--a');
+  const BRANCH_B = document.querySelector('.sakura-branch--b');
+  const ANCHORS_A = [[150, 214], [176, 184], [206, 154], [238, 128], [282, 102], [326, 66], [386, 30], [292, 146], [300, 224], [152, 146]];
+  const ANCHORS_B = [[214, 78], [160, 44], [124, 214], [92, 150], [28, 232], [60, 196], [148, 102]];
+
+  // Blossom anchors as viewport-% spawn points: [{x, y, dx}] where dx is the
+  // sway direction (away from the edge the branch hangs from). Null when no
+  // branch is on screen.
+  function branchSpawnPoints() {
+    const pts = [];
+    const add = (el, anchors, boxW, boxH, dir) => {
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
+      anchors.forEach(a => pts.push({
+        x: (r.left + a[0] / boxW * r.width) / window.innerWidth * 100,
+        y: (r.top + a[1] / boxH * r.height) / window.innerHeight * 100,
+        dx: dir,
+      }));
+    };
+    add(BRANCH_A, ANCHORS_A, 460, 340, -1);
+    add(BRANCH_B, ANCHORS_B, 300, 280, 1);
+    return pts.length ? pts : null;
+  }
+
+  // Depth pass: each petal draws a 0..1 depth (0 = far away, 1 = close);
+  // size, sharpness, brightness and fall speed all follow it, so the drift
+  // reads as a layered shower instead of a flat curtain of emoji. Opacity
+  // travels via --po so fallY can fade fresh petals in as they detach.
+  function buildPetals(count, sizeMin, sizeMax, fromBranches) {
     const frag = document.createDocumentFragment();
+    const spawns = fromBranches ? branchSpawnPoints() : null;
     for (let i = 0; i < count; i++) {
       const s = document.createElement('span');
       s.className = 'petal';
       s.textContent = BLOSSOM_GLYPHS[(Math.random() * BLOSSOM_GLYPHS.length) | 0];
-      s.style.left = randRange(0, 100).toFixed(1) + '%';
-      s.style.top = '-5%';
-      s.style.fontSize = randRange(sizeMin, sizeMax).toFixed(0) + 'px';
-      s.style.opacity = randRange(0.5, 0.85).toFixed(2);
-      s.style.animationDuration = randRange(13, 24).toFixed(1) + 's';
-      s.style.animationDelay = randRange(0, 8).toFixed(1) + 's';
+      const depth = Math.random();
+      if (spawns) {
+        const a = spawns[(Math.random() * spawns.length) | 0];
+        s.style.left = (a.x + randRange(-1.5, 1.5)).toFixed(1) + '%';
+        s.style.top = (a.y + randRange(-1.5, 1.5)).toFixed(1) + '%';
+        s.style.setProperty('--y0', '0vh'); // detach exactly on the blossom
+        s.style.setProperty('--dx', (a.dx * randRange(8, 18)).toFixed(1) + 'vw');
+      } else {
+        s.style.left = randRange(0, 100).toFixed(1) + '%';
+        s.style.top = '-5%';
+        s.style.setProperty('--dx', (randRange(5, 14) * (Math.random() < 0.5 ? -1 : 1)).toFixed(1) + 'vw');
+      }
+      s.style.fontSize = (sizeMin + (sizeMax - sizeMin) * (0.35 + depth * 0.65)).toFixed(0) + 'px';
+      s.style.setProperty('--po', (0.42 + depth * 0.43).toFixed(2));
+      s.style.filter = 'blur(' + (2.6 - depth * 1.8).toFixed(1) + 'px)';
+      // fall, sway, rock — a staggered positive delay on the fall, so on load
+      // the shower visibly builds out of the branches instead of popping
+      // into mid-air; sway/rock stay phase-desynced with negative delays.
+      const fall = randRange(12, 20 + (1 - depth) * 6);
+      s.style.animationDuration = fall.toFixed(1) + 's, ' + randRange(2.2, 3.8).toFixed(1) + 's, ' + randRange(3.5, 6).toFixed(1) + 's';
+      s.style.animationDelay = randRange(0, 7).toFixed(1) + 's, ' + (-randRange(0, 4)).toFixed(1) + 's, ' + (-randRange(0, 5)).toFixed(1) + 's';
       frag.appendChild(s);
     }
     return frag;
@@ -344,7 +400,7 @@
     atmosphereEl.innerHTML = '';
     if (mode === 'none') return;
     if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(particleCount(46, PARTICLE_FLAGS))); return; }
-    if (mode === 'blossom-heavy') { atmosphereEl.appendChild(buildPetals(particleCount(48, PARTICLE_FLAGS), 12, 26)); return; }
+    if (mode === 'blossom-heavy') { atmosphereEl.appendChild(buildPetals(particleCount(48, PARTICLE_FLAGS), 12, 26, false)); return; }
     if (mode === 'aurora') {
       // Clear night sky: two drifting light ribbons over a static starfield.
       // Pure CSS animation, no per-frame JS (see style.css).
@@ -356,8 +412,66 @@
       atmosphereEl.appendChild(a);
       return;
     }
-    atmosphereEl.appendChild(buildPetals(particleCount(30, PARTICLE_FLAGS), 13, 24)); // cherry-blossom default
+    // cherry-blossom default: petals detach from the sakura branches
+    atmosphereEl.appendChild(buildPetals(particleCount(30, PARTICLE_FLAGS), 13, 24, true));
   }
+
+  // ---------- Sky body (sun/moon arc on UK time) ----------
+  // The scenery layer's sun (by day) or moon (by night) rides an arc from
+  // the left edge of the page to the right, timed to the Europe/London wall
+  // clock with approximate Aberystwyth sunrise/sunset. The maths lives in
+  // lib.js (KazuLib.skyBodyState, gate-tested); the local copy keeps the sky
+  // working if lib.js fails to load. Cheap by construction: one style write
+  // a minute, with a CSS transition gliding each step.
+  const skyBodyEl = document.querySelector('.sky-body');
+  const skyBodyState = (KazuLib && KazuLib.skyBodyState) || function (ukMinutes, dayOfYear) {
+    const t0 = +ukMinutes;
+    if (isNaN(t0)) return null;
+    const t = ((t0 % 1440) + 1440) % 1440;
+    let d = Math.round(+dayOfYear);
+    if (isNaN(d) || d < 1 || d > 366) d = 172;
+    const w = 2 * Math.PI * (d - 172) / 365;
+    const rise = Math.round(397.5 - 97.5 * Math.cos(w));
+    const set = Math.round(1125 + 165 * Math.cos(w));
+    const dayLen = set - rise;
+    const isSun = t >= rise && t < set;
+    const p = isSun ? (t - rise) / dayLen : ((((t - set) % 1440) + 1440) % 1440) / (1440 - dayLen);
+    const alt = Math.sin(Math.PI * p);
+    return { body: isSun ? 'sun' : 'moon', x: 6 + p * 88, y: 52 - alt * 40, low: alt < 0.28 };
+  };
+  let skyBodySnapped = false;
+  function updateSkyBody() {
+    if (!skyBodyEl) return;
+    // UK wall frame via lib.js; visitor-local is an acceptable fallback for
+    // an ambient feature (same call the seasonal themes make).
+    const now = new Date();
+    let mins, doy;
+    if (KazuLib && KazuLib.ukWallParts) {
+      const w = KazuLib.ukWallParts(now);
+      mins = w.hours * 60 + w.minutes;
+      doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
+    } else {
+      mins = now.getHours() * 60 + now.getMinutes();
+      doy = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(now.getFullYear(), 0, 1)) / 86400000) + 1;
+    }
+    const st = skyBodyState(mins, doy);
+    if (!st) return;
+    skyBodyEl.classList.toggle('sky-body--sun', st.body === 'sun');
+    skyBodyEl.classList.toggle('sky-body--moon', st.body === 'moon');
+    skyBodyEl.classList.toggle('sky-body--low', !!st.low);
+    if (!skyBodySnapped) {
+      // First write: no transition — the body must simply BE in position on
+      // load, not glide across the sky from the no-JS default pose. The
+      // transition is restored a frame later for the per-minute updates.
+      skyBodySnapped = true;
+      skyBodyEl.style.transition = 'none';
+      requestAnimationFrame(() => requestAnimationFrame(() => { skyBodyEl.style.transition = ''; }));
+    }
+    skyBodyEl.style.left = st.x + '%';
+    skyBodyEl.style.top = st.y + '%';
+  }
+  updateSkyBody();
+  setInterval(updateSkyBody, 60000);
 
   // ---------- Discord (Lanyard) ----------
   const STATUS_MAP = {
@@ -2608,15 +2722,18 @@
    ----------------------------------------------------------------------------
    "Lazy" scrolling: wheel input no longer jumps the page in notches — each
    turn of the wheel accumulates into a target position and a rAF loop eases
-   the real scroll toward it (a fraction of the remaining gap per frame), so
-   the page feels weighted, like it has momentum and mass. Wheel-only: touch
-   flings keep their native inertia, and everything else that moves the real
-   scroll position — keyboard, the custom scrollbar's drag/steppers, the
-   to-top button, anchor jumps — is adopted via the scroll listener (any
-   scroll the loop didn't write itself is external input: resync and yield).
-   Skipped entirely under prefers-reduced-motion. The maths lives in lib.js
-   (wheelDeltaPx, smoothScrollStep, gate-tested); local fallbacks keep it
-   alive if lib.js fails to load.
+   the real scroll toward it, so the page feels weighted, like it has
+   momentum and mass. The ease is scaled by the real frame delta (the rAF
+   timestamp), so the glide's time constant is the same at any refresh rate
+   — without that, high-Hz displays shrink the tail 2-4x and the scroll
+   stops dead the moment the wheel does instead of slowing to a stop.
+   Wheel-only: touch flings keep their native inertia, and everything else
+   that moves the real scroll position — keyboard, the custom scrollbar's
+   drag/steppers, the to-top button, anchor jumps — is adopted via the
+   scroll listener (any scroll the loop didn't write itself is external
+   input: resync and yield). Skipped entirely under prefers-reduced-motion.
+   The maths lives in lib.js (wheelDeltaPx, smoothScrollStep, gate-tested);
+   local fallbacks keep it alive if lib.js fails to load.
    ========================================================================== */
 (() => {
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -2630,39 +2747,53 @@
     if (deltaMode === 2) return d * 800;
     return d;
   };
-  const smoothScrollStep = (KazuLib && KazuLib.smoothScrollStep) || function (current, target, ease, snap) {
+  const smoothScrollStep = (KazuLib && KazuLib.smoothScrollStep) || function (current, target, ease, dtMs, snap) {
     let c = +current, t = +target;
     if (isNaN(c) || isNaN(t)) return 0;
     let e = +ease; if (isNaN(e) || e <= 0 || e > 1) e = 0.1;
+    let dt = +dtMs; if (isNaN(dt) || dt <= 0) dt = 1000 / 60;
+    if (dt > 100) dt = 100;
     let s = +snap; if (isNaN(s) || s <= 0) s = 0.5;
     const diff = t - c;
-    return Math.abs(diff) <= s ? t : c + diff * e;
+    return Math.abs(diff) <= s ? t : c + diff * (1 - Math.pow(1 - e, dt / (1000 / 60)));
   };
 
-  // Fraction of the remaining gap closed per frame: lower = heavier. 0.05
-  // gives a long, buttery glide with a soft tail; the 0.5px snap lets the
-  // loop stop instead of trailing forever.
-  const SMOOTH_EASE = 0.03;
+  // Fraction of the remaining gap closed per 60fps frame: lower = heavier.
+  // 0.12 keeps the weighted feel but tracks the wheel closely and settles in
+  // under half a second — the old 0.03 trailed input by seconds, so reversing
+  // direction meant fighting the old tail (read as jitter) and scroll events
+  // kept firing long after the wheel stopped. smoothScrollStep scales the
+  // fraction by the real frame delta, so the glide lasts the same wall-clock
+  // time on a 240Hz display as on a 60Hz one.
+  const SMOOTH_EASE = 0.12;
 
   let targetY = window.scrollY;
   let lastWritten = window.scrollY; // loop's last write; scroll events matching it are our own
   let rafId = null;
+  let lastTickAt = 0; // rAF timestamp of the previous tick; 0 = no glide running
   const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 
-  const tick = () => {
+  const tick = (now) => {
     rafId = null;
+    const dt = lastTickAt ? now - lastTickAt : 1000 / 60;
+    lastTickAt = now;
     targetY = Math.min(Math.max(targetY, 0), maxScroll()); // content can shrink mid-glide
-    const next = Math.min(Math.max(smoothScrollStep(window.scrollY, targetY, SMOOTH_EASE, 0.5), 0), maxScroll());
+    // Fractional writes, 0.5px snap: the exponential tail decays smoothly to
+    // a stop. (Rounding writes to whole pixels made the tail stall below a
+    // 1px step and then jump the remaining gap in one frame — an abrupt
+    // stop.)
+    const next = Math.min(Math.max(smoothScrollStep(window.scrollY, targetY, SMOOTH_EASE, dt, 0.5), 0), maxScroll());
     lastWritten = next;
     window.scrollTo({ top: next, behavior: 'instant' });
     if (next !== targetY) rafId = requestAnimationFrame(tick);
+    else lastTickAt = 0;
   };
 
   // Programmatic glides (the back-to-top button) ride the same loop — a
   // native smooth scrollTo would be stomped by the loop's per-frame writes.
   window.kazuSmoothScrollTo = (y) => {
     targetY = Math.min(Math.max(+y || 0, 0), maxScroll());
-    if (rafId === null) rafId = requestAnimationFrame(tick);
+    if (rafId === null) { lastTickAt = 0; rafId = requestAnimationFrame(tick); }
   };
 
   window.addEventListener('wheel', (e) => {
@@ -2672,7 +2803,7 @@
     if (e.target && e.target.closest && e.target.closest('.modal-overlay')) return;
     e.preventDefault();
     targetY = Math.min(Math.max(targetY + wheelDeltaPx(e.deltaY, e.deltaMode), 0), maxScroll());
-    if (rafId === null) rafId = requestAnimationFrame(tick);
+    if (rafId === null) { lastTickAt = 0; rafId = requestAnimationFrame(tick); }
   }, { passive: false });
 
   // Any scroll the loop didn't write is external (keyboard, scrollbar drag,
@@ -2681,6 +2812,7 @@
   window.addEventListener('scroll', () => {
     if (rafId === null || Math.abs(window.scrollY - lastWritten) > 2) {
       if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+      lastTickAt = 0;
       targetY = window.scrollY;
       lastWritten = window.scrollY;
     }
