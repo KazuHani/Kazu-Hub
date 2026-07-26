@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=17"></script>
+  <script src="lib.js?v=18"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -339,6 +339,59 @@
       eq('listenbrainzRow no track name → null', L.listenbrainzRow({ track_metadata: { artist_name: 'A' } }), null);
       eq('listenbrainzRow null → null', L.listenbrainzRow(null), null);
 
+      // ---- xmlText / ytArtistName ----
+      eq('xmlText decodes all five entities', L.xmlText('A &amp; B &lt;C&gt; &quot;D&quot; &#39;E&#39;'), 'A & B <C> "D" \'E\'');
+      eq('xmlText decodes zero-padded numeric apos + &apos;', L.xmlText('it&#039;s &apos;ok&apos;'), "it's 'ok'");
+      eq('xmlText empty → empty', L.xmlText(''), '');
+      eq('ytArtistName strips - Topic', L.ytArtistName('Shadow Bass King - Topic'), 'Shadow Bass King');
+      eq('ytArtistName strips VEVO', L.ytArtistName('UsherVEVO'), 'Usher');
+      eq('ytArtistName keeps a plain name', L.ytArtistName('Christina Perri'), 'Christina Perri');
+      eq('ytArtistName decodes entities', L.ytArtistName('Tom &amp; Jerry - Topic'), 'Tom & Jerry');
+
+      // ---- parseYouTubePlaylistRss ----
+      var YTM_FEED = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+        '<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns="http://www.w3.org/2005/Atom">\n' +
+        '<title>Songs that SLAP</title>\n' +
+        '<entry>\n' +
+        '<yt:videoId>2nfxYkiVLNo</yt:videoId>\n' +
+        '<title>I AM THUNDER</title>\n' +
+        '<author><name>Shadow Bass King - Topic</name></author>\n' +
+        '</entry>\n' +
+        '<entry>\n' +
+        '<yt:videoId>yqsJsO8H-oA</yt:videoId>\n' +
+        '<title>DJ Got Us Fallin&#39; In Love &amp; More</title>\n' +
+        '<author><name>UsherVEVO</name></author>\n' +
+        '</entry>\n' +
+        '<entry>\n' +
+        '<yt:videoId>bad!!id</yt:videoId>\n' +
+        '<title>Malformed id row</title>\n' +
+        '<author><name>Nobody</name></author>\n' +
+        '</entry>\n' +
+        '<entry>\n' +
+        '<yt:videoId>aaaaaaaaaaa</yt:videoId>\n' +
+        '</entry>\n' +
+        '</feed>';
+      var ytmRows = L.parseYouTubePlaylistRss(YTM_FEED);
+      eq('parseYouTubePlaylistRss keeps feed order, drops malformed id + missing title', ytmRows.length, 2);
+      eq('parseYouTubePlaylistRss first row shaped + - Topic stripped', ytmRows[0], { id: '2nfxYkiVLNo', title: 'I AM THUNDER', artist: 'Shadow Bass King' });
+      eq('parseYouTubePlaylistRss decodes entities + strips VEVO', ytmRows[1], { id: 'yqsJsO8H-oA', title: "DJ Got Us Fallin' In Love & More", artist: 'Usher' });
+      eq('parseYouTubePlaylistRss no entries → []', L.parseYouTubePlaylistRss('<feed><title>x</title></feed>'), []);
+      eq('parseYouTubePlaylistRss garbage → []', L.parseYouTubePlaylistRss('not xml'), []);
+      eq('parseYouTubePlaylistRss null → []', L.parseYouTubePlaylistRss(null), []);
+
+      // ---- ytPlaylistCacheParse ----
+      eq('ytPlaylistCacheParse round-trips written rows', L.ytPlaylistCacheParse(JSON.stringify({ at: 1, rows: ytmRows })), ytmRows);
+      eq('ytPlaylistCacheParse valid empty list → []', L.ytPlaylistCacheParse(JSON.stringify({ at: 1, rows: [] })), []);
+      eq('ytPlaylistCacheParse bad JSON → null', L.ytPlaylistCacheParse('{nope'), null);
+      eq('ytPlaylistCacheParse null → null', L.ytPlaylistCacheParse(null), null);
+      eq('ytPlaylistCacheParse missing rows → null', L.ytPlaylistCacheParse(JSON.stringify({ at: 1 })), null);
+      eq('ytPlaylistCacheParse row without title → null', L.ytPlaylistCacheParse(JSON.stringify({ rows: [{ id: '2nfxYkiVLNo' }] })), null);
+      eq('ytPlaylistCacheParse malformed video id → null', L.ytPlaylistCacheParse(JSON.stringify({ rows: [{ id: 'x', title: 't' }] })), null);
+      ok('ytPlaylistCacheParse defaults missing artist to empty', (function () {
+        var r = L.ytPlaylistCacheParse(JSON.stringify({ rows: [{ id: '2nfxYkiVLNo', title: 't' }] }));
+        return r && r[0].artist === '';
+      })());
+
       // ---- forecastRows (weather modal 5-day strip) ----
       var dailyBlock = {
         time: ['2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22'],
@@ -553,6 +606,9 @@
         ok('jikan anime + manga bypass the HTTP cache', scriptSrc.indexOf("'/animelist?status=watching', { cache: 'no-store' }") !== -1 && scriptSrc.indexOf("'/mangalist?status=reading', { cache: 'no-store' }") !== -1);
         ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split("encodeURIComponent(listUrl), { cache: 'no-store' }").length - 1 === 2);
         ok('letterboxd RSS bypasses the HTTP cache', scriptSrc.indexOf("encodeURIComponent(rss), { cache: 'no-store' }") !== -1);
+        ok('youtube playlist feed bypasses the HTTP cache', scriptSrc.indexOf("encodeURIComponent(feed), { cache: 'no-store' }") !== -1);
+        ok('playlist tracks ride the poller loop', scriptSrc.indexOf('{ fn: loadPlaylistTracks,') !== -1);
+        ok('playlist card has a live-swap mount point', htmlSrc.indexOf('id="musicFeatured"') !== -1);
         // Every live fetch rides fetchT (script.js): a 12s AbortSignal.timeout so a
         // hung API/proxy fails into the loader's existing catch instead of pinning
         // the card on its loading line forever.

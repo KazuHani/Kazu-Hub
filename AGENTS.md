@@ -18,7 +18,9 @@ countdown) with detail pop-ups; a "right now" section with live Discord
 presence (Lanyard, WebSocket + REST fallback), Steam status, MyAnimeList
 watching/reading (Jikan, falling back to MAL list endpoints through
 `corsproxy.io`), and the latest Letterboxd diary entry (RSS via the same
-proxy); a YouTube Music playlist with a ListenBrainz "recently played" strip;
+proxy); a YouTube Music playlist card whose "From the playlist" rows update
+themselves from the playlist's Atom feed (`feeds/videos.xml`, via the same
+proxy, newest additions first), plus a ListenBrainz "recently played" strip;
 socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 `sw.js` offline shell), has dark/light theme, seasonal themes (birthday,
 Christmas, pride), a weather-reactive cherry-blossom atmosphere, and custom
@@ -37,7 +39,8 @@ scrollbars.
   Steam/MAL data shaping, dev-code matching, and scrollbar thumb geometry.
 - `script.js` (~2400 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
-  Steam, Jikan/MAL, Letterboxd, ListenBrainz, ZenQuotes), custom scrollbars,
+  Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,
+  ZenQuotes), custom scrollbars,
   the `kazudev` dev panel. It consumes `KazuLib` but keeps inline fallbacks
   for the lib helpers it needs, so the page still works if `lib.js` fails to
   load. User-facing IDs (`DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`, `LB_USER`,
@@ -117,7 +120,8 @@ These are load-bearing; read before editing.
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
 - **localStorage keys in use:** `kazu-dev-seasons`, `kazu-mal-cache`,
-  `kazu-mal-manga-cache`, `kazu-lb-cache`, plus the theme key. Don't collide.
+  `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`, plus the theme
+  key. Don't collide.
 
 ## Working agreements (from CLAUDE.md)
 

@@ -416,7 +416,7 @@
       </section>
 
       <!-- ───────────────────────────────────────────────────────────────
-           YOUTUBE MUSIC PLAYLIST (static card)
+           YOUTUBE MUSIC PLAYLIST (live track rows, static fallback)
            ──────────────────────────────────────────────────────────── -->
       <h2 class="section-title scroll-reveal">My playlist</h2>
       <section class="music-grid">
@@ -449,11 +449,12 @@
               </div>
             </div>
 
-            <!-- Featured tracks: static snapshot of the top of the playlist,
-                 pulled from the YouTube Music browse API on 2026-07-19. Each
-                 row opens the track inside the playlist. Edit by hand when
-                 the playlist's top changes. -->
-            <div class="music-featured">
+            <!-- Featured tracks: the rows below are a static snapshot used as
+                 the no-JS / fetch-failure fallback. On load, script.js swaps
+                 them for the playlist's latest additions pulled live from its
+                 Atom feed (see loadPlaylistTracks). Keep this fallback
+                 hand-edited if the feed ever needs a stand-in. -->
+            <div class="music-featured" id="musicFeatured">
               <div class="music-recent-label">From the playlist</div>
               <a class="music-track-row" href="https://music.youtube.com/watch?v=ejUr_Uunvjc&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
                 <div class="music-track-num">1</div>
@@ -597,8 +598,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=17"></script>
-<script src="script.js?v=34"></script>
+<script src="lib.js?v=18"></script>
+<script src="script.js?v=35"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

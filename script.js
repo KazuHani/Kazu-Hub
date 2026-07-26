@@ -209,6 +209,7 @@
   let lastMalMangaSig = '';
   let lastLbSig = '';
   let lastMusicSig = '';
+  let lastYtmSig = '';
 
   // ---------- Weather ----------
   function weatherInfo(code, isDay) {
@@ -1101,6 +1102,56 @@
       wrap.classList.remove('hidden');
     } catch (e) {
       // Keep the static card on failure; the playlist link is the fallback content.
+    }
+  }
+
+  // ---------- YouTube Music playlist (latest additions via Atom feed) -------
+  // Every public playlist publishes an Atom feed (feeds/videos.xml, newest
+  // additions first) — keyless, so the "From the playlist" rows track the
+  // real playlist instead of going stale: a song added in YouTube Music
+  // appears here on the next poll. No CORS header on the feed, so it rides
+  // the same corsproxy.io as Letterboxd; parsing lives in lib.js (regex,
+  // DOM-free, gate-tested). Failure order: localStorage cache → the static
+  // snapshot rows shipped in index.html.
+  const YTM_PLAYLIST_ID = 'PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m';
+  const YTM_CACHE_KEY = 'kazu-ytm-cache';
+
+  function renderPlaylistTracks(rows) {
+    const list = $('musicFeatured');
+    if (!list) return;
+    const sig = JSON.stringify(rows);
+    if (sig === lastYtmSig) return;
+    lastYtmSig = sig;
+    list.innerHTML = '<div class="music-recent-label">From the playlist</div>' + rows.map((t, i) =>
+      '<a class="music-track-row" href="https://music.youtube.com/watch?v=' + t.id + '&amp;list=' + YTM_PLAYLIST_ID + '" target="_blank" rel="noopener">' +
+        '<div class="music-track-num">' + (i + 1) + '</div>' +
+        '<div class="music-track-text">' +
+          '<div class="music-track-name">' + escapeHtml(t.title) + '</div>' +
+          '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
+        '</div>' +
+      '</a>').join('');
+  }
+
+  function ytmCacheRead() {
+    const parse = KazuLib && KazuLib.ytPlaylistCacheParse;
+    if (!parse) return null;
+    try { return parse(localStorage.getItem(YTM_CACHE_KEY)); } catch (e) { return null; }
+  }
+
+  async function loadPlaylistTracks() {
+    if (!KazuLib || !KazuLib.parseYouTubePlaylistRss) return;
+    try {
+      const feed = 'https://www.youtube.com/feeds/videos.xml?playlist_id=' + YTM_PLAYLIST_ID;
+      const r = await fetchT('https://corsproxy.io/?' + encodeURIComponent(feed), { cache: 'no-store' });
+      if (!r.ok) throw new Error('proxy status ' + r.status);
+      const rows = KazuLib.parseYouTubePlaylistRss(await r.text()).slice(0, 5);
+      if (!rows.length) throw new Error('feed had no usable entries');
+      renderPlaylistTracks(rows);
+      try { localStorage.setItem(YTM_CACHE_KEY, JSON.stringify({ at: Date.now(), rows })); } catch (e) {}
+    } catch (e) {
+      // No cache yet → the static snapshot in index.html stays as the fallback.
+      const cached = ytmCacheRead();
+      if (cached && cached.length) renderPlaylistTracks(cached);
     }
   }
 
@@ -2044,9 +2095,10 @@
     { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },
     { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0 },
-    // firstDelay: the two lowest-priority cards yield their FIRST fetch to the
+    { fn: loadPlaylistTracks, ms: 30 * 60 * 1000, last: 0, firstDelay: 2000 },
+    // firstDelay: the lowest-priority cards yield their FIRST fetch to the
     // critical load-time resources (fonts, hero image, weather, Discord)
-    // instead of joining the eight-way burst. Intervals/payloads unchanged.
+    // instead of joining the load-time burst. Intervals/payloads unchanged.
     { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0, firstDelay: 1000 },
     { fn: loadQuote, ms: 15 * 60 * 1000, last: 0, firstDelay: 1500 },
   ];

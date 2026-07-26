@@ -627,6 +627,66 @@
     };
   }
 
+  // ---- YouTube Music playlist (Atom feed) -----------------------------------
+  // Every public YouTube playlist publishes an Atom feed at
+  // /feeds/videos.xml?playlist_id={id} with one <entry> per video, most
+  // recently added first (YouTube caps it at 15). That feed is what keeps the
+  // music card's "From the playlist" rows in step with the real playlist: add
+  // a song in YouTube Music and it shows up here on the next poll. Parsed
+  // with regexes like the Letterboxd feed so the tests stay headless.
+
+  // Atom text is XML-escaped; decode it back to plain text (escapeHtml
+  // re-escapes at render time, so without this '&' would show as '&amp;').
+  function xmlText(s) {
+    return String(s || '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#0?39;|&apos;/g, "'")
+      .replace(/&amp;/g, '&');
+  }
+
+  // Music uploads come from auto-generated/VEVO channels whose names carry
+  // furniture the card doesn't want: 'Shadow Bass King - Topic' → 'Shadow
+  // Bass King', 'UsherVEVO' → 'Usher'.
+  function ytArtistName(name) {
+    return xmlText(name).replace(/ - Topic$/i, '').replace(/VEVO$/, '').trim();
+  }
+
+  // Feed XML → flat rows { id, title, artist }, newest addition first. Rows
+  // without a usable title are dropped, and the video id must match
+  // YouTube's exact 11-char alphabet — it's interpolated into a href later,
+  // so anything malformed/hostile is refused here instead of escaped there.
+  function parseYouTubePlaylistRss(xml) {
+    if (typeof xml !== 'string' || xml.indexOf('<entry>') === -1) return [];
+    var entries = xml.match(/<entry>[\s\S]*?<\/entry>/g) || [];
+    var rows = [];
+    for (var i = 0; i < entries.length; i++) {
+      var id = rssPick(entries[i], 'yt:videoId');
+      var title = xmlText(rssPick(entries[i], 'title'));
+      if (!/^[A-Za-z0-9_-]{11}$/.test(id) || !title) continue;
+      rows.push({ id: id, title: title, artist: ytArtistName(rssPick(entries[i], 'name')) });
+    }
+    return rows;
+  }
+
+  // localStorage fallback copy of the playlist rows, same contract as
+  // malCacheParse: sanitized rows or null.
+  function ytPlaylistCacheParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    if (!payload || !Array.isArray(payload.rows)) return null;
+    var rows = [];
+    for (var i = 0; i < payload.rows.length; i++) {
+      var r = payload.rows[i];
+      if (!r || typeof r.id !== 'string' || !/^[A-Za-z0-9_-]{11}$/.test(r.id)) return null;
+      if (typeof r.title !== 'string' || !r.title) return null;
+      rows.push({ id: r.id, title: r.title, artist: typeof r.artist === 'string' ? r.artist : '' });
+    }
+    return rows;
+  }
+
   // ---- Konami code easter egg ----------------------------------------------
   // The classic ↑↑↓↓←→←→BA. script.js keeps a rolling window of recent keys
   // and asks this whether the window ENDS with the code, so junk typed before
@@ -859,6 +919,10 @@
     parseLetterboxdRss: parseLetterboxdRss,
     letterboxdCacheParse: letterboxdCacheParse,
     listenbrainzRow: listenbrainzRow,
+    xmlText: xmlText,
+    ytArtistName: ytArtistName,
+    parseYouTubePlaylistRss: parseYouTubePlaylistRss,
+    ytPlaylistCacheParse: ytPlaylistCacheParse,
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
