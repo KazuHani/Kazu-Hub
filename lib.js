@@ -113,18 +113,21 @@
     var nextMilestoneDays = (Math.floor(totalDays / 1000) + 1) * 1000;
     var nextMilestoneOn = new Date(BIRTH_WALL_MS + nextMilestoneDays * 86400000); // wall frame: format with timeZone:'UTC'
     var heartbeats = Math.floor((msAlive / 60000) * 72); // ~72 bpm
+    // Playful equivalents for the age pop-up — rough average rates, but
+    // deterministic: same instant, same numbers, on any machine.
+    var daysAlive = msAlive / 86400000;
+    var orbits = daysAlive / 365.2422;                  // tropical years = laps of the Sun
 
     return {
       years: years, months: months, days: days,
       totalDays: totalDays, totalWeeks: totalWeeks, totalHours: totalHours,
       nextMilestoneDays: nextMilestoneDays, nextMilestoneOn: nextMilestoneOn,
       heartbeats: heartbeats,
+      fullMoons: Math.floor(daysAlive / 29.530589),     // mean synodic month
+      orbits: orbits,
+      asleepYears: orbits / 3,                          // ~8 h/day = a third of life
+      breaths: Math.floor((msAlive / 60000) * 16),      // ~16 breaths/min at rest
     };
-  }
-
-  function lifeWeeksLived(now) {
-    now = now || new Date();
-    return Math.floor((ukWallMs(now) - BIRTH_WALL_MS) / (7 * 86400000));
   }
 
   // ---- Birthday countdown ------------------------------------------------
@@ -948,7 +951,6 @@
     isUkBST: isUkBST,
     nextUkDstTransition: nextUkDstTransition,
     ageBreakdown: ageBreakdown,
-    lifeWeeksLived: lifeWeeksLived,
     birthdayCountdownParts: birthdayCountdownParts,
     zodiac: zodiac,
     birthFacts: birthFacts,

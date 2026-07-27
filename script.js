@@ -1416,8 +1416,9 @@
   // ---------- Card detail modals ----------
   // Click/Enter on any .stat-card[data-modal] opens one reusable glass pop-up.
   // Each card maps to an entry in MODALS: render() paints the body, afterRender()
-  // runs DOM work that needs layout (mount the wind-globe iframe, draw the
-  // life-weeks canvas), live() re-runs every second while the pop-up is open.
+  // runs DOM work that needs layout (mount the wind-globe iframe), live()
+  // re-runs every second while the pop-up is open. Bodies are laid out to fit
+  // the panel without scrolling on typical screens (see style.css modal rules).
   const modalEl = $('cardModal');
   const modalPanel = modalEl ? modalEl.querySelector('.modal-panel') : null;
   const modalTitleEl = $('modalTitle');
@@ -1464,10 +1465,13 @@
       +     '<div class="tz-time" id="mLocalTime">' + fmtTime.format(now) + '</div>'
       +     '<div class="tz-meta">' + localZone + '</div></div>'
       + '</div>'
-      + '<div class="modal-note"><div class="modal-row"><span>Time difference</span><strong>' + diffText + '</strong></div></div>'
-      + '<div class="modal-note">' + stateText + '<br>'
+      + '<div class="modal-note">'
+      +   '<div class="modal-row"><span>Time difference</span><strong>' + diffText + '</strong></div>'
+      +   '<div class="modal-note-hr"></div>'
+      +   stateText + '<br>'
       +   '<span class="modal-row-sub">Next clock change:</span> <strong>' + dstDate + '</strong> '
-      +   '(in ' + daysToDst + ' day' + (daysToDst === 1 ? '' : 's') + ') — ' + dirText + '</div>';
+      +   '(in ' + daysToDst + ' day' + (daysToDst === 1 ? '' : 's') + ') — ' + dirText
+      + '</div>';
   }
   function timeModalLive() {
     const now = new Date();
@@ -1479,15 +1483,14 @@
   // ----- Weather: 3D wind globe + 5-day forecast -----
   function weatherModalHTML() {
     return ''
-      + '<p class="modal-lead">Live surface wind, centred on the UK. Drag to spin the globe, scroll to zoom — the moving particles trace wind direction and speed in real time.</p>'
+      + '<p class="modal-lead">Live surface wind over the UK — drag to spin, scroll to zoom. <span class="modal-lead-src">Source: earth.nullschool.net</span></p>'
       + '<div class="globe-frame" id="globeFrame"></div>'
       + '<div class="forecast-strip" id="forecastStrip"></div>'
       + '<div class="modal-actions">'
       +   '<a class="modal-btn" id="globeOpen" target="_blank" rel="noopener">Open full UK wind map ↗</a>'
       +   '<button type="button" class="modal-btn modal-btn--ghost" id="skyCompare">📍 Compare with your sky</button>'
       + '</div>'
-      + '<div class="sky-compare hidden" id="skyCompareOut"></div>'
-      + '<p class="modal-credit">Source: earth.nullschool.net — global weather, forecast by supercomputer.</p>';
+      + '<div class="sky-compare hidden" id="skyCompareOut"></div>';
   }
 
   // "Compare with your sky": opt-in geolocation (button click only — never
@@ -1592,6 +1595,10 @@
   function statTile(num, label) {
     return '<div class="stat-tile"><div class="stat-tile-num">' + num + '</div><div class="stat-tile-label">' + label + '</div></div>';
   }
+  function funCell(emoji, num, label) {
+    return '<div class="fun-cell"><span class="fun-emoji">' + emoji + '</span><div>'
+      + '<div class="fun-num">' + num + '</div><div class="fun-label">' + label + '</div></div></div>';
+  }
   function ageModalHTML() {
     const a = KazuLib.ageBreakdown(new Date());
     const f = KazuLib.birthFacts();
@@ -1611,49 +1618,14 @@
       + '<div class="sign-row"><div class="sign-glyph">' + f.starGlyph + '</div><div>'
       +   '<div class="tz-label">Star sign</div><div class="sign-name">' + f.starSign + '</div>'
       +   '<div class="tz-meta">Born ' + f.dateLabel + ' — a ' + f.weekday + '</div></div></div>'
-      + '<div class="life-weeks-wrap">'
-      +   '<div class="life-weeks-head"><span class="life-weeks-title">Life in weeks</span>'
-      +     '<span class="life-weeks-legend">each dot = 1 week · filled = lived</span></div>'
-      +   '<canvas id="lifeWeeksCanvas"></canvas>'
+      + '<div class="fun-wrap"><div class="fun-title">Life in fun units</div>'
+      +   '<div class="fun-grid">'
+      +     funCell('🌕', nf(a.fullMoons), 'full moons seen')
+      +     funCell('🌍', a.orbits.toFixed(1), 'laps of the Sun')
+      +     funCell('😴', '~' + a.asleepYears.toFixed(1), 'years asleep')
+      +     funCell('💨', nf(a.breaths), 'breaths taken')
+      +   '</div>'
       + '</div>';
-  }
-  function drawLifeWeeks() {
-    const canvas = $('lifeWeeksCanvas');
-    if (!canvas) return;
-    const YEARS = 90, WEEKS = 52, gap = 2;
-    const lived = KazuLib.lifeWeeksLived(new Date());
-    // measure the container, not the canvas (a bare canvas reports its 300px default)
-    const wrap = canvas.parentElement;
-    const avail = (wrap && wrap.clientWidth) || modalBodyEl.clientWidth || 460;
-    const cell = Math.max(3, Math.floor((avail - (WEEKS - 1) * gap) / WEEKS));
-    const W = WEEKS * cell + (WEEKS - 1) * gap;
-    const H = YEARS * cell + (YEARS - 1) * gap;
-    const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = W * DPR; canvas.height = H * DPR;
-    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#5cc6ff';
-    const r = Math.max(1, cell * 0.28);
-    // Two batched paths instead of 4,680 beginPath/fill cycles: one for the
-    // weeks lived, one for the rest — identical dots, two fills total.
-    const livedPath = new Path2D();
-    const restPath = new Path2D();
-    for (let i = 0; i < YEARS * WEEKS; i++) {
-      const x = (i % WEEKS) * (cell + gap), y = Math.floor(i / WEEKS) * (cell + gap);
-      const p = i < lived ? livedPath : restPath;
-      p.moveTo(x + r, y);
-      p.arcTo(x + cell, y, x + cell, y + cell, r);
-      p.arcTo(x + cell, y + cell, x, y + cell, r);
-      p.arcTo(x, y + cell, x, y, r);
-      p.arcTo(x, y, x + cell, y, r);
-      p.closePath();
-    }
-    ctx.fillStyle = accent;
-    ctx.fill(livedPath);
-    ctx.fillStyle = 'rgba(140,170,210,.18)';
-    ctx.fill(restPath);
   }
 
   // ----- Next birthday: countdown + calendar export -----
@@ -1708,7 +1680,7 @@
   const MODALS = {
     time: { title: '🕒 Time & timezones', render: timeModalHTML, live: timeModalLive },
     weather: { title: '🌬️ UK wind globe', wide: true, render: weatherModalHTML, afterRender: weatherModalAfter },
-    age: { title: '🎂 Age & life stats', render: ageModalHTML, afterRender: drawLifeWeeks },
+    age: { title: '🎂 Age & life stats', render: ageModalHTML },
     bday: { title: '🎉 Next birthday', render: bdayModalHTML, afterRender: bdayModalAfter, live: bdayModalLive },
   };
 
@@ -1762,7 +1734,6 @@
       if (e.key === 'Escape') { e.preventDefault(); closeModal(); }
       else trapFocus(e);
     });
-    window.addEventListener('resize', () => { if (modalKey === 'age') drawLifeWeeks(); }, { passive: true });
     document.querySelectorAll('.stat-card[data-modal]').forEach((card) => {
       card.addEventListener('click', () => openModal(card.dataset.modal, card));
       card.addEventListener('keydown', (e) => {

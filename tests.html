@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=20"></script>
+  <script src="lib.js?v=21"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -87,7 +87,10 @@
       eq('breakdown = 24y 7m 18d', [a.years, a.months, a.days], [24, 7, 18]);
       ok('totalDays > 8000', a.totalDays > 8000, a.totalDays);
       ok('next milestone is a future multiple of 1000', a.nextMilestoneDays % 1000 === 0 && a.nextMilestoneDays > a.totalDays, a.nextMilestoneDays);
-      ok('lifeWeeksLived ≈ totalDays/7', Math.abs(L.lifeWeeksLived(new Date(Date.UTC(2026, 5, 27))) - Math.floor(a.totalDays / 7)) <= 1);
+      ok('fullMoons ≈ days/29.53', Math.abs(a.fullMoons - Math.floor(a.totalDays / 29.530589)) <= 1, a.fullMoons);
+      ok('orbits between 24 and 25 on 27 Jun 2026', a.orbits > 24 && a.orbits < 25, a.orbits);
+      ok('asleepYears = orbits/3', Math.abs(a.asleepYears - a.orbits / 3) < 1e-9);
+      ok('breaths ≈ 16/min', Math.abs(a.breaths - a.totalHours * 60 * 16) <= 60 * 16, a.breaths);
       eq('still 24 at 8 Nov 23:30 UK', L.ageBreakdown(new Date(Date.UTC(2026, 10, 8, 23, 30))).years, 24);
       eq('25 at 9 Nov 00:30 UK', L.ageBreakdown(new Date(Date.UTC(2026, 10, 9, 0, 30))).years, 25);
 
