@@ -591,13 +591,18 @@ const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8');
  'rgba(20,40,100,.32), var(--glint)',   // myanimelist
  'rgba(10,16,24,.4), var(--glint)',     // letterboxd
  'rgba(255,26,26,.16), var(--glint)',   // music
- 'rgba(255,26,26,.3), var(--glint)',    // music hover keeps the glint
+ '0 8px 20px rgba(0,0,0,.3), var(--glint)',    // music hover keeps the glint
 ].forEach((shadow) => ok('glass shadow wired: ' + shadow, cssFlat.includes(shadow)));
 ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
 ok('story card gradients made translucent', htmlSrc.includes('rgba(124,29,43,.66)') && htmlSrc.includes('rgba(14,94,84,.66)'));
 ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);'));
 ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
 ok('social tiles are full glass citizens (rim refraction included)', !scriptSrc.includes(':not(.social-card)') && !cssFlat.includes(':not(.social-card)'));
+
+// ---- One hover recipe: uniform lift + depth on every interactive element ----
+ok('uniform hover depth applied broadly', cssFlat.split('box-shadow: 0 8px 20px rgba(0,0,0,.3)').length - 1 >= 12);
+ok('uniform hover lift applied broadly', cssFlat.split('transform: translateY(-3px)').length - 1 >= 15);
+ok('no legacy hover scales remain', !cssSrc.includes(':hover { transform: scale('));
 
 // ---- Scroll reveal (static wiring checks) ----
 // Everything .scroll-reveal starts hidden and fades + slides in the first

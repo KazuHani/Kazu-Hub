@@ -207,9 +207,9 @@ body.season-christmas .sakura-scene { display: none; }
 #theme-orb {
   position: fixed; top: 20px; left: 20px; z-index: 60;
   width: 56px; height: 56px; border: none; padding: 0; background: none; cursor: pointer;
-  transition: transform .35s cubic-bezier(.34,1.5,.6,1);
+  transition: transform .2s ease-in-out;
 }
-#theme-orb:hover { transform: scale(1.12); }
+#theme-orb:hover { transform: translateY(-3px); }
 #theme-orb:active { transform: scale(.94); }
 #theme-orb > span {
   display: flex; align-items: center; justify-content: center;
@@ -220,7 +220,7 @@ body.season-christmas .sakura-scene { display: none; }
   transform: rotate(0deg);
 }
 #theme-orb:hover > span {
-  box-shadow: 0 8px 26px rgba(40,60,120,.7), inset 0 0 0 1px rgba(255,255,255,.24);
+  box-shadow: 0 8px 20px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.24);
 }
 body[data-theme="light"] #theme-orb > span {
   background: radial-gradient(circle at 35% 30%, #ffe79c, #ffb43d);
@@ -228,7 +228,7 @@ body[data-theme="light"] #theme-orb > span {
   transform: rotate(360deg);
 }
 body[data-theme="light"] #theme-orb:hover > span {
-  box-shadow: 0 8px 32px rgba(255,170,40,.75), inset 0 0 0 1px rgba(255,255,255,.6);
+  box-shadow: 0 8px 20px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.6);
 }
 @media (max-width: 768px) {
   #theme-orb:hover { transform: none; }
@@ -342,9 +342,9 @@ body[data-theme="light"] #theme-orb:hover > span {
 .pill-link {
   position: relative; overflow: hidden; font-size: 12px; font-weight: 800; text-decoration: none;
   padding: 5px 11px; border-radius: 999px; display: inline-block;
-  transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
 }
-.pill-link:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 16px rgba(0,0,0,.18); filter: brightness(1.12); }
+.pill-link:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .pill-link:active { transform: translateY(0) scale(.97); }
 .pill-link::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -389,9 +389,9 @@ body[data-theme="light"] #theme-orb:hover > span {
   appearance: none; border: 1px solid rgba(140,180,230,.4); background: rgba(120,170,230,.16);
   color: inherit; font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .04em;
   border-radius: 999px; padding: 6px 14px; cursor: pointer;
-  transition: transform .25s ease, background .25s ease;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
 }
-.retry-btn:hover { transform: translateY(-1px); background: rgba(120,170,230,.3); }
+.retry-btn:hover { transform: translateY(-3px); background: rgba(120,170,230,.3); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .retry-btn:active { transform: translateY(0) scale(.97); }
 @media (prefers-reduced-motion: reduce) { .retry-btn { transition: none; } .retry-btn:hover, .retry-btn:active { transform: none; } }
 
@@ -469,8 +469,8 @@ body[data-theme="light"] #theme-orb:hover > span {
 .mal-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
 .mal-card .idle-banner { background: rgba(255,255,255,.12); color: #c7d4f7; }
 
-.mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 10px 12px; margin-top: 10px; text-decoration: none; transition: transform .25s ease, background .25s ease; }
-.mal-row:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
+.mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 10px 12px; margin-top: 10px; text-decoration: none; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out; }
+.mal-row:hover { transform: translateY(-3px); background: rgba(255,255,255,.17); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .mal-row:active { transform: translateY(0) scale(.98); }
 .mal-cover { width: 44px; height: 62px; border-radius: 8px; object-fit: cover; flex: none; background: rgba(143,176,255,.18); }
 .mal-info { min-width: 0; flex: 1; }
@@ -486,12 +486,12 @@ body[data-theme="light"] #theme-orb:hover > span {
 /* These are <a> elements that only get an href when there's a real
    destination (Spotify track, Steam store page). No href = inert. */
 a.info-pill { text-decoration: none; color: inherit; }
-a.info-pill[href] { cursor: pointer; transition: transform .25s ease, filter .25s ease; }
-a.info-pill[href]:hover { transform: translateY(-2px); filter: brightness(1.08); }
+a.info-pill[href] { cursor: pointer; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out; }
+a.info-pill[href]:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 a.info-pill[href]:active { transform: translateY(0) scale(.98); }
 a.info-pill:not([href]) { cursor: default; }
-a.recent-game-row { text-decoration: none; color: inherit; border-radius: 10px; padding: 7px 6px; margin: 0 -6px; transition: background .2s ease; }
-a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
+a.recent-game-row { text-decoration: none; color: inherit; border-radius: 10px; padding: 7px 6px; margin: 0 -6px; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out; }
+a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(102,192,244,.12); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 @media (prefers-reduced-motion: reduce) {
   a.info-pill[href], a.recent-game-row { transition: none; }
   a.info-pill[href]:hover, a.info-pill[href]:active { transform: none; }
@@ -564,9 +564,9 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   font: inherit; font-weight: 800; font-size: 13px; color: #fff;
   background: rgba(255,0,0,.22); border: 1px solid rgba(255,90,90,.4);
   padding: 9px 16px; border-radius: 999px;
-  transition: transform .25s cubic-bezier(.34,1.5,.6,1), background .25s ease, box-shadow .25s ease;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
 }
-.music-play-btn:hover { transform: translateY(-2px); background: rgba(255,0,0,.32); box-shadow: 0 8px 20px rgba(255,0,0,.25); }
+.music-play-btn:hover { transform: translateY(-3px); background: rgba(255,0,0,.32); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .music-play-btn:active { transform: translateY(0) scale(.97); }
 .music-embed { display: block; width: 100%; aspect-ratio: 16 / 9; border: none; border-radius: 16px; background: rgba(0,0,0,.35); }
 @media (prefers-reduced-motion: reduce) { .music-play-btn { transition: none; } .music-play-btn:hover, .music-play-btn:active { transform: none; } }
@@ -604,14 +604,14 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
      restate the transition at higher specificity so the reveal transition
      doesn't clobber the bouncier hover one. */
   .music-card.scroll-reveal {
-    transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .45s cubic-bezier(.34,1.56,.64,1), box-shadow .45s ease;
+    transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
   }
   /* .scroll-reveal.is-visible pins transform: translateY(0) after reveal and
      would win on source order, so restate the hover transform at higher
      specificity. The overshoot easing makes the expand bounce. */
   .music-card.scroll-reveal.is-visible:hover {
-    transform: scale(1.03);
-    box-shadow: 0 22px 46px rgba(255,26,26,.3), var(--glint);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint);
   }
   .music-card:hover .music-viz { opacity: 1; }
   .music-card:hover .music-viz span { animation-play-state: running; }
@@ -639,16 +639,16 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   text-decoration: none; color: inherit; border-radius: 20px; padding: 18px;
   -webkit-tap-highlight-color: transparent;
   display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1;
-  transition: transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, border-color .3s ease, z-index .3s;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, z-index .2s;
 }
-.social-card:hover { transform: scale(1.05); box-shadow: 0 18px 34px rgba(70,150,230,.28); z-index: 2; }
+.social-card:hover { transform: translateY(-3px); z-index: 2; }
 .social-card:active { transform: scale(1.06); }
 .social-icon {
   width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center;
   transition: transform .35s cubic-bezier(.34,1.6,.55,1), box-shadow .35s ease;
 }
-.social-card:hover .social-icon { transform: scale(1.12) rotate(-6deg); }
-.social-card:hover .social-name { color: var(--accent); transition: color .2s ease; }
+
+
 .social-icon--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: #fff; letter-spacing: .02em; }
 .social-icon--dots { gap: 3px; }
 .social-icon--dots span { width: 12px; height: 12px; border-radius: 50%; display: block; }
@@ -669,8 +669,8 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 /* ---- Stories ---- */
 .stories-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
 .story-link { text-decoration: none; color: inherit; display: block; }
-.story-card { position: relative; border-radius: 24px; padding: 26px; overflow: hidden; height: 100%; transition: transform .2s ease, box-shadow .2s ease; }
-.story-link:hover .story-card { transform: translateY(-4px); }
+.story-card { position: relative; border-radius: 24px; padding: 26px; overflow: hidden; height: 100%; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out; }
+.story-link:hover .story-card { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint) !important; }
 .story-title { position: relative; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 30px; color: #fff; line-height: 1.05; margin: 16px 0 8px; }
 .story-desc { position: relative; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.85); line-height: 1.55; max-width: 300px; }
 .story-cta {
@@ -678,7 +678,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   background: #fff; font-weight: 800; font-size: 13px; padding: 9px 16px; border-radius: 999px;
   transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, gap .25s ease;
 }
-.story-link:hover .story-cta { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.28); gap: 11px; }
+
 /* Off-site marker: the story cards open Google Docs in a new tab. */
 .story-card::after {
   content: "\2197"; /* ↗ */
@@ -695,16 +695,17 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    !important weight) and drives the hidden state with opacity/transform/
    pointer-events instead. right: 28px (not 20px) because the custom page
    scrollbar (.cscroll) ends flush at 20px from the screen edge (4px offset
-   + 16px wide) — 28px leaves an 8px gap instead of touching it. No hover
-   state by design; only :active gives press feedback. */
+   + 16px wide) — 28px leaves an 8px gap instead of touching it. Hover uses the
+   standard lift + depth recipe, same as every other interactive element. */
 .to-top {
   position: fixed; right: 28px; bottom: 20px; z-index: 50; width: 52px; height: 52px;
   border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: 23px; line-height: 1;
   box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
   opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
-  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.6,.55,1);
+  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
 }
+.to-top:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .to-top:active { transform: translateY(-1px) scale(.96); }
 .to-top.hidden {
   display: flex !important;
@@ -716,6 +717,13 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 
 @media (prefers-reduced-motion: reduce) {
   .to-top { transition: none; }
+}
+
+/* One hover recipe => one kill switch: under reduced motion nothing lifts. */
+@media (prefers-reduced-motion: reduce) {
+  .pill-link:hover, .story-link:hover .story-card, a.music-track-row:hover,
+  a.recent-game-row[href]:hover, #theme-orb:hover, .to-top:hover,
+  .dev-panel-close:hover, .dev-reset:hover { transform: none; }
 }
 
 .footer { text-align: center; margin-top: 54px; font-size: 13px; font-weight: 700; color: var(--ink-faint); }
@@ -855,9 +863,9 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 .dev-panel-close {
   width: 26px; height: 26px; border: none; cursor: pointer; border-radius: 50%;
   background: rgba(140,170,210,.18); color: var(--ink); font-size: 13px; line-height: 1;
-  display: flex; align-items: center; justify-content: center; transition: background .2s ease;
+  display: flex; align-items: center; justify-content: center; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
 }
-.dev-panel-close:hover { background: rgba(140,170,210,.34); }
+.dev-panel-close:hover { background: rgba(140,170,210,.34); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .dev-panel-sub { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 10px; }
 .dev-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(140,170,210,.16); }
 .dev-row-label { font-weight: 700; white-space: nowrap; }
@@ -877,9 +885,9 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 .dev-reset {
   margin-top: 10px; width: 100%; padding: 7px 10px; border-radius: 10px; cursor: pointer;
   border: 1px solid rgba(140,170,210,.3); background: rgba(140,170,210,.14);
-  color: var(--ink); font-size: 12px; font-weight: 700; transition: background .2s ease;
+  color: var(--ink); font-size: 12px; font-weight: 700; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
 }
-.dev-reset:hover { background: rgba(140,170,210,.28); }
+.dev-reset:hover { background: rgba(140,170,210,.28); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .dev-hint { margin-top: 9px; font-size: 10.5px; font-weight: 600; color: var(--ink-faint); text-align: center; }
 .dev-hint kbd {
   padding: 1px 5px; border-radius: 5px; border: 1px solid rgba(140,170,210,.35);
@@ -972,13 +980,13 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
    (higher specificity: two classes) so the fade-in transition above doesn't
    clobber the snappier hover transform/box-shadow transition set on .social-card. */
 .social-card.scroll-reveal {
-  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, border-color .3s ease;
+  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
 }
 /* .scroll-reveal.is-visible pins transform: translateY(0) at equal specificity to
    .social-card:hover and wins on source order, silently killing the hover scale
    once a card has revealed. Restate the hover transform here at higher specificity. */
 .social-card.scroll-reveal.is-visible:hover {
-  transform: scale(1.05);
+  transform: translateY(-3px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1056,7 +1064,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 }
 /* keep the glint on the social tile's lift-on-hover shadow */
 .social-card:hover {
-  box-shadow: 0 18px 34px rgba(70, 150, 230, .22), var(--glint);
+  box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint);
 }
 .toast {
   box-shadow: 0 14px 34px rgba(3, 10, 24, .3), var(--glint);
@@ -1134,9 +1142,9 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 /* clickable affordance on the four tiles */
 .stat-card[data-modal] {
   cursor: pointer;
-  transition: transform .25s cubic-bezier(.34,1.45,.55,1), box-shadow .25s ease;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
 }
-.stat-card[data-modal]:hover { transform: translateY(-3px); }
+.stat-card[data-modal]:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint, 0 0 0 rgba(0,0,0,0)); }
 .stat-card[data-modal]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .stat-card[data-modal]::after {
   content: "\2922"; /* ⤢ expand */
@@ -1185,9 +1193,9 @@ body.modal-open { overflow: hidden; }
   border: none; cursor: pointer; border-radius: 50%;
   background: rgba(140,170,210,.18); color: var(--ink);
   font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;
-  transition: background .2s ease, transform .2s ease;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
 }
-.modal-close:hover { background: rgba(140,170,210,.34); transform: rotate(90deg) scale(1.06); }
+.modal-close:hover { background: rgba(140,170,210,.34); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 
 .modal-title {
   font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 23px;
@@ -1219,12 +1227,12 @@ body.modal-open { overflow: hidden; }
   padding: 11px 18px; border-radius: 999px; color: #fff;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff);
   box-shadow: 0 8px 20px rgba(80,110,230,.35);
-  transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease, background .2s ease;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
 }
-.modal-btn:hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.08); box-shadow: 0 12px 26px rgba(80,110,230,.5); }
+.modal-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .modal-btn:active { transform: scale(.97); }
 .modal-btn--ghost { background: rgba(140,170,210,.16); color: var(--ink); box-shadow: none; }
-.modal-btn--ghost:hover { background: rgba(140,170,210,.3); filter: none; }
+.modal-btn--ghost:hover { background: rgba(140,170,210,.3); }
 
 /* Time modal */
 .tz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -1407,9 +1415,9 @@ body.modal-open { overflow: hidden; }
   display: flex; align-items: center; gap: 14px; text-decoration: none;
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
   border-radius: 14px; padding: 12px 14px;
-  transition: transform .25s ease, background .25s ease;
+  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
 }
-.lb-entry:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
+.lb-entry:hover { transform: translateY(-3px); background: rgba(255,255,255,.17); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .lb-entry:active { transform: translateY(0) scale(.98); }
 .lb-poster {
   width: 52px; height: 74px; border-radius: 8px; object-fit: cover; flex: none;
@@ -1443,8 +1451,8 @@ body.modal-open { overflow: hidden; }
 }
 
 /* ---- Music card: ListenBrainz recent tracks ---- */
-a.music-track-row { text-decoration: none; color: inherit; border-radius: 10px; }
-a.music-track-row:hover { background: rgba(255,255,255,.08); }
+a.music-track-row { text-decoration: none; color: inherit; border-radius: 10px; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out; }
+a.music-track-row:hover { transform: translateY(-3px); background: rgba(255,255,255,.08); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 
 /* ---- Weather modal: "compare with your sky" output ---- */
 .sky-compare { margin-top: 16px; }

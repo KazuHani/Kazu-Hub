@@ -32,7 +32,7 @@ the Christmas season), and custom scrollbars.
 
 ## Code layout
 
-- `index.html` (~750 lines) — the whole page. Loads `style.css?v=36`,
+- `index.html` (~750 lines) — the whole page. Loads `style.css?v=37`,
   `lib.js?v=22`, `script.js?v=44` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global

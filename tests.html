@@ -616,8 +616,13 @@
           'rgba(20,40,100,.32), var(--glint)',   // myanimelist
           'rgba(10,16,24,.4), var(--glint)',     // letterboxd
           'rgba(255,26,26,.16), var(--glint)',   // music
-          'rgba(255,26,26,.3), var(--glint)'     // music hover keeps the glint
+          '0 8px 20px rgba(0,0,0,.3), var(--glint)'     // music hover keeps the glint
         ].forEach(function (shadow) { ok('glass shadow wired: ' + shadow, cssFlat.indexOf(shadow) !== -1); });
+
+        // ---- One hover recipe: uniform lift + depth on every interactive element ----
+        ok('uniform hover depth applied broadly', cssFlat.split('box-shadow: 0 8px 20px rgba(0,0,0,.3)').length - 1 >= 12);
+        ok('uniform hover lift applied broadly', cssFlat.split('transform: translateY(-3px)').length - 1 >= 15);
+        ok('no legacy hover scales remain', cssSrc.indexOf(':hover { transform: scale(') === -1);
         ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
         ok('story card gradients made translucent', htmlSrc.indexOf('rgba(124,29,43,.66)') !== -1 && htmlSrc.indexOf('rgba(14,94,84,.66)') !== -1);
         ok('presence + story cards get the frosted backdrop', cssFlat.indexOf('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);') !== -1);
