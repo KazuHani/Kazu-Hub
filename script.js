@@ -71,10 +71,9 @@
 
   // ---------- Dev settings (secret code: kazudev) ----------
   // Typing the code opens a floating panel with per-season Auto/On/Off
-  // overrides, for previewing the event themes (and iterating on their CSS)
-  // on any date. Overrides persist in localStorage across reloads. Matching
-  // and override maths live in lib.js (gate-tested); the local copies keep
-  // the panel working if lib.js fails to load.
+  // overrides plus the responsive sky-curve switch. Overrides persist in
+  // localStorage across reloads. Matching and parsing live in lib.js
+  // (gate-tested); the local copies keep the panel working if lib.js fails.
   const devCodeMatch = (KazuLib && KazuLib.devCodeMatch) || function (recent) {
     const CODE = 'kazudev';
     if (!recent || recent.length < CODE.length) return false;
@@ -96,15 +95,28 @@
     return out;
   };
   const seasonDevParse = (KazuLib && KazuLib.seasonDevParse) || function () { return null; };
+  const devModeParse = (KazuLib && KazuLib.devModeParse) || function (raw) {
+    return raw === 'on' || raw === 'off' || raw === 'auto' ? raw : 'auto';
+  };
 
   const DEV_KEY = 'kazu-dev-seasons';
   let devSeasons = {}; // { birthday|christmas|pride: 'on'|'off' } — 'auto' is the absence of a key
   try { devSeasons = seasonDevParse(localStorage.getItem(DEV_KEY)) || {}; } catch (e) {}
+  const DEV_CURVE_KEY = 'kazu-dev-curve';
+  let devCurveMode = 'auto';
+  try { devCurveMode = devModeParse(localStorage.getItem(DEV_CURVE_KEY)); } catch (e) {}
 
   function saveDevSeasons() {
     try {
       if (Object.keys(devSeasons).length) localStorage.setItem(DEV_KEY, JSON.stringify(devSeasons));
       else localStorage.removeItem(DEV_KEY); // all-auto: leave no trace
+    } catch (e) {}
+  }
+
+  function saveDevCurve() {
+    try {
+      if (devCurveMode === 'auto') localStorage.removeItem(DEV_CURVE_KEY);
+      else localStorage.setItem(DEV_CURVE_KEY, devCurveMode);
     } catch (e) {}
   }
 
@@ -231,71 +243,31 @@
   let weatherCurrent = null; // last good `current` snapshot, reused by "compare with your sky"
   let weatherDone = false;   // true once a fetch attempt has finished (ok or failed)
 
-  // 15-minute localStorage cache: repeat visits / quick reloads inside the
-  // TTL paint the last snapshot instantly and skip the network, which keeps
-  // Open-Meteo volume down (rate-limit friendly). The 10-minute poller and
-  // the Retry button pass force=true so they always go live. The freshness
-  // maths is KazuLib.cacheFresh (gate-tested); the inline copy keeps the card
-  // working if lib.js fails to load.
-  const WEATHER_CACHE_KEY = 'kazu-weather-cache';
-  const WEATHER_CACHE_TTL = 15 * 60 * 1000;
-  const cacheFresh = (KazuLib && KazuLib.cacheFresh) || function (at, ttl, now) {
-    if (typeof at !== 'number' || typeof ttl !== 'number') return false;
-    const t = (typeof now === 'number') ? now : Date.now();
-    return t - at >= 0 && t - at < ttl;
-  };
-
-  // Paints a current+daily payload — live fetch or cache snapshot — into the
-  // card, the weather-reactive atmosphere and, if it's open, the forecast modal.
-  function applyWeather(j) {
-    const w = j.current;
-    weatherDaily = j.daily || null;
-    weatherCurrent = {
-      code: w.weather_code, isDay: w.is_day === 1,
-      tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
-    };
-    const info = weatherInfo(w.weather_code, w.is_day === 1);
-    $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
-    $('liveWeatherDesc').textContent = info.d;
-    $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
-    if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
-    $('weatherLoaded').classList.remove('hidden');
-    $('weatherLoading').classList.add('hidden');
-    $('weatherError').classList.add('hidden');
-    weatherDone = true;
-    if (modalKey === 'weather') renderForecastStrip();
-  }
-
-  // Reads the cached snapshot; freshOnly=true restricts it to the TTL window
-  // (page loads), false accepts any age (last-good fallback on fetch failure).
-  function weatherCacheRead(freshOnly) {
-    try {
-      const c = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
-      if (!c || !c.data || !c.data.current) return null;
-      if (freshOnly && !cacheFresh(c.at, WEATHER_CACHE_TTL)) return null;
-      return c.data;
-    } catch (e) { return null; }
-  }
-
-  async function loadWeather(force) {
+  async function loadWeather() {
     weatherDone = false;
-    // Fresh cache hit: paint the snapshot and skip the network this load.
-    if (!force) {
-      const snap = weatherCacheRead(true);
-      if (snap) { applyWeather(snap); return; }
-    }
     try {
       const url = (KazuLib && KazuLib.openMeteoUrl)
         ? KazuLib.openMeteoUrl(52.414, -4.081)
         : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
       const r = await fetchT(url);
       const j = await r.json();
-      applyWeather(j);
-      try { localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ at: Date.now(), data: { current: j.current, daily: j.daily || null } })); } catch (e) {}
+      const w = j.current;
+      weatherDaily = j.daily || null;
+      weatherCurrent = {
+        code: w.weather_code, isDay: w.is_day === 1,
+        tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
+      };
+      const info = weatherInfo(w.weather_code, w.is_day === 1);
+      $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
+      $('liveWeatherDesc').textContent = info.d;
+      $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
+      if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
+      $('weatherLoaded').classList.remove('hidden');
+      $('weatherLoading').classList.add('hidden');
+      $('weatherError').classList.add('hidden');
+      weatherDone = true;
+      if (modalKey === 'weather') renderForecastStrip();
     } catch (e) {
-      // Last-good fallback before the error state: a stale sky beats no sky.
-      const snap = weatherCacheRead(false);
-      if (snap) { applyWeather(snap); return; }
       weatherDone = true;
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.remove('hidden');
@@ -477,20 +449,7 @@
     const isSun = t >= rise && t < set;
     const p = isSun ? (t - rise) / dayLen : ((((t - set) % 1440) + 1440) % 1440) / (1440 - dayLen);
     const alt = Math.sin(Math.PI * p);
-    return { body: isSun ? 'sun' : 'moon', x: 4 + p * 92, y: 92 - 17 * p - alt * 70, alt, low: alt < 0.28 };
-  };
-  // The avatar's sun bounce consumes the same sky position: KazuLib.sunBounce
-  // (gate-tested), mirrored inline so the glow survives a lib.js failure.
-  const pfpRingEl = document.querySelector('.pfp-ring');
-  const sunBounce = (KazuLib && KazuLib.sunBounce) || function (x, alt) {
-    if (typeof x !== 'number' || typeof alt !== 'number' || isNaN(x) || isNaN(alt)) return null;
-    const az = Math.max(-1, Math.min(1, (x - 50) / 46));
-    const al = Math.max(0, Math.min(1, alt));
-    return {
-      dx: Math.round(az * 14 * (0.4 + 0.6 * (1 - al)) * 10) / 10,
-      dy: Math.round(-(4 + al * 10) * 10) / 10,
-      opacity: Math.round((0.10 + al * 0.16) * 100) / 100,
-    };
+    return { body: isSun ? 'sun' : 'moon', x: 6 + p * 88, y: 52 - alt * 40, low: alt < 0.28 };
   };
   let skyBodySnapped = false;
   function updateSkyBody() {
@@ -522,20 +481,17 @@
     }
     skyBodyEl.style.left = st.x + '%';
     skyBodyEl.style.top = st.y + '%';
-    // Sun bounce: while the sun is up, a warm bloom tracks it onto the hero
-    // avatar's ring (the --sun-* vars drive .pfp-ring::after). Fades out at
-    // night; the CSS hides it on phones and in the Christmas season.
-    if (pfpRingEl) {
-      const b = st.body === 'sun' ? sunBounce(st.x, st.alt) : null;
-      if (b) {
-        pfpRingEl.style.setProperty('--sun-dx', b.dx + 'px');
-        pfpRingEl.style.setProperty('--sun-dy', b.dy + 'px');
-        pfpRingEl.style.setProperty('--sun-glow-o', b.opacity);
-      } else {
-        pfpRingEl.style.setProperty('--sun-glow-o', 0);
-      }
-    }
   }
+  // Auto restores the stylesheet's responsive behaviour: the arc is visible
+  // on wider screens and the sky body is hidden on phones. On forces it back
+  // on for narrow-screen inspection; Off hides it everywhere.
+  function applySkyCurveMode(mode) {
+    devCurveMode = devModeParse(mode);
+    if (!skyBodyEl) return;
+    skyBodyEl.style.display = devCurveMode === 'on' ? 'block' :
+      (devCurveMode === 'off' ? 'none' : '');
+  }
+  applySkyCurveMode(devCurveMode);
   updateSkyBody();
   setInterval(updateSkyBody, 60000);
 
@@ -1028,7 +984,7 @@
         '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
           (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
           '<div class="mal-info">' +
-            '<div class="mal-title" title="' + escapeHtml(x.title) + '">' + escapeHtml(x.title) + '</div>' +
+            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
             '<div class="mal-progress">' +
               (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
               '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
@@ -1056,7 +1012,7 @@
           '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
             (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
             '<div class="mal-info">' +
-              '<div class="mal-title" title="' + escapeHtml(x.title) + '">' + escapeHtml(x.title) + '</div>' +
+              '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
               '<div class="mal-progress">' +
                 (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
                 '<div class="mal-eps">Ch ' + x.read + ' / ' + (x.total || '?') + '</div>' +
@@ -1306,8 +1262,8 @@
       '<a class="music-track-row" href="https://music.youtube.com/watch?v=' + t.id + '&amp;list=' + YTM_PLAYLIST_ID + '" target="_blank" rel="noopener">' +
         '<div class="music-track-num">' + (i + 1) + '</div>' +
         '<div class="music-track-text">' +
-          '<div class="music-track-name" title="' + escapeHtml(t.title) + '">' + escapeHtml(t.title) + '</div>' +
-          '<div class="music-track-artist" title="' + escapeHtml(t.artist) + '">' + escapeHtml(t.artist) + '</div>' +
+          '<div class="music-track-name">' + escapeHtml(t.title) + '</div>' +
+          '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
         '</div>' +
       '</a>').join('');
   }
@@ -2090,9 +2046,9 @@
   });
 
   // ---------- Dev settings panel (secret code: kazudev) ----------
-  // A floating panel for previewing the seasonal event themes on any date:
-  // each season gets Auto (follow the clock) / On / Off. Built once on first
-  // use; styles live in style.css ("DEV SETTINGS PANEL").
+  // A floating panel for previewing the seasonal event themes on any date
+  // and checking the responsive sky curve. Built once on first use; styles
+  // live in style.css ("DEV SETTINGS PANEL").
   const DEV_SEASON_ROWS = [
     ['birthday', '🎂 Birthday'],
     ['christmas', '🎄 Christmas'],
@@ -2112,7 +2068,7 @@
         '<span class="dev-panel-title">🛠 Dev settings</span>' +
         '<button type="button" class="dev-panel-close" aria-label="Close developer settings">✕</button>' +
       '</div>' +
-      '<div class="dev-panel-sub">Season triggers — preview the event themes on any date:</div>';
+      '<div class="dev-panel-sub">Season triggers + responsive scenery preview:</div>';
     DEV_SEASON_ROWS.forEach((row) => {
       html += '<div class="dev-row" data-season="' + row[0] + '">' +
           '<span class="dev-row-label">' + row[1] + ' <span class="dev-live" hidden>live</span></span>' +
@@ -2123,6 +2079,14 @@
           '</span>' +
         '</div>';
     });
+    html += '<div class="dev-row" data-setting="curve">' +
+        '<span class="dev-row-label">Sky curve</span>' +
+        '<span class="dev-seg" role="group" aria-label="Sky curve mode">' +
+          '<button type="button" data-mode="auto">Auto</button>' +
+          '<button type="button" data-mode="on">On</button>' +
+          '<button type="button" data-mode="off">Off</button>' +
+        '</span>' +
+      '</div>';
     html += '<button type="button" class="dev-reset">Reset all to auto</button>' +
       '<div class="dev-hint">type <kbd>kazudev</kbd> to toggle · Esc to close</div>';
     el.innerHTML = html;
@@ -2130,17 +2094,29 @@
     el.querySelector('.dev-panel-close').addEventListener('click', closeDevPanel);
     el.querySelector('.dev-reset').addEventListener('click', () => {
       devSeasons = {};
+      devCurveMode = 'auto';
       saveDevSeasons();
+      saveDevCurve();
+      applySkyCurveMode(devCurveMode);
       applySeasons();
-      showToast('Season overrides cleared — back to the real clock');
+      syncDevPanel(seasonState(new Date()));
+      showToast('Dev overrides cleared — back to auto');
     });
-    el.querySelectorAll('.dev-seg button').forEach((btn) => {
+    el.querySelectorAll('.dev-row[data-season] .dev-seg button').forEach((btn) => {
       btn.addEventListener('click', () => {
         const season = btn.closest('.dev-row').dataset.season;
         if (btn.dataset.mode === 'auto') delete devSeasons[season];
         else devSeasons[season] = btn.dataset.mode;
         saveDevSeasons();
         applySeasons(); // repaint now; the per-second tick keeps it honest
+      });
+    });
+    el.querySelectorAll('.dev-row[data-setting="curve"] .dev-seg button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        devCurveMode = devModeParse(btn.dataset.mode);
+        saveDevCurve();
+        applySkyCurveMode(devCurveMode);
+        syncDevPanel(seasonState(new Date()));
       });
     });
     document.body.appendChild(el);
@@ -2165,6 +2141,14 @@
         b.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
     });
+    const curveRow = devPanel.querySelector('.dev-row[data-setting="curve"]');
+    if (curveRow) {
+      curveRow.querySelectorAll('.dev-seg button').forEach((b) => {
+        const on = b.dataset.mode === devCurveMode;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    }
   }
 
   function toggleDevPanel() {
@@ -2191,7 +2175,7 @@
   if (weatherRetry) weatherRetry.addEventListener('click', () => {
     $('weatherError').classList.add('hidden');
     $('weatherLoading').classList.remove('hidden');
-    loadWeather(true);
+    loadWeather();
   });
   const discordRetryBtn = $('discordRetry');
   if (discordRetryBtn) discordRetryBtn.addEventListener('click', () => {
@@ -2222,16 +2206,6 @@
     });
   }
 
-  // Embedded playlist player: click-to-load, so the heavy YouTube iframe is
-  // only downloaded on intent (first paint stays light, the card static until
-  // asked). youtube-nocookie's videoseries embed plays the whole playlist.
-  const musicPlayBtn = $('musicPlayBtn');
-  if (musicPlayBtn) musicPlayBtn.addEventListener('click', () => {
-    const holder = $('musicPlayer');
-    if (!holder) return;
-    holder.innerHTML = '<iframe class="music-embed" src="https://www.youtube-nocookie.com/embed/videoseries?list=' + YTM_PLAYLIST_ID + '&autoplay=1" title="YouTube playlist player — Songs that SLAP" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
-  });
-
   setAtmosphere(ATMOSPHERE_OVERRIDE || 'blossom');
 
   // ---------- Pause polling/ticking while the page isn't visible ----------
@@ -2251,7 +2225,7 @@
   // sw.js — so there is no second cache layer in front of them either.)
   const POLLERS = [
     { fn: tick, ms: 1000, last: 0 },
-    { fn: () => loadWeather(true), ms: 10 * 60 * 1000, last: 0 },
+    { fn: loadWeather, ms: 10 * 60 * 1000, last: 0 },
     { fn: loadDiscord, ms: 20 * 1000, last: 0 },
     { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },

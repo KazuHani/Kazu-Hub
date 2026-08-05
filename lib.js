@@ -316,11 +316,8 @@
   // Where the sky body sits at `ukMinutes` (minutes since UK midnight).
   // Returns { body, x, y, alt, low }: x/y are % offsets inside the scenery
   // layer, alt the 0..1 height along the arc (1 = top of the sky), low flags
-  // near-horizon positions for golden-hour styling. The arc is a tall
-  // hand-tuned curve — a sine bulge on a gently falling baseline: it rises
-  // from the layer's bottom-left corner (y 92), crests just behind the hero
-  // avatar (y ~13) and sets toward the right edge (y 75). Junk time input
-  // yields null so the page keeps whatever it is already showing.
+  // near-horizon positions for golden-hour styling. Junk time input yields
+  // null so the page keeps whatever it is already showing.
   function skyBodyState(ukMinutes, dayOfYear) {
     var t = +ukMinutes;
     if (isNaN(t)) return null;
@@ -333,28 +330,10 @@
     var alt = Math.sin(Math.PI * p);
     return {
       body: isSun ? 'sun' : 'moon',
-      x: +(4 + p * 92).toFixed(2),
-      y: +(92 - 17 * p - alt * 70).toFixed(2),
+      x: +(6 + p * 88).toFixed(2),
+      y: +(52 - alt * 40).toFixed(2),
       alt: +alt.toFixed(3),
       low: alt < 0.28,
-    };
-  }
-
-  // Sun bounce for the hero avatar: while the sun is up, a warm bloom sits on
-  // the sun-facing side of the profile ring (.pfp-ring::after in style.css).
-  // Takes the sky body's x% and alt (from skyBodyState) and returns the glow's
-  // px offset + opacity: dx tracks the azimuth (strongest when the sun hangs
-  // low at a page edge), dy stays negative (light comes from above) and the
-  // whole glow fades toward the horizon. Pure maths; the gate tests pin the
-  // edges. Junk input yields null.
-  function sunBounce(x, alt) {
-    if (typeof x !== 'number' || typeof alt !== 'number' || isNaN(x) || isNaN(alt)) return null;
-    var az = Math.max(-1, Math.min(1, (x - 50) / 46)); // -1 left edge … +1 right
-    var al = Math.max(0, Math.min(1, alt));            // 0 horizon … 1 zenith
-    return {
-      dx: Math.round(az * 14 * (0.4 + 0.6 * (1 - al)) * 10) / 10,
-      dy: Math.round(-(4 + al * 10) * 10) / 10,
-      opacity: Math.round((0.10 + al * 0.16) * 100) / 100,
     };
   }
 
@@ -755,17 +734,6 @@
     return rows;
   }
 
-  // ---- TTL cache freshness -------------------------------------------------
-  // Shared by the weather card's localStorage snapshot (kazu-weather-cache):
-  // an {at: epochMs} entry counts as fresh only inside its TTL window — and
-  // never when the stamp is in the future (clock skew). Pure maths, so the
-  // gate tests pin the boundaries; `now` is injectable for exactly that.
-  function cacheFresh(at, ttlMs, now) {
-    if (typeof at !== 'number' || typeof ttlMs !== 'number') return false;
-    var t = (typeof now === 'number') ? now : Date.now();
-    return t - at >= 0 && t - at < ttlMs;
-  }
-
   // ---- Konami code easter egg ----------------------------------------------
   // The classic ↑↑↓↓←→←→BA. script.js keeps a rolling window of recent keys
   // and asks this whether the window ENDS with the code, so junk typed before
@@ -829,6 +797,12 @@
       if (p[k] === 'on' || p[k] === 'off') out[k] = p[k];
     }
     return out;
+  }
+
+  // Single-value mode used by non-season dev switches. Auto is the safe
+  // default for missing, malformed, or unknown localStorage values.
+  function devModeParse(raw) {
+    return raw === 'on' || raw === 'off' || raw === 'auto' ? raw : 'auto';
   }
 
   // ---- Birthday balloons (canvas physics core) ------------------------------
@@ -994,7 +968,6 @@
     particleCount: particleCount,
     sunTimesUK: sunTimesUK,
     skyBodyState: skyBodyState,
-    sunBounce: sunBounce,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,
@@ -1014,12 +987,12 @@
     ytArtistName: ytArtistName,
     parseYouTubePlaylistRss: parseYouTubePlaylistRss,
     ytPlaylistCacheParse: ytPlaylistCacheParse,
-    cacheFresh: cacheFresh,
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
     seasonDevApply: seasonDevApply,
     seasonDevParse: seasonDevParse,
+    devModeParse: devModeParse,
     balloonDriftStep: balloonDriftStep,
     ropeStep: ropeStep,
     scrollThumbGeometry: scrollThumbGeometry,

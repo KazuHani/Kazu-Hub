@@ -22,9 +22,7 @@ body[data-theme="dark"] {
   --page-bg: radial-gradient(720px 520px at 72% 8%, rgba(214,228,255,.07) 0%, rgba(214,228,255,0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.06) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, #15365c 0%, rgba(21,54,92,0) 55%), radial-gradient(1000px 600px at 0% 5%, #1b2a52 0%, rgba(27,42,82,0) 50%), linear-gradient(170deg,#0a1626 0%,#0d1b31 45%,#101a36 100%);
   --ink: #eaf4ff;
   --ink-soft: #9db8d4;
-  /* Brightened from #6f8aac: faint text on the glass card fills sat at ~3.5:1
-     — under WCAG AA's 4.5:1. #8ba6c4 clears 4.9:1 on card and page alike. */
-  --ink-faint: #8ba6c4;
+  --ink-faint: #6f8aac;
   --accent: #5cc6ff;
   --card-bg: rgba(46,70,108,.74);
   --card-blur: blur(10px);
@@ -46,26 +44,6 @@ body[data-theme="light"] {
 }
 
 .hidden { display: none !important; }
-
-/* ---- Skip link + keyboard focus ---- */
-/* Visually hidden until focused: keyboard/screen-reader users jump straight
-   past the decorative layers and hero to the content (#main-content). */
-.skip-link {
-  position: fixed; top: 12px; left: 50%; transform: translate(-50%, -220%);
-  z-index: 300; padding: 10px 20px; border-radius: 999px;
-  background: var(--accent); color: #fff; font-weight: 800; font-size: 14px;
-  text-decoration: none; box-shadow: 0 10px 26px rgba(3,10,24,.4);
-  transition: transform .22s ease;
-}
-.skip-link:focus-visible { transform: translate(-50%, 0); outline: 2px solid #fff; outline-offset: 2px; }
-/* One explicit focus ring for every interactive element — the dark palette
-   swallows the browser default. The social/stat cards restate the same ring
-   at higher specificity, so nothing here conflicts. */
-a:focus-visible, button:focus-visible, [tabindex]:focus-visible, [role="button"]:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 3px;
-}
-/* Smooth scrolling off when the user asks for reduced motion. */
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 /* ---- Atmosphere: cherry-blossom petals ---- */
 /* Anchored to the top of the page (absolute, not fixed): the whole ambience
@@ -142,20 +120,18 @@ body[data-theme="light"] .sakura-scene {
   --sakura-bud: #dd7ba6;
   --sakura-stamen: #fff3f8;
 }
-/* Sky body: the sun by day, the moon by night, riding a tall arc across the
-   scenery layer — up from the bottom-left corner, cresting just behind the
-   hero avatar, setting toward the right edge (script.js positions it from
-   the UK clock once a minute; the transition glides each step). The no-JS
-   pose is the moon partway down the right slope. */
+/* Sky body: the sun by day, the moon by night, riding an arc across the
+   scenery layer (script.js positions it from the UK clock once a minute;
+   the transition glides each step). The no-JS pose is the moon upper-right. */
 .sky-body {
-  position: absolute; left: 78%; top: 38%; transform: translate(-50%, -50%);
+  position: absolute; left: 78%; top: 16%; transform: translate(-50%, -50%);
   width: clamp(92px, 10vw, 148px); aspect-ratio: 1; border-radius: 50%;
   transition: left 1.8s ease, top 1.8s ease;
 }
 .sky-body--moon {
   background: radial-gradient(circle at 38% 34%, #fffdf6 0%, #f8eed6 46%, #eedcae 74%, rgba(238,220,174,0) 78%);
-  box-shadow: 0 0 46px 22px rgba(255,240,205,.12), 0 0 130px 64px rgba(186,212,255,.07), 0 0 90px 34px rgba(255,236,190,.16);
-  opacity: .88;
+  box-shadow: 0 0 46px 22px rgba(255,240,205,.12), 0 0 130px 64px rgba(186,212,255,.07);
+  opacity: .92;
 }
 .sky-body--sun {
   background: radial-gradient(circle at 38% 34%, #fffbe8 0%, #ffeda8 42%, #ffcf52 74%, rgba(255,207,82,0) 80%);
@@ -176,11 +152,8 @@ body[data-theme="light"] .sky-body--moon {
 }
 body[data-theme="light"] .sky-body--sun { opacity: .8; }
 .sakura-branch { position: absolute; display: block; height: auto; }
-/* The top-right cluster carries a lot of visual weight on one side of the
-   hero, so it sits a half-step back — slightly smaller and softened — to
-   keep the avatar + quote the focal point (branch--b balances it low-left). */
 .sakura-branch--a {
-  top: 0; right: 0; width: clamp(250px, 28vw, 410px); opacity: .92;
+  top: 0; right: 0; width: clamp(270px, 30vw, 440px);
   transform-origin: 100% 0;
   animation: sakuraSwayA 9s ease-in-out infinite alternate;
 }
@@ -207,11 +180,11 @@ body.season-christmas .sakura-scene { display: none; }
 
 /* ---- Theme orb ---- */
 #theme-orb {
-  position: fixed; top: 20px; left: 20px; z-index: 60;
+  position: fixed; top: 18px; left: 18px; z-index: 60;
   width: 56px; height: 56px; border: none; padding: 0; background: none; cursor: pointer;
-  transition: transform .2s ease-in-out;
+  transition: transform .35s cubic-bezier(.34,1.5,.6,1);
 }
-#theme-orb:hover { transform: translateY(-3px); }
+#theme-orb:hover { transform: scale(1.12); }
 #theme-orb:active { transform: scale(.94); }
 #theme-orb > span {
   display: flex; align-items: center; justify-content: center;
@@ -222,7 +195,7 @@ body.season-christmas .sakura-scene { display: none; }
   transform: rotate(0deg);
 }
 #theme-orb:hover > span {
-  box-shadow: 0 8px 20px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.24);
+  box-shadow: 0 8px 26px rgba(40,60,120,.7), inset 0 0 0 1px rgba(255,255,255,.24);
 }
 body[data-theme="light"] #theme-orb > span {
   background: radial-gradient(circle at 35% 30%, #ffe79c, #ffb43d);
@@ -230,13 +203,13 @@ body[data-theme="light"] #theme-orb > span {
   transform: rotate(360deg);
 }
 body[data-theme="light"] #theme-orb:hover > span {
-  box-shadow: 0 8px 20px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.6);
+  box-shadow: 0 8px 32px rgba(255,170,40,.75), inset 0 0 0 1px rgba(255,255,255,.6);
 }
 @media (max-width: 768px) {
   #theme-orb:hover { transform: none; }
 }
 @media (max-width: 768px) {
-  #theme-orb { left: auto !important; right: 16px !important; top: 16px !important; transition: none !important; }
+  #theme-orb { left: auto !important; right: 16px !important; top: 14px !important; transition: none !important; }
   #theme-orb > span { transition: background .6s ease, box-shadow .6s ease !important; transform: none !important; }
 }
 
@@ -264,25 +237,6 @@ body[data-theme="light"] #theme-orb:hover > span {
   -webkit-text-fill-color: transparent;
   animation: titleReveal 1s cubic-bezier(.2,.6,.35,1) .26s both, shimmer 7s linear infinite alternate;
 }
-
-/* Sun bounce: while the sky body's sun is up, script.js stamps --sun-dx/
-   --sun-dy/--sun-glow-o on .pfp-ring each minute (same UK-clock tick as the
-   sky) and this warm bloom sits on the sun-facing side of the avatar ring —
-   light catching it, cast like a shadow. The 1.8s fade matches the sky
-   body's glide, so the light visibly travels with the sun. */
-.pfp-ring::after {
-  content: ""; position: absolute; inset: -14px; border-radius: 50%;
-  z-index: -1; pointer-events: none;
-  background: radial-gradient(circle, rgba(255,214,120,.85) 0%, rgba(255,190,90,.35) 45%, rgba(255,190,90,0) 70%);
-  filter: blur(12px);
-  transform: translate(var(--sun-dx, 0), var(--sun-dy, 0));
-  opacity: var(--sun-glow-o, 0);
-  transition: opacity 1.8s ease, transform 1.8s ease;
-}
-/* Phones and the Christmas season show no sun, so the glow sits out too. */
-@media (max-width: 768px) { .pfp-ring::after { display: none; } }
-body.season-christmas .pfp-ring::after { display: none; }
-@media (prefers-reduced-motion: reduce) { .pfp-ring::after { transition: none; } }
 
 /* ---- Quote box ---- */
 .quote-box {
@@ -313,9 +267,6 @@ body.season-christmas .pfp-ring::after { display: none; }
 
 /* ---- Stat strip ---- */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 16px; margin-top: 34px; }
-/* Tablet: pin a clean 2×2 instead of auto-fit's ragged 3+1; phones stack. */
-@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr; } }
 .stat-card { border-radius: 22px; padding: 20px 22px; }
 .stat-label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(26px, 7vw, 38px); line-height: 1.05; margin-top: 6px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -337,24 +288,6 @@ body.season-christmas .pfp-ring::after { display: none; }
 
 /* ---- Right now ---- */
 .right-now-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
-/* Tactile lift + glow on hover, fine-pointer devices only (touch never
-   hovers). Same .scroll-reveal restatement pattern as .social-card: the
-   reveal transition is restated at higher specificity so it can't clobber
-   the hover one, and .is-visible pins transform: translateY(0) at equal
-   specificity, so the hover lift is restated on the revealed state. The
-   --glint layer stays appended so the glass rim survives the hover shadow. */
-@media (hover: hover) and (pointer: fine) {
-  .right-now-grid .card.scroll-reveal {
-    transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
-  }
-  .right-now-grid .card.scroll-reveal.is-visible:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .right-now-grid .card.scroll-reveal.is-visible:hover { transform: none; }
-}
 .discord-card, .steam-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; }
 .discord-card { background: linear-gradient(150deg,#1e2147 0%,#404ee0 60%,#1e2147 100%); box-shadow: 0 16px 38px rgba(40,40,110,.32); backdrop-filter: none; border: none; }
 .steam-card { background: linear-gradient(150deg,#1b2838 0%,#2a475e 60%,#1b2838 100%); box-shadow: 0 16px 38px rgba(20,40,70,.32); backdrop-filter: none; border: none; }
@@ -363,9 +296,9 @@ body.season-christmas .pfp-ring::after { display: none; }
 .pill-link {
   position: relative; overflow: hidden; font-size: 12px; font-weight: 800; text-decoration: none;
   padding: 5px 11px; border-radius: 999px; display: inline-block;
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+  transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease;
 }
-.pill-link:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.pill-link:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 16px rgba(0,0,0,.18); filter: brightness(1.12); }
 .pill-link:active { transform: translateY(0) scale(.97); }
 .pill-link::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -410,9 +343,9 @@ body.season-christmas .pfp-ring::after { display: none; }
   appearance: none; border: 1px solid rgba(140,180,230,.4); background: rgba(120,170,230,.16);
   color: inherit; font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .04em;
   border-radius: 999px; padding: 6px 14px; cursor: pointer;
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
+  transition: transform .25s ease, background .25s ease;
 }
-.retry-btn:hover { transform: translateY(-3px); background: rgba(120,170,230,.3); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.retry-btn:hover { transform: translateY(-1px); background: rgba(120,170,230,.3); }
 .retry-btn:active { transform: translateY(0) scale(.97); }
 @media (prefers-reduced-motion: reduce) { .retry-btn { transition: none; } .retry-btn:hover, .retry-btn:active { transform: none; } }
 
@@ -490,8 +423,8 @@ body.season-christmas .pfp-ring::after { display: none; }
 .mal-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
 .mal-card .idle-banner { background: rgba(255,255,255,.12); color: #c7d4f7; }
 
-.mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 10px 12px; margin-top: 10px; text-decoration: none; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out; }
-.mal-row:hover { transform: translateY(-3px); background: rgba(255,255,255,.17); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 10px 12px; margin-top: 10px; text-decoration: none; transition: transform .25s ease, background .25s ease; }
+.mal-row:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
 .mal-row:active { transform: translateY(0) scale(.98); }
 .mal-cover { width: 44px; height: 62px; border-radius: 8px; object-fit: cover; flex: none; background: rgba(143,176,255,.18); }
 .mal-info { min-width: 0; flex: 1; }
@@ -507,12 +440,12 @@ body.season-christmas .pfp-ring::after { display: none; }
 /* These are <a> elements that only get an href when there's a real
    destination (Spotify track, Steam store page). No href = inert. */
 a.info-pill { text-decoration: none; color: inherit; }
-a.info-pill[href] { cursor: pointer; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out; }
-a.info-pill[href]:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+a.info-pill[href] { cursor: pointer; transition: transform .25s ease, filter .25s ease; }
+a.info-pill[href]:hover { transform: translateY(-2px); filter: brightness(1.08); }
 a.info-pill[href]:active { transform: translateY(0) scale(.98); }
 a.info-pill:not([href]) { cursor: default; }
-a.recent-game-row { text-decoration: none; color: inherit; border-radius: 10px; padding: 7px 6px; margin: 0 -6px; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out; }
-a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(102,192,244,.12); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+a.recent-game-row { text-decoration: none; color: inherit; border-radius: 10px; padding: 7px 6px; margin: 0 -6px; transition: background .2s ease; }
+a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 @media (prefers-reduced-motion: reduce) {
   a.info-pill[href], a.recent-game-row { transition: none; }
   a.info-pill[href]:hover, a.info-pill[href]:active { transform: none; }
@@ -577,22 +510,6 @@ a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(10
 .music-track-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .music-track-artist { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
 
-/* Click-to-load embedded player: script.js injects the YouTube iframe into
-   .music-player on button click, so it never sits on the critical path. */
-.music-player { margin-top: 18px; width: 100%; }
-.music-play-btn {
-  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-  font: inherit; font-weight: 800; font-size: 13px; color: #fff;
-  background: rgba(255,0,0,.22); border: 1px solid rgba(255,90,90,.4);
-  padding: 9px 16px; border-radius: 999px;
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
-}
-.music-play-btn:hover { transform: translateY(-3px); background: rgba(255,0,0,.32); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
-.music-play-btn:active { transform: translateY(0) scale(.97); }
-.music-embed { display: block; width: 100%; aspect-ratio: 16 / 9; border: none; border-radius: 16px; background: rgba(0,0,0,.35); }
-@media (prefers-reduced-motion: reduce) { .music-play-btn { transition: none; } .music-play-btn:hover, .music-play-btn:active { transform: none; } }
-@media (max-width: 560px) { .music-player { text-align: center; } }
-
 /* ---- Music card hover: expand/bounce + equalizer (desktop only) ---- */
 /* The whole effect is gated behind @media (hover: hover) and (pointer: fine)
    so touch devices never see it, and killed under prefers-reduced-motion at
@@ -625,14 +542,14 @@ a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(10
      restate the transition at higher specificity so the reveal transition
      doesn't clobber the bouncier hover one. */
   .music-card.scroll-reveal {
-    transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
+    transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .45s cubic-bezier(.34,1.56,.64,1), box-shadow .45s ease;
   }
   /* .scroll-reveal.is-visible pins transform: translateY(0) after reveal and
      would win on source order, so restate the hover transform at higher
      specificity. The overshoot easing makes the expand bounce. */
   .music-card.scroll-reveal.is-visible:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint);
+    transform: scale(1.03);
+    box-shadow: 0 22px 46px rgba(255,26,26,.3), var(--glint);
   }
   .music-card:hover .music-viz { opacity: 1; }
   .music-card:hover .music-viz span { animation-play-state: running; }
@@ -660,16 +577,16 @@ a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(10
   text-decoration: none; color: inherit; border-radius: 20px; padding: 18px;
   -webkit-tap-highlight-color: transparent;
   display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1;
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, z-index .2s;
+  transition: transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, border-color .3s ease, z-index .3s;
 }
-.social-card:hover { transform: translateY(-3px); z-index: 2; }
+.social-card:hover { transform: scale(1.05); box-shadow: 0 18px 34px rgba(70,150,230,.28); z-index: 2; }
 .social-card:active { transform: scale(1.06); }
 .social-icon {
   width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center;
   transition: transform .35s cubic-bezier(.34,1.6,.55,1), box-shadow .35s ease;
 }
-
-
+.social-card:hover .social-icon { transform: scale(1.12) rotate(-6deg); }
+.social-card:hover .social-name { color: var(--accent); transition: color .2s ease; }
 .social-icon--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 14px; color: #fff; letter-spacing: .02em; }
 .social-icon--dots { gap: 3px; }
 .social-icon--dots span { width: 12px; height: 12px; border-radius: 50%; display: block; }
@@ -677,21 +594,12 @@ a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(10
 .social-handle { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
 .social-card:focus { outline: none; }
 .social-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-/* Off-site marker: every social card leaves the page (new tab). */
-.social-card::after {
-  content: "\2197"; /* ↗ */
-  position: absolute; top: 10px; right: 13px; z-index: 1;
-  font-size: 13px; font-weight: 800; color: var(--ink-faint);
-  opacity: .75; pointer-events: none;
-  transition: opacity .2s ease, color .2s ease;
-}
-.social-card:hover::after { opacity: 1; color: var(--accent); }
 
 /* ---- Stories ---- */
 .stories-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
 .story-link { text-decoration: none; color: inherit; display: block; }
-.story-card { position: relative; border-radius: 24px; padding: 26px; overflow: hidden; height: 100%; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out; }
-.story-link:hover .story-card { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint) !important; }
+.story-card { position: relative; border-radius: 24px; padding: 26px; overflow: hidden; height: 100%; transition: transform .2s ease, box-shadow .2s ease; }
+.story-link:hover .story-card { transform: translateY(-4px); }
 .story-title { position: relative; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 30px; color: #fff; line-height: 1.05; margin: 16px 0 8px; }
 .story-desc { position: relative; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.85); line-height: 1.55; max-width: 300px; }
 .story-cta {
@@ -699,14 +607,7 @@ a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(10
   background: #fff; font-weight: 800; font-size: 13px; padding: 9px 16px; border-radius: 999px;
   transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, gap .25s ease;
 }
-
-/* Off-site marker: the story cards open Google Docs in a new tab. */
-.story-card::after {
-  content: "\2197"; /* ↗ */
-  position: absolute; top: 14px; right: 16px; z-index: 1;
-  font-size: 15px; font-weight: 800; color: rgba(255,255,255,.85);
-  pointer-events: none;
-}
+.story-link:hover .story-cta { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.28); gap: 11px; }
 
 /* ---- Back to top ---- */
 /* Fades + scales in/out instead of popping via display:none, matching the
@@ -716,17 +617,16 @@ a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(10
    !important weight) and drives the hidden state with opacity/transform/
    pointer-events instead. right: 28px (not 20px) because the custom page
    scrollbar (.cscroll) ends flush at 20px from the screen edge (4px offset
-   + 16px wide) — 28px leaves an 8px gap instead of touching it. Hover uses the
-   standard lift + depth recipe, same as every other interactive element. */
+   + 16px wide) — 28px leaves an 8px gap instead of touching it. No hover
+   state by design; only :active gives press feedback. */
 .to-top {
   position: fixed; right: 28px; bottom: 20px; z-index: 50; width: 52px; height: 52px;
   border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: 23px; line-height: 1;
   box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
   opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
-  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
+  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.6,.55,1);
 }
-.to-top:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
 .to-top:active { transform: translateY(-1px) scale(.96); }
 .to-top.hidden {
   display: flex !important;
@@ -738,13 +638,6 @@ a.recent-game-row[href]:hover { transform: translateY(-3px); background: rgba(10
 
 @media (prefers-reduced-motion: reduce) {
   .to-top { transition: none; }
-}
-
-/* One hover recipe => one kill switch: under reduced motion nothing lifts. */
-@media (prefers-reduced-motion: reduce) {
-  .pill-link:hover, .story-link:hover .story-card, a.music-track-row:hover,
-  a.recent-game-row[href]:hover, #theme-orb:hover, .to-top:hover,
-  .dev-panel-close:hover, .dev-reset:hover { transform: none; }
 }
 
 .footer { text-align: center; margin-top: 54px; font-size: 13px; font-weight: 700; color: var(--ink-faint); }
@@ -884,9 +777,9 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 .dev-panel-close {
   width: 26px; height: 26px; border: none; cursor: pointer; border-radius: 50%;
   background: rgba(140,170,210,.18); color: var(--ink); font-size: 13px; line-height: 1;
-  display: flex; align-items: center; justify-content: center; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
+  display: flex; align-items: center; justify-content: center; transition: background .2s ease;
 }
-.dev-panel-close:hover { background: rgba(140,170,210,.34); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.dev-panel-close:hover { background: rgba(140,170,210,.34); }
 .dev-panel-sub { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 10px; }
 .dev-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(140,170,210,.16); }
 .dev-row-label { font-weight: 700; white-space: nowrap; }
@@ -906,9 +799,9 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 .dev-reset {
   margin-top: 10px; width: 100%; padding: 7px 10px; border-radius: 10px; cursor: pointer;
   border: 1px solid rgba(140,170,210,.3); background: rgba(140,170,210,.14);
-  color: var(--ink); font-size: 12px; font-weight: 700; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
+  color: var(--ink); font-size: 12px; font-weight: 700; transition: background .2s ease;
 }
-.dev-reset:hover { background: rgba(140,170,210,.28); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.dev-reset:hover { background: rgba(140,170,210,.28); }
 .dev-hint { margin-top: 9px; font-size: 10.5px; font-weight: 600; color: var(--ink-faint); text-align: center; }
 .dev-hint kbd {
   padding: 1px 5px; border-radius: 5px; border: 1px solid rgba(140,170,210,.35);
@@ -1001,13 +894,13 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
    (higher specificity: two classes) so the fade-in transition above doesn't
    clobber the snappier hover transform/box-shadow transition set on .social-card. */
 .social-card.scroll-reveal {
-  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
+  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, border-color .3s ease;
 }
 /* .scroll-reveal.is-visible pins transform: translateY(0) at equal specificity to
    .social-card:hover and wins on source order, silently killing the hover scale
    once a card has revealed. Restate the hover transform here at higher specificity. */
 .social-card.scroll-reveal.is-visible:hover {
-  transform: translateY(-3px);
+  transform: scale(1.05);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1085,7 +978,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 }
 /* keep the glint on the social tile's lift-on-hover shadow */
 .social-card:hover {
-  box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint);
+  box-shadow: 0 18px 34px rgba(70, 150, 230, .22), var(--glint);
 }
 .toast {
   box-shadow: 0 14px 34px rgba(3, 10, 24, .3), var(--glint);
@@ -1163,9 +1056,9 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 /* clickable affordance on the four tiles */
 .stat-card[data-modal] {
   cursor: pointer;
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+  transition: transform .25s cubic-bezier(.34,1.45,.55,1), box-shadow .25s ease;
 }
-.stat-card[data-modal]:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint, 0 0 0 rgba(0,0,0,0)); }
+.stat-card[data-modal]:hover { transform: translateY(-3px); }
 .stat-card[data-modal]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .stat-card[data-modal]::after {
   content: "\2922"; /* ⤢ expand */
@@ -1214,9 +1107,9 @@ body.modal-open { overflow: hidden; }
   border: none; cursor: pointer; border-radius: 50%;
   background: rgba(140,170,210,.18); color: var(--ink);
   font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
+  transition: background .2s ease, transform .2s ease;
 }
-.modal-close:hover { background: rgba(140,170,210,.34); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.modal-close:hover { background: rgba(140,170,210,.34); transform: rotate(90deg) scale(1.06); }
 
 .modal-title {
   font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 23px;
@@ -1248,12 +1141,12 @@ body.modal-open { overflow: hidden; }
   padding: 11px 18px; border-radius: 999px; color: #fff;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff);
   box-shadow: 0 8px 20px rgba(80,110,230,.35);
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
+  transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease, background .2s ease;
 }
-.modal-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.modal-btn:hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.08); box-shadow: 0 12px 26px rgba(80,110,230,.5); }
 .modal-btn:active { transform: scale(.97); }
 .modal-btn--ghost { background: rgba(140,170,210,.16); color: var(--ink); box-shadow: none; }
-.modal-btn--ghost:hover { background: rgba(140,170,210,.3); }
+.modal-btn--ghost:hover { background: rgba(140,170,210,.3); filter: none; }
 
 /* Time modal */
 .tz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -1436,9 +1329,9 @@ body.modal-open { overflow: hidden; }
   display: flex; align-items: center; gap: 14px; text-decoration: none;
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
   border-radius: 14px; padding: 12px 14px;
-  transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out;
+  transition: transform .25s ease, background .25s ease;
 }
-.lb-entry:hover { transform: translateY(-3px); background: rgba(255,255,255,.17); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.lb-entry:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
 .lb-entry:active { transform: translateY(0) scale(.98); }
 .lb-poster {
   width: 52px; height: 74px; border-radius: 8px; object-fit: cover; flex: none;
@@ -1472,8 +1365,8 @@ body.modal-open { overflow: hidden; }
 }
 
 /* ---- Music card: ListenBrainz recent tracks ---- */
-a.music-track-row { text-decoration: none; color: inherit; border-radius: 10px; transition: transform .2s ease-in-out, box-shadow .2s ease-in-out, background .2s ease-in-out; }
-a.music-track-row:hover { transform: translateY(-3px); background: rgba(255,255,255,.08); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+a.music-track-row { text-decoration: none; color: inherit; border-radius: 10px; }
+a.music-track-row:hover { background: rgba(255,255,255,.08); }
 
 /* ---- Weather modal: "compare with your sky" output ---- */
 .sky-compare { margin-top: 16px; }

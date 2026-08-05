@@ -27,14 +27,13 @@ Christmas, pride), a weather-reactive cherry-blossom atmosphere (petals
 detach from the branches and drift down-wind; the layer is anchored to the
 top of the page, so it scrolls away with the hero), a "moonlit sakura"
 scenery layer (SVG branches from the page edges plus a sun-by-day /
-moon-by-night sky body arcing from the bottom-left corner up behind the
-hero avatar and down toward the right edge on the UK clock; hidden during
+moon-by-night sky body arcing left→right on the UK clock; hidden during
 the Christmas season), and custom scrollbars.
 
 ## Code layout
 
-- `index.html` (~750 lines) — the whole page. Loads `style.css?v=39`,
-  `lib.js?v=24`, `script.js?v=46` (version query strings; see cache-busting
+- `index.html` (~750 lines) — the whole page. Loads `style.css?v=35`,
+  `lib.js?v=21`, `script.js?v=43` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
@@ -43,8 +42,7 @@ the Christmas season), and custom scrollbars.
   (including the playful equivalents in `ageBreakdown`: full moons, Sun laps,
   years asleep, breaths), calendar export (`.ics`, Google Calendar URL), HTML
   escaping, Steam/MAL data shaping, dev-code matching, scrollbar thumb
-  geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`,
-  `sunBounce`).
+  geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
 - `script.js` (~2400 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,
@@ -127,9 +125,9 @@ These are load-bearing; read before editing.
 - **Service worker.** `sw.js` must never serve stale content while online:
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
-- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-weather-cache`,
-  `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
-  plus the theme key. Don't collide.
+- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-mal-cache`,
+  `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`, plus the theme
+  key. Don't collide.
 
 ## Working agreements (from CLAUDE.md)
 

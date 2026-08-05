@@ -129,12 +129,12 @@ eq('summer solstice sun times', L.sunTimesUK(172), { rise: 300, set: 1290 });
 eq('winter solstice sun times', L.sunTimesUK(355), { rise: 495, set: 960 });
 eq('junk day → solstice default', L.sunTimesUK('nope'), { rise: 300, set: 1290 });
 eq('out-of-range day → solstice default', L.sunTimesUK(400), { rise: 300, set: 1290 });
-eq('summer 1pm: sun near the top of the arc', L.skyBodyState(780, 172), { body: 'sun', x: 48.61, y: 13.84, alt: 0.999, low: false });
-eq('summer midnight: moon a third along the arc', L.skyBodyState(0, 172), { body: 'moon', x: 34.67, y: 25.71, alt: 0.866, low: false });
-eq('sunrise: bottom-left corner, golden', L.skyBodyState(300, 172), { body: 'sun', x: 4, y: 92, alt: 0, low: true });
-eq('just before sunset: right edge, golden', L.skyBodyState(1289, 172), { body: 'sun', x: 95.91, y: 74.8, alt: 0.003, low: true });
-eq('winter midday is still the sun', L.skyBodyState(727, 355), { body: 'sun', x: 49.9, y: 13.52, alt: 1, low: false });
-eq('winter 1am: moon past the top', L.skyBodyState(60, 355), { body: 'moon', x: 54.95, y: 13.58, alt: 0.986, low: false });
+eq('summer 1pm: sun near the top of the arc', L.skyBodyState(780, 172), { body: 'sun', x: 48.67, y: 12.05, alt: 0.999, low: false });
+eq('summer midnight: moon a third along the arc', L.skyBodyState(0, 172), { body: 'moon', x: 35.33, y: 17.36, alt: 0.866, low: false });
+eq('sunrise: left horizon, golden', L.skyBodyState(300, 172), { body: 'sun', x: 6, y: 52, alt: 0, low: true });
+eq('just before sunset: right horizon, golden', L.skyBodyState(1289, 172), { body: 'sun', x: 93.91, y: 51.87, alt: 0.003, low: true });
+eq('winter midday is still the sun', L.skyBodyState(727, 355), { body: 'sun', x: 49.91, y: 12, alt: 1, low: false });
+eq('winter 1am: moon past the top', L.skyBodyState(60, 355), { body: 'moon', x: 54.74, y: 12.57, alt: 0.986, low: false });
 ok('arc travels left → right through the day', L.skyBodyState(600, 172).x < L.skyBodyState(900, 172).x);
 eq('junk time → null', L.skyBodyState('abc'), null);
 eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
@@ -393,15 +393,6 @@ ok('ytPlaylistCacheParse defaults missing artist to empty', (function () {
   return r && r[0].artist === '';
 })());
 
-// ---- cacheFresh (TTL caches, e.g. the weather snapshot) ----
-ok('cacheFresh: inside the TTL is fresh', L.cacheFresh(1000, 15000, 5000) === true);
-ok('cacheFresh: one ms before the boundary is fresh', L.cacheFresh(1000, 15000, 15999) === true);
-ok('cacheFresh: exactly at the boundary is stale', L.cacheFresh(1000, 15000, 16000) === false);
-ok('cacheFresh: well past the TTL is stale', L.cacheFresh(1000, 15000, 99999) === false);
-ok('cacheFresh: future stamps are never fresh (clock skew)', L.cacheFresh(9000, 15000, 5000) === false);
-ok('cacheFresh: junk input is not fresh', L.cacheFresh('1000', 15000, 5000) === false && L.cacheFresh(1000, 'soon', 5000) === false);
-ok('cacheFresh: now defaults to Date.now', L.cacheFresh(Date.now(), 60000) === true);
-
 // ---- forecastRows (weather modal 5-day strip) ----
 const dailyBlock = {
   time: ['2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22'],
@@ -470,6 +461,12 @@ ok('input state object is not mutated', (function () { const s = { birthday: tru
 
 // ---- seasonDevParse (localStorage copy of the overrides) ----
 eq('seasonDevParse round-trips stored overrides', L.seasonDevParse('{"birthday":"on","pride":"off"}'), { birthday: 'on', pride: 'off' });
+// ---- devModeParse (single-value dev-panel modes) ----
+eq('devModeParse accepts auto', L.devModeParse('auto'), 'auto');
+eq('devModeParse accepts on', L.devModeParse('on'), 'on');
+eq('devModeParse accepts off', L.devModeParse('off'), 'off');
+eq('devModeParse rejects junk to auto', L.devModeParse('maybe'), 'auto');
+eq('devModeParse rejects missing to auto', L.devModeParse(null), 'auto');
 eq('seasonDevParse strips auto + junk values + unknown keys', L.seasonDevParse('{"birthday":"auto","christmas":"yes","pride":"on","wat":"off"}'), { pride: 'on' });
 eq('seasonDevParse all-auto → {}', L.seasonDevParse('{}'), {});
 eq('seasonDevParse bad JSON → null', L.seasonDevParse('{nope'), null);
@@ -591,27 +588,13 @@ const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8');
  'rgba(20,40,100,.32), var(--glint)',   // myanimelist
  'rgba(10,16,24,.4), var(--glint)',     // letterboxd
  'rgba(255,26,26,.16), var(--glint)',   // music
- '0 8px 20px rgba(0,0,0,.3), var(--glint)',    // music hover keeps the glint
+ 'rgba(255,26,26,.3), var(--glint)',    // music hover keeps the glint
 ].forEach((shadow) => ok('glass shadow wired: ' + shadow, cssFlat.includes(shadow)));
 ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
 ok('story card gradients made translucent', htmlSrc.includes('rgba(124,29,43,.66)') && htmlSrc.includes('rgba(14,94,84,.66)'));
 ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);'));
 ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
 ok('social tiles are full glass citizens (rim refraction included)', !scriptSrc.includes(':not(.social-card)') && !cssFlat.includes(':not(.social-card)'));
-
-// ---- One hover recipe: uniform lift + depth on every interactive element ----
-ok('uniform hover depth applied broadly', cssFlat.split('box-shadow: 0 8px 20px rgba(0,0,0,.3)').length - 1 >= 12);
-ok('uniform hover lift applied broadly', cssFlat.split('transform: translateY(-3px)').length - 1 >= 15);
-ok('no legacy hover scales remain', !cssSrc.includes(':hover { transform: scale('));
-
-// ---- sunBounce (hero avatar sun glow) ----
-eq('sunBounce: low sun far left → strong side glow', L.sunBounce(4, 0), { dx: -14, dy: -4, opacity: 0.1 });
-eq('sunBounce: low sun far right mirrors', L.sunBounce(96, 0), { dx: 14, dy: -4, opacity: 0.1 });
-eq('sunBounce: zenith overhead → glow pools on top', L.sunBounce(50, 1), { dx: 0, dy: -14, opacity: 0.26 });
-eq('sunBounce: mid-arc', L.sunBounce(73, 0.5), { dx: 4.9, dy: -9, opacity: 0.18 });
-ok('sunBounce: junk input → null', L.sunBounce('x', 0.5) === null && L.sunBounce(10) === null);
-ok('sun glow wired to the sky tick', scriptSrc.includes("setProperty('--sun-glow-o'") && cssFlat.includes('.pfp-ring::after {'));
-ok('sun glow sits out without a sun (phones, christmas)', cssFlat.includes('body.season-christmas .pfp-ring::after { display: none; }'));
 
 // ---- Scroll reveal (static wiring checks) ----
 // Everything .scroll-reveal starts hidden and fades + slides in the first
@@ -643,14 +626,6 @@ ok('playlist card has a live-swap mount point', htmlSrc.includes('id="musicFeatu
 ok('live fetches ride the timeout wrapper', !/await fetch\(/.test(scriptSrc));
 ok('service worker never intercepts the live APIs', swSrc.includes('if (url.origin !== location.origin) return;'));
 
-// ---- Weather snapshot cache + a11y/polish wiring ----
-ok('weather cache key + 15-minute TTL wired', scriptSrc.includes("WEATHER_CACHE_KEY = 'kazu-weather-cache'") && scriptSrc.includes('WEATHER_CACHE_TTL = 15 * 60 * 1000'));
-ok('weather cache freshness rides KazuLib.cacheFresh', scriptSrc.includes('cacheFresh(c.at, WEATHER_CACHE_TTL)'));
-ok('weather poller + retry bypass the cache', scriptSrc.includes('{ fn: () => loadWeather(true),') && scriptSrc.includes('loadWeather(true);'));
-ok('skip link targets main content', htmlSrc.includes('class="skip-link" href="#main-content"') && htmlSrc.includes('id="main-content"'));
-ok('playlist embed is click-to-load', htmlSrc.includes('id="musicPlayBtn"') && scriptSrc.includes('youtube-nocookie.com/embed/videoseries'));
-ok('truncated rows carry hover titles', scriptSrc.includes('class="mal-title" title="') && scriptSrc.includes('class="music-track-name" title="'));
-
 // ---- Music card left zone fills the card height ----
 ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));
 ok('.music-side spreads cover + info', cssFlat.includes('.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }'));
@@ -664,6 +639,9 @@ ok('seasonState consults the dev overrides', scriptSrc.includes('seasonDevApply(
 ok('dev overrides persist under kazu-dev-seasons', scriptSrc.includes("DEV_KEY = 'kazu-dev-seasons'"));
 ok('panel applies changes through applySeasons', scriptSrc.includes('syncDevPanel(s)'));
 ok('dev panel styles present', cssFlat.includes('.dev-panel {') && cssFlat.includes('.dev-seg button.is-active'));
+ok('sky curve mode persists separately', scriptSrc.includes("DEV_CURVE_KEY = 'kazu-dev-curve'") && scriptSrc.includes('saveDevCurve'));
+ok('sky curve has Auto / On / Off controls', scriptSrc.includes('data-setting="curve"') && scriptSrc.includes('aria-label="Sky curve mode"'));
+ok('sky curve Auto / On / Off is applied', scriptSrc.includes('applySkyCurveMode') && scriptSrc.includes("devCurveMode === 'on'") && scriptSrc.includes("devCurveMode === 'off'"));
 
 // ---- Christmas theme (cozy classic: pine + cranberry + gold) ----
 // The palette vars moved to a pine base with a warm gold accent, and every
