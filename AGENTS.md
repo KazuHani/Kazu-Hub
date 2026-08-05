@@ -27,13 +27,14 @@ Christmas, pride), a weather-reactive cherry-blossom atmosphere (petals
 detach from the branches and drift down-wind; the layer is anchored to the
 top of the page, so it scrolls away with the hero), a "moonlit sakura"
 scenery layer (SVG branches from the page edges plus a sun-by-day /
-moon-by-night sky body arcing left→right on the UK clock; hidden during
+moon-by-night sky body arcing from the bottom-left corner up behind the
+hero avatar and down toward the right edge on the UK clock; hidden during
 the Christmas season), and custom scrollbars.
 
 ## Code layout
 
-- `index.html` (~750 lines) — the whole page. Loads `style.css?v=38`,
-  `lib.js?v=23`, `script.js?v=45` (version query strings; see cache-busting
+- `index.html` (~750 lines) — the whole page. Loads `style.css?v=39`,
+  `lib.js?v=24`, `script.js?v=46` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth

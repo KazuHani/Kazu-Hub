@@ -477,19 +477,19 @@
     const isSun = t >= rise && t < set;
     const p = isSun ? (t - rise) / dayLen : ((((t - set) % 1440) + 1440) % 1440) / (1440 - dayLen);
     const alt = Math.sin(Math.PI * p);
-    return { body: isSun ? 'sun' : 'moon', x: 6 + p * 88, y: 52 - alt * 40, low: alt < 0.28 };
+    return { body: isSun ? 'sun' : 'moon', x: 4 + p * 92, y: 92 - 17 * p - alt * 70, alt, low: alt < 0.28 };
   };
   // The avatar's sun bounce consumes the same sky position: KazuLib.sunBounce
   // (gate-tested), mirrored inline so the glow survives a lib.js failure.
   const pfpRingEl = document.querySelector('.pfp-ring');
-  const sunBounce = (KazuLib && KazuLib.sunBounce) || function (x, y) {
-    if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) return null;
-    const az = Math.max(-1, Math.min(1, (x - 50) / 44));
-    const alt = Math.max(0, Math.min(1, (52 - y) / 40));
+  const sunBounce = (KazuLib && KazuLib.sunBounce) || function (x, alt) {
+    if (typeof x !== 'number' || typeof alt !== 'number' || isNaN(x) || isNaN(alt)) return null;
+    const az = Math.max(-1, Math.min(1, (x - 50) / 46));
+    const al = Math.max(0, Math.min(1, alt));
     return {
-      dx: Math.round(az * 14 * (0.4 + 0.6 * (1 - alt)) * 10) / 10,
-      dy: Math.round(-(4 + alt * 10) * 10) / 10,
-      opacity: Math.round((0.10 + alt * 0.16) * 100) / 100,
+      dx: Math.round(az * 14 * (0.4 + 0.6 * (1 - al)) * 10) / 10,
+      dy: Math.round(-(4 + al * 10) * 10) / 10,
+      opacity: Math.round((0.10 + al * 0.16) * 100) / 100,
     };
   };
   let skyBodySnapped = false;
@@ -526,7 +526,7 @@
     // avatar's ring (the --sun-* vars drive .pfp-ring::after). Fades out at
     // night; the CSS hides it on phones and in the Christmas season.
     if (pfpRingEl) {
-      const b = st.body === 'sun' ? sunBounce(st.x, st.y) : null;
+      const b = st.body === 'sun' ? sunBounce(st.x, st.alt) : null;
       if (b) {
         pfpRingEl.style.setProperty('--sun-dx', b.dx + 'px');
         pfpRingEl.style.setProperty('--sun-dy', b.dy + 'px');

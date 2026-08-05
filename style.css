@@ -142,11 +142,13 @@ body[data-theme="light"] .sakura-scene {
   --sakura-bud: #dd7ba6;
   --sakura-stamen: #fff3f8;
 }
-/* Sky body: the sun by day, the moon by night, riding an arc across the
-   scenery layer (script.js positions it from the UK clock once a minute;
-   the transition glides each step). The no-JS pose is the moon upper-right. */
+/* Sky body: the sun by day, the moon by night, riding a tall arc across the
+   scenery layer — up from the bottom-left corner, cresting just behind the
+   hero avatar, setting toward the right edge (script.js positions it from
+   the UK clock once a minute; the transition glides each step). The no-JS
+   pose is the moon partway down the right slope. */
 .sky-body {
-  position: absolute; left: 78%; top: 16%; transform: translate(-50%, -50%);
+  position: absolute; left: 78%; top: 38%; transform: translate(-50%, -50%);
   width: clamp(92px, 10vw, 148px); aspect-ratio: 1; border-radius: 50%;
   transition: left 1.8s ease, top 1.8s ease;
 }
