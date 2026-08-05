@@ -393,6 +393,15 @@ ok('ytPlaylistCacheParse defaults missing artist to empty', (function () {
   return r && r[0].artist === '';
 })());
 
+// ---- cacheFresh (TTL caches, e.g. the weather snapshot) ----
+ok('cacheFresh: inside the TTL is fresh', L.cacheFresh(1000, 15000, 5000) === true);
+ok('cacheFresh: one ms before the boundary is fresh', L.cacheFresh(1000, 15000, 15999) === true);
+ok('cacheFresh: exactly at the boundary is stale', L.cacheFresh(1000, 15000, 16000) === false);
+ok('cacheFresh: well past the TTL is stale', L.cacheFresh(1000, 15000, 99999) === false);
+ok('cacheFresh: future stamps are never fresh (clock skew)', L.cacheFresh(9000, 15000, 5000) === false);
+ok('cacheFresh: junk input is not fresh', L.cacheFresh('1000', 15000, 5000) === false && L.cacheFresh(1000, 'soon', 5000) === false);
+ok('cacheFresh: now defaults to Date.now', L.cacheFresh(Date.now(), 60000) === true);
+
 // ---- forecastRows (weather modal 5-day strip) ----
 const dailyBlock = {
   time: ['2026-07-18', '2026-07-19', '2026-07-20', '2026-07-21', '2026-07-22'],
@@ -619,6 +628,14 @@ ok('playlist card has a live-swap mount point', htmlSrc.includes('id="musicFeatu
 // the card on its loading line forever.
 ok('live fetches ride the timeout wrapper', !/await fetch\(/.test(scriptSrc));
 ok('service worker never intercepts the live APIs', swSrc.includes('if (url.origin !== location.origin) return;'));
+
+// ---- Weather snapshot cache + a11y/polish wiring ----
+ok('weather cache key + 15-minute TTL wired', scriptSrc.includes("WEATHER_CACHE_KEY = 'kazu-weather-cache'") && scriptSrc.includes('WEATHER_CACHE_TTL = 15 * 60 * 1000'));
+ok('weather cache freshness rides KazuLib.cacheFresh', scriptSrc.includes('cacheFresh(c.at, WEATHER_CACHE_TTL)'));
+ok('weather poller + retry bypass the cache', scriptSrc.includes('{ fn: () => loadWeather(true),') && scriptSrc.includes('loadWeather(true);'));
+ok('skip link targets main content', htmlSrc.includes('class="skip-link" href="#main-content"') && htmlSrc.includes('id="main-content"'));
+ok('playlist embed is click-to-load', htmlSrc.includes('id="musicPlayBtn"') && scriptSrc.includes('youtube-nocookie.com/embed/videoseries'));
+ok('truncated rows carry hover titles', scriptSrc.includes('class="mal-title" title="') && scriptSrc.includes('class="music-track-name" title="'));
 
 // ---- Music card left zone fills the card height ----
 ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));

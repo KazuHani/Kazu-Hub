@@ -22,7 +22,9 @@ body[data-theme="dark"] {
   --page-bg: radial-gradient(720px 520px at 72% 8%, rgba(214,228,255,.07) 0%, rgba(214,228,255,0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.06) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, #15365c 0%, rgba(21,54,92,0) 55%), radial-gradient(1000px 600px at 0% 5%, #1b2a52 0%, rgba(27,42,82,0) 50%), linear-gradient(170deg,#0a1626 0%,#0d1b31 45%,#101a36 100%);
   --ink: #eaf4ff;
   --ink-soft: #9db8d4;
-  --ink-faint: #6f8aac;
+  /* Brightened from #6f8aac: faint text on the glass card fills sat at ~3.5:1
+     — under WCAG AA's 4.5:1. #8ba6c4 clears 4.9:1 on card and page alike. */
+  --ink-faint: #8ba6c4;
   --accent: #5cc6ff;
   --card-bg: rgba(46,70,108,.74);
   --card-blur: blur(10px);
@@ -44,6 +46,26 @@ body[data-theme="light"] {
 }
 
 .hidden { display: none !important; }
+
+/* ---- Skip link + keyboard focus ---- */
+/* Visually hidden until focused: keyboard/screen-reader users jump straight
+   past the decorative layers and hero to the content (#main-content). */
+.skip-link {
+  position: fixed; top: 12px; left: 50%; transform: translate(-50%, -220%);
+  z-index: 300; padding: 10px 20px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-weight: 800; font-size: 14px;
+  text-decoration: none; box-shadow: 0 10px 26px rgba(3,10,24,.4);
+  transition: transform .22s ease;
+}
+.skip-link:focus-visible { transform: translate(-50%, 0); outline: 2px solid #fff; outline-offset: 2px; }
+/* One explicit focus ring for every interactive element — the dark palette
+   swallows the browser default. The social/stat cards restate the same ring
+   at higher specificity, so nothing here conflicts. */
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 3px;
+}
+/* Smooth scrolling off when the user asks for reduced motion. */
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 /* ---- Atmosphere: cherry-blossom petals ---- */
 /* Anchored to the top of the page (absolute, not fixed): the whole ambience
@@ -130,8 +152,8 @@ body[data-theme="light"] .sakura-scene {
 }
 .sky-body--moon {
   background: radial-gradient(circle at 38% 34%, #fffdf6 0%, #f8eed6 46%, #eedcae 74%, rgba(238,220,174,0) 78%);
-  box-shadow: 0 0 46px 22px rgba(255,240,205,.12), 0 0 130px 64px rgba(186,212,255,.07);
-  opacity: .92;
+  box-shadow: 0 0 46px 22px rgba(255,240,205,.12), 0 0 130px 64px rgba(186,212,255,.07), 0 0 90px 34px rgba(255,236,190,.16);
+  opacity: .88;
 }
 .sky-body--sun {
   background: radial-gradient(circle at 38% 34%, #fffbe8 0%, #ffeda8 42%, #ffcf52 74%, rgba(255,207,82,0) 80%);
@@ -152,8 +174,11 @@ body[data-theme="light"] .sky-body--moon {
 }
 body[data-theme="light"] .sky-body--sun { opacity: .8; }
 .sakura-branch { position: absolute; display: block; height: auto; }
+/* The top-right cluster carries a lot of visual weight on one side of the
+   hero, so it sits a half-step back — slightly smaller and softened — to
+   keep the avatar + quote the focal point (branch--b balances it low-left). */
 .sakura-branch--a {
-  top: 0; right: 0; width: clamp(270px, 30vw, 440px);
+  top: 0; right: 0; width: clamp(250px, 28vw, 410px); opacity: .92;
   transform-origin: 100% 0;
   animation: sakuraSwayA 9s ease-in-out infinite alternate;
 }
@@ -180,7 +205,7 @@ body.season-christmas .sakura-scene { display: none; }
 
 /* ---- Theme orb ---- */
 #theme-orb {
-  position: fixed; top: 18px; left: 18px; z-index: 60;
+  position: fixed; top: 20px; left: 20px; z-index: 60;
   width: 56px; height: 56px; border: none; padding: 0; background: none; cursor: pointer;
   transition: transform .35s cubic-bezier(.34,1.5,.6,1);
 }
@@ -209,7 +234,7 @@ body[data-theme="light"] #theme-orb:hover > span {
   #theme-orb:hover { transform: none; }
 }
 @media (max-width: 768px) {
-  #theme-orb { left: auto !important; right: 16px !important; top: 14px !important; transition: none !important; }
+  #theme-orb { left: auto !important; right: 16px !important; top: 16px !important; transition: none !important; }
   #theme-orb > span { transition: background .6s ease, box-shadow .6s ease !important; transform: none !important; }
 }
 
@@ -267,6 +292,9 @@ body[data-theme="light"] #theme-orb:hover > span {
 
 /* ---- Stat strip ---- */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 16px; margin-top: 34px; }
+/* Tablet: pin a clean 2×2 instead of auto-fit's ragged 3+1; phones stack. */
+@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr; } }
 .stat-card { border-radius: 22px; padding: 20px 22px; }
 .stat-label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(26px, 7vw, 38px); line-height: 1.05; margin-top: 6px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -288,6 +316,24 @@ body[data-theme="light"] #theme-orb:hover > span {
 
 /* ---- Right now ---- */
 .right-now-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
+/* Tactile lift + glow on hover, fine-pointer devices only (touch never
+   hovers). Same .scroll-reveal restatement pattern as .social-card: the
+   reveal transition is restated at higher specificity so it can't clobber
+   the hover one, and .is-visible pins transform: translateY(0) at equal
+   specificity, so the hover lift is restated on the revealed state. The
+   --glint layer stays appended so the glass rim survives the hover shadow. */
+@media (hover: hover) and (pointer: fine) {
+  .right-now-grid .card.scroll-reveal {
+    transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .2s ease-in-out, box-shadow .2s ease-in-out;
+  }
+  .right-now-grid .card.scroll-reveal.is-visible:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.3), var(--glint);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .right-now-grid .card.scroll-reveal.is-visible:hover { transform: none; }
+}
 .discord-card, .steam-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; }
 .discord-card { background: linear-gradient(150deg,#1e2147 0%,#404ee0 60%,#1e2147 100%); box-shadow: 0 16px 38px rgba(40,40,110,.32); backdrop-filter: none; border: none; }
 .steam-card { background: linear-gradient(150deg,#1b2838 0%,#2a475e 60%,#1b2838 100%); box-shadow: 0 16px 38px rgba(20,40,70,.32); backdrop-filter: none; border: none; }
@@ -510,6 +556,22 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .music-track-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .music-track-artist { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
 
+/* Click-to-load embedded player: script.js injects the YouTube iframe into
+   .music-player on button click, so it never sits on the critical path. */
+.music-player { margin-top: 18px; width: 100%; }
+.music-play-btn {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  font: inherit; font-weight: 800; font-size: 13px; color: #fff;
+  background: rgba(255,0,0,.22); border: 1px solid rgba(255,90,90,.4);
+  padding: 9px 16px; border-radius: 999px;
+  transition: transform .25s cubic-bezier(.34,1.5,.6,1), background .25s ease, box-shadow .25s ease;
+}
+.music-play-btn:hover { transform: translateY(-2px); background: rgba(255,0,0,.32); box-shadow: 0 8px 20px rgba(255,0,0,.25); }
+.music-play-btn:active { transform: translateY(0) scale(.97); }
+.music-embed { display: block; width: 100%; aspect-ratio: 16 / 9; border: none; border-radius: 16px; background: rgba(0,0,0,.35); }
+@media (prefers-reduced-motion: reduce) { .music-play-btn { transition: none; } .music-play-btn:hover, .music-play-btn:active { transform: none; } }
+@media (max-width: 560px) { .music-player { text-align: center; } }
+
 /* ---- Music card hover: expand/bounce + equalizer (desktop only) ---- */
 /* The whole effect is gated behind @media (hover: hover) and (pointer: fine)
    so touch devices never see it, and killed under prefers-reduced-motion at
@@ -594,6 +656,15 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .social-handle { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
 .social-card:focus { outline: none; }
 .social-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* Off-site marker: every social card leaves the page (new tab). */
+.social-card::after {
+  content: "\2197"; /* ↗ */
+  position: absolute; top: 10px; right: 13px; z-index: 1;
+  font-size: 13px; font-weight: 800; color: var(--ink-faint);
+  opacity: .75; pointer-events: none;
+  transition: opacity .2s ease, color .2s ease;
+}
+.social-card:hover::after { opacity: 1; color: var(--accent); }
 
 /* ---- Stories ---- */
 .stories-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
@@ -608,6 +679,13 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, gap .25s ease;
 }
 .story-link:hover .story-cta { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.28); gap: 11px; }
+/* Off-site marker: the story cards open Google Docs in a new tab. */
+.story-card::after {
+  content: "\2197"; /* ↗ */
+  position: absolute; top: 14px; right: 16px; z-index: 1;
+  font-size: 15px; font-weight: 800; color: rgba(255,255,255,.85);
+  pointer-events: none;
+}
 
 /* ---- Back to top ---- */
 /* Fades + scales in/out instead of popping via display:none, matching the

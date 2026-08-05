@@ -32,8 +32,8 @@ the Christmas season), and custom scrollbars.
 
 ## Code layout
 
-- `index.html` (~750 lines) — the whole page. Loads `style.css?v=35`,
-  `lib.js?v=21`, `script.js?v=43` (version query strings; see cache-busting
+- `index.html` (~750 lines) — the whole page. Loads `style.css?v=36`,
+  `lib.js?v=22`, `script.js?v=44` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
@@ -125,9 +125,9 @@ These are load-bearing; read before editing.
 - **Service worker.** `sw.js` must never serve stale content while online:
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
-- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-mal-cache`,
-  `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`, plus the theme
-  key. Don't collide.
+- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-weather-cache`,
+  `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
+  plus the theme key. Don't collide.
 
 ## Working agreements (from CLAUDE.md)
 

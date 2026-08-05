@@ -45,7 +45,7 @@
 <link rel="dns-prefetch" href="//avatars.steamstatic.com">
 <link rel="dns-prefetch" href="//a.ltrbxd.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=35">
+<link rel="stylesheet" href="style.css?v=36">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -70,6 +70,10 @@
 </script>
 </head>
 <body data-theme="dark">
+
+  <!-- Keyboard/screen-reader shortcut: jumps past the decorative layers and
+       the hero straight to the content. Visually hidden until focused. -->
+  <a class="skip-link" href="#main-content">Skip to main content</a>
 
   <!-- moonlit sakura scenery: glowing moon + branches reaching in from the
        page edges. Purely decorative; hidden during the Christmas season. -->
@@ -265,7 +269,7 @@
       <span id="orb-icon">🌙</span>
     </button>
 
-    <div class="container">
+    <div class="container" id="main-content">
 
       <!-- HERO -->
       <header class="hero">
@@ -540,7 +544,7 @@
                  height (.music-side) so no dead space sits under the text. -->
             <div class="music-side">
               <a class="music-cover-wrap" href="https://music.youtube.com/playlist?list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m&si=SloJG31P-_wVFS1G" target="_blank" rel="noopener" aria-label="Open playlist on YouTube Music">
-                <img class="music-cover" src="assets/Sisu.jpg" alt="Playlist cover" loading="lazy" decoding="async" onerror="this.style.display='none'">
+                <img class="music-cover" src="assets/Sisu.jpg" alt="Playlist cover" width="152" height="152" loading="lazy" decoding="async" onerror="this.style.display='none'">
               </a>
 
               <div class="music-body">
@@ -565,39 +569,45 @@
               <a class="music-track-row" href="https://music.youtube.com/watch?v=ejUr_Uunvjc&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
                 <div class="music-track-num">1</div>
                 <div class="music-track-text">
-                  <div class="music-track-name">Fly Through the Fire</div>
-                  <div class="music-track-artist">Christina Perri</div>
+                  <div class="music-track-name" title="Fly Through the Fire">Fly Through the Fire</div>
+                  <div class="music-track-artist" title="Christina Perri">Christina Perri</div>
                 </div>
               </a>
               <a class="music-track-row" href="https://music.youtube.com/watch?v=DFBvS_fuSqY&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
                 <div class="music-track-num">2</div>
                 <div class="music-track-text">
-                  <div class="music-track-name">Dale Lento</div>
-                  <div class="music-track-artist">MONYX</div>
+                  <div class="music-track-name" title="Dale Lento">Dale Lento</div>
+                  <div class="music-track-artist" title="MONYX">MONYX</div>
                 </div>
               </a>
               <a class="music-track-row" href="https://music.youtube.com/watch?v=Skbzy3BBTcM&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
                 <div class="music-track-num">3</div>
                 <div class="music-track-text">
-                  <div class="music-track-name">Rocketeer (feat. Ryan Tedder)</div>
-                  <div class="music-track-artist">Far East Movement</div>
+                  <div class="music-track-name" title="Rocketeer (feat. Ryan Tedder)">Rocketeer (feat. Ryan Tedder)</div>
+                  <div class="music-track-artist" title="Far East Movement">Far East Movement</div>
                 </div>
               </a>
               <a class="music-track-row" href="https://music.youtube.com/watch?v=4IcAIrPCerA&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
                 <div class="music-track-num">4</div>
                 <div class="music-track-text">
-                  <div class="music-track-name">Light It Up</div>
-                  <div class="music-track-artist">Robin Hustin, Tobimorrow &amp; Jex</div>
+                  <div class="music-track-name" title="Light It Up">Light It Up</div>
+                  <div class="music-track-artist" title="Robin Hustin, Tobimorrow &amp; Jex">Robin Hustin, Tobimorrow &amp; Jex</div>
                 </div>
               </a>
               <a class="music-track-row" href="https://music.youtube.com/watch?v=yqsJsO8H-oA&amp;list=PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m" target="_blank" rel="noopener">
                 <div class="music-track-num">5</div>
                 <div class="music-track-text">
-                  <div class="music-track-name">DJ Got Us Fallin' In Love (feat. Pitbull)</div>
-                  <div class="music-track-artist">Usher</div>
+                  <div class="music-track-name" title="DJ Got Us Fallin' In Love (feat. Pitbull)">DJ Got Us Fallin' In Love (feat. Pitbull)</div>
+                  <div class="music-track-artist" title="Usher">Usher</div>
                 </div>
               </a>
             </div>
+          </div>
+
+          <!-- Click-to-load embedded player: the YouTube iframe is injected
+               here by script.js only on intent, keeping first paint light. -->
+          <div class="music-player" id="musicPlayer">
+            <button type="button" class="music-play-btn" id="musicPlayBtn">▶ Play the playlist here</button>
           </div>
         </div>
       </section>
@@ -704,8 +714,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=21"></script>
-<script src="script.js?v=43"></script>
+<script src="lib.js?v=22"></script>
+<script src="script.js?v=44"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

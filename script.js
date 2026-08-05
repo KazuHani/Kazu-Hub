@@ -231,31 +231,71 @@
   let weatherCurrent = null; // last good `current` snapshot, reused by "compare with your sky"
   let weatherDone = false;   // true once a fetch attempt has finished (ok or failed)
 
-  async function loadWeather() {
+  // 15-minute localStorage cache: repeat visits / quick reloads inside the
+  // TTL paint the last snapshot instantly and skip the network, which keeps
+  // Open-Meteo volume down (rate-limit friendly). The 10-minute poller and
+  // the Retry button pass force=true so they always go live. The freshness
+  // maths is KazuLib.cacheFresh (gate-tested); the inline copy keeps the card
+  // working if lib.js fails to load.
+  const WEATHER_CACHE_KEY = 'kazu-weather-cache';
+  const WEATHER_CACHE_TTL = 15 * 60 * 1000;
+  const cacheFresh = (KazuLib && KazuLib.cacheFresh) || function (at, ttl, now) {
+    if (typeof at !== 'number' || typeof ttl !== 'number') return false;
+    const t = (typeof now === 'number') ? now : Date.now();
+    return t - at >= 0 && t - at < ttl;
+  };
+
+  // Paints a current+daily payload — live fetch or cache snapshot — into the
+  // card, the weather-reactive atmosphere and, if it's open, the forecast modal.
+  function applyWeather(j) {
+    const w = j.current;
+    weatherDaily = j.daily || null;
+    weatherCurrent = {
+      code: w.weather_code, isDay: w.is_day === 1,
+      tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
+    };
+    const info = weatherInfo(w.weather_code, w.is_day === 1);
+    $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
+    $('liveWeatherDesc').textContent = info.d;
+    $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
+    if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
+    $('weatherLoaded').classList.remove('hidden');
+    $('weatherLoading').classList.add('hidden');
+    $('weatherError').classList.add('hidden');
+    weatherDone = true;
+    if (modalKey === 'weather') renderForecastStrip();
+  }
+
+  // Reads the cached snapshot; freshOnly=true restricts it to the TTL window
+  // (page loads), false accepts any age (last-good fallback on fetch failure).
+  function weatherCacheRead(freshOnly) {
+    try {
+      const c = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null');
+      if (!c || !c.data || !c.data.current) return null;
+      if (freshOnly && !cacheFresh(c.at, WEATHER_CACHE_TTL)) return null;
+      return c.data;
+    } catch (e) { return null; }
+  }
+
+  async function loadWeather(force) {
     weatherDone = false;
+    // Fresh cache hit: paint the snapshot and skip the network this load.
+    if (!force) {
+      const snap = weatherCacheRead(true);
+      if (snap) { applyWeather(snap); return; }
+    }
     try {
       const url = (KazuLib && KazuLib.openMeteoUrl)
         ? KazuLib.openMeteoUrl(52.414, -4.081)
         : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
       const r = await fetchT(url);
       const j = await r.json();
-      const w = j.current;
-      weatherDaily = j.daily || null;
-      weatherCurrent = {
-        code: w.weather_code, isDay: w.is_day === 1,
-        tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
-      };
-      const info = weatherInfo(w.weather_code, w.is_day === 1);
-      $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
-      $('liveWeatherDesc').textContent = info.d;
-      $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
-      if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
-      $('weatherLoaded').classList.remove('hidden');
-      $('weatherLoading').classList.add('hidden');
-      $('weatherError').classList.add('hidden');
-      weatherDone = true;
-      if (modalKey === 'weather') renderForecastStrip();
+      applyWeather(j);
+      try { localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ at: Date.now(), data: { current: j.current, daily: j.daily || null } })); } catch (e) {}
     } catch (e) {
+      // Last-good fallback before the error state: a stale sky beats no sky.
+      const snap = weatherCacheRead(false);
+      if (snap) { applyWeather(snap); return; }
       weatherDone = true;
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.remove('hidden');
@@ -962,7 +1002,7 @@
         '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
           (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
           '<div class="mal-info">' +
-            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+            '<div class="mal-title" title="' + escapeHtml(x.title) + '">' + escapeHtml(x.title) + '</div>' +
             '<div class="mal-progress">' +
               (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
               '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
@@ -990,7 +1030,7 @@
           '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
             (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
             '<div class="mal-info">' +
-              '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+              '<div class="mal-title" title="' + escapeHtml(x.title) + '">' + escapeHtml(x.title) + '</div>' +
               '<div class="mal-progress">' +
                 (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
                 '<div class="mal-eps">Ch ' + x.read + ' / ' + (x.total || '?') + '</div>' +
@@ -1240,8 +1280,8 @@
       '<a class="music-track-row" href="https://music.youtube.com/watch?v=' + t.id + '&amp;list=' + YTM_PLAYLIST_ID + '" target="_blank" rel="noopener">' +
         '<div class="music-track-num">' + (i + 1) + '</div>' +
         '<div class="music-track-text">' +
-          '<div class="music-track-name">' + escapeHtml(t.title) + '</div>' +
-          '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
+          '<div class="music-track-name" title="' + escapeHtml(t.title) + '">' + escapeHtml(t.title) + '</div>' +
+          '<div class="music-track-artist" title="' + escapeHtml(t.artist) + '">' + escapeHtml(t.artist) + '</div>' +
         '</div>' +
       '</a>').join('');
   }
@@ -2125,7 +2165,7 @@
   if (weatherRetry) weatherRetry.addEventListener('click', () => {
     $('weatherError').classList.add('hidden');
     $('weatherLoading').classList.remove('hidden');
-    loadWeather();
+    loadWeather(true);
   });
   const discordRetryBtn = $('discordRetry');
   if (discordRetryBtn) discordRetryBtn.addEventListener('click', () => {
@@ -2156,6 +2196,16 @@
     });
   }
 
+  // Embedded playlist player: click-to-load, so the heavy YouTube iframe is
+  // only downloaded on intent (first paint stays light, the card static until
+  // asked). youtube-nocookie's videoseries embed plays the whole playlist.
+  const musicPlayBtn = $('musicPlayBtn');
+  if (musicPlayBtn) musicPlayBtn.addEventListener('click', () => {
+    const holder = $('musicPlayer');
+    if (!holder) return;
+    holder.innerHTML = '<iframe class="music-embed" src="https://www.youtube-nocookie.com/embed/videoseries?list=' + YTM_PLAYLIST_ID + '&autoplay=1" title="YouTube playlist player — Songs that SLAP" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+  });
+
   setAtmosphere(ATMOSPHERE_OVERRIDE || 'blossom');
 
   // ---------- Pause polling/ticking while the page isn't visible ----------
@@ -2175,7 +2225,7 @@
   // sw.js — so there is no second cache layer in front of them either.)
   const POLLERS = [
     { fn: tick, ms: 1000, last: 0 },
-    { fn: loadWeather, ms: 10 * 60 * 1000, last: 0 },
+    { fn: () => loadWeather(true), ms: 10 * 60 * 1000, last: 0 },
     { fn: loadDiscord, ms: 20 * 1000, last: 0 },
     { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },

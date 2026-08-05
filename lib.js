@@ -734,6 +734,17 @@
     return rows;
   }
 
+  // ---- TTL cache freshness -------------------------------------------------
+  // Shared by the weather card's localStorage snapshot (kazu-weather-cache):
+  // an {at: epochMs} entry counts as fresh only inside its TTL window — and
+  // never when the stamp is in the future (clock skew). Pure maths, so the
+  // gate tests pin the boundaries; `now` is injectable for exactly that.
+  function cacheFresh(at, ttlMs, now) {
+    if (typeof at !== 'number' || typeof ttlMs !== 'number') return false;
+    var t = (typeof now === 'number') ? now : Date.now();
+    return t - at >= 0 && t - at < ttlMs;
+  }
+
   // ---- Konami code easter egg ----------------------------------------------
   // The classic ↑↑↓↓←→←→BA. script.js keeps a rolling window of recent keys
   // and asks this whether the window ENDS with the code, so junk typed before
@@ -981,6 +992,7 @@
     ytArtistName: ytArtistName,
     parseYouTubePlaylistRss: parseYouTubePlaylistRss,
     ytPlaylistCacheParse: ytPlaylistCacheParse,
+    cacheFresh: cacheFresh,
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
