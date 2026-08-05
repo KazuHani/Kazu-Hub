@@ -263,6 +263,25 @@ body[data-theme="light"] #theme-orb:hover > span {
   animation: titleReveal 1s cubic-bezier(.2,.6,.35,1) .26s both, shimmer 7s linear infinite alternate;
 }
 
+/* Sun bounce: while the sky body's sun is up, script.js stamps --sun-dx/
+   --sun-dy/--sun-glow-o on .pfp-ring each minute (same UK-clock tick as the
+   sky) and this warm bloom sits on the sun-facing side of the avatar ring —
+   light catching it, cast like a shadow. The 1.8s fade matches the sky
+   body's glide, so the light visibly travels with the sun. */
+.pfp-ring::after {
+  content: ""; position: absolute; inset: -14px; border-radius: 50%;
+  z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,214,120,.85) 0%, rgba(255,190,90,.35) 45%, rgba(255,190,90,0) 70%);
+  filter: blur(12px);
+  transform: translate(var(--sun-dx, 0), var(--sun-dy, 0));
+  opacity: var(--sun-glow-o, 0);
+  transition: opacity 1.8s ease, transform 1.8s ease;
+}
+/* Phones and the Christmas season show no sun, so the glow sits out too. */
+@media (max-width: 768px) { .pfp-ring::after { display: none; } }
+body.season-christmas .pfp-ring::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .pfp-ring::after { transition: none; } }
+
 /* ---- Quote box ---- */
 .quote-box {
   display: block; width: 100%; max-width: 560px; margin: 0 auto;

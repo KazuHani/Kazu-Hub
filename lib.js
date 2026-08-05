@@ -337,6 +337,24 @@
     };
   }
 
+  // Sun bounce for the hero avatar: while the sun is up, a warm bloom sits on
+  // the sun-facing side of the profile ring (.pfp-ring::after in style.css).
+  // Takes the sky body's % position (from skyBodyState) and returns the glow's
+  // px offset + opacity: dx tracks the azimuth (strongest when the sun hangs
+  // low at a page edge), dy stays negative (light comes from above) and the
+  // whole glow fades toward the horizon. Pure maths; the gate tests pin the
+  // edges. Junk input yields null.
+  function sunBounce(x, y) {
+    if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) return null;
+    var az = Math.max(-1, Math.min(1, (x - 50) / 44)); // -1 left edge … +1 right
+    var alt = Math.max(0, Math.min(1, (52 - y) / 40)); // 0 horizon … 1 zenith
+    return {
+      dx: Math.round(az * 14 * (0.4 + 0.6 * (1 - alt)) * 10) / 10,
+      dy: Math.round(-(4 + alt * 10) * 10) / 10,
+      opacity: Math.round((0.10 + alt * 0.16) * 100) / 100,
+    };
+  }
+
   // ---- 5-day forecast strip ------------------------------------------------
   // Shapes an Open-Meteo `daily` block (day-aligned to Europe/London via the
   // request's timezone param) into rows for the weather modal's strip. The
@@ -973,6 +991,7 @@
     particleCount: particleCount,
     sunTimesUK: sunTimesUK,
     skyBodyState: skyBodyState,
+    sunBounce: sunBounce,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,

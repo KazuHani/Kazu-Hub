@@ -32,8 +32,8 @@ the Christmas season), and custom scrollbars.
 
 ## Code layout
 
-- `index.html` (~750 lines) — the whole page. Loads `style.css?v=37`,
-  `lib.js?v=22`, `script.js?v=44` (version query strings; see cache-busting
+- `index.html` (~750 lines) — the whole page. Loads `style.css?v=38`,
+  `lib.js?v=23`, `script.js?v=45` (version query strings; see cache-busting
   below). Inline JSON-LD schema in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
@@ -42,7 +42,8 @@ the Christmas season), and custom scrollbars.
   (including the playful equivalents in `ageBreakdown`: full moons, Sun laps,
   years asleep, breaths), calendar export (`.ics`, Google Calendar URL), HTML
   escaping, Steam/MAL data shaping, dev-code matching, scrollbar thumb
-  geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
+  geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`,
+  `sunBounce`).
 - `script.js` (~2400 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,

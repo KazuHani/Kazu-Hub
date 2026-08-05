@@ -604,6 +604,15 @@ ok('uniform hover depth applied broadly', cssFlat.split('box-shadow: 0 8px 20px 
 ok('uniform hover lift applied broadly', cssFlat.split('transform: translateY(-3px)').length - 1 >= 15);
 ok('no legacy hover scales remain', !cssSrc.includes(':hover { transform: scale('));
 
+// ---- sunBounce (hero avatar sun glow) ----
+eq('sunBounce: low sun far left → strong side glow', L.sunBounce(6, 52), { dx: -14, dy: -4, opacity: 0.1 });
+eq('sunBounce: low sun far right mirrors', L.sunBounce(94, 52), { dx: 14, dy: -4, opacity: 0.1 });
+eq('sunBounce: zenith overhead → glow pools on top', L.sunBounce(50, 12), { dx: 0, dy: -14, opacity: 0.26 });
+eq('sunBounce: mid-arc', L.sunBounce(72, 32), { dx: 4.9, dy: -9, opacity: 0.18 });
+ok('sunBounce: junk input → null', L.sunBounce('x', 20) === null && L.sunBounce(10) === null);
+ok('sun glow wired to the sky tick', scriptSrc.includes("setProperty('--sun-glow-o'") && cssFlat.includes('.pfp-ring::after {'));
+ok('sun glow sits out without a sun (phones, christmas)', cssFlat.includes('body.season-christmas .pfp-ring::after { display: none; }'));
+
 // ---- Scroll reveal (static wiring checks) ----
 // Everything .scroll-reveal starts hidden and fades + slides in the first
 // time it enters the viewport, via an IntersectionObserver (one-shot).

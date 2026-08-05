@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=22"></script>
+  <script src="lib.js?v=23"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -623,6 +623,15 @@
         ok('uniform hover depth applied broadly', cssFlat.split('box-shadow: 0 8px 20px rgba(0,0,0,.3)').length - 1 >= 12);
         ok('uniform hover lift applied broadly', cssFlat.split('transform: translateY(-3px)').length - 1 >= 15);
         ok('no legacy hover scales remain', cssSrc.indexOf(':hover { transform: scale(') === -1);
+
+        // ---- sunBounce (hero avatar sun glow) ----
+        eq('sunBounce: low sun far left → strong side glow', L.sunBounce(6, 52), { dx: -14, dy: -4, opacity: 0.1 });
+        eq('sunBounce: low sun far right mirrors', L.sunBounce(94, 52), { dx: 14, dy: -4, opacity: 0.1 });
+        eq('sunBounce: zenith overhead → glow pools on top', L.sunBounce(50, 12), { dx: 0, dy: -14, opacity: 0.26 });
+        eq('sunBounce: mid-arc', L.sunBounce(72, 32), { dx: 4.9, dy: -9, opacity: 0.18 });
+        ok('sunBounce: junk input → null', L.sunBounce('x', 20) === null && L.sunBounce(10) === null);
+        ok('sun glow wired to the sky tick', scriptSrc.indexOf("setProperty('--sun-glow-o'") !== -1 && cssFlat.indexOf('.pfp-ring::after {') !== -1);
+        ok('sun glow sits out without a sun (phones, christmas)', cssFlat.indexOf('body.season-christmas .pfp-ring::after { display: none; }') !== -1);
         ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
         ok('story card gradients made translucent', htmlSrc.indexOf('rgba(124,29,43,.66)') !== -1 && htmlSrc.indexOf('rgba(14,94,84,.66)') !== -1);
         ok('presence + story cards get the frosted backdrop', cssFlat.indexOf('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);') !== -1);
