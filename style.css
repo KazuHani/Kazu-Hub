@@ -120,6 +120,27 @@ body[data-theme="light"] .sakura-scene {
   --sakura-bud: #dd7ba6;
   --sakura-stamen: #fff3f8;
 }
+/* Dev-only trajectory overlay. The SVG uses the same percentage frame as
+   skyArcPoint(), so it scales with the scenery without JS resize work. It is
+   deliberately hidden by default; kazudev's Sky curve guide turns it on. */
+.sky-curve-guide {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: none;
+  overflow: visible; pointer-events: none;
+}
+.sky-curve-guide__glow {
+  fill: none; stroke: rgba(255,214,118,.20); stroke-width: 12px;
+  stroke-linecap: round;
+}
+.sky-curve-guide__line {
+  fill: none; stroke: rgba(255,239,181,.94); stroke-width: 2px;
+  stroke-linecap: round; stroke-dasharray: 7px 10px;
+  filter: drop-shadow(0 0 4px rgba(255,211,96,.9));
+}
+body[data-theme="light"] .sky-curve-guide__glow { stroke: rgba(66,143,212,.17); }
+body[data-theme="light"] .sky-curve-guide__line {
+  stroke: rgba(22,112,190,.85);
+  filter: drop-shadow(0 0 3px rgba(71,151,220,.6));
+}
 /* Sky body: the sun by day, the moon by night, riding an arc across the
    scenery layer (script.js positions it from the UK clock once a minute;
    the transition glides each step). The no-JS pose is the moon upper-right. */

@@ -313,6 +313,21 @@
     };
   }
 
+  // A point on the sky body's 0..1 journey from the left horizon to the
+  // right horizon. It is shared by the live sun/moon position and the dev
+  // guide so the drawn curve can never drift away from the real path.
+  function skyArcPoint(progress) {
+    var p = +progress;
+    if (isNaN(p)) return null;
+    p = Math.min(1, Math.max(0, p));
+    var alt = Math.sin(Math.PI * p);
+    return {
+      x: +(6 + p * 88).toFixed(2),
+      y: +(52 - alt * 40).toFixed(2),
+      alt: +alt.toFixed(3),
+    };
+  }
+
   // Where the sky body sits at `ukMinutes` (minutes since UK midnight).
   // Returns { body, x, y, alt, low }: x/y are % offsets inside the scenery
   // layer, alt the 0..1 height along the arc (1 = top of the sky), low flags
@@ -327,13 +342,13 @@
     var isSun = t >= st.rise && t < st.set;
     var p = isSun ? (t - st.rise) / dayLen
                   : ((((t - st.set) % 1440) + 1440) % 1440) / (1440 - dayLen);
-    var alt = Math.sin(Math.PI * p);
+    var point = skyArcPoint(p);
     return {
       body: isSun ? 'sun' : 'moon',
-      x: +(6 + p * 88).toFixed(2),
-      y: +(52 - alt * 40).toFixed(2),
-      alt: +alt.toFixed(3),
-      low: alt < 0.28,
+      x: point.x,
+      y: point.y,
+      alt: point.alt,
+      low: point.alt < 0.28,
     };
   }
 
@@ -967,6 +982,7 @@
     atmosphereMode: atmosphereMode,
     particleCount: particleCount,
     sunTimesUK: sunTimesUK,
+    skyArcPoint: skyArcPoint,
     skyBodyState: skyBodyState,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,

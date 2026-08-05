@@ -436,6 +436,21 @@
   // working if lib.js fails to load. Cheap by construction: one style write
   // a minute, with a CSS transition gliding each step.
   const skyBodyEl = document.querySelector('.sky-body');
+  const skyCurveGuideEl = document.querySelector('.sky-curve-guide');
+  const skyCurveGuidePaths = skyCurveGuideEl
+    ? skyCurveGuideEl.querySelectorAll('.sky-curve-guide__glow, .sky-curve-guide__line')
+    : [];
+  const skyArcPoint = (KazuLib && KazuLib.skyArcPoint) || function (progress) {
+    let p = +progress;
+    if (isNaN(p)) return null;
+    p = Math.min(1, Math.max(0, p));
+    const alt = Math.sin(Math.PI * p);
+    return {
+      x: +(6 + p * 88).toFixed(2),
+      y: +(52 - alt * 40).toFixed(2),
+      alt: +alt.toFixed(3),
+    };
+  };
   const skyBodyState = (KazuLib && KazuLib.skyBodyState) || function (ukMinutes, dayOfYear) {
     const t0 = +ukMinutes;
     if (isNaN(t0)) return null;
@@ -448,9 +463,24 @@
     const dayLen = set - rise;
     const isSun = t >= rise && t < set;
     const p = isSun ? (t - rise) / dayLen : ((((t - set) % 1440) + 1440) % 1440) / (1440 - dayLen);
-    const alt = Math.sin(Math.PI * p);
-    return { body: isSun ? 'sun' : 'moon', x: 6 + p * 88, y: 52 - alt * 40, low: alt < 0.28 };
+    const point = skyArcPoint(p);
+    return { body: isSun ? 'sun' : 'moon', x: point.x, y: point.y, alt: point.alt, low: point.alt < 0.28 };
   };
+
+  // The guide uses the same pure point helper as the live body. Because its
+  // SVG viewBox is expressed in percentages, it scales cleanly at every
+  // viewport size without redrawing during resize.
+  function renderSkyCurveGuide() {
+    if (!skyCurveGuideEl) return;
+    const steps = 48;
+    let d = '';
+    for (let i = 0; i <= steps; i++) {
+      const point = skyArcPoint(i / steps);
+      if (!point) return;
+      d += (i ? ' L ' : 'M ') + point.x + ' ' + point.y;
+    }
+    skyCurveGuidePaths.forEach((path) => path.setAttribute('d', d));
+  }
   let skyBodySnapped = false;
   function updateSkyBody() {
     if (!skyBodyEl) return;
@@ -482,15 +512,21 @@
     skyBodyEl.style.left = st.x + '%';
     skyBodyEl.style.top = st.y + '%';
   }
-  // Auto restores the stylesheet's responsive behaviour: the arc is visible
-  // on wider screens and the sky body is hidden on phones. On forces it back
-  // on for narrow-screen inspection; Off hides it everywhere.
+  // Auto restores the stylesheet's responsive sky-body behaviour and keeps
+  // the debug line hidden. On forces both the sky body and its visible guide
+  // on for inspection; Off hides both everywhere.
   function applySkyCurveMode(mode) {
     devCurveMode = devModeParse(mode);
-    if (!skyBodyEl) return;
-    skyBodyEl.style.display = devCurveMode === 'on' ? 'block' :
-      (devCurveMode === 'off' ? 'none' : '');
+    if (skyBodyEl) {
+      skyBodyEl.style.display = devCurveMode === 'on' ? 'block' :
+        (devCurveMode === 'off' ? 'none' : '');
+    }
+    if (skyCurveGuideEl) {
+      if (devCurveMode === 'on') renderSkyCurveGuide();
+      skyCurveGuideEl.style.display = devCurveMode === 'on' ? 'block' : 'none';
+    }
   }
+  renderSkyCurveGuide();
   applySkyCurveMode(devCurveMode);
   updateSkyBody();
   setInterval(updateSkyBody, 60000);
@@ -2047,7 +2083,7 @@
 
   // ---------- Dev settings panel (secret code: kazudev) ----------
   // A floating panel for previewing the seasonal event themes on any date
-  // and checking the responsive sky curve. Built once on first use; styles
+  // and checking the responsive sky curve guide. Built once on first use; styles
   // live in style.css ("DEV SETTINGS PANEL").
   const DEV_SEASON_ROWS = [
     ['birthday', '🎂 Birthday'],
@@ -2080,8 +2116,8 @@
         '</div>';
     });
     html += '<div class="dev-row" data-setting="curve">' +
-        '<span class="dev-row-label">Sky curve</span>' +
-        '<span class="dev-seg" role="group" aria-label="Sky curve mode">' +
+        '<span class="dev-row-label">Sky curve guide</span>' +
+        '<span class="dev-seg" role="group" aria-label="Sky curve guide mode">' +
           '<button type="button" data-mode="auto">Auto</button>' +
           '<button type="button" data-mode="on">On</button>' +
           '<button type="button" data-mode="off">Off</button>' +

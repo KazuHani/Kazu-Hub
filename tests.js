@@ -129,6 +129,11 @@ eq('summer solstice sun times', L.sunTimesUK(172), { rise: 300, set: 1290 });
 eq('winter solstice sun times', L.sunTimesUK(355), { rise: 495, set: 960 });
 eq('junk day → solstice default', L.sunTimesUK('nope'), { rise: 300, set: 1290 });
 eq('out-of-range day → solstice default', L.sunTimesUK(400), { rise: 300, set: 1290 });
+eq('skyArcPoint starts at the left horizon', L.skyArcPoint(0), { x: 6, y: 52, alt: 0 });
+eq('skyArcPoint crests at mid-journey', L.skyArcPoint(0.5), { x: 50, y: 12, alt: 1 });
+eq('skyArcPoint ends at the right horizon', L.skyArcPoint(1), { x: 94, y: 52, alt: 0 });
+eq('skyArcPoint clamps off-path progress', L.skyArcPoint(-1), { x: 6, y: 52, alt: 0 });
+eq('skyArcPoint rejects junk progress', L.skyArcPoint('nope'), null);
 eq('summer 1pm: sun near the top of the arc', L.skyBodyState(780, 172), { body: 'sun', x: 48.67, y: 12.05, alt: 0.999, low: false });
 eq('summer midnight: moon a third along the arc', L.skyBodyState(0, 172), { body: 'moon', x: 35.33, y: 17.36, alt: 0.866, low: false });
 eq('sunrise: left horizon, golden', L.skyBodyState(300, 172), { body: 'sun', x: 6, y: 52, alt: 0, low: true });
@@ -640,8 +645,9 @@ ok('dev overrides persist under kazu-dev-seasons', scriptSrc.includes("DEV_KEY =
 ok('panel applies changes through applySeasons', scriptSrc.includes('syncDevPanel(s)'));
 ok('dev panel styles present', cssFlat.includes('.dev-panel {') && cssFlat.includes('.dev-seg button.is-active'));
 ok('sky curve mode persists separately', scriptSrc.includes("DEV_CURVE_KEY = 'kazu-dev-curve'") && scriptSrc.includes('saveDevCurve'));
-ok('sky curve has Auto / On / Off controls', scriptSrc.includes('data-setting="curve"') && scriptSrc.includes('aria-label="Sky curve mode"'));
+ok('sky curve has Auto / On / Off controls', scriptSrc.includes('data-setting="curve"') && scriptSrc.includes('aria-label="Sky curve guide mode"'));
 ok('sky curve Auto / On / Off is applied', scriptSrc.includes('applySkyCurveMode') && scriptSrc.includes("devCurveMode === 'on'") && scriptSrc.includes("devCurveMode === 'off'"));
+ok('Sky curve On draws the exact guide path', htmlSrc.includes('class="sky-curve-guide"') && cssFlat.includes('.sky-curve-guide__line') && scriptSrc.includes('renderSkyCurveGuide') && scriptSrc.includes('skyArcPoint(i / steps)'));
 
 // ---- Christmas theme (cozy classic: pine + cranberry + gold) ----
 // The palette vars moved to a pine base with a warm gold accent, and every
