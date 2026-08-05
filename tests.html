@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=23"></script>
+  <script src="lib.js?v=24"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -147,16 +147,18 @@
       eq('junk day → solstice default', L.sunTimesUK('nope'), { rise: 300, set: 1290 });
       eq('out-of-range day → solstice default', L.sunTimesUK(400), { rise: 300, set: 1290 });
       eq('skyArcPoint starts at the left horizon', L.skyArcPoint(0), { x: 6, y: 52, alt: 0 });
-      eq('skyArcPoint crests at mid-journey', L.skyArcPoint(0.5), { x: 50, y: 12, alt: 1 });
+      eq('skyArcPoint crests at the default profile height', L.skyArcPoint(0.5), { x: 50, y: 19, alt: 1 });
+      eq('skyArcPoint accepts the responsive profile height', L.skyArcPoint(0.5, 23.5), { x: 50, y: 23.5, alt: 1 });
       eq('skyArcPoint ends at the right horizon', L.skyArcPoint(1), { x: 94, y: 52, alt: 0 });
       eq('skyArcPoint clamps off-path progress', L.skyArcPoint(-1), { x: 6, y: 52, alt: 0 });
       eq('skyArcPoint rejects junk progress', L.skyArcPoint('nope'), null);
-      eq('summer 1pm: sun near the top of the arc', L.skyBodyState(780, 172), { body: 'sun', x: 48.67, y: 12.05, alt: 0.999, low: false });
-      eq('summer midnight: moon a third along the arc', L.skyBodyState(0, 172), { body: 'moon', x: 35.33, y: 17.36, alt: 0.866, low: false });
+      eq('summer 1pm: sun near the profile-height crest', L.skyBodyState(780, 172), { body: 'sun', x: 48.67, y: 19.04, alt: 0.999, low: false });
+      eq('summer midnight: moon a third along the arc', L.skyBodyState(0, 172), { body: 'moon', x: 35.33, y: 23.42, alt: 0.866, low: false });
       eq('sunrise: left horizon, golden', L.skyBodyState(300, 172), { body: 'sun', x: 6, y: 52, alt: 0, low: true });
-      eq('just before sunset: right horizon, golden', L.skyBodyState(1289, 172), { body: 'sun', x: 93.91, y: 51.87, alt: 0.003, low: true });
-      eq('winter midday is still the sun', L.skyBodyState(727, 355), { body: 'sun', x: 49.91, y: 12, alt: 1, low: false });
-      eq('winter 1am: moon past the top', L.skyBodyState(60, 355), { body: 'moon', x: 54.74, y: 12.57, alt: 0.986, low: false });
+      eq('just before sunset: right horizon, golden', L.skyBodyState(1289, 172), { body: 'sun', x: 93.91, y: 51.9, alt: 0.003, low: true });
+      eq('winter midday is still the sun', L.skyBodyState(727, 355), { body: 'sun', x: 49.91, y: 19, alt: 1, low: false });
+      eq('winter 1am: moon past the top', L.skyBodyState(60, 355), { body: 'moon', x: 54.74, y: 19.47, alt: 0.986, low: false });
+      eq('summer solar noon follows a supplied profile height', L.skyBodyState(795, 172, 23.5), { body: 'sun', x: 50, y: 23.5, alt: 1, low: false });
       ok('arc travels left → right through the day', L.skyBodyState(600, 172).x < L.skyBodyState(900, 172).x);
       eq('junk time → null', L.skyBodyState('abc'), null);
       eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
@@ -668,7 +670,7 @@
         ok('sky curve mode persists separately', scriptSrc.indexOf("DEV_CURVE_KEY = 'kazu-dev-curve'") !== -1 && scriptSrc.indexOf('saveDevCurve') !== -1);
         ok('sky curve has Auto / On / Off controls', scriptSrc.indexOf('data-setting="curve"') !== -1 && scriptSrc.indexOf('aria-label="Sky curve guide mode"') !== -1);
         ok('sky curve Auto / On / Off is applied', scriptSrc.indexOf('applySkyCurveMode') !== -1 && scriptSrc.indexOf("devCurveMode === 'on'") !== -1 && scriptSrc.indexOf("devCurveMode === 'off'") !== -1);
-        ok('Sky curve On draws the exact guide path', htmlSrc.indexOf('class="sky-curve-guide"') !== -1 && cssFlat.indexOf('.sky-curve-guide__line') !== -1 && scriptSrc.indexOf('renderSkyCurveGuide') !== -1 && scriptSrc.indexOf('skyArcPoint(i / steps)') !== -1);
+        ok('sky curve keeps the guide and live body on the responsive profile centre', htmlSrc.indexOf('class="sky-curve-guide"') !== -1 && cssFlat.indexOf('.sky-curve-guide__line') !== -1 && scriptSrc.indexOf('renderSkyCurveGuide') !== -1 && scriptSrc.indexOf('skyArcPeakY') !== -1 && scriptSrc.indexOf('skyArcPoint(i / steps, crestY)') !== -1 && scriptSrc.indexOf('skyBodyState(mins, doy, skyArcPeakY())') !== -1 && scriptSrc.indexOf("window.addEventListener('resize', scheduleSkyLayout") !== -1);
 
         // ---- Christmas theme (cozy classic: pine + cranberry + gold) ----
         // The palette vars moved to a pine base with a warm gold accent, and every

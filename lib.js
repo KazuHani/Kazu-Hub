@@ -316,14 +316,19 @@
   // A point on the sky body's 0..1 journey from the left horizon to the
   // right horizon. It is shared by the live sun/moon position and the dev
   // guide so the drawn curve can never drift away from the real path.
-  function skyArcPoint(progress) {
+  // `crestY` is optional: the page supplies the profile picture's live
+  // centre, placing the noon sun / midnight moon directly behind it.
+  function skyArcPoint(progress, crestY) {
     var p = +progress;
     if (isNaN(p)) return null;
     p = Math.min(1, Math.max(0, p));
+    var crest = crestY == null ? 19 : +crestY;
+    if (isNaN(crest)) crest = 19;
+    crest = Math.min(52, Math.max(0, crest));
     var alt = Math.sin(Math.PI * p);
     return {
       x: +(6 + p * 88).toFixed(2),
-      y: +(52 - alt * 40).toFixed(2),
+      y: +(52 - alt * (52 - crest)).toFixed(2),
       alt: +alt.toFixed(3),
     };
   }
@@ -333,7 +338,7 @@
   // layer, alt the 0..1 height along the arc (1 = top of the sky), low flags
   // near-horizon positions for golden-hour styling. Junk time input yields
   // null so the page keeps whatever it is already showing.
-  function skyBodyState(ukMinutes, dayOfYear) {
+  function skyBodyState(ukMinutes, dayOfYear, crestY) {
     var t = +ukMinutes;
     if (isNaN(t)) return null;
     t = ((t % 1440) + 1440) % 1440;
@@ -342,7 +347,7 @@
     var isSun = t >= st.rise && t < st.set;
     var p = isSun ? (t - st.rise) / dayLen
                   : ((((t - st.set) % 1440) + 1440) % 1440) / (1440 - dayLen);
-    var point = skyArcPoint(p);
+    var point = skyArcPoint(p, crestY);
     return {
       body: isSun ? 'sun' : 'moon',
       x: point.x,

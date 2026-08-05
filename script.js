@@ -435,23 +435,28 @@
   // lib.js (KazuLib.skyBodyState, gate-tested); the local copy keeps the sky
   // working if lib.js fails to load. Cheap by construction: one style write
   // a minute, with a CSS transition gliding each step.
+  const skySceneEl = document.querySelector('.sakura-scene');
+  const skyProfileEl = document.querySelector('.pfp');
   const skyBodyEl = document.querySelector('.sky-body');
   const skyCurveGuideEl = document.querySelector('.sky-curve-guide');
   const skyCurveGuidePaths = skyCurveGuideEl
     ? skyCurveGuideEl.querySelectorAll('.sky-curve-guide__glow, .sky-curve-guide__line')
     : [];
-  const skyArcPoint = (KazuLib && KazuLib.skyArcPoint) || function (progress) {
+  const skyArcPoint = (KazuLib && KazuLib.skyArcPoint) || function (progress, crestY) {
     let p = +progress;
     if (isNaN(p)) return null;
     p = Math.min(1, Math.max(0, p));
+    let crest = crestY == null ? 19 : +crestY;
+    if (isNaN(crest)) crest = 19;
+    crest = Math.min(52, Math.max(0, crest));
     const alt = Math.sin(Math.PI * p);
     return {
       x: +(6 + p * 88).toFixed(2),
-      y: +(52 - alt * 40).toFixed(2),
+      y: +(52 - alt * (52 - crest)).toFixed(2),
       alt: +alt.toFixed(3),
     };
   };
-  const skyBodyState = (KazuLib && KazuLib.skyBodyState) || function (ukMinutes, dayOfYear) {
+  const skyBodyState = (KazuLib && KazuLib.skyBodyState) || function (ukMinutes, dayOfYear, crestY) {
     const t0 = +ukMinutes;
     if (isNaN(t0)) return null;
     const t = ((t0 % 1440) + 1440) % 1440;
@@ -463,19 +468,31 @@
     const dayLen = set - rise;
     const isSun = t >= rise && t < set;
     const p = isSun ? (t - rise) / dayLen : ((((t - set) % 1440) + 1440) % 1440) / (1440 - dayLen);
-    const point = skyArcPoint(p);
+    const point = skyArcPoint(p, crestY);
     return { body: isSun ? 'sun' : 'moon', x: point.x, y: point.y, alt: point.alt, low: point.alt < 0.28 };
   };
 
-  // The guide uses the same pure point helper as the live body. Because its
-  // SVG viewBox is expressed in percentages, it scales cleanly at every
-  // viewport size without redrawing during resize.
+  // The scenery's coordinate frame is the viewport, while the profile picture
+  // moves with the responsive hero padding. Measure its actual centre so the
+  // crest is behind the picture on every screen size, not just one desktop.
+  function skyArcPeakY() {
+    if (!skySceneEl || !skyProfileEl) return undefined;
+    const sceneRect = skySceneEl.getBoundingClientRect();
+    const profileRect = skyProfileEl.getBoundingClientRect();
+    if (!sceneRect.height || !profileRect.height) return undefined;
+    const y = ((profileRect.top + profileRect.height / 2 - sceneRect.top) / sceneRect.height) * 100;
+    return +Math.min(52, Math.max(0, y)).toFixed(2);
+  }
+
+  // The guide uses the same pure point helper as the live body. Its crest is
+  // measured from the profile picture, then redrawn when the viewport changes.
   function renderSkyCurveGuide() {
     if (!skyCurveGuideEl) return;
     const steps = 48;
+    const crestY = skyArcPeakY();
     let d = '';
     for (let i = 0; i <= steps; i++) {
-      const point = skyArcPoint(i / steps);
+      const point = skyArcPoint(i / steps, crestY);
       if (!point) return;
       d += (i ? ' L ' : 'M ') + point.x + ' ' + point.y;
     }
@@ -496,7 +513,7 @@
       mins = now.getHours() * 60 + now.getMinutes();
       doy = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(now.getFullYear(), 0, 1)) / 86400000) + 1;
     }
-    const st = skyBodyState(mins, doy);
+    const st = skyBodyState(mins, doy, skyArcPeakY());
     if (!st) return;
     skyBodyEl.classList.toggle('sky-body--sun', st.body === 'sun');
     skyBodyEl.classList.toggle('sky-body--moon', st.body === 'moon');
@@ -530,6 +547,16 @@
   applySkyCurveMode(devCurveMode);
   updateSkyBody();
   setInterval(updateSkyBody, 60000);
+  let skyLayoutFrame = 0;
+  function scheduleSkyLayout() {
+    if (skyLayoutFrame) return;
+    skyLayoutFrame = requestAnimationFrame(() => {
+      skyLayoutFrame = 0;
+      renderSkyCurveGuide();
+      updateSkyBody();
+    });
+  }
+  window.addEventListener('resize', scheduleSkyLayout, { passive: true });
 
   // ---------- Discord (Lanyard) ----------
   const STATUS_MAP = {
