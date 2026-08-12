@@ -585,6 +585,29 @@ ok('reduced motion hides the visualizer', cssSrc.includes('.music-viz { display:
 ok('featured tracks: 5 real playlist links', htmlSrc.split('class="music-track-row" href="https://music.youtube.com/watch?v=').length - 1, 5);
 ok('featured column styled (fills space, stacks on mobile)', cssSrc.includes('.music-featured {'));
 
+// ---- PC specifications section (static wiring checks) ----
+// All supplied parts stay present, grouped into four asymmetric glass cards
+// that collapse to one column before the narrower span becomes cramped.
+eq('PC specs use four grouped glass cards', htmlSrc.split('class="card pc-spec-card').length - 1, 4);
+[
+  'AMD Ryzen 5 3600',
+  'Cooler Master Hyper 212 Black Edition',
+  'Gigabyte',
+  'NVIDIA GeForce <strong>RTX 4060</strong>',
+  '32 GB DDR4-3200',
+  '<dt>2 TB</dt>',
+  'Western Digital HDD',
+  '<dt>240 GB</dt>',
+  'Kingston SSD',
+  '<dt>1 TB</dt>',
+  'Crucial P3 Plus M.2 PCIe 4.0 NVMe SSD',
+  'Corsair RM650, 80 Plus Gold, 650 W',
+  'Corsair Carbide Series 270R',
+  'MSI B450 Tomahawk Max',
+].forEach((spec) => ok('PC spec present: ' + spec.replace(/<[^>]+>/g, ''), htmlSrc.includes(spec)));
+ok('PC specs use the asymmetric 7/5 bento', cssSrc.includes('grid-template-columns: repeat(12,minmax(0,1fr));') && cssSrc.includes('.pc-spec-card--graphics {\n  grid-column: span 7;') && cssSrc.includes('.pc-spec-card--platform { grid-column: span 5; }'));
+ok('PC specs collapse to one column on compact screens', cssSrc.includes('@media (max-width: 860px)') && cssSrc.includes('.pc-spec-card { grid-column: 1 / -1; }'));
+
 // ---- Liquid glass on the content cards (static wiring checks) ----
 // The presence/music/story cards joined the glass set: translucent fills,
 // glint rims, frosted backdrop, and the Chromium refraction list in script.js.

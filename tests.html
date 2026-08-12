@@ -612,6 +612,27 @@
         eq('featured tracks: 5 real playlist links', htmlSrc.split('class="music-track-row" href="https://music.youtube.com/watch?v=').length - 1, 5);
         ok('featured column styled (fills space, stacks on mobile)', cssSrc.indexOf('.music-featured {') !== -1);
 
+        // ---- PC specifications section ----
+        eq('PC specs use four grouped glass cards', htmlSrc.split('class="card pc-spec-card').length - 1, 4);
+        [
+          'AMD Ryzen 5 3600',
+          'Cooler Master Hyper 212 Black Edition',
+          'Gigabyte',
+          'NVIDIA GeForce <strong>RTX 4060</strong>',
+          '32 GB DDR4-3200',
+          '<dt>2 TB</dt>',
+          'Western Digital HDD',
+          '<dt>240 GB</dt>',
+          'Kingston SSD',
+          '<dt>1 TB</dt>',
+          'Crucial P3 Plus M.2 PCIe 4.0 NVMe SSD',
+          'Corsair RM650, 80 Plus Gold, 650 W',
+          'Corsair Carbide Series 270R',
+          'MSI B450 Tomahawk Max'
+        ].forEach(function (spec) { ok('PC spec present: ' + spec.replace(/<[^>]+>/g, ''), htmlSrc.indexOf(spec) !== -1); });
+        ok('PC specs use the asymmetric 7/5 bento', cssSrc.indexOf('grid-template-columns: repeat(12,minmax(0,1fr));') !== -1 && cssSrc.indexOf('.pc-spec-card--graphics {\n  grid-column: span 7;') !== -1 && cssSrc.indexOf('.pc-spec-card--platform { grid-column: span 5; }') !== -1);
+        ok('PC specs collapse to one column on compact screens', cssSrc.indexOf('@media (max-width: 860px)') !== -1 && cssSrc.indexOf('.pc-spec-card { grid-column: 1 / -1; }') !== -1);
+
         // ---- Liquid glass on the content cards ----
         var cssFlat = cssSrc.replace(/\r/g, '');
         [
@@ -625,7 +646,8 @@
         ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 1 === 2);
         ok('story card gradients made translucent', htmlSrc.indexOf('rgba(124,29,43,.66)') !== -1 && htmlSrc.indexOf('rgba(14,94,84,.66)') !== -1);
         ok('presence + story cards get the frosted backdrop', cssFlat.indexOf('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);') !== -1);
-        ok('refraction list covers the new glass cards', scriptSrc.indexOf('.toast, .discord-card, .steam-card, .mal-card, .lb-card, .story-card') !== -1);
+        ok('refraction keys off .card so future cards join automatically', scriptSrc.indexOf("querySelectorAll('.card:not(.stat-card--bday), .toast')") !== -1);
+        ok('social tiles are full glass citizens (rim refraction included)', scriptSrc.indexOf(':not(.social-card)') === -1 && cssFlat.indexOf(':not(.social-card)') === -1);
 
         // ---- Scroll reveal ----
         ok('scroll reveal uses an IntersectionObserver', scriptSrc.indexOf('IntersectionObserver') !== -1);

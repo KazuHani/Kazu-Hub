@@ -472,6 +472,100 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   a.info-pill[href]:hover, a.info-pill[href]:active { transform: none; }
 }
 
+/* ---- PC specifications ---- */
+/* Four grouped cards keep the ten supplied components scannable without a
+   table. The 7/5 then 5/7 spans give the section a bento rhythm, while every
+   card becomes full-width before its copy gets cramped. As with the rest of
+   the site, .card supplies the glass rim/refraction and all colour variation
+   is derived from the active theme's single accent token. */
+.pc-specs-grid {
+  display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); gap: 18px;
+}
+.pc-spec-card {
+  min-width: 0; border-radius: 24px; padding: clamp(22px,3vw,30px);
+}
+.pc-spec-card--graphics {
+  grid-column: span 7; min-height: 270px; display: grid;
+  grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: clamp(24px,4vw,52px);
+  background:
+    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 66%),
+    color-mix(in srgb, var(--card-bg) 62%, transparent);
+}
+.pc-spec-card--platform { grid-column: span 5; }
+.pc-spec-card--storage {
+  grid-column: span 5;
+  background:
+    radial-gradient(circle at 8% 100%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 48%),
+    color-mix(in srgb, var(--card-bg) 58%, transparent);
+}
+.pc-spec-card--build {
+  grid-column: span 7;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 46%),
+    color-mix(in srgb, var(--card-bg) 58%, transparent);
+}
+.pc-spec-card-title {
+  margin: 0 0 20px; font-family: 'Fredoka', sans-serif; font-weight: 600;
+  font-size: 17px; line-height: 1.2; color: var(--accent);
+}
+.pc-spec-maker {
+  margin-bottom: 7px; font-size: 13px; font-weight: 800; color: var(--ink-soft);
+}
+.pc-spec-feature-name {
+  margin: 0; max-width: 330px; font-family: 'Fredoka', sans-serif; font-weight: 500;
+  font-size: clamp(26px,3.5vw,38px); line-height: 1.06; color: var(--ink);
+}
+.pc-spec-feature-name strong { display: block; color: var(--accent); font-weight: 700; }
+.pc-gpu-mark {
+  min-width: clamp(116px,15vw,164px); padding-left: clamp(18px,3vw,34px);
+  border-left: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  display: flex; flex-direction: column; align-items: flex-end; color: var(--ink); text-align: right;
+}
+.pc-gpu-mark span {
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-soft); white-space: nowrap;
+}
+.pc-gpu-mark strong {
+  font-family: 'Fredoka', sans-serif; font-weight: 700;
+  font-size: clamp(60px,8vw,92px); line-height: .9; letter-spacing: -.04em;
+}
+.pc-spec-list, .pc-storage-list { margin: 0; }
+.pc-spec-list { display: grid; gap: 18px; }
+.pc-spec-list--build { grid-template-columns: repeat(3,minmax(0,1fr)); gap: clamp(16px,3vw,28px); }
+.pc-spec-entry dt {
+  margin-bottom: 4px; font-size: 12px; font-weight: 800; color: var(--ink-faint);
+}
+.pc-spec-entry dd {
+  margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 600;
+  font-size: 17px; line-height: 1.3; color: var(--ink);
+}
+.pc-storage-list { display: grid; gap: 16px; }
+.pc-storage-entry {
+  display: grid; grid-template-columns: 76px minmax(0,1fr); align-items: baseline; gap: 14px;
+}
+.pc-storage-entry dt {
+  font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px;
+  line-height: 1; color: var(--accent); white-space: nowrap;
+}
+.pc-storage-entry dd {
+  margin: 0; font-weight: 700; font-size: 14px; line-height: 1.35; color: var(--ink);
+}
+@media (max-width: 860px) {
+  .pc-spec-card { grid-column: 1 / -1; }
+  .pc-spec-card--graphics { min-height: 0; }
+}
+@media (max-width: 600px) {
+  .pc-spec-card--graphics { grid-template-columns: minmax(0,1fr); align-items: start; }
+  .pc-gpu-mark {
+    min-width: 0; padding: 18px 0 0; border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+    align-items: flex-start; text-align: left;
+  }
+  .pc-gpu-mark strong { font-size: 62px; }
+  .pc-spec-list--build { grid-template-columns: minmax(0,1fr); }
+}
+
 /* ---- Music / YouTube Music playlist ---- */
 .music-grid { display: grid; grid-template-columns: minmax(0,1fr); }
 .music-card {
@@ -1493,6 +1587,10 @@ body.modal-open > .cscroll { display: none; }
 .lb-card {
   content-visibility: auto;
   contain-intrinsic-size: auto 420px;
+}
+.pc-spec-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
 }
 .music-card {
   content-visibility: auto;
