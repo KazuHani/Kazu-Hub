@@ -291,7 +291,10 @@
   };
 
   const atmosphereEl = document.querySelector('.atmosphere');
+  const pageEl = document.querySelector('.page');
   let atmosphereCurrent = null;
+  let atmosphereHeight = window.innerHeight;
+  let atmosphereBoundsFrame = 0;
   const BLOSSOM_GLYPHS = ['🌸'];
   const SNOW_COLORS = ['#bfe3ff', '#a9d6ff', '#cde8ff', '#b9deff']; // Konami dragon burst only
   const randRange = (min, max) => min + Math.random() * (max - min);
@@ -314,6 +317,60 @@
     const light = o && (o.coarsePointer || o.smallScreen || o.lowConcurrency || o.saveData);
     return Math.min(64, Math.max(8, light ? Math.round(n * 0.6) : n));
   };
+  const petalFallDuration = (KazuLib && KazuLib.petalFallDuration) || function (pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
+    const view = +viewportHeight;
+    const base = +baseSeconds;
+    if (!isFinite(view) || view <= 0 || !isFinite(base) || base <= 0) return 0;
+    const page = !isFinite(+pageHeight) || +pageHeight < view ? view : +pageHeight;
+    const spawn = isFinite(+spawnY) ? +spawnY : 0;
+    const pad = isFinite(+exitPad) && +exitPad >= 0 ? +exitPad : 0;
+    const reference = view * 1.12;
+    return Math.round(base * Math.max(reference, page - spawn + pad) / reference * 100) / 100;
+  };
+
+  // Blossom mode owns a page-height runway. A ResizeObserver follows the
+  // natural .page height as live cards and responsive layouts settle, then a
+  // single CSS custom property updates every petal's transform-only endpoint.
+  // Rain and aurora intentionally retain their original one-viewport layer.
+  function measureAtmosphereHeight() {
+    if (!pageEl) return Math.max(window.innerHeight, document.documentElement.scrollHeight);
+    const r = pageEl.getBoundingClientRect();
+    return Math.max(window.innerHeight, Math.ceil(r.bottom + window.scrollY));
+  }
+
+  function syncPetalDurations() {
+    if (!atmosphereEl) return;
+    atmosphereEl.querySelectorAll('.petal[data-base-fall]').forEach((petal) => {
+      const fall = petalFallDuration(
+        atmosphereHeight,
+        +petal.dataset.spawnY,
+        window.innerHeight,
+        +petal.dataset.baseFall,
+        +petal.dataset.exitPad
+      );
+      petal.style.animationDuration = fall.toFixed(2) + 's, ' + petal.dataset.swayDuration + 's, ' + petal.dataset.rockDuration + 's';
+    });
+  }
+
+  function syncAtmosphereBounds() {
+    atmosphereBoundsFrame = 0;
+    if (!atmosphereEl) return;
+    atmosphereHeight = measureAtmosphereHeight();
+    atmosphereEl.style.setProperty('--atmosphere-height', atmosphereHeight + 'px');
+    syncPetalDurations();
+  }
+
+  function scheduleAtmosphereBounds() {
+    if (atmosphereBoundsFrame) return;
+    atmosphereBoundsFrame = requestAnimationFrame(syncAtmosphereBounds);
+  }
+
+  if (atmosphereEl) {
+    syncAtmosphereBounds();
+    window.addEventListener('resize', scheduleAtmosphereBounds, { passive: true });
+    window.addEventListener('load', scheduleAtmosphereBounds, { once: true });
+    if ('ResizeObserver' in window && pageEl) new ResizeObserver(scheduleAtmosphereBounds).observe(pageEl);
+  }
 
   // Petal physics: fallY carries each petal down a steady wind-drifted path
   // (--dx = total sideways travel across the fall, AWAY from its branch), a
@@ -331,18 +388,21 @@
   const ANCHORS_A = [[150, 214], [176, 184], [206, 154], [238, 128], [282, 102], [326, 66], [386, 30], [292, 146], [300, 224], [152, 146]];
   const ANCHORS_B = [[214, 78], [160, 44], [124, 214], [92, 150], [28, 232], [60, 196], [148, 102]];
 
-  // Blossom anchors as viewport-% spawn points: [{x, y, dx}] where dx is the
-  // sway direction (away from the edge the branch hangs from). Null when no
-  // branch is on screen.
+  // Blossom anchors as page-layer spawn points: x remains a width percentage;
+  // y is a pixel offset inside the document-height atmosphere. Measuring both
+  // against the layer rect keeps the detachment point exact at any scroll.
   function branchSpawnPoints() {
     const pts = [];
+    if (!atmosphereEl) return null;
+    const layer = atmosphereEl.getBoundingClientRect();
+    if (!layer.width) return null;
     const add = (el, anchors, boxW, boxH, dir) => {
       if (!el) return;
       const r = el.getBoundingClientRect();
       if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
       anchors.forEach(a => pts.push({
-        x: (r.left + a[0] / boxW * r.width) / window.innerWidth * 100,
-        y: (r.top + a[1] / boxH * r.height) / window.innerHeight * 100,
+        x: (r.left + a[0] / boxW * r.width - layer.left) / layer.width * 100,
+        y: r.top + a[1] / boxH * r.height - layer.top,
         dx: dir,
       }));
     };
@@ -363,26 +423,45 @@
       s.className = 'petal';
       s.textContent = BLOSSOM_GLYPHS[(Math.random() * BLOSSOM_GLYPHS.length) | 0];
       const depth = Math.random();
+      let spawnY;
       if (spawns) {
         const a = spawns[(Math.random() * spawns.length) | 0];
         s.style.left = (a.x + randRange(-1.5, 1.5)).toFixed(1) + '%';
-        s.style.top = (a.y + randRange(-1.5, 1.5)).toFixed(1) + '%';
+        spawnY = a.y + randRange(-12, 12);
+        s.style.top = spawnY.toFixed(1) + 'px';
         s.style.setProperty('--y0', '0vh'); // detach exactly on the blossom
         s.style.setProperty('--dx', (a.dx * randRange(8, 18)).toFixed(1) + 'vw');
       } else {
+        const layer = atmosphereEl.getBoundingClientRect();
+        spawnY = -layer.top - window.innerHeight * 0.05;
         s.style.left = randRange(0, 100).toFixed(1) + '%';
-        s.style.top = '-5%';
+        s.style.top = spawnY.toFixed(1) + 'px';
         s.style.setProperty('--dx', (randRange(5, 14) * (Math.random() < 0.5 ? -1 : 1)).toFixed(1) + 'vw');
       }
-      s.style.fontSize = (sizeMin + (sizeMax - sizeMin) * (0.35 + depth * 0.65)).toFixed(0) + 'px';
+      const size = sizeMin + (sizeMax - sizeMin) * (0.35 + depth * 0.65);
+      const exitPad = Math.max(48, size * 2);
+      s.style.fontSize = size.toFixed(0) + 'px';
+      s.style.setProperty('--spawn-y', spawnY.toFixed(1) + 'px');
+      s.style.setProperty('--exit-pad', exitPad.toFixed(1) + 'px');
       s.style.setProperty('--po', (0.42 + depth * 0.43).toFixed(2));
       s.style.filter = 'blur(' + (2.6 - depth * 1.8).toFixed(1) + 'px)';
-      // fall, sway, rock — a staggered positive delay on the fall, so on load
-      // the shower visibly builds out of the branches instead of popping
-      // into mid-air; sway/rock stay phase-desynced with negative delays.
-      const fall = randRange(12, 20 + (1 - depth) * 6);
-      s.style.animationDuration = fall.toFixed(1) + 's, ' + randRange(2.2, 3.8).toFixed(1) + 's, ' + randRange(3.5, 6).toFixed(1) + 's';
-      s.style.animationDelay = randRange(0, 7).toFixed(1) + 's, ' + (-randRange(0, 4)).toFixed(1) + 's, ' + (-randRange(0, 5)).toFixed(1) + 's';
+      // Scale the original one-viewport timing to the remaining page distance
+      // so terminal velocity stays familiar. A fresh cohort still detaches at
+      // the branches; the rest starts phase-seeded along the long runway so
+      // the lower sections are populated from first paint.
+      const baseFall = randRange(12, 20 + (1 - depth) * 6);
+      const fall = petalFallDuration(atmosphereHeight, spawnY, window.innerHeight, baseFall, exitPad);
+      const swayDuration = randRange(2.2, 3.8);
+      const rockDuration = randRange(3.5, 6);
+      const freshAtBranch = fromBranches && i < Math.max(6, Math.round(count * 0.35));
+      const fallDelay = freshAtBranch ? randRange(0, 7) : -randRange(0, fall);
+      s.dataset.spawnY = spawnY.toFixed(1);
+      s.dataset.baseFall = baseFall.toFixed(2);
+      s.dataset.exitPad = exitPad.toFixed(1);
+      s.dataset.swayDuration = swayDuration.toFixed(1);
+      s.dataset.rockDuration = rockDuration.toFixed(1);
+      s.style.animationDuration = fall.toFixed(2) + 's, ' + s.dataset.swayDuration + 's, ' + s.dataset.rockDuration + 's';
+      s.style.animationDelay = fallDelay.toFixed(2) + 's, ' + (-randRange(0, 4)).toFixed(1) + 's, ' + (-randRange(0, 5)).toFixed(1) + 's';
       frag.appendChild(s);
     }
     return frag;
@@ -410,6 +489,9 @@
     if (!atmosphereEl || mode === atmosphereCurrent) return;
     atmosphereCurrent = mode;
     atmosphereEl.innerHTML = '';
+    const pagePetals = mode === 'blossom' || mode === 'blossom-heavy';
+    atmosphereEl.classList.toggle('atmosphere--page', pagePetals);
+    if (pagePetals) syncAtmosphereBounds();
     if (mode === 'none') return;
     if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(particleCount(46, PARTICLE_FLAGS))); return; }
     if (mode === 'blossom-heavy') { atmosphereEl.appendChild(buildPetals(particleCount(48, PARTICLE_FLAGS), 12, 26, false)); return; }

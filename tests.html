@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=24"></script>
+  <script src="lib.js?v=25"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -587,6 +587,12 @@
       // A hidden-tab rAF gap is clamped to 100ms, not applied in full.
       eq('smooth step clamps a hidden-tab gap to 100ms', L.smoothScrollStep(0, 100, 0.1, 5000, 0.5), L.smoothScrollStep(0, 100, 0.1, 100, 0.5));
 
+      // ---- Full-page cherry-blossom runway ----
+      eq('petal fall keeps its original speed for a one-viewport page', L.petalFallDuration(1000, 0, 1000, 16, 48), 16);
+      eq('petal fall scales to the remaining long-page distance', L.petalFallDuration(4000, 100, 1000, 16, 48), 56.4);
+      eq('petal fall includes an above-screen spawn', L.petalFallDuration(4000, -50, 1000, 16, 48), 58.54);
+      eq('petal fall rejects an unusable viewport', L.petalFallDuration(4000, 0, 0, 16, 48), 0);
+
       var s = document.getElementById('summary');
       s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
       s.className = fail === 0 ? 'pass' : 'fail';
@@ -597,10 +603,10 @@
       // files. Needs HTTP; shows a neutral SKIP row on file:// where fetch
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
-        fetch('index.html').then(function (r) { return r.text(); }),
-        fetch('style.css').then(function (r) { return r.text(); }),
-        fetch('script.js').then(function (r) { return r.text(); }),
-        fetch('sw.js').then(function (r) { return r.text(); })
+        fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=38', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=47', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2], swSrc = src[3];
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
@@ -635,6 +641,9 @@
 
         // ---- Liquid glass on the content cards ----
         var cssFlat = cssSrc.replace(/\r/g, '');
+        ok('page-height petal runway is wired', cssFlat.indexOf('.atmosphere.atmosphere--page { height: var(--atmosphere-height, 100vh); }') !== -1 && cssFlat.indexOf('var(--atmosphere-height, 100vh) - var(--spawn-y, 0px) + var(--exit-pad, 48px)') !== -1);
+        ok('blossom bounds follow the live page height', scriptSrc.indexOf("classList.toggle('atmosphere--page', pagePetals)") !== -1 && scriptSrc.indexOf('new ResizeObserver(scheduleAtmosphereBounds).observe(pageEl)') !== -1);
+        ok('petals keep a fresh branch cohort and seed the full runway', scriptSrc.indexOf('freshAtBranch') !== -1 && scriptSrc.indexOf('-randRange(0, fall)') !== -1);
         [
           'rgba(40,40,110,.32), var(--glint)',   // discord
           'rgba(20,40,70,.32), var(--glint)',    // steam

@@ -711,6 +711,13 @@ eq('particleCount: blossom-heavy scales to 29', L.particleCount(48, { saveData: 
 eq('particleCount: small screens floor at 8', L.particleCount(12, { smallScreen: true }), 8);
 eq('particleCount: junk input yields nothing', L.particleCount('nope', {}), 0);
 ok('particleCount exported + used with device flags', scriptSrc.includes('particleCount(46, PARTICLE_FLAGS)') && scriptSrc.includes('particleCount(30, PARTICLE_FLAGS)'));
+eq('petal fall keeps its original speed for a one-viewport page', L.petalFallDuration(1000, 0, 1000, 16, 48), 16);
+eq('petal fall scales to the remaining long-page distance', L.petalFallDuration(4000, 100, 1000, 16, 48), 56.4);
+eq('petal fall includes an above-screen spawn', L.petalFallDuration(4000, -50, 1000, 16, 48), 58.54);
+eq('petal fall rejects an unusable viewport', L.petalFallDuration(4000, 0, 0, 16, 48), 0);
+ok('page-height petal runway is wired', cssFlat.includes('.atmosphere.atmosphere--page { height: var(--atmosphere-height, 100vh); }') && cssFlat.includes('var(--atmosphere-height, 100vh) - var(--spawn-y, 0px) + var(--exit-pad, 48px)'));
+ok('blossom bounds follow the live page height', scriptSrc.includes("classList.toggle('atmosphere--page', pagePetals)") && scriptSrc.includes('new ResizeObserver(scheduleAtmosphereBounds).observe(pageEl)'));
+ok('petals keep a fresh branch cohort and seed the full runway', scriptSrc.includes('freshAtBranch') && scriptSrc.includes('-randRange(0, fall)'));
 ok('wheel hijacked non-passively', scriptSrc.includes("addEventListener('wheel'") && scriptSrc.includes('{ passive: false }'));
 ok('heavy scroll gated on reduced motion + KazuLib', scriptSrc.includes('KazuLib.wheelDeltaPx') && scriptSrc.includes('KazuLib.smoothScrollStep') && scriptSrc.includes('prefers-reduced-motion'));
 ok('heavy scroll feeds the real frame delta to the step', scriptSrc.includes('smoothScrollStep(window.scrollY, targetY, SMOOTH_EASE, dt, 0.5)'));

@@ -293,6 +293,25 @@
     return Math.min(64, Math.max(8, n));
   }
 
+  // Scales a petal's existing one-viewport fall time to the remaining page
+  // distance. This keeps the same terminal velocity on a long document while
+  // ensuring the petal crosses the footer plus a small exit pad before its
+  // animation loops back to the branch.
+  function petalFallDuration(pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
+    var view = +viewportHeight;
+    var base = +baseSeconds;
+    if (!isFinite(view) || view <= 0 || !isFinite(base) || base <= 0) return 0;
+    var page = +pageHeight;
+    var spawn = +spawnY;
+    var pad = +exitPad;
+    if (!isFinite(page) || page < view) page = view;
+    if (!isFinite(spawn)) spawn = 0;
+    if (!isFinite(pad) || pad < 0) pad = 0;
+    var reference = view * 1.12;
+    var distance = Math.max(reference, page - spawn + pad);
+    return Math.round(base * distance / reference * 100) / 100;
+  }
+
   // ---- Sky body (sun/moon arc) ---------------------------------------------
   // The scenery layer's celestial body: the sun by day, the moon by night,
   // both travelling the same arc — rising at the left edge of the page,
@@ -986,6 +1005,7 @@
     openMeteoUrl: openMeteoUrl,
     atmosphereMode: atmosphereMode,
     particleCount: particleCount,
+    petalFallDuration: petalFallDuration,
     sunTimesUK: sunTimesUK,
     skyArcPoint: skyArcPoint,
     skyBodyState: skyBodyState,
