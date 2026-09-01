@@ -2184,6 +2184,20 @@
       });
     }, { rootMargin: '0px 0px -10% 0px' });
     revealEls.forEach((el) => revealObserver.observe(el));
+    // The -10% bottom margin can never trip for the last sliver of the page:
+    // the footer is shorter than the margin band, so it stayed hidden forever.
+    // Reaching the bottom of the document reveals whatever is left.
+    const revealStragglers = () => {
+      if (window.scrollY + window.innerHeight < document.documentElement.scrollHeight - 4) return;
+      revealEls.forEach((el) => {
+        if (el.classList.contains('is-visible')) return;
+        revealObserver.unobserve(el);
+        revealEl(el, 0);
+      });
+    };
+    window.addEventListener('scroll', revealStragglers, { passive: true });
+    window.addEventListener('load', revealStragglers, { once: true });
+    revealStragglers(); // a page that fits the viewport gets no scroll events
   } else {
     // Low power / no observer support: everything is simply present.
     revealEls.forEach((el) => revealEl(el, 0));

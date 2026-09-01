@@ -682,6 +682,7 @@
         ok('reveal resolves via .is-visible', scriptSrc.indexOf("classList.add('is-visible')") !== -1);
         ok('reveal is one-shot (unobserve after showing)', scriptSrc.indexOf('unobserve') !== -1);
         ok('no-observer fallback reveals everything', scriptSrc.indexOf("'IntersectionObserver' in window") !== -1);
+        ok('bottom-of-page fallback reveals the stragglers', scriptSrc.indexOf('revealStragglers') !== -1 && scriptSrc.indexOf('scrollHeight - 4') !== -1);
         ok('scroll-reveal section present in the stylesheet', cssFlat.indexOf('============ SCROLL REVEAL ============') !== -1);
         ok('wheel hijacked non-passively', scriptSrc.indexOf("addEventListener('wheel'") !== -1 && scriptSrc.indexOf('{ passive: false }') !== -1);
         ok('heavy scroll gated on reduced motion + KazuLib', scriptSrc.indexOf('KazuLib.wheelDeltaPx') !== -1 && scriptSrc.indexOf('KazuLib.smoothScrollStep') !== -1 && scriptSrc.indexOf('prefers-reduced-motion') !== -1);

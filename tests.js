@@ -634,6 +634,10 @@ ok('same-batch reveals stagger', scriptSrc.includes('REVEAL_STAGGER') && scriptS
 ok('reveal resolves via .is-visible', scriptSrc.includes("classList.add('is-visible')"));
 ok('reveal is one-shot (unobserve after showing)', scriptSrc.includes('unobserve'));
 ok('no-observer fallback reveals everything', scriptSrc.includes("'IntersectionObserver' in window"));
+// The observer's -10% bottom margin can never trip for the last sliver of the
+// page (the footer is shorter than the margin band) — a scroll fallback
+// reveals the stragglers once the document bottom is reached.
+ok('bottom-of-page fallback reveals the stragglers', scriptSrc.includes('revealStragglers') && scriptSrc.includes('scrollHeight - 4'));
 ok('scroll-reveal section present in the stylesheet', cssFlat.includes('============ SCROLL REVEAL ============'));
 
 // ---- Live API freshness (static wiring checks) ----
