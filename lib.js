@@ -293,6 +293,27 @@
     return Math.min(64, Math.max(8, n));
   }
 
+  // Whole-effect kill switch for devices that can't afford the ambient layer
+  // at all — where particleCount merely lightens the drift, this takes the
+  // petals, glass blur/refraction, wheel-lerp and entrance animations away
+  // entirely (script.js mirrors the verdict onto body.low-power, and
+  // style.css does the rest). True when the visitor asked for it (save-data,
+  // reduced motion) or when at least two weakness signals stack up — a weak
+  // phone trips lowConcurrency + coarsePointer + smallScreen together, while
+  // any single signal alone still gets the full page at reduced density.
+  // `o` flags: saveData, reducedMotion, lowMemory, lowConcurrency,
+  // coarsePointer, smallScreen.
+  function lowPowerMode(o) {
+    o = o || {};
+    if (o.saveData || o.reducedMotion) return true;
+    var weak = 0;
+    if (o.lowMemory) weak++;
+    if (o.lowConcurrency) weak++;
+    if (o.coarsePointer) weak++;
+    if (o.smallScreen) weak++;
+    return weak >= 2;
+  }
+
   // Scales a petal's existing one-viewport fall time to the remaining page
   // distance. This keeps the same terminal velocity on a long document while
   // ensuring the petal crosses the footer plus a small exit pad before its
@@ -1005,6 +1026,7 @@
     openMeteoUrl: openMeteoUrl,
     atmosphereMode: atmosphereMode,
     particleCount: particleCount,
+    lowPowerMode: lowPowerMode,
     petalFallDuration: petalFallDuration,
     sunTimesUK: sunTimesUK,
     skyArcPoint: skyArcPoint,

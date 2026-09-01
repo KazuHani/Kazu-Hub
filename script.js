@@ -307,6 +307,10 @@
     smallScreen: Math.min(window.innerWidth, window.innerHeight) < 500,
     lowConcurrency: !!(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4),
     saveData: !!(navigator.connection && navigator.connection.saveData),
+    // Two extra signals that only feed the low-power verdict below;
+    // particleCount keeps its original four.
+    lowMemory: !!(navigator.deviceMemory && navigator.deviceMemory <= 4),
+    reducedMotion: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches),
   };
   // particleCount() clamps to a minimum of 8 (it's sized for petals/drops);
   // the one-off canvas bursts (confetti, balloons) scale smaller counts off
@@ -317,6 +321,26 @@
     const light = o && (o.coarsePointer || o.smallScreen || o.lowConcurrency || o.saveData);
     return Math.min(64, Math.max(8, light ? Math.round(n * 0.6) : n));
   };
+  // Same for the low-power verdict (see lib.js).
+  const lowPowerMode = (KazuLib && KazuLib.lowPowerMode) || function (o) {
+    o = o || {};
+    if (o.saveData || o.reducedMotion) return true;
+    let weak = 0;
+    if (o.lowMemory) weak++;
+    if (o.lowConcurrency) weak++;
+    if (o.coarsePointer) weak++;
+    if (o.smallScreen) weak++;
+    return weak >= 2;
+  };
+
+  // Low-power mode: the device can't afford the ambient layer at all, so the
+  // whole class of work is skipped rather than scaled down — no particles, no
+  // backdrop blur/refraction, no wheel-lerp smooth scroll, no entrance motion.
+  // The body class lets style.css drop the CSS half (blur, infinite loops,
+  // scroll-reveal hiding); the JS halves are guarded where they're built.
+  const LOW_POWER = lowPowerMode(PARTICLE_FLAGS);
+  if (LOW_POWER) document.body.classList.add('low-power');
+
   const petalFallDuration = (KazuLib && KazuLib.petalFallDuration) || function (pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
     const view = +viewportHeight;
     const base = +baseSeconds;
@@ -487,6 +511,9 @@
   // the first call replaces them.
   function setAtmosphere(mode) {
     if (!atmosphereEl || mode === atmosphereCurrent) return;
+    // Low-power devices get a still sky — an explicit ?atmosphere= preview
+    // param still wins (it's a deliberate look, not the weather's idea).
+    if (LOW_POWER && !ATMOSPHERE_OVERRIDE) mode = 'none';
     atmosphereCurrent = mode;
     atmosphereEl.innerHTML = '';
     const pagePetals = mode === 'blossom' || mode === 'blossom-heavy';
@@ -754,11 +781,23 @@
   // REST fallback: used for the first paint and whenever the socket is down.
   // While the socket is live it is the fresher source, so the poll no-ops.
   // cache: 'no-store' — presence must never come from the browser HTTP cache.
+  // Direct first; on failure (Lanyard hiccup, or an ad blocker / DNS filter
+  // blackholing api.lanyard.rest) retry once through corsproxy.io like the
+  // Steam/MAL/Letterboxd loaders — the browser then talks to corsproxy.io's
+  // domain, which blocklists don't know. The WebSocket can't be proxied, so
+  // on a blocking network the 20s REST poll is what keeps the card alive.
   async function loadDiscord() {
     if (lanyardWsLive) return;
+    const url = 'https://api.lanyard.rest/v1/users/' + DISCORD_ID;
     try {
-      const r = await fetchT('https://api.lanyard.rest/v1/users/' + DISCORD_ID, { cache: 'no-store' });
-      const j = await r.json();
+      let j;
+      try {
+        const r = await fetchT(url, { cache: 'no-store' });
+        j = await r.json();
+      } catch (e) {
+        const r2 = await fetchT('https://corsproxy.io/?' + encodeURIComponent(url), { cache: 'no-store' });
+        j = await r2.json();
+      }
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
       if (lanyardWsLive) return; // a socket update beat this response
       renderDiscord(j.data);
@@ -1538,6 +1577,9 @@
 
   function applyTheme(dark) {
     document.body.dataset.theme = dark ? 'dark' : 'light';
+    // <html> tracks the theme too — it owns the canvas/overscroll colour (see
+    // the critical inline <style> in index.html).
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     orb.dataset.dark = dark ? '1' : '0';
     orb.title = dark ? 'Switch to light theme' : 'Switch to dark theme';
     orb.setAttribute('aria-pressed', dark ? 'true' : 'false');
@@ -1940,7 +1982,7 @@
   }
 
   function fireConfetti() {
-    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (LOW_POWER) return; // reduced motion is one of the low-power signals
     if (document.getElementById('confetti-canvas')) return; // already running
     const canvas = document.createElement('canvas');
     canvas.id = 'confetti-canvas';
@@ -2072,7 +2114,7 @@
   function startBalloons() {
     if (balloonCanvas) return; // applySeasons re-calls every second: stay idempotent
     if (!KazuLib || !KazuLib.balloonDriftStep || !KazuLib.ropeStep) return;
-    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (LOW_POWER) return; // reduced motion is one of the low-power signals
     balloonCanvas = document.createElement('canvas');
     balloonCanvas.id = 'balloon-canvas';
     balloonCanvas.setAttribute('aria-hidden', 'true');
@@ -2117,7 +2159,7 @@
     }
     el.classList.add('is-visible');
   };
-  if ('IntersectionObserver' in window) {
+  if (!LOW_POWER && 'IntersectionObserver' in window) {
     const revealObserver = new IntersectionObserver((entries) => {
       let batch = 0;
       entries.forEach((entry) => {
@@ -2128,7 +2170,7 @@
     }, { rootMargin: '0px 0px -10% 0px' });
     revealEls.forEach((el) => revealObserver.observe(el));
   } else {
-    // No observer support: everything is simply present.
+    // Low power / no observer support: everything is simply present.
     revealEls.forEach((el) => revealEl(el, 0));
   }
 
@@ -2148,7 +2190,7 @@
   function dragonFly() {
     if (konamiBusy) return;
     konamiBusy = true;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (LOW_POWER) {
       showToast('You found the dragon! 🐉');
       konamiBusy = false;
       return;
@@ -2432,6 +2474,11 @@
     'CSS' in window && CSS.supports && CSS.supports('backdrop-filter', 'url("#a")') &&
     /Chrome|Chromium|Edg|OPR/.test(ua) && !/CriOS|EdgiOS|FxiOS|OPiOS/.test(ua);
   if (!CAN_REFRACT) return;
+  // Low-power mode (the main IIFE set the body class): baking per-card
+  // displacement maps and re-running SVG filters against the backdrop is
+  // exactly the work the mode exists to skip. style.css keeps the cards
+  // readable with no backdrop-filter at all under body.low-power.
+  if (document.body.classList.contains('low-power')) return;
 
   const housing = document.getElementById('glass-filters');
   if (!housing) return;
@@ -2903,6 +2950,8 @@
    ========================================================================== */
 (() => {
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // Low-power mode: native scrolling is cheaper than a per-frame lerp loop.
+  if (document.body.classList.contains('low-power')) return;
 
   const KazuLib = window.KazuLib;
   // Owned by lib.js (single source of truth, gate-tested); local copies below.

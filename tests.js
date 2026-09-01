@@ -642,7 +642,8 @@ ok('scroll-reveal section present in the stylesheet', cssFlat.includes('========
 // never answer for them, and the service worker ignores cross-origin
 // requests entirely (no second cache layer in front of the APIs).
 const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
-ok('discord REST bypasses the HTTP cache', scriptSrc.includes("DISCORD_ID, { cache: 'no-store' }"));
+ok('discord REST bypasses the HTTP cache', scriptSrc.includes("'https://api.lanyard.rest/v1/users/' + DISCORD_ID") && scriptSrc.includes("fetchT(url, { cache: 'no-store' })"));
+ok('discord REST falls back through corsproxy when lanyard is unreachable', scriptSrc.includes("fetchT('https://corsproxy.io/?' + encodeURIComponent(url), { cache: 'no-store' })"));
 ok('steam fetches bypass the HTTP cache', scriptSrc.includes("encodeURIComponent(STEAM_URL), { cache: 'no-store' }") && scriptSrc.includes("fetchT(STEAM_URL, { cache: 'no-store' })"));
 ok('jikan anime + manga bypass the HTTP cache', scriptSrc.includes("'/animelist?status=watching', { cache: 'no-store' }") && scriptSrc.includes("'/mangalist?status=reading', { cache: 'no-store' }"));
 ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split("encodeURIComponent(listUrl), { cache: 'no-store' }").length - 1 === 2);
@@ -727,6 +728,31 @@ ok('aurora live blur removed', !cssFlat.includes('filter: blur(38px)'));
 ok('aurora softness baked into a mask', cssFlat.includes('mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0))'));
 ok('refraction rests while scrolling', scriptSrc.includes("classList.add('glass-scrolling')") && cssFlat.includes('html.glass-scrolling .card:not(.stat-card--bday),'));
 ok('scroll-idle swap restores the frosted base', cssFlat.includes('html.glass-scrolling .toast {'));
+
+// ---- Low-power mode (whole-effect kill switch for weak devices) ----
+// particleCount lightens the drift; lowPowerMode decides when the ambient
+// layer goes away entirely (body.low-power + the JS guards).
+eq('low power: save-data opts out', L.lowPowerMode({ saveData: true }), true);
+eq('low power: reduced motion opts out', L.lowPowerMode({ reducedMotion: true }), true);
+eq('low power: one weak signal is only light density', L.lowPowerMode({ lowConcurrency: true }), false);
+eq('low power: coarse pointer alone is only light density', L.lowPowerMode({ coarsePointer: true }), false);
+eq('low power: weak-phone stack trips the switch', L.lowPowerMode({ coarsePointer: true, lowConcurrency: true }), true);
+eq('low power: low memory + small screen trips the switch', L.lowPowerMode({ lowMemory: true, smallScreen: true }), true);
+eq('low power: desktop keeps the full page', L.lowPowerMode({}), false);
+eq('low power: missing flags object keeps the full page', L.lowPowerMode(), false);
+ok('lowPowerMode exported + drives the body class', scriptSrc.includes('KazuLib.lowPowerMode') && scriptSrc.includes("classList.add('low-power')"));
+ok('low power stills the particle sky', scriptSrc.includes("if (LOW_POWER && !ATMOSPHERE_OVERRIDE) mode = 'none';"));
+ok('low power skips the liquid-glass refraction + the wheel lerp', scriptSrc.split("document.body.classList.contains('low-power')").length - 1 >= 2);
+ok('low power reveals content without the observer', scriptSrc.includes("if (!LOW_POWER && 'IntersectionObserver' in window) {"));
+ok('low power drops the frosted backdrop + ambient loops', cssFlat.includes('body.low-power { --card-blur: none; }') && cssFlat.includes('body.low-power .scroll-reveal {'));
+
+// ---- First paint: no white flash on a cold cache ----
+ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<style>html{background:#0d1b31') && htmlSrc.indexOf('<style>html{background:#0d1b31') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+ok('theme stamped on <html> before first paint', htmlSrc.includes("localStorage.getItem('kazu-dark')") && htmlSrc.includes('document.documentElement.dataset.theme'));
+ok('body picks the stamped theme up pre-content', htmlSrc.includes('document.body.dataset.theme = document.documentElement.dataset.theme'));
+ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" onload="this.media=\'all\'"'));
+ok('applyTheme keeps <html> in sync', scriptSrc.includes("document.documentElement.dataset.theme = dark ? 'dark' : 'light';"));
+ok('html base colours moved into the stylesheet', cssFlat.includes('html { background: #0d1b31; }') && cssFlat.includes('html[data-theme="light"] { background: #eaf6ff; }'));
 
 // ---- Liquid glass: default-on + the LB ordering bug (regression guards) ----
 // The effect is the .card default: any future class="card ..." section gets

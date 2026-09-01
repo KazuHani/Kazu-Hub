@@ -1,6 +1,12 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-html, body { background: #eaf6ff; }
+/* html owns the canvas colour (and the overscroll fringe); body carries the
+   themed gradient on top. Keep these two base colours in sync with the
+   critical inline <style> in index.html, which paints the same colours
+   before this file arrives (no more white first paint on a cold cache). */
+html { background: #0d1b31; }
+html[data-theme="light"] { background: #eaf6ff; }
+body { background: #eaf6ff; }
 
 body {
   position: relative;
@@ -1621,4 +1627,66 @@ html.glass-scrolling .card:not(.stat-card--bday),
 html.glass-scrolling .toast {
   -webkit-backdrop-filter: blur(6px) saturate(1.7) !important;
           backdrop-filter: blur(6px) saturate(1.7) !important;
+}
+
+/* ============ LOW-POWER MODE (body.low-power) ============ */
+/* script.js sets body.low-power when KazuLib.lowPowerMode() says the device
+   can't afford the ambient layer: the visitor asked for it (save-data,
+   prefers-reduced-motion) or several weakness signals stacked up (few cores +
+   coarse pointer + small screen + little RAM — see lib.js). This block mirrors
+   what the per-feature prefers-reduced-motion queries already do, then goes
+   where media queries can't:
+     - the frosted-glass backdrop-filter behind every card (a live blur that
+       re-runs for every frame while anything animates beneath it) is switched
+       off, and the translucent fills go near-solid so text contrast survives
+       the lost blur;
+     - the liquid-glass SVG refraction, particle layers, canvas bursts and the
+       wheel-lerp smooth scroll are skipped in script.js (nothing to override
+       here — they never get built);
+     - the remaining ambient loops (branch sway, halo spin, shimmer, twinkle,
+       aurora drift, equalizer, pulse dots) and all entrance motion stop. */
+body.low-power { --card-blur: none; }
+body.low-power[data-theme="dark"] { --card-bg: rgba(40,63,98,.95); }
+body.low-power[data-theme="light"] { --card-bg: rgba(255,255,255,.95); }
+body.low-power .card:not(.stat-card--bday),
+body.low-power .stat-card:not(.stat-card--bday),
+body.low-power .social-card,
+body.low-power .music-card,
+body.low-power .discord-card,
+body.low-power .steam-card,
+body.low-power .mal-card,
+body.low-power .lb-card,
+body.low-power .story-card,
+body.low-power .toast,
+body.low-power .dev-panel,
+body.low-power .modal-overlay,
+body.low-power .modal-panel {
+  -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+}
+body.low-power .petal,
+body.low-power .drop { animation: none; display: none; }
+body.low-power .atmosphere,
+body.low-power .sakura-scene,
+body.low-power .sakura-branch--a,
+body.low-power .sakura-branch--b,
+body.low-power .aurora-ribbon,
+body.low-power .xmas-lights circle,
+body.low-power .pfp-ring,
+body.low-power .pfp-ring::before,
+body.low-power .title,
+body.low-power .pulse-dot,
+body.low-power .music-viz span,
+body.low-power #theme-orb,
+body.low-power .hero .pfp,
+body.low-power .stat-card {
+  animation: none !important;
+}
+body.low-power .music-viz { display: none; }
+/* Everything is simply present — the observer/stagger in script.js is skipped
+   too, this is the belt-and-braces half (and covers a slow script.js). */
+body.low-power .scroll-reveal {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
 }

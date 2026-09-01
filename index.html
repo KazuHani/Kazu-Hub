@@ -44,8 +44,27 @@
 <link rel="dns-prefetch" href="//i.scdn.co">
 <link rel="dns-prefetch" href="//avatars.steamstatic.com">
 <link rel="dns-prefetch" href="//a.ltrbxd.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=38">
+<!-- Critical first paint: the stylesheets below are render-blocking, so on a
+     cold cache the page used to sit WHITE until style.css arrived. Stamp the
+     theme on <html> from the saved choice (the same 'kazu-dark' key script.js
+     re-reads at boot; OS preference when unsaved, dark as the final default)
+     and paint the canvas its base colour inline — the first paint is themed
+     immediately, and saved-light visitors skip the dark flash too. Keep the
+     two colours in sync with the html rules at the top of style.css. -->
+<script>
+  try {
+    var t = localStorage.getItem('kazu-dark');
+    var dark = t !== null ? t === '1' : !(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+</script>
+<style>html{background:#0d1b31;color-scheme:dark}html[data-theme="light"]{background:#eaf6ff;color-scheme:light}</style>
+<!-- Fonts no longer block the first paint: the stylesheet loads off the
+     critical path and applies once it lands (display=swap already covers the
+     text swap). noscript keeps the plain render-blocking link for no-JS. -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="style.css?v=39">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -70,6 +89,11 @@
 </script>
 </head>
 <body data-theme="dark">
+<script>
+  // Carry the head-stamped theme onto <body> before any content parses, so
+  // the body[data-theme] rules are correct from the very first paint.
+  try { document.body.dataset.theme = document.documentElement.dataset.theme || 'dark'; } catch (e) {}
+</script>
 
   <!-- moonlit sakura scenery: glowing moon + branches reaching in from the
        page edges. Purely decorative; hidden during the Christmas season. -->
@@ -784,8 +808,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=25"></script>
-<script src="script.js?v=47"></script>
+<script src="lib.js?v=26"></script>
+<script src="script.js?v=49"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.
