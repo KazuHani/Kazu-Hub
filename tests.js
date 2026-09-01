@@ -643,12 +643,13 @@ ok('scroll-reveal section present in the stylesheet', cssFlat.includes('========
 // requests entirely (no second cache layer in front of the APIs).
 const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
 ok('discord REST bypasses the HTTP cache', scriptSrc.includes("'https://api.lanyard.rest/v1/users/' + DISCORD_ID") && scriptSrc.includes("fetchT(url, { cache: 'no-store' })"));
-ok('discord REST falls back through corsproxy when lanyard is unreachable', scriptSrc.includes("fetchT('https://corsproxy.io/?' + encodeURIComponent(url), { cache: 'no-store' })"));
-ok('steam fetches bypass the HTTP cache', scriptSrc.includes("encodeURIComponent(STEAM_URL), { cache: 'no-store' }") && scriptSrc.includes("fetchT(STEAM_URL, { cache: 'no-store' })"));
+ok('discord REST falls back through the CORS proxy when lanyard is unreachable', scriptSrc.includes('const r2 = await proxyFetch(url);'));
+ok('steam fetches bypass the HTTP cache', scriptSrc.includes('const r = await proxyFetch(STEAM_URL);') && scriptSrc.includes("fetchT(STEAM_URL, { cache: 'no-store' })"));
 ok('jikan anime + manga bypass the HTTP cache', scriptSrc.includes("'/animelist?status=watching', { cache: 'no-store' }") && scriptSrc.includes("'/mangalist?status=reading', { cache: 'no-store' }"));
-ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split("encodeURIComponent(listUrl), { cache: 'no-store' }").length - 1 === 2);
-ok('letterboxd RSS bypasses the HTTP cache', scriptSrc.includes("encodeURIComponent(rss), { cache: 'no-store' }"));
-ok('youtube playlist feed bypasses the HTTP cache', scriptSrc.includes("encodeURIComponent(feed), { cache: 'no-store' }"));
+ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split('const r2 = await proxyFetch(listUrl);').length - 1 === 2);
+ok('letterboxd RSS bypasses the HTTP cache', scriptSrc.includes('const r = await proxyFetch(rss);'));
+ok('youtube playlist feed bypasses the HTTP cache', scriptSrc.includes('const r = await proxyFetch(feed);'));
+ok('one proxy helper feeds every cross-origin card', scriptSrc.includes("return fetchT('https://proxy.cors.sh/' + target, opts);") && !scriptSrc.includes("fetchT('https://corsproxy.io"));
 ok('playlist tracks ride the poller loop', scriptSrc.includes('{ fn: loadPlaylistTracks,'));
 ok('playlist card has a live-swap mount point', htmlSrc.includes('id="musicFeatured"'));
 // Every live fetch rides fetchT (script.js): a 12s AbortSignal.timeout so a

@@ -200,7 +200,7 @@
   }
 
   // ---------- Fetch timeout wrapper ----------
-  // A hung API or proxy (corsproxy.io on a bad day) used to pin a card on its
+  // A hung API or proxy (the CORS proxy on a bad day) used to pin a card on its
   // loading line forever. AbortSignal.timeout fails the fetch fast instead,
   // landing in each loader's existing catch (error card / localStorage cache
   // / fallback quotes) — no new failure modes. Older browsers without it get
@@ -210,6 +210,20 @@
       return fetch(url, Object.assign({}, opts, { signal: AbortSignal.timeout(12000) }));
     }
     return fetch(url, opts);
+  }
+
+  // ---------- Cross-origin proxy ----------
+  // Steam, Letterboxd, YouTube and MAL send no Access-Control-Allow-Origin,
+  // so the browser can only reach them through a CORS proxy. corsproxy.io
+  // played that role until it went key-only; proxy.cors.sh serves the same
+  // raw byte passthrough with no key today. If keyless access ever stops, a
+  // free cors.sh key is public by design and pinned to this site's Origin —
+  // paste it into CORS_PROXY_KEY and every loader below picks it up.
+  const CORS_PROXY_KEY = '';
+  function proxyFetch(target) {
+    const opts = { cache: 'no-store' };
+    if (CORS_PROXY_KEY) opts.headers = { 'x-cors-api-key': CORS_PROXY_KEY };
+    return fetchT('https://proxy.cors.sh/' + target, opts);
   }
 
   // ---------- Render dedup signatures ----------
@@ -782,10 +796,11 @@
   // While the socket is live it is the fresher source, so the poll no-ops.
   // cache: 'no-store' — presence must never come from the browser HTTP cache.
   // Direct first; on failure (Lanyard hiccup, or an ad blocker / DNS filter
-  // blackholing api.lanyard.rest) retry once through corsproxy.io like the
-  // Steam/MAL/Letterboxd loaders — the browser then talks to corsproxy.io's
-  // domain, which blocklists don't know. The WebSocket can't be proxied, so
-  // on a blocking network the 20s REST poll is what keeps the card alive.
+  // blackholing api.lanyard.rest) retry once through the shared CORS proxy
+  // (proxyFetch — the same one the Steam/MAL/Letterboxd cards ride) so the
+  // browser talks to the proxy's domain, which blocklists don't know. The
+  // WebSocket can't be proxied, so on a blocking network the 20s REST poll
+  // is what keeps the card alive.
   async function loadDiscord() {
     if (lanyardWsLive) return;
     const url = 'https://api.lanyard.rest/v1/users/' + DISCORD_ID;
@@ -795,7 +810,7 @@
         const r = await fetchT(url, { cache: 'no-store' });
         j = await r.json();
       } catch (e) {
-        const r2 = await fetchT('https://corsproxy.io/?' + encodeURIComponent(url), { cache: 'no-store' });
+        const r2 = await proxyFetch(url);
         j = await r2.json();
       }
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
@@ -1016,7 +1031,7 @@
         // so a direct browser fetch can never succeed. (Order flipped after the
         // direct attempt wasted one doomed round trip on every 5-min poll.)
         // no-store: status must track the server, not the browser HTTP cache.
-        const r = await fetchT('https://corsproxy.io/?' + encodeURIComponent(STEAM_URL), { cache: 'no-store' });
+        const r = await proxyFetch(STEAM_URL);
         if (!r.ok) throw new Error('proxy failed');
         xmlText = await r.text();
       } catch (e) {
@@ -1219,7 +1234,7 @@
   // because it is CORS-clean, but MAL has been refusing its scrape of the
   // user endpoints for long stretches (they 504 while the rest of Jikan is
   // fine). The fallback is MAL's own load.json — the endpoint myanimelist.net
-  // itself uses — reached through the same corsproxy.io the Steam card uses,
+  // itself uses — reached through the shared CORS proxy (proxyFetch),
   // because MAL sends no Access-Control-Allow-Origin.
   async function fetchMalRows() {
     try {
@@ -1237,7 +1252,7 @@
     } catch (e) {
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetchT('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
+      const r2 = await proxyFetch(listUrl);
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
@@ -1287,7 +1302,7 @@
     } catch (e) {
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
-      const r2 = await fetchT('https://corsproxy.io/?' + encodeURIComponent(listUrl), { cache: 'no-store' });
+      const r2 = await proxyFetch(listUrl);
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected mangalist load.json payload');
@@ -1324,7 +1339,7 @@
   // ---------- Letterboxd (latest diary entry via RSS) ----------
   // Letterboxd has no public API, but every profile publishes a diary RSS
   // feed. No Access-Control-Allow-Origin there either, so it rides the same
-  // corsproxy.io the Steam and MAL fallbacks use. Parsing lives in lib.js
+  // CORS proxy the Steam and MAL fallbacks use. Parsing lives in lib.js
   // (regex-based, DOM-free, gate-tested); the last good entry is cached in
   // localStorage exactly like the MAL rows.
   const LB_USER = 'KazuHani';
@@ -1370,7 +1385,7 @@
     if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
-      const r = await fetchT('https://corsproxy.io/?' + encodeURIComponent(rss), { cache: 'no-store' });
+      const r = await proxyFetch(rss);
       if (!r.ok) throw new Error('proxy status ' + r.status);
       const entry = KazuLib.parseLetterboxdRss(await r.text());
       renderLetterboxd(entry);
@@ -1430,7 +1445,7 @@
   // additions first) — keyless, so the "From the playlist" rows track the
   // real playlist instead of going stale: a song added in YouTube Music
   // appears here on the next poll. No CORS header on the feed, so it rides
-  // the same corsproxy.io as Letterboxd; parsing lives in lib.js (regex,
+  // the same CORS proxy as Letterboxd; parsing lives in lib.js (regex,
   // DOM-free, gate-tested). Failure order: localStorage cache → the static
   // snapshot rows shipped in index.html.
   const YTM_PLAYLIST_ID = 'PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m';
@@ -1462,7 +1477,7 @@
     if (!KazuLib || !KazuLib.parseYouTubePlaylistRss) return;
     try {
       const feed = 'https://www.youtube.com/feeds/videos.xml?playlist_id=' + YTM_PLAYLIST_ID;
-      const r = await fetchT('https://corsproxy.io/?' + encodeURIComponent(feed), { cache: 'no-store' });
+      const r = await proxyFetch(feed);
       if (!r.ok) throw new Error('proxy status ' + r.status);
       const rows = KazuLib.parseYouTubePlaylistRss(await r.text()).slice(0, 5);
       if (!rows.length) throw new Error('feed had no usable entries');
