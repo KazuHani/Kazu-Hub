@@ -107,6 +107,14 @@ These are load-bearing; read before editing.
   in `tests.html` for `lib.js`), keep the matching entries in `sw.js`'s
   `PRECACHE` list in sync, and bump `CACHE` in `sw.js` if `sw.js` itself
   changes.
+- **Staged boot & populate animation.** Startup work runs in priority order,
+  not all at once: first API fetches ride the `firstDelay` ladder in the
+  `POLLERS` array (stretch gaps via `bootGap`), heavy layers wait for
+  `scheduleIdle`, and the glass-map bake runs in idle slices. When a live
+  card's data arrives, swap its loading row out through `popReveal(loadedEl,
+  loadingEl)` — never raw `classList` toggles — so the content fades/rises in
+  and the card's height glides to fit. Both paths must stay free for
+  low-power (`LOW_POWER`) and reduced-motion devices (instant swap).
 - **Timezone rule.** Anything age/birthday-related must run in the
   Europe/London wall-clock frame via `KazuLib.ukWallParts` / `ukWallMs`
   (calendar arithmetic happens in a fake-UTC frame so results are identical on

@@ -276,8 +276,7 @@
       $('liveWeatherDesc').textContent = info.d;
       $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
       if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
-      $('weatherLoaded').classList.remove('hidden');
-      $('weatherLoading').classList.add('hidden');
+      popReveal($('weatherLoaded'), $('weatherLoading'));
       $('weatherError').classList.add('hidden');
       weatherDone = true;
       if (modalKey === 'weather') renderForecastStrip();
@@ -371,6 +370,69 @@
   const scheduleIdle = window.requestIdleCallback
     ? (fn, timeout) => requestIdleCallback(fn, { timeout })
     : (fn, timeout) => setTimeout(fn, Math.min(timeout || 200, 400));
+
+  // ---------- Populate animation ----------
+  // When a live card's data arrives, the "Connecting to…" row used to vanish
+  // and the content snapped in, the card jumping to its new height in one
+  // frame. popReveal() turns that swap into one motion beat: the card's
+  // height glides from the loading height to the content height (WAAPI, so
+  // the inline height cleans itself up when the animation ends) while the
+  // content fades + rises via the .populated-in keyframes in style.css.
+  // Same discipline as the staged boot: low-power and reduced-motion devices
+  // keep the instant swap, and the glass rebake is suppressed while the
+  // height animates so the expansion doesn't trigger a per-frame map rebuild
+  // (one bake lands on the final size instead, via window.kazuGlassSchedule).
+  const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const POP_EASE = 'cubic-bezier(.22,.9,.3,1)';
+
+  // Content-only pop (no height glide): for live swaps that rewrite an
+  // already-visible block, like the playlist rows replacing the static
+  // snapshot. Restarts the keyframes even if the class lingered.
+  function popRefresh(el) {
+    if (!el || LOW_POWER || REDUCED_MOTION) return;
+    el.classList.remove('populated-in');
+    void el.offsetWidth;
+    el.classList.add('populated-in');
+  }
+
+  function popReveal(loadedEl, loadingEl) {
+    if (!loadedEl) { if (loadingEl) loadingEl.classList.add('hidden'); return; }
+    if (!loadedEl.classList.contains('hidden')) {
+      // Later polls re-run the renderers; only the first arrival animates.
+      if (loadingEl) loadingEl.classList.add('hidden');
+      return;
+    }
+    const card = loadedEl.closest ? loadedEl.closest('.card') : null;
+    const still = LOW_POWER || REDUCED_MOTION || !loadedEl.animate;
+    const h0 = (!still && card) ? card.getBoundingClientRect().height : 0;
+    loadedEl.classList.remove('hidden');
+    if (loadingEl) loadingEl.classList.add('hidden');
+    if (still) return;
+    popRefresh(loadedEl);
+    if (!card) return;
+    const h1 = card.getBoundingClientRect().height;
+    if (Math.abs(h1 - h0) < 2) return;
+    window.__kazuPopAnim = (window.__kazuPopAnim || 0) + 1;
+    let settled = false;
+    const anim = card.animate(
+      [{ height: h0 + 'px', overflow: 'hidden' }, { height: h1 + 'px', overflow: 'hidden' }],
+      { duration: 340, easing: POP_EASE }
+    );
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      window.__kazuPopAnim--;
+      // The ResizeObserver was suppressed during the glide; bake the rim at
+      // the final size now (no-op if the glass layer isn't running).
+      if (window.kazuGlassSchedule) window.kazuGlassSchedule();
+    };
+    anim.onfinish = done;
+    anim.oncancel = done;
+    // Safety net: a suspended renderer (hidden panel/tab) can pause the WAAPI
+    // timeline so neither callback fires — the glass rebake must never stay
+    // suppressed, so settle on a timer too (done() is idempotent).
+    setTimeout(done, 500);
+  }
 
   const petalFallDuration = (KazuLib && KazuLib.petalFallDuration) || function (pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
     const view = +viewportHeight;
@@ -958,8 +1020,7 @@
 
     updatePresenceProgress();
     discordHasData = true;
-    $('discordLoaded').classList.remove('hidden');
-    $('discordLoading').classList.add('hidden');
+    popReveal($('discordLoaded'), $('discordLoading'));
     $('discordError').classList.add('hidden');
   }
 
@@ -1134,8 +1195,7 @@
         $('steamRecent').classList.add('hidden');
       }
 
-      $('steamLoaded').classList.remove('hidden');
-      $('steamLoading').classList.add('hidden');
+      popReveal($('steamLoaded'), $('steamLoading'));
       $('steamErr').classList.add('hidden');
     } catch (e) {
       console.warn('Steam load failed:', e);
@@ -1216,8 +1276,7 @@
     }
     updateMalIdle();
 
-    $('malLoaded').classList.remove('hidden');
-    $('malLoading').classList.add('hidden');
+    popReveal($('malLoaded'), $('malLoading'));
     $('malError').classList.add('hidden');
   }
 
@@ -1392,8 +1451,7 @@
           '</a>';
       }
     }
-    $('lbLoaded').classList.remove('hidden');
-    $('lbLoading').classList.add('hidden');
+    popReveal($('lbLoaded'), $('lbLoading'));
     $('lbError').classList.add('hidden');
   }
 
@@ -1456,7 +1514,7 @@
             : '<div class="music-track-row">' + inner + '</div>';
         }).join('');
       }
-      wrap.classList.remove('hidden');
+      popReveal(wrap); // first arrival expands the strip; later polls no-op
     } catch (e) {
       // Keep the static card on failure; the playlist link is the fallback content.
     }
@@ -1487,6 +1545,7 @@
           '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
         '</div>' +
       '</a>').join('');
+    popRefresh(list); // live rows pop in over the static snapshot
   }
 
   function ytmCacheRead() {
@@ -2665,10 +2724,11 @@
   let bootIndex = 0;
   let pending = false;
   function schedule() {
-    if (pending || !booted) return;
+    if (pending || !booted || window.__kazuPopAnim) return;
     pending = true;
     requestAnimationFrame(() => { pending = false; refreshAll(); });
   }
+  window.kazuGlassSchedule = schedule; // popReveal fires one rebake when a card's expand glide finishes
   function watchResizes() {
     if ('ResizeObserver' in window) {
       const ro = new ResizeObserver(schedule);

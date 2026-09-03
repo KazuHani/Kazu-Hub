@@ -1035,6 +1035,27 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
   }
 }
 
+/* ============ POPULATE ANIMATION ============ */
+/* When a live card's data arrives, the "Connecting to…" row swaps out and
+   the content pops in: a quick fade + rise on the content block, while
+   script.js's popReveal() glides the card's height from the loading height
+   to the content height in the same beat. The class is added by popReveal
+   only on the hidden → visible transition, and removing display:none
+   restarts the keyframes, so retries after an error animate again.
+   Reduced-motion and low-power keep the old instant swap (popReveal skips
+   both halves there; these rules are the belt to its braces). */
+@keyframes populateIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.populated-in {
+  animation: populateIn .38s cubic-bezier(.22,.9,.3,1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .populated-in { animation: none; }
+}
+body.low-power .populated-in { animation: none; }
+
 /* ============ LIQUID GLASS ============ */
 /* An Apple-style "liquid glass" treatment, applied site-wide: the live-stat
    tiles, the social tiles, the copy toast, the "Right now" presence cards
