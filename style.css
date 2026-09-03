@@ -1,12 +1,20 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
+/* Time-of-day palette. There is only ONE theme now — a soft slate blue that
+   breathes with the UK day: script.js rewrites --bg-h/--bg-s/--bg-l from
+   KazuLib.skyTint once a minute (lighter towards midday, darker and more
+   indigo towards sunset and night). They are registered <number> properties
+   so the per-minute step TRANSITIONS glide inside the gradients below
+   instead of jumping; browsers without @property just step once a minute.
+   The fallbacks in each var() are the deep-night values, matching the
+   critical inline first paint in index.html. */
+@property --bg-h { syntax: '<number>'; inherits: true; initial-value: 215; }
+@property --bg-s { syntax: '<number>'; inherits: true; initial-value: 33; }
+@property --bg-l { syntax: '<number>'; inherits: true; initial-value: 9; }
 /* html owns the canvas colour (and the overscroll fringe); body carries the
-   themed gradient on top. Keep these two base colours in sync with the
-   critical inline <style> in index.html, which paints the same colours
-   before this file arrives (no more white first paint on a cold cache). */
-html { background: #0d1b31; }
-html[data-theme="light"] { background: #eaf6ff; }
-body { background: #eaf6ff; }
+   tinted gradient on top. */
+html { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
+body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
 
 body {
   position: relative;
@@ -16,16 +24,24 @@ body {
   font-family: 'Nunito', system-ui, sans-serif;
   color: var(--ink);
   background: var(--page-bg);
-  transition: background .45s ease, color .45s ease;
+}
+/* Added by script.js AFTER the first tint write has snapped into place, so
+   the once-a-minute updates glide (registered properties above) but the
+   initial set is instant rather than a 90-second fade from night. */
+body[data-bg-live] {
+  transition: --bg-h 90s linear, --bg-s 90s linear, --bg-l 90s linear;
 }
 
 /* ---- Theme variables ---- */
-body[data-theme="dark"] {
+body {
   color-scheme: dark;
-  /* Night sky: the two original corner blooms, now joined by a cool moonlit
-     glow upper-right (seats .sakura-moon) and a faint sakura-pink bloom
-     low-left that ties the sky to the blossom branches. */
-  --page-bg: radial-gradient(720px 520px at 72% 8%, rgba(214,228,255,.07) 0%, rgba(214,228,255,0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.06) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, #15365c 0%, rgba(21,54,92,0) 55%), radial-gradient(1000px 600px at 0% 5%, #1b2a52 0%, rgba(27,42,82,0) 50%), linear-gradient(170deg,#0a1626 0%,#0d1b31 45%,#101a36 100%);
+  /* One soft slate-blue palette, easy on the eyes: moderate saturation,
+     never pitch black, never bright. Every blue below is built from the
+     live --bg-* tint, so the whole sky lightens towards midday, dims and
+     warms towards indigo at sunset, and settles into deep night. The pink
+     bloom low-left stays static — it ties the sky to the blossom branches
+     whatever the hour. */
+  --page-bg: radial-gradient(720px 520px at 72% 8%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16) * 1%) / .5) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16) * 1%) / 0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.07) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9) * 1%) / 0) 55%), radial-gradient(1000px 600px at 0% 5%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7) * 1%)) 0%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7) * 1%) / 0) 50%), linear-gradient(170deg, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 5) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)) 45%, hsl(calc(var(--bg-h, 215) + 8) calc((var(--bg-s, 33) + 4) * 1%) calc((var(--bg-l, 9) + 2) * 1%)) 100%);
   --ink: #eaf4ff;
   --ink-soft: #9db8d4;
   --ink-faint: #6f8aac;
@@ -34,19 +50,6 @@ body[data-theme="dark"] {
   --card-blur: blur(10px);
   --card-bd: 1px solid rgba(92,150,220,.55);
   --card-shadow: 0 14px 34px rgba(3,10,24,.16);
-}
-body[data-theme="light"] {
-  color-scheme: light;
-  /* Day version: warm hazy glow upper-right, the same pink bloom, softened. */
-  --page-bg: radial-gradient(760px 540px at 72% 8%, rgba(255,240,200,.5) 0%, rgba(255,240,200,0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.14) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, #c8ecff 0%, rgba(200,236,255,0) 55%), radial-gradient(1000px 600px at 0% 5%, #dfe4ff 0%, rgba(223,228,255,0) 50%), linear-gradient(170deg,#eaf7ff 0%,#f4f9ff 45%,#eef0ff 100%);
-  --ink: #0b3a5c;
-  --ink-soft: #5a7a96;
-  --ink-faint: #8aa6bd;
-  --accent: #1b7fd1;
-  --card-bg: rgba(255,255,255,.74);
-  --card-blur: blur(10px);
-  --card-bd: 1px solid rgba(125,195,255,.55);
-  --card-shadow: 0 14px 34px rgba(70,150,230,.16);
 }
 
 .hidden { display: none !important; }
@@ -107,8 +110,7 @@ body[data-theme="light"] {
    .atmosphere; it sits earlier in the DOM so petals fall in front of the
    branches. All motion is transform-only; the moon is a static gradient so
    it never repaints under the glass cards' backdrop-filter. Colours come
-   from the --sakura-* custom properties so the light theme can restyle
-   the SVGs. */
+   from the --sakura-* custom properties so seasons can restyle the SVGs. */
 .sakura-scene {
   position: absolute; top: 0; left: 0; right: 0; height: 100vh; overflow: hidden;
   z-index: 0; pointer-events: none;
@@ -119,14 +121,6 @@ body[data-theme="light"] {
   --sakura-bud: #d95f8f;
   --sakura-stamen: #ffe9f2;
   animation: ambientFade 2.2s ease both;
-}
-body[data-theme="light"] .sakura-scene {
-  --sakura-branch: #6d4a57;
-  --sakura-branch-rim: rgba(255,255,255,.35);
-  --sakura-petal: #f7b9d2;
-  --sakura-petal-deep: #e58ab0;
-  --sakura-bud: #dd7ba6;
-  --sakura-stamen: #fff3f8;
 }
 /* Dev-only trajectory overlay. The SVG uses the same percentage frame as
    skyArcPoint(), so it scales with the scenery without JS resize work. It is
@@ -143,11 +137,6 @@ body[data-theme="light"] .sakura-scene {
   fill: none; stroke: rgba(255,239,181,.94); stroke-width: 2px;
   stroke-linecap: round; stroke-dasharray: 7px 10px;
   filter: drop-shadow(0 0 4px rgba(255,211,96,.9));
-}
-body[data-theme="light"] .sky-curve-guide__glow { stroke: rgba(66,143,212,.17); }
-body[data-theme="light"] .sky-curve-guide__line {
-  stroke: rgba(22,112,190,.85);
-  filter: drop-shadow(0 0 3px rgba(71,151,220,.6));
 }
 /* Sky body: the sun by day, the moon by night, riding an arc across the
    scenery layer (script.js positions it from the UK clock once a minute;
@@ -173,13 +162,6 @@ body[data-theme="light"] .sky-curve-guide__line {
   box-shadow: 0 0 70px 34px rgba(255,160,60,.38), 0 0 180px 90px rgba(255,120,40,.16);
 }
 .sky-body--moon.sky-body--low { opacity: .7; }
-/* Light theme: the moon becomes a hazy glow so it reads on the pale sky. */
-body[data-theme="light"] .sky-body--moon {
-  background: radial-gradient(circle at 38% 34%, #fff9e6 0%, #ffefd0 50%, rgba(255,239,208,0) 76%);
-  box-shadow: 0 0 50px 26px rgba(255,224,160,.35), 0 0 120px 60px rgba(255,214,150,.18);
-  opacity: .55;
-}
-body[data-theme="light"] .sky-body--sun { opacity: .8; }
 .sakura-branch { position: absolute; display: block; height: auto; }
 .sakura-branch--a {
   top: 0; right: 0; width: clamp(270px, 30vw, 440px);
@@ -205,41 +187,6 @@ body.season-christmas .sakura-scene { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sakura-scene, .sakura-branch--a, .sakura-branch--b { animation: none; }
-}
-
-/* ---- Theme orb ---- */
-#theme-orb {
-  position: fixed; top: 18px; left: 18px; z-index: 60;
-  width: 56px; height: 56px; border: none; padding: 0; background: none; cursor: pointer;
-  transition: transform .35s cubic-bezier(.34,1.5,.6,1);
-}
-#theme-orb:hover { transform: scale(1.12); }
-#theme-orb:active { transform: scale(.94); }
-#theme-orb > span {
-  display: flex; align-items: center; justify-content: center;
-  width: 56px; height: 56px; border-radius: 50%; font-size: 27px; line-height: 1;
-  background: radial-gradient(circle at 35% 30%, #33437a, #15213c);
-  box-shadow: 0 6px 20px rgba(40,60,120,.55), inset 0 0 0 1px rgba(255,255,255,.14);
-  transition: background .6s ease, box-shadow .6s ease, transform .95s cubic-bezier(.65,0,.35,1);
-  transform: rotate(0deg);
-}
-#theme-orb:hover > span {
-  box-shadow: 0 8px 26px rgba(40,60,120,.7), inset 0 0 0 1px rgba(255,255,255,.24);
-}
-body[data-theme="light"] #theme-orb > span {
-  background: radial-gradient(circle at 35% 30%, #ffe79c, #ffb43d);
-  box-shadow: 0 6px 26px rgba(255,170,40,.6), inset 0 0 0 1px rgba(255,255,255,.45);
-  transform: rotate(360deg);
-}
-body[data-theme="light"] #theme-orb:hover > span {
-  box-shadow: 0 8px 32px rgba(255,170,40,.75), inset 0 0 0 1px rgba(255,255,255,.6);
-}
-@media (max-width: 768px) {
-  #theme-orb:hover { transform: none; }
-}
-@media (max-width: 768px) {
-  #theme-orb { left: auto !important; right: 16px !important; top: 14px !important; transition: none !important; }
-  #theme-orb > span { transition: background .6s ease, box-shadow .6s ease !important; transform: none !important; }
 }
 
 .container {
@@ -826,8 +773,8 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .footer { text-align: center; margin-top: 54px; font-size: 13px; font-weight: 700; color: var(--ink-faint); }
 
 /* ============ SEASONAL EFFECTS ============ */
-/* These rules are intentionally placed AFTER the body[data-theme=...] blocks so the
-   Christmas palette (equal specificity) wins by source order regardless of saved theme. */
+/* These rules intentionally sit AFTER the base palette block so the
+   Christmas repaint (higher specificity) always wins while the season is live. */
 
 /* ---- Birthday: party hat (revealed on body.season-birthday) ---- */
 .party-hat {
@@ -883,8 +830,6 @@ body.season-christmas {
   --card-bg: rgba(16,52,36,.66); --card-blur: blur(12px);
   --card-bd: 1px solid rgba(255,209,102,.38); --card-shadow: 0 14px 34px rgba(2,16,10,.45);
 }
-/* Hide the theme toggle on Christmas (!important beats the mobile media-query !important) */
-body.season-christmas #theme-orb { display: none !important; }
 
 /* ---- Christmas: hero + cards follow the palette ---- */
 /* The base card rules keep their brand colours the rest of the year (and are
@@ -1011,10 +956,6 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
   from { opacity: 0; transform: translateY(26px); filter: blur(12px); }
   to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
 }
-@keyframes orbReveal {
-  from { opacity: 0; transform: translateY(-18px) scale(.5); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
 @keyframes ambientFade {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -1024,7 +965,6 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 .atmosphere { animation: ambientFade 1.6s ease both; }
 
 /* Hero accents */
-#theme-orb { animation: orbReveal .7s cubic-bezier(.34,1.5,.6,1) .08s both; }
 .hero .pfp { animation: revealPop .85s ease-out .14s both; }
 /* (.title carries titleReveal in the .title rule above) */
 
@@ -1042,7 +982,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 
 /* Reduced motion: skip the whole entrance — everything is simply present. */
 @media (prefers-reduced-motion: reduce) {
-  .atmosphere, .sakura-scene, #theme-orb, .hero .pfp, .title, .stat-card {
+  .atmosphere, .sakura-scene, .hero .pfp, .title, .stat-card {
     animation: none !important;
   }
 }
@@ -1631,14 +1571,6 @@ html.cscroll-dragging, html.cscroll-dragging * {
 .cscroll-btn:active { transform: scale(.82); color: var(--accent); }
 .cscroll-btn svg { width: 10px; height: 10px; display: block; fill: currentColor; }
 
-/* Light theme: the frosted track needs a navy tint to stay visible. */
-body[data-theme="light"] .cscroll-track {
-  background: rgba(11,58,92,.08);
-  border-color: rgba(11,58,92,.12);
-}
-body[data-theme="light"] .cscroll-thumb {
-  box-shadow: 0 1px 6px rgba(27,80,130,.3), inset 0 0 0 1px rgba(255,255,255,.65);
-}
 
 /* Inner scrollers (card modal, any overflow container found by the DOM scan
    in script.js): a zero-height sticky wrapper is the host's first in-flow
@@ -1728,8 +1660,7 @@ html.glass-scrolling .toast {
      - the remaining ambient loops (branch sway, halo spin, twinkle,
        aurora drift, equalizer, pulse dots) and all entrance motion stop. */
 body.low-power { --card-blur: none; }
-body.low-power[data-theme="dark"] { --card-bg: rgba(40,63,98,.95); }
-body.low-power[data-theme="light"] { --card-bg: rgba(255,255,255,.95); }
+body.low-power { --card-bg: rgba(40,63,98,.95); }
 body.low-power .card:not(.stat-card--bday),
 body.low-power .stat-card:not(.stat-card--bday),
 body.low-power .social-card,
@@ -1759,7 +1690,6 @@ body.low-power .pfp-ring::before,
 body.low-power .title,
 body.low-power .pulse-dot,
 body.low-power .music-viz span,
-body.low-power #theme-orb,
 body.low-power .hero .pfp,
 body.low-power .stat-card {
   animation: none !important;

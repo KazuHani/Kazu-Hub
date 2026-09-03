@@ -686,6 +686,78 @@
     return { body: isSun ? 'sun' : 'moon', x: point.x, y: point.y, alt: point.alt, low: point.alt < 0.28 };
   };
 
+  // Same clock-driven palette as KazuLib.skyTint / KazuLib.hslToHex; these
+  // local copies keep the background breathing if lib.js fails to load.
+  const skyTint = (KazuLib && KazuLib.skyTint) || function (ukMinutes, dayOfYear) {
+    let t = +ukMinutes;
+    if (isNaN(t)) return null;
+    t = ((t % 1440) + 1440) % 1440;
+    let d = Math.round(+dayOfYear);
+    if (isNaN(d) || d < 1 || d > 366) d = 172;
+    const w = 2 * Math.PI * (d - 172) / 365;
+    const rise = Math.round(397.5 - 97.5 * Math.cos(w));
+    const set = Math.round(1125 + 165 * Math.cos(w));
+    let day = 0;
+    if (t > rise && t < set) day = Math.sin(Math.PI * (t - rise) / (set - rise));
+    const bell = (c) => {
+      let dist = Math.abs(t - c);
+      dist = Math.min(dist, 1440 - dist);
+      return Math.exp(-(dist * dist) / 7200); // 2 * 60^2
+    };
+    const dusk = Math.max(bell(rise), bell(set));
+    return {
+      h: +(215 + 22 * dusk).toFixed(2),
+      s: +(33 + 9 * dusk).toFixed(2),
+      l: +(9 + 13 * day).toFixed(2),
+      daylight: +day.toFixed(4),
+      dusk: +dusk.toFixed(4),
+    };
+  };
+  const hslToHex = (KazuLib && KazuLib.hslToHex) || function (h, s, l) {
+    h = ((+h % 360) + 360) % 360;
+    s = Math.min(100, Math.max(0, +s)) / 100;
+    l = Math.min(100, Math.max(0, +l)) / 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    let r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    const hex = (v) => {
+      const n = Math.round((v + m) * 255);
+      return (n < 16 ? '0' : '') + n.toString(16);
+    };
+    return '#' + hex(r) + hex(g) + hex(b);
+  };
+
+  // The whole page's blue breathes with the UK day: the tint lands on
+  // documentElement so both <html> (overscroll canvas) and <body> (the
+  // gradient stack) track it. First write snaps; afterwards body carries
+  // data-bg-live and the registered @property transitions glide each
+  // per-minute step. Cheap by construction: three property writes a minute.
+  let skyTintSnapped = false;
+  let skyTintHex = '#0f161f'; // deep-night default, matches the inline first paint
+  function applySkyTint(mins, doy) {
+    const tint = skyTint(mins, doy);
+    if (!tint) return;
+    const root = document.documentElement.style;
+    root.setProperty('--bg-h', tint.h);
+    root.setProperty('--bg-s', tint.s);
+    root.setProperty('--bg-l', tint.l);
+    skyTintHex = hslToHex(tint.h, tint.s, tint.l);
+    if (!document.body.classList.contains('season-christmas')) setThemeColor(skyTintHex);
+    if (!skyTintSnapped) {
+      skyTintSnapped = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.body.dataset.bgLive = '1';
+      }));
+    }
+  }
+
   // The scenery's coordinate frame is the viewport, while the profile picture
   // moves with the responsive hero padding. Measure its actual centre so the
   // crest is behind the picture on every screen size, not just one desktop.
@@ -742,6 +814,7 @@
     }
     skyBodyEl.style.left = st.x + '%';
     skyBodyEl.style.top = st.y + '%';
+    applySkyTint(mins, doy);
   }
   // Auto restores the stylesheet's responsive sky-body behaviour and keeps
   // the debug line hidden. On forces both the sky body and its visible guide
@@ -1670,52 +1743,16 @@
   }
 
 
-  // ---------- Theme toggle ----------
-  const orb = $('theme-orb');
-  const orbIcon = $('orb-icon');
+  // ---------- Browser-chrome colour ----------
+  // There is no theme toggle any more: the single time-of-day palette owns
+  // the page, and this paints the meta theme-color to match (the sky tint
+  // writer refreshes it every minute; Christmas overrides it while live).
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-
-  // Browser-chrome colour follows the active theme (and the Christmas palette,
-  // which applySeasons reapplies on top of this).
   function setThemeColor(c) {
     if (themeColorMeta && themeColorMeta.getAttribute('content') !== c) {
       themeColorMeta.setAttribute('content', c);
     }
   }
-
-  function applyTheme(dark) {
-    document.body.dataset.theme = dark ? 'dark' : 'light';
-    // <html> tracks the theme too — it owns the canvas/overscroll colour (see
-    // the critical inline <style> in index.html).
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    orb.dataset.dark = dark ? '1' : '0';
-    orb.title = dark ? 'Switch to light theme' : 'Switch to dark theme';
-    orb.setAttribute('aria-pressed', dark ? 'true' : 'false');
-    orbIcon.textContent = dark ? '🌙' : '☀️';
-    if (!document.body.classList.contains('season-christmas')) {
-      setThemeColor(dark ? '#0d1b31' : '#eaf6ff');
-    }
-  }
-
-  // No saved choice → follow the OS, and keep following it live until the
-  // visitor picks a side with the orb (an explicit choice always wins).
-  const themeMedia = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
-  let savedTheme = null;
-  try { savedTheme = localStorage.getItem('kazu-dark'); } catch (e) {}
-  let isDark = savedTheme !== null ? savedTheme === '1' : (themeMedia ? themeMedia.matches : true);
-  applyTheme(isDark);
-
-  if (themeMedia && savedTheme === null) {
-    const onSystemTheme = (e) => { isDark = e.matches; applyTheme(isDark); };
-    if (themeMedia.addEventListener) themeMedia.addEventListener('change', onSystemTheme);
-    else if (themeMedia.addListener) themeMedia.addListener(onSystemTheme); // older Safari
-  }
-
-  orb.addEventListener('click', () => {
-    isDark = !isDark;
-    try { localStorage.setItem('kazu-dark', isDark ? '1' : '0'); } catch (e) {}
-    applyTheme(isDark);
-  });
 
   // ---------- Back to top ----------
   const toTopBtn = $('toTopBtn');
@@ -2080,9 +2117,9 @@
     body.classList.toggle('season-birthday', s.birthday);
     body.classList.toggle('season-christmas', s.christmas);
     body.classList.toggle('season-pride', s.pride);
-    // Christmas owns the palette (and hides the theme orb), so it owns the
-    // browser-chrome colour too; otherwise follow the active theme.
-    setThemeColor(s.christmas ? '#071f16' : (isDark ? '#0d1b31' : '#eaf6ff'));
+    // Christmas owns the palette, so it owns the browser-chrome colour too;
+    // otherwise follow the current time-of-day tint.
+    setThemeColor(s.christmas ? '#071f16' : skyTintHex);
     if (s.birthday && !bdayCelebrated) { bdayCelebrated = true; fireConfetti(); }
     if (!s.birthday) bdayCelebrated = false; // re-arm if it turns off (e.g. preview param removed)
     syncDevPanel(s); // keep the dev panel's live badges / pressed buttons current

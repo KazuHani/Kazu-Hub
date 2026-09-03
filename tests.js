@@ -149,6 +149,16 @@ ok('arc travels left → right through the day', L.skyBodyState(600, 172).x < L.
 eq('junk time → null', L.skyBodyState('abc'), null);
 eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
 
+// ---- skyTint + hslToHex (time-of-day page palette) ----
+eq('summer midnight: deep-night palette', L.skyTint(0, 172), { h: 215.97, s: 33.4, l: 9, daylight: 0, dusk: 0.0439 });
+eq('summer solar peak: gentle daylight', L.skyTint(780, 172), { h: 215, s: 33, l: 21.99, daylight: 0.9989, dusk: 0 });
+eq('sunset: indigo dusk blush at full strength', L.skyTint(1290, 172), { h: 237, s: 42, l: 9, daylight: 0, dusk: 1 });
+eq('winter midday still lightens', L.skyTint(760, 355), { h: 215.09, s: 33.03, l: 21.69, daylight: 0.976, dusk: 0.0039 });
+ok('night is darker than midday', L.skyTint(0, 172).l < L.skyTint(780, 172).l);
+eq('junk tint time → null', L.skyTint('abc', 172), null);
+eq('hslToHex primaries', [L.hslToHex(0, 100, 50), L.hslToHex(-120, 100, 50), L.hslToHex(120, 100, 50)], ['#ff0000', '#0000ff', '#00ff00']);
+eq('hslToHex night base matches the inline first paint', L.hslToHex(215, 33, 9), '#0f161f');
+
 // ---- openMeteoUrl (weather fetch URL builder) ----
 ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);
 ok('openMeteoUrl includes daily block by default', L.openMeteoUrl(52.414, -4.081).indexOf('daily=weather_code') > -1);
@@ -760,12 +770,15 @@ ok('low power reveals content without the observer', scriptSrc.includes("if (!LO
 ok('low power drops the frosted backdrop + ambient loops', cssFlat.includes('body.low-power { --card-blur: none; }') && cssFlat.includes('body.low-power .scroll-reveal {'));
 
 // ---- First paint: no white flash on a cold cache ----
-ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<style>html{background:#0d1b31') && htmlSrc.indexOf('<style>html{background:#0d1b31') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
-ok('theme stamped on <html> before first paint', htmlSrc.includes("localStorage.getItem('kazu-dark')") && htmlSrc.includes('document.documentElement.dataset.theme'));
-ok('body picks the stamped theme up pre-content', htmlSrc.includes('document.body.dataset.theme = document.documentElement.dataset.theme'));
+ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<style>html{background:#0f161f') && htmlSrc.indexOf('<style>html{background:#0f161f') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
 ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" onload="this.media=\'all\'"'));
-ok('applyTheme keeps <html> in sync', scriptSrc.includes("document.documentElement.dataset.theme = dark ? 'dark' : 'light';"));
-ok('html base colours moved into the stylesheet', cssFlat.includes('html { background: #0d1b31; }') && cssFlat.includes('html[data-theme="light"] { background: #eaf6ff; }'));
+
+// ---- Single time-of-day palette (light theme + toggle fully removed) ----
+ok('no light theme selectors or bootstrap left', !cssFlat.includes('data-theme="light"') && !htmlSrc.includes('data-theme="light"') && !scriptSrc.includes('data-theme'));
+ok('theme toggle orb fully removed', !htmlSrc.includes('theme-orb') && !scriptSrc.includes('theme-orb') && !cssFlat.includes('theme-orb') && !htmlSrc.includes('kazu-dark') && !scriptSrc.includes('kazu-dark'));
+ok('registered tint properties glide the background', cssFlat.includes("@property --bg-h { syntax: '<number>';") && cssFlat.includes('body[data-bg-live] {'));
+ok('sky tint written from the UK clock once a minute', scriptSrc.includes('applySkyTint(mins, doy)') && scriptSrc.includes("document.body.dataset.bgLive = '1'"));
+ok('page gradient built from the live tint', cssFlat.includes('calc(var(--bg-l, 9) * 1%)'));
 
 // ---- Liquid glass: default-on + the LB ordering bug (regression guards) ----
 // The effect is the .card default: any future class="card ..." section gets

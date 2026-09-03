@@ -411,6 +411,59 @@
     };
   }
 
+  // Time-of-day page tint: a soft slate-blue palette that breathes with the
+  // UK day. Lightness rides the sun (9% in deep night, 22% at midday), while
+  // a gaussian blush around sunrise/sunset warms the hue from blue towards
+  // indigo-violet. script.js writes h/s/l onto CSS custom properties once a
+  // minute (registered @property transitions glide each step). Junk time
+  // input yields null so the page keeps its current tint.
+  function skyTint(ukMinutes, dayOfYear) {
+    var t = +ukMinutes;
+    if (isNaN(t)) return null;
+    t = ((t % 1440) + 1440) % 1440;
+    var st = sunTimesUK(dayOfYear);
+    var day = 0;
+    if (t > st.rise && t < st.set) {
+      day = Math.sin(Math.PI * (t - st.rise) / (st.set - st.rise));
+    }
+    // 60-minute-sigma bell around each horizon crossing.
+    function bell(c) {
+      var d = Math.abs(t - c);
+      d = Math.min(d, 1440 - d);
+      return Math.exp(-(d * d) / 7200); // 2 * 60^2
+    }
+    var dusk = Math.max(bell(st.rise), bell(st.set));
+    return {
+      h: +(215 + 22 * dusk).toFixed(2),  // 215 soft blue -> 237 indigo at the horizon
+      s: +(33 + 9 * dusk).toFixed(2),    // saturation deepens a touch at dusk
+      l: +(9 + 13 * day).toFixed(2),     // 9% deep night -> 22% gentle daylight
+      daylight: +day.toFixed(4),
+      dusk: +dusk.toFixed(4),
+    };
+  }
+
+  // hsl -> '#rrggbb' for the theme-color meta (which the bg tint follows).
+  function hslToHex(h, s, l) {
+    h = ((+h % 360) + 360) % 360;
+    s = Math.min(100, Math.max(0, +s)) / 100;
+    l = Math.min(100, Math.max(0, +l)) / 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c / 2;
+    var r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; }
+    else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    function hex(v) {
+      var n = Math.round((v + m) * 255);
+      return (n < 16 ? '0' : '') + n.toString(16);
+    }
+    return '#' + hex(r) + hex(g) + hex(b);
+  }
+
   // ---- 5-day forecast strip ------------------------------------------------
   // Shapes an Open-Meteo `daily` block (day-aligned to Europe/London via the
   // request's timezone param) into rows for the weather modal's strip. The
@@ -1045,6 +1098,8 @@
     sunTimesUK: sunTimesUK,
     skyArcPoint: skyArcPoint,
     skyBodyState: skyBodyState,
+    skyTint: skyTint,
+    hslToHex: hslToHex,
     steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,

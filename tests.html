@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=27"></script>
+  <script src="lib.js?v=28"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -165,6 +165,16 @@
       ok('arc travels left → right through the day', L.skyBodyState(600, 172).x < L.skyBodyState(900, 172).x);
       eq('junk time → null', L.skyBodyState('abc'), null);
       eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
+
+      // ---- skyTint + hslToHex (time-of-day page palette) ----
+      eq('summer midnight: deep-night palette', L.skyTint(0, 172), { h: 215.97, s: 33.4, l: 9, daylight: 0, dusk: 0.0439 });
+      eq('summer solar peak: gentle daylight', L.skyTint(780, 172), { h: 215, s: 33, l: 21.99, daylight: 0.9989, dusk: 0 });
+      eq('sunset: indigo dusk blush at full strength', L.skyTint(1290, 172), { h: 237, s: 42, l: 9, daylight: 0, dusk: 1 });
+      eq('winter midday still lightens', L.skyTint(760, 355), { h: 215.09, s: 33.03, l: 21.69, daylight: 0.976, dusk: 0.0039 });
+      ok('night is darker than midday', L.skyTint(0, 172).l < L.skyTint(780, 172).l);
+      eq('junk tint time → null', L.skyTint('abc', 172), null);
+      eq('hslToHex primaries', [L.hslToHex(0, 100, 50), L.hslToHex(-120, 100, 50), L.hslToHex(120, 100, 50)], ['#ff0000', '#0000ff', '#00ff00']);
+      eq('hslToHex night base matches the inline first paint', L.hslToHex(215, 33, 9), '#0f161f');
 
       // ---- openMeteoUrl (weather fetch URL builder) ----
       ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);
@@ -675,7 +685,13 @@
         ok('low power stills the particle sky', scriptSrc.indexOf("if (LOW_POWER && !ATMOSPHERE_OVERRIDE) mode = 'none';") !== -1);
         ok('low power skips the liquid-glass refraction + the wheel lerp', scriptSrc.split("document.body.classList.contains('low-power')").length - 1 >= 2);
         ok('low power drops the frosted backdrop + ambient loops', cssFlat.indexOf('body.low-power { --card-blur: none; }') !== -1 && cssFlat.indexOf('body.low-power .scroll-reveal {') !== -1);
-        ok('canvas colour painted inline before the stylesheet', htmlSrc.indexOf('<style>html{background:#0d1b31') !== -1 && htmlSrc.indexOf('<style>html{background:#0d1b31') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+        ok('canvas colour painted inline before the stylesheet', htmlSrc.indexOf('<style>html{background:#0f161f') !== -1 && htmlSrc.indexOf('<style>html{background:#0f161f') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+        // ---- Single time-of-day palette (light theme + toggle fully removed) ----
+        ok('no light theme selectors or bootstrap left', cssFlat.indexOf('data-theme="light"') === -1 && htmlSrc.indexOf('data-theme="light"') === -1 && scriptSrc.indexOf('data-theme') === -1);
+        ok('theme toggle orb fully removed', htmlSrc.indexOf('theme-orb') === -1 && scriptSrc.indexOf('theme-orb') === -1 && cssFlat.indexOf('theme-orb') === -1 && htmlSrc.indexOf('kazu-dark') === -1 && scriptSrc.indexOf('kazu-dark') === -1);
+        ok('registered tint properties glide the background', cssFlat.indexOf("@property --bg-h { syntax: '<number>';") !== -1 && cssFlat.indexOf('body[data-bg-live] {') !== -1);
+        ok('sky tint written from the UK clock once a minute', scriptSrc.indexOf('applySkyTint(mins, doy)') !== -1 && scriptSrc.indexOf("document.body.dataset.bgLive = '1'") !== -1);
+        ok('page gradient built from the live tint', cssFlat.indexOf('calc(var(--bg-l, 9) * 1%)') !== -1);
         ok('fonts no longer render-blocking', htmlSrc.indexOf('rel="stylesheet" media="print" onload="this.media=\'all\'"') !== -1);
         ok('social tiles are solid brand tiles (not glass .card members)', htmlSrc.indexOf('class="card social-card') === -1);
         eq('every social tile carries a brand modifier', htmlSrc.split('class="social-card social-card--').length - 1, 7);

@@ -22,7 +22,10 @@ proxy); a YouTube Music playlist card whose "From the playlist" rows update
 themselves from the playlist's Atom feed (`feeds/videos.xml`, via the same
 proxy, newest additions first), plus a ListenBrainz "recently played" strip;
 socials; and in-progress stories. It is installable as a PWA-lite (manifest +
-`sw.js` offline shell), has dark/light theme, seasonal themes (birthday,
+`sw.js` offline shell), a single time-of-day-reactive palette (a soft
+slate blue that lightens towards midday and dims towards sunset/night,
+driven by `KazuLib.skyTint` on the UK clock — there is no theme toggle),
+seasonal themes (birthday,
 Christmas, pride), a weather-reactive cherry-blossom atmosphere (petals
 detach from the branches and drift down-wind; the layer is anchored to the
 top of the page, so it scrolls away with the hero), a "moonlit sakura"
@@ -144,8 +147,8 @@ These are load-bearing; read before editing.
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
 - **localStorage keys in use:** `kazu-dev-seasons`, `kazu-mal-cache`,
-  `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`, plus the theme
-  key. Don't collide.
+  `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`.
+  Don't collide.
 
 ## Working agreements (from CLAUDE.md)
 

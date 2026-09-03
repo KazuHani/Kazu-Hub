@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Kazu Hani — personal hub: socials, live status, and stories.">
 <link rel="canonical" href="https://kazuhani.github.io/Kazu-Hub/">
-<meta name="theme-color" content="#0d1b31">
+<meta name="theme-color" content="#0f161f">
 <link rel="manifest" href="site.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -45,26 +45,17 @@
 <link rel="dns-prefetch" href="//avatars.steamstatic.com">
 <link rel="dns-prefetch" href="//a.ltrbxd.com">
 <!-- Critical first paint: the stylesheets below are render-blocking, so on a
-     cold cache the page used to sit WHITE until style.css arrived. Stamp the
-     theme on <html> from the saved choice (the same 'kazu-dark' key script.js
-     re-reads at boot; OS preference when unsaved, dark as the final default)
-     and paint the canvas its base colour inline — the first paint is themed
-     immediately, and saved-light visitors skip the dark flash too. Keep the
-     two colours in sync with the html rules at the top of style.css. -->
-<script>
-  try {
-    var t = localStorage.getItem('kazu-dark');
-    var dark = t !== null ? t === '1' : !(window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
-</script>
-<style>html{background:#0d1b31;color-scheme:dark}html[data-theme="light"]{background:#eaf6ff;color-scheme:light}</style>
+     cold cache the page used to sit WHITE until style.css arrived. Paint the
+     canvas the deep-night base colour inline — script.js replaces it with the
+     live time-of-day tint within a frame (keep this in sync with the --bg-*
+     fallbacks at the top of style.css). -->
+<style>html{background:#0f161f;color-scheme:dark}</style>
 <!-- Fonts no longer block the first paint: the stylesheet loads off the
      critical path and applies once it lands (display=swap already covers the
      text swap). noscript keeps the plain render-blocking link for no-JS. -->
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=43">
+<link rel="stylesheet" href="style.css?v=44">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -88,12 +79,7 @@
 }
 </script>
 </head>
-<body data-theme="dark">
-<script>
-  // Carry the head-stamped theme onto <body> before any content parses, so
-  // the body[data-theme] rules are correct from the very first paint.
-  try { document.body.dataset.theme = document.documentElement.dataset.theme || 'dark'; } catch (e) {}
-</script>
+<body>
 
   <!-- moonlit sakura scenery: glowing moon + branches reaching in from the
        page edges. Purely decorative; hidden during the Christmas season. -->
@@ -290,10 +276,6 @@
   </div>
 
   <div class="page">
-
-    <button id="theme-orb" data-dark="1" title="Switch to light theme" aria-label="Toggle theme">
-      <span id="orb-icon">🌙</span>
-    </button>
 
     <div class="container">
 
@@ -804,8 +786,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=27"></script>
-<script src="script.js?v=55"></script>
+<script src="lib.js?v=28"></script>
+<script src="script.js?v=56"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.
