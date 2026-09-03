@@ -355,6 +355,23 @@
   const LOW_POWER = lowPowerMode(PARTICLE_FLAGS);
   if (LOW_POWER) document.body.classList.add('low-power');
 
+  // ---------- Staged boot ----------
+  // Everything expensive used to fire inside the same task as the script
+  // parse: five API fetches, the Lanyard socket, the petal build and the
+  // glass-map bake all competed with the first paint, which is what made
+  // weak phones hitch on load. Boot is now a queue in priority order — hero
+  // content and the clock first, then each live card's first fetch on its
+  // own rung of a ladder, then the ambient layers once the main thread is
+  // idle. bootGap widens the spacing on light hardware (the same flags that
+  // already thin the particle counts), so a phone gets the same order with
+  // more air between the steps.
+  const bootGap = (ms) => Math.round(ms * (lightDevice ? 1.6 : 1));
+  // requestIdleCallback where it exists (not Safari), a short timeout
+  // otherwise: either way fn runs off the critical parse/paint path.
+  const scheduleIdle = window.requestIdleCallback
+    ? (fn, timeout) => requestIdleCallback(fn, { timeout })
+    : (fn, timeout) => setTimeout(fn, Math.min(timeout || 200, 400));
+
   const petalFallDuration = (KazuLib && KazuLib.petalFallDuration) || function (pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
     const view = +viewportHeight;
     const base = +baseSeconds;
@@ -666,9 +683,14 @@
       skyCurveGuideEl.style.display = devCurveMode === 'on' ? 'block' : 'none';
     }
   }
-  renderSkyCurveGuide();
-  applySkyCurveMode(devCurveMode);
-  updateSkyBody();
+  // First layout rides one frame behind parse so the rect reads don't join
+  // the load-time layout storm; the transition-less snap in updateSkyBody
+  // means the body still simply appears in place rather than gliding.
+  requestAnimationFrame(() => {
+    renderSkyCurveGuide();
+    applySkyCurveMode(devCurveMode);
+    updateSkyBody();
+  });
   setInterval(updateSkyBody, 60000);
   let skyLayoutFrame = 0;
   function scheduleSkyLayout() {
@@ -2422,7 +2444,13 @@
     });
   }
 
-  setAtmosphere(ATMOSPHERE_OVERRIDE || 'blossom');
+  // The petal/drop build waits for an idle slice: ~40 animated nodes' worth
+  // of style work has no business inside the load task (the hardcoded
+  // fallback petals in index.html cover the gap). If the weather fetch lands
+  // first and picks the real mode, this no-ops.
+  scheduleIdle(() => {
+    if (atmosphereCurrent === null) setAtmosphere(ATMOSPHERE_OVERRIDE || 'blossom');
+  }, 1200);
 
   // ---------- Pause polling/ticking while the page isn't visible ----------
   // Saves battery/data when the tab is backgrounded or the phone screen is
@@ -2442,16 +2470,19 @@
   const POLLERS = [
     { fn: tick, ms: 1000, last: 0 },
     { fn: loadWeather, ms: 10 * 60 * 1000, last: 0 },
-    { fn: loadDiscord, ms: 20 * 1000, last: 0 },
-    { fn: loadSteam, ms: 5 * 60 * 1000, last: 0 },
-    { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0 },
-    { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0 },
-    { fn: loadPlaylistTracks, ms: 30 * 60 * 1000, last: 0, firstDelay: 2000 },
-    // firstDelay: the lowest-priority cards yield their FIRST fetch to the
-    // critical load-time resources (fonts, hero image, weather, Discord)
-    // instead of joining the load-time burst. Intervals/payloads unchanged.
-    { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0, firstDelay: 1000 },
-    { fn: loadQuote, ms: 15 * 60 * 1000, last: 0, firstDelay: 1500 },
+    { fn: loadDiscord, ms: 20 * 1000, last: 0, firstDelay: bootGap(700) },
+    { fn: loadSteam, ms: 5 * 60 * 1000, last: 0, firstDelay: bootGap(2000) },
+    { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0, firstDelay: bootGap(3300) },
+    { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(4600) },
+    { fn: loadPlaylistTracks, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(5900) },
+    // firstDelay ladder: only the clock and the weather (which also picks
+    // the atmosphere mode) fetch inside the load task now. Every other
+    // card's FIRST fetch waits for its own rung, so the network burst, the
+    // JSON parsing and the DOM rewrites land one at a time instead of as a
+    // six-way pile-up. bootGap stretches the ladder on light hardware.
+    // Intervals and payloads are unchanged — this only orders the boot.
+    { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0, firstDelay: bootGap(7200) },
+    { fn: loadQuote, ms: 15 * 60 * 1000, last: 0, firstDelay: bootGap(8500) },
   ];
   let timers = [];
 
@@ -2481,7 +2512,12 @@
     else { startPolling(); startLanyard(); }
   });
 
-  if (!document.hidden) { startPolling(); startLanyard(); }
+  if (!document.hidden) {
+    startPolling();
+    // The socket joins the ladder too: the REST poll above already paints
+    // the Discord card, so the live channel can open a beat later.
+    setTimeout(() => { if (!document.hidden) startLanyard(); }, bootGap(1400));
+  }
 })();
 
 /* ============================================================================
@@ -2618,22 +2654,51 @@
 
   function refreshAll() { cards.forEach(refresh); renderHousing(); }
 
+  // Staged first bake: buildMap is a per-pixel SDF loop for every card size,
+  // and baking every card inside the load task was the single heaviest thing
+  // this page did on startup. The first pass now walks the card list in
+  // ~12ms slices on idle callbacks instead; until a card's rim lands it
+  // shows the stylesheet's plain frosted blur — the same look Safari and
+  // Firefox always render. Size watching only starts once the first pass is
+  // done; before that the bake itself measures whatever the layout is.
+  let booted = false;
+  let bootIndex = 0;
   let pending = false;
   function schedule() {
-    if (pending) return;
+    if (pending || !booted) return;
     pending = true;
     requestAnimationFrame(() => { pending = false; refreshAll(); });
   }
-  if ('ResizeObserver' in window) {
-    const ro = new ResizeObserver(schedule);
-    cards.forEach((c) => ro.observe(c.el));
-  } else {
-    window.addEventListener('resize', schedule, { passive: true });
+  function watchResizes() {
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(schedule);
+      cards.forEach((c) => ro.observe(c.el));
+    } else {
+      window.addEventListener('resize', schedule, { passive: true });
+    }
   }
+  function bootGlassStep() {
+    const t0 = performance.now();
+    while (bootIndex < cards.length && performance.now() - t0 < 12) {
+      refresh(cards[bootIndex++]);
+    }
+    if (bootIndex < cards.length) {
+      if (window.requestIdleCallback) requestIdleCallback(bootGlassStep);
+      else setTimeout(bootGlassStep, 40);
+      return;
+    }
+    renderHousing();
+    booted = true;
+    watchResizes();
+    refreshAll(); // catch-up pass: no-op for measured cards, picks up any mid-boot reflow
+  }
+  if (window.requestIdleCallback) requestIdleCallback(bootGlassStep, { timeout: 2500 });
+  else setTimeout(bootGlassStep, 250);
 
-  refreshAll();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshAll);
-  window.addEventListener('load', refreshAll);
+  // Late reflows still refresh every card at once — but only after the
+  // staged first pass, otherwise the bake is already handling it.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (booted) refreshAll(); });
+  window.addEventListener('load', () => { if (booted) refreshAll(); });
 
   // Scroll-idle refraction: re-running every card's SVG displacement filter
   // against a moving backdrop is the desktop scroll stutter, so while the
