@@ -100,7 +100,6 @@ body[data-theme="light"] {
 @keyframes rainfall { 0% { transform: translateY(-15vh) rotate(9deg); } 100% { transform: translateY(115vh) rotate(9deg); } }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
 @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes shimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 
 /* ---- Sakura scenery: moon + overhanging branches ---- */
 /* Anchored to the top of the page (absolute, not fixed): it scrolls away
@@ -259,13 +258,22 @@ body[data-theme="light"] #theme-orb:hover > span {
   display: block; width: 181px; height: 181px; border-radius: 50%;
   background: var(--card-bg); object-fit: cover;
 }
+/* Editorial serif wordmark instead of the old rounded-sans + rainbow-shimmer
+   combo (the saturated multi-stop gradient sliding forever was the thing that
+   read "generated"). Fraunces at optical size with a quiet vertical ink
+   sheen — from full ink into a whisper of the theme accent — keeps the colour
+   tied to the palette without shouting. Seasonal themes still repaint it
+   below. Size pulled down from billboard to masthead scale. */
 .title {
-  position: relative; margin: 20px 0 6px; font-family: 'Fredoka', sans-serif; font-weight: 700;
-  font-size: clamp(54px,11vw,116px); line-height: .95; letter-spacing: -.01em;
-  background: linear-gradient(110deg,#0ea5e9 0%,#3b82f6 35%,#7c5cff 70%,#22d3ee 100%);
-  background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
+  position: relative; margin: 20px 0 6px;
+  font-family: 'Fraunces', 'Fredoka', serif; font-weight: 560; font-style: italic;
+  font-optical-sizing: auto;
+  font-size: clamp(42px,7.4vw,80px); line-height: 1.04; letter-spacing: -.015em;
+  color: var(--ink); /* fallback for browsers without color-mix/clip */
+  background: linear-gradient(178deg, var(--ink) 55%, color-mix(in srgb, var(--ink) 62%, var(--accent)) 125%);
+  -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: titleReveal 1s cubic-bezier(.2,.6,.35,1) .26s both, shimmer 7s linear infinite alternate;
+  animation: titleReveal 1s cubic-bezier(.2,.6,.35,1) .26s both;
 }
 
 /* ---- Quote box ---- */
@@ -1018,7 +1026,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 /* Hero accents */
 #theme-orb { animation: orbReveal .7s cubic-bezier(.34,1.5,.6,1) .08s both; }
 .hero .pfp { animation: revealPop .85s ease-out .14s both; }
-/* (.title carries titleReveal + shimmer in the .title rule above) */
+/* (.title carries titleReveal in the .title rule above) */
 
 /* The cascading blocks (above-the-fold hero stats only — everything further
    down the page is revealed on scroll instead, see SCROLL REVEAL below) */
@@ -1111,7 +1119,7 @@ body.low-power .populated-in { animation: none; }
 /* script.js tags fx layers with .fx-paused when they scroll out of the
    viewport (IntersectionObserver, 100px early-wake margin). Freezing
    animation-play-state stops the compositor work for petals, rain, aurora,
-   branch sway, the hero float/shimmer and the tree lights while nothing
+   branch sway, the hero float and the tree lights while nothing
    can see them; every animation resumes mid-cycle when scrolled back. */
 .fx-paused, .fx-paused * { animation-play-state: paused !important; }
 
@@ -1717,7 +1725,7 @@ html.glass-scrolling .toast {
      - the liquid-glass SVG refraction, particle layers, canvas bursts and the
        wheel-lerp smooth scroll are skipped in script.js (nothing to override
        here — they never get built);
-     - the remaining ambient loops (branch sway, halo spin, shimmer, twinkle,
+     - the remaining ambient loops (branch sway, halo spin, twinkle,
        aurora drift, equalizer, pulse dots) and all entrance motion stop. */
 body.low-power { --card-blur: none; }
 body.low-power[data-theme="dark"] { --card-bg: rgba(40,63,98,.95); }
