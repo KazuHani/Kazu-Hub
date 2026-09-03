@@ -674,7 +674,9 @@
         ok('low power drops the frosted backdrop + ambient loops', cssFlat.indexOf('body.low-power { --card-blur: none; }') !== -1 && cssFlat.indexOf('body.low-power .scroll-reveal {') !== -1);
         ok('canvas colour painted inline before the stylesheet', htmlSrc.indexOf('<style>html{background:#0d1b31') !== -1 && htmlSrc.indexOf('<style>html{background:#0d1b31') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
         ok('fonts no longer render-blocking', htmlSrc.indexOf('rel="stylesheet" media="print" onload="this.media=\'all\'"') !== -1);
-        ok('social tiles are full glass citizens (rim refraction included)', scriptSrc.indexOf(':not(.social-card)') === -1 && cssFlat.indexOf(':not(.social-card)') === -1);
+        ok('social tiles are solid brand tiles (not glass .card members)', htmlSrc.indexOf('class="card social-card') === -1);
+        eq('every social tile carries a brand modifier', htmlSrc.split('class="social-card social-card--').length - 1, 7);
+        ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every(function (n) { return cssFlat.indexOf('.social-card--' + n + ' ') !== -1; }));
 
         // ---- Scroll reveal ----
         ok('scroll reveal uses an IntersectionObserver', scriptSrc.indexOf('IntersectionObserver') !== -1);

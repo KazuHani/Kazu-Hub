@@ -115,6 +115,14 @@ These are load-bearing; read before editing.
   loadingEl)` — never raw `classList` toggles — so the content fades/rises in
   and the card's height glides to fit. Both paths must stay free for
   low-power (`LOW_POWER`) and reduced-motion devices (instant swap).
+- **Social tiles are solid brand tiles.** `.social-card` is deliberately NOT
+  a `.card` member (no glass/refraction — nothing to refract through). The
+  design hangs off two custom properties: each network gets a
+  `.social-card--<name>` rule in style.css with `--brand-a` (centre, lighter)
+  and `--brand-b` (edge, darker); the bevel, gloss, badge and hover are all
+  inherited. To add a social: copy a tile in index.html, swap href / badge /
+  name / handle, add one modifier rule — then bump the tile count in the
+  structural assertions in tests.js and tests.html.
 - **Timezone rule.** Anything age/birthday-related must run in the
   Europe/London wall-clock frame via `KazuLib.ukWallParts` / `ukWallMs`
   (calendar arithmetic happens in a fake-UTC frame so results are identical on

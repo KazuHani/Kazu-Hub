@@ -624,7 +624,9 @@ ok('story cards carry the glint inline', htmlSrc.split('var(--glint)').length - 
 ok('story card gradients made translucent', htmlSrc.includes('rgba(124,29,43,.66)') && htmlSrc.includes('rgba(14,94,84,.66)'));
 ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card,\n.story-card {\n  border: none;\n  -webkit-backdrop-filter: blur(6px) saturate(1.7);'));
 ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
-ok('social tiles are full glass citizens (rim refraction included)', !scriptSrc.includes(':not(.social-card)') && !cssFlat.includes(':not(.social-card)'));
+ok('social tiles are solid brand tiles (not glass .card members)', !htmlSrc.includes('class="card social-card'));
+ok('every social tile carries a brand modifier', (htmlSrc.match(/class="social-card social-card--/g) || []).length === 7);
+ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every((n) => cssFlat.includes('.social-card--' + n + ' ')));
 
 // ---- Scroll reveal (static wiring checks) ----
 // Everything .scroll-reveal starts hidden and fades + slides in the first

@@ -2702,11 +2702,11 @@
     card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
   }
 
-  // Every .card refracts by default — the birthday tile is the one opt-out
-  // (solid brand gradient, nothing to refract through). The toast joins too.
-  // Keying the selector off .card means any future card gets the rim
-  // automatically. (The social tiles used to be excluded — the rim read as a
-  // drawn-on outline on them — but they're full glass citizens now.)
+  // Every .card refracts by default — the opt-outs are the birthday tile and
+  // the social tiles (solid brand gradients, nothing to refract through; the
+  // socials dropped the .card class when they became brand tiles). The toast
+  // joins too. Keying the selector off .card means any future card gets the
+  // rim automatically.
   const cards = Array.from(
     document.querySelectorAll('.card:not(.stat-card--bday), .toast'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
