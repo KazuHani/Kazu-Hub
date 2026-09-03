@@ -385,8 +385,22 @@
     var st = sunTimesUK(dayOfYear);
     var dayLen = st.set - st.rise;
     var isSun = t >= st.rise && t < st.set;
-    var p = isSun ? (t - st.rise) / dayLen
-                  : ((((t - st.set) % 1440) + 1440) % 1440) / (1440 - dayLen);
+    // Piecewise progress, re-anchored to the CLOCK: the crest (p = 0.5, dead
+    // centre behind the profile picture) is hit at exactly 12:00 by the sun
+    // and 00:00 by the moon, while sunrise/sunset still pin the horizons.
+    // (The raw midpoint of the approximate rise/set times wanders up to ~75
+    // minutes off clock noon across the year, which is what used to leave
+    // the body visibly off-centre at midday/midnight.)
+    var p;
+    if (isSun) {
+      p = t < 720 ? 0.5 * (t - st.rise) / (720 - st.rise)
+                  : 0.5 + 0.5 * (t - 720) / (st.set - 720);
+    } else {
+      var u = (((t - st.set) % 1440) + 1440) % 1440; // 0 at sunset, climbing through the night
+      var uMid = 1440 - st.set;                       // midnight's offset into the night
+      p = u < uMid ? 0.5 * u / uMid
+                   : 0.5 + 0.5 * (u - uMid) / (1440 - dayLen - uMid);
+    }
     var point = skyArcPoint(p, crestY);
     return {
       body: isSun ? 'sun' : 'moon',

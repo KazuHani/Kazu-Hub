@@ -670,7 +670,18 @@
     const set = Math.round(1125 + 165 * Math.cos(w));
     const dayLen = set - rise;
     const isSun = t >= rise && t < set;
-    const p = isSun ? (t - rise) / dayLen : ((((t - set) % 1440) + 1440) % 1440) / (1440 - dayLen);
+    // Same clock-anchored piecewise progress as lib.js: crest (p = 0.5, behind
+    // the profile picture) at exactly 12:00 for the sun and 00:00 for the moon.
+    let p;
+    if (isSun) {
+      p = t < 720 ? 0.5 * (t - rise) / (720 - rise)
+                  : 0.5 + 0.5 * (t - 720) / (set - 720);
+    } else {
+      const u = (((t - set) % 1440) + 1440) % 1440; // 0 at sunset, climbing through the night
+      const uMid = 1440 - set;                      // midnight's offset into the night
+      p = u < uMid ? 0.5 * u / uMid
+                  : 0.5 + 0.5 * (u - uMid) / (1440 - dayLen - uMid);
+    }
     const point = skyArcPoint(p, crestY);
     return { body: isSun ? 'sun' : 'moon', x: point.x, y: point.y, alt: point.alt, low: point.alt < 0.28 };
   };
