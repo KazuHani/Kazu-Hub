@@ -640,6 +640,9 @@ ok('no-observer fallback reveals everything', scriptSrc.includes("'IntersectionO
 // page (the footer is shorter than the margin band) — a scroll fallback
 // reveals the stragglers once the document bottom is reached.
 ok('bottom-of-page fallback reveals the stragglers', scriptSrc.includes('revealStragglers') && scriptSrc.includes('scrollHeight - 4'));
+ok('off-screen fx layers pause via .fx-paused', cssFlat.includes('.fx-paused, .fx-paused *') && scriptSrc.includes("classList.toggle('fx-paused', !entry.isIntersecting)"));
+ok('fx watcher covers the scenery layers + hero', scriptSrc.includes("fxWatch(document.querySelector('.sakura-scene'))") && scriptSrc.includes("fxWatch(document.querySelector('.xmas-scene'))") && scriptSrc.includes("fxWatch(document.querySelector('.hero'))") && scriptSrc.includes('fxWatch(atmosphereEl)'));
+ok('petals + drops are watched individually', scriptSrc.includes("querySelectorAll('.petal').forEach(fxWatch)") && scriptSrc.includes("querySelectorAll('.drop').forEach(fxWatch)"));
 ok('scroll-reveal section present in the stylesheet', cssFlat.includes('============ SCROLL REVEAL ============'));
 
 // ---- Live API freshness (static wiring checks) ----

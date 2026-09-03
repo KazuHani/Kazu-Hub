@@ -115,6 +115,8 @@ These are load-bearing; read before editing.
   loadingEl)` — never raw `classList` toggles — so the content fades/rises in
   and the card's height glides to fit. Both paths must stay free for
   low-power (`LOW_POWER`) and reduced-motion devices (instant swap).
+  Any new always-on animated layer (infinite CSS loops, canvas rAF) must
+  register with `fxWatch(el)` so it pauses off-screen via `.fx-paused`.
 - **Social tiles are solid brand tiles.** `.social-card` is deliberately NOT
   a `.card` member (no glass/refraction — nothing to refract through). The
   design hangs off two custom properties: each network gets a

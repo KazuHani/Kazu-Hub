@@ -613,8 +613,8 @@
     atmosphereEl.classList.toggle('atmosphere--page', pagePetals);
     if (pagePetals) syncAtmosphereBounds();
     if (mode === 'none') return;
-    if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(particleCount(46, PARTICLE_FLAGS))); return; }
-    if (mode === 'blossom-heavy') { atmosphereEl.appendChild(buildPetals(particleCount(48, PARTICLE_FLAGS), 12, 26, false)); return; }
+    if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(particleCount(46, PARTICLE_FLAGS))); atmosphereEl.querySelectorAll('.drop').forEach(fxWatch); return; }
+    if (mode === 'blossom-heavy') { atmosphereEl.appendChild(buildPetals(particleCount(48, PARTICLE_FLAGS), 12, 26, false)); atmosphereEl.querySelectorAll('.petal').forEach(fxWatch); return; }
     if (mode === 'aurora') {
       // Clear night sky: two drifting light ribbons over a static starfield.
       // Pure CSS animation, no per-frame JS (see style.css).
@@ -628,6 +628,7 @@
     }
     // cherry-blossom default: petals detach from the sakura branches
     atmosphereEl.appendChild(buildPetals(particleCount(30, PARTICLE_FLAGS), 13, 24, true));
+    atmosphereEl.querySelectorAll('.petal').forEach(fxWatch);
   }
 
   // ---------- Sky body (sun/moon arc on UK time) ----------
@@ -2283,6 +2284,32 @@
     // Low power / no observer support: everything is simply present.
     revealEls.forEach((el) => revealEl(el, 0));
   }
+
+  // ---------- Off-screen power save ----------
+  // Infinite CSS loops (branch sway, petal fall, rain, aurora, the hero
+  // float/shimmer, tree twinkle) keep compositing even after their layer
+  // scrolls out of view. One IntersectionObserver tags each fx layer with
+  // .fx-paused as it leaves the viewport (100px early-wake margin on the
+  // way back), and the stylesheet freezes every animation under it until
+  // it returns. Petals/drops are watched individually too: the blossom
+  // runway is page-height, so at any scroll position half of them are
+  // off-screen. The observer does all the watching -- no scroll handlers,
+  // no timers, and low-power mode (which has no fx running anyway) skips
+  // even the observer.
+  const fxObserver = (!LOW_POWER && 'IntersectionObserver' in window)
+    ? new IntersectionObserver((entries) => {
+        entries.forEach((entry) => entry.target.classList.toggle('fx-paused', !entry.isIntersecting));
+      }, { rootMargin: '100px 0px' })
+    : null;
+
+  function fxWatch(el) { if (fxObserver && el) fxObserver.observe(el); }
+
+  fxWatch(document.querySelector('.sakura-scene'));
+  fxWatch(document.querySelector('.xmas-scene'));
+  fxWatch(document.querySelector('.hero'));
+  // The 100vh modes (rain/aurora) scroll away with the hero and pause; the
+  // page-height blossom runway always intersects, so this is free there.
+  fxWatch(atmosphereEl);
 
   // ---------- Konami code easter egg ----------
   // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.

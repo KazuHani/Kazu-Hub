@@ -1107,6 +1107,14 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 }
 body.low-power .populated-in { animation: none; }
 
+/* ============ OFF-SCREEN POWER SAVE ============ */
+/* script.js tags fx layers with .fx-paused when they scroll out of the
+   viewport (IntersectionObserver, 100px early-wake margin). Freezing
+   animation-play-state stops the compositor work for petals, rain, aurora,
+   branch sway, the hero float/shimmer and the tree lights while nothing
+   can see them; every animation resumes mid-cycle when scrolled back. */
+.fx-paused, .fx-paused * { animation-play-state: paused !important; }
+
 /* ============ LIQUID GLASS ============ */
 /* An Apple-style "liquid glass" treatment, applied site-wide: the live-stat
    tiles, the social tiles, the copy toast, the "Right now" presence cards
