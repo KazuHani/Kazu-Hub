@@ -669,6 +669,14 @@ ok('no-observer fallback reveals everything', scriptSrc.includes("'IntersectionO
 // reveals the stragglers once the document bottom is reached.
 ok('bottom-of-page fallback reveals the stragglers', scriptSrc.includes('revealStragglers') && scriptSrc.includes('scrollHeight - 4'));
 ok('off-screen fx layers pause via .fx-paused', cssFlat.includes('.fx-paused, .fx-paused *') && scriptSrc.includes("classList.toggle('fx-paused', !entry.isIntersecting)"));
+
+// ---- Scroll anchor (static wiring checks) ----
+// A card above the fold growing when its data arrives used to shove whatever
+// the reader was looking at down the page. The anchor watches the top-level
+// blocks and scrolls back by the same delta, instantly.
+ok('scroll anchor watches the top-level content blocks', scriptSrc.includes('function scrollAnchor()') && scriptSrc.includes("document.querySelector('.container')"));
+ok('scroll anchor compensates only growth above the fold', scriptSrc.includes('preBottom <= 0'));
+ok('scroll anchor rides the smooth-scroll loop when it exists', scriptSrc.includes('window.kazuScrollAdjust'))
 ok('fx watcher covers the scenery layers + hero', scriptSrc.includes("fxWatch(document.querySelector('.sakura-scene'))") && scriptSrc.includes("fxWatch(document.querySelector('.xmas-scene'))") && scriptSrc.includes("fxWatch(document.querySelector('.hero'))") && scriptSrc.includes('fxWatch(atmosphereEl)'));
 ok('petals + drops are watched individually', scriptSrc.includes("querySelectorAll('.petal').forEach(fxWatch)") && scriptSrc.includes("querySelectorAll('.drop').forEach(fxWatch)"));
 ok('scroll-reveal section present in the stylesheet', cssFlat.includes('============ SCROLL REVEAL ============'));

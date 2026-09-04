@@ -434,6 +434,56 @@
     setTimeout(done, 500);
   }
 
+  // ---------- Scroll anchor ----------
+  // When a card above the fold finishes loading, popReveal glides it taller --
+  // and everything below it (including whatever the reader is mid-sentence
+  // on) jumps down with it. Native overflow-anchor can't save us: body's
+  // overflow-x: hidden suppresses it, and the smooth-scroll loop writes
+  // scrollY per frame. So watch the top-level content blocks; when one that
+  // sits ENTIRELY above the viewport changes height (async content arriving,
+  // an image loading, a font swap, a window-resize reflow), scroll instantly
+  // by the same delta so the reading point stays glued. Blocks straddling or
+  // below the fold are left alone -- their growth doesn't move what you're
+  // reading. The adjustment rides the smooth-scroll loop's own channel when
+  // that loop exists, so an active wheel glide is adjusted rather than
+  // cancelled as "external input".
+  (function scrollAnchor() {
+    if (!('ResizeObserver' in window)) return;
+    const container = document.querySelector('.container');
+    if (!container) return;
+    const kids = Array.from(container.children);
+    const heights = new WeakMap();
+    const ro = new ResizeObserver((entries) => {
+      const changed = [];
+      for (const entry of entries) {
+        const el = entry.target;
+        const now = entry.contentRect.height;
+        const prev = heights.get(el);
+        heights.set(el, now);
+        if (prev === undefined || Math.abs(now - prev) < 1) continue;
+        changed.push({ el: el, delta: now - prev, bottom: el.getBoundingClientRect().bottom });
+      }
+      if (!changed.length) return;
+      // The watched blocks are siblings and the callback runs post-layout, so
+      // a later block's bottom already includes the growth of every block
+      // above it in this batch. Walk in document order and peel the cumulative
+      // delta off, testing each block's bottom as it was BEFORE the batch
+      // landed -- testing the post-layout bottom directly misses big one-shot
+      // swaps whose growth pushes the block's own bottom across the fold.
+      changed.sort((a, b) => kids.indexOf(a.el) - kids.indexOf(b.el));
+      let shift = 0, adjust = 0;
+      for (const it of changed) {
+        const preBottom = it.bottom - shift - it.delta;
+        shift += it.delta;
+        if (preBottom <= 0) adjust += it.delta;
+      }
+      if (!adjust) return;
+      if (window.kazuScrollAdjust) window.kazuScrollAdjust(adjust);
+      else window.scrollBy({ top: adjust, behavior: 'instant' });
+    });
+    kids.forEach((el) => ro.observe(el));
+  })();
+
   const petalFallDuration = (KazuLib && KazuLib.petalFallDuration) || function (pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
     const view = +viewportHeight;
     const base = +baseSeconds;
@@ -3286,6 +3336,17 @@
   window.kazuSmoothScrollTo = (y) => {
     targetY = Math.min(Math.max(+y || 0, 0), maxScroll());
     if (rafId === null) { lastTickAt = 0; rafId = requestAnimationFrame(tick); }
+  };
+
+  // Scroll-anchor adjustments (layout shifts above the fold) move the resting
+  // point too: pre-seed lastWritten with the value the write will produce, so
+  // the scroll listener reads it as one of the loop's own writes and an
+  // active glide adjusts its target instead of cancelling as external input.
+  window.kazuScrollAdjust = (delta) => {
+    const y = Math.min(Math.max(window.scrollY + delta, 0), maxScroll());
+    targetY = Math.min(Math.max(targetY + delta, 0), maxScroll());
+    lastWritten = y;
+    window.scrollTo({ top: y, behavior: 'instant' });
   };
 
   window.addEventListener('wheel', (e) => {

@@ -631,7 +631,7 @@
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('style.css?v=49', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=57', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=58', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2], swSrc = src[3];
@@ -730,6 +730,14 @@
         ok('no-observer fallback reveals everything', scriptSrc.indexOf("'IntersectionObserver' in window") !== -1);
         ok('bottom-of-page fallback reveals the stragglers', scriptSrc.indexOf('revealStragglers') !== -1 && scriptSrc.indexOf('scrollHeight - 4') !== -1);
         ok('off-screen fx layers pause via .fx-paused', cssFlat.indexOf('.fx-paused, .fx-paused *') !== -1 && scriptSrc.indexOf("classList.toggle('fx-paused', !entry.isIntersecting)") !== -1);
+
+        // ---- Scroll anchor (static wiring checks) ----
+        // A card above the fold growing when its data arrives used to shove whatever
+        // the reader was looking at down the page. The anchor watches the top-level
+        // blocks and scrolls back by the same delta, instantly.
+        ok('scroll anchor watches the top-level content blocks', scriptSrc.indexOf('function scrollAnchor()') !== -1 && scriptSrc.indexOf("document.querySelector('.container')") !== -1);
+        ok('scroll anchor compensates only growth above the fold', scriptSrc.indexOf('preBottom <= 0') !== -1);
+        ok('scroll anchor rides the smooth-scroll loop when it exists', scriptSrc.indexOf('window.kazuScrollAdjust') !== -1);
         ok('fx watcher covers the scenery layers + hero', scriptSrc.indexOf("fxWatch(document.querySelector('.sakura-scene'))") !== -1 && scriptSrc.indexOf("fxWatch(document.querySelector('.xmas-scene'))") !== -1 && scriptSrc.indexOf("fxWatch(document.querySelector('.hero'))") !== -1 && scriptSrc.indexOf('fxWatch(atmosphereEl)') !== -1);
         ok('petals + drops are watched individually', scriptSrc.indexOf("querySelectorAll('.petal').forEach(fxWatch)") !== -1 && scriptSrc.indexOf("querySelectorAll('.drop').forEach(fxWatch)") !== -1);
         ok('scroll-reveal section present in the stylesheet', cssFlat.indexOf('============ SCROLL REVEAL ============') !== -1);
