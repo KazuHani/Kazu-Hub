@@ -630,7 +630,7 @@
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=47', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=48', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=57', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
@@ -704,6 +704,22 @@
         ok('social tiles are solid brand tiles (not glass .card members)', htmlSrc.indexOf('class="card social-card') === -1);
         eq('every social tile carries a brand modifier', htmlSrc.split('class="social-card social-card--').length - 1, 7);
         ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every(function (n) { return cssFlat.indexOf('.social-card--' + n + ' ') !== -1; }));
+
+        // ---- Social tile hover feel (static wiring checks) ----
+        // The hover is a physical button: straight lift (no tilt, no grow -- the old
+        // rotate(-5deg) badge tilt was vetoed), a one-shot sheen sweep across the
+        // face, and a press that sinks the tile. Keep it that way.
+        ok('social hover lifts straight up', cssFlat.indexOf('.social-card:hover {
+  transform: translateY(-3px);') !== -1);
+        ok('no tilt anywhere in the socials hover', !/\.social-card(:hover|:active)?[^}]*rotate\(/.test(cssFlat));
+        ok('hover sheen sweep wired', cssFlat.indexOf('.social-card::after {') !== -1 && cssFlat.indexOf('.social-card:hover::after { transform: translateX(300%) skewX(-14deg); }') !== -1);
+        ok('press sinks the tile with a fast down-stroke', cssFlat.indexOf('.social-card:active {
+  transform: translateY(1px);
+  transition-duration: .07s;') !== -1);
+        ok('revealed social tiles keep the hover lift', cssFlat.indexOf('.social-card.scroll-reveal.is-visible:hover {
+  transform: translateY(-3px);') !== -1);
+        ok('revealed social tiles keep the press', cssFlat.indexOf('.social-card.scroll-reveal.is-visible:active {
+  transform: translateY(1px);') !== -1);
 
         // ---- Scroll reveal ----
         ok('scroll reveal uses an IntersectionObserver', scriptSrc.indexOf('IntersectionObserver') !== -1);
