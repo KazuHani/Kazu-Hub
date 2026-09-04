@@ -716,18 +716,25 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   pointer-events: none;
 }
 /* Hover sheen: a soft band of light sweeps once across the face, like the
-   tile catching a lamp as it tips towards you. Parked off the left edge,
-   glides to off the right edge on hover (and back when the pointer leaves).
-   The print rides above it (see the z-index on badge/name/handle below) and
-   the tile's overflow: hidden clips the band to the rounded corners. */
+   tile catching a lamp as it tips towards you. Parked off the left edge and
+   glides to off the right edge on hover. ONE-WAY on purpose: the transition
+   lives only on the :hover rule, so when the pointer leaves, the band snaps
+   straight back to its parking spot (both ends sit fully outside the tile,
+   so the reset is invisible). Putting the transition on the base rule made
+   the band sweep BACKWARDS on mouse-leave, so sliding along the row flashed
+   the previous tile and the current one at the same time. The print rides
+   above the band (z-index below) and the tile's overflow: hidden clips it
+   to the rounded corners. */
 .social-card::after {
   content: ''; position: absolute; top: -30%; bottom: -30%; left: 0; width: 55%;
   background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.13) 40%, rgba(255,255,255,.30) 50%, rgba(255,255,255,.13) 60%, rgba(255,255,255,0) 100%);
   transform: translateX(-180%) skewX(-14deg);
-  transition: transform .6s cubic-bezier(.45,0,.25,1);
   pointer-events: none;
 }
-.social-card:hover::after { transform: translateX(300%) skewX(-14deg); }
+.social-card:hover::after {
+  transform: translateX(300%) skewX(-14deg);
+  transition: transform .6s cubic-bezier(.45,0,.25,1);
+}
 /* Hover is a plain physical lift: straight up, no scale, no tilt. The top
    light-catch brightens and the drop shadow deepens, so the tile reads as
    rising towards the light rather than growing. */
@@ -792,7 +799,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 /* Reduced motion: the lift/press/sheen are decorative — the tile simply
    changes its shadows, with no movement at all. */
 @media (prefers-reduced-motion: reduce) {
-  .social-card, .social-card::after, .social-badge, .social-badge svg, .social-handle { transition: none; }
+  .social-card, .social-card::after, .social-card:hover::after, .social-badge, .social-badge svg, .social-handle { transition: none; }
   .social-card:hover, .social-card:active, .social-card:hover .social-badge { transform: none; }
 }
 
@@ -1781,4 +1788,5 @@ body.low-power .scroll-reveal {
   transform: none !important;
   transition: none !important;
 }
+
 

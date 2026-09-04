@@ -630,7 +630,7 @@
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=48', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=49', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=57', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
@@ -712,7 +712,8 @@
         ok('social hover lifts straight up', cssFlat.indexOf('.social-card:hover {
   transform: translateY(-3px);') !== -1);
         ok('no tilt anywhere in the socials hover', !/\.social-card(:hover|:active)?[^}]*rotate\(/.test(cssFlat));
-        ok('hover sheen sweep wired', cssFlat.indexOf('.social-card::after {') !== -1 && cssFlat.indexOf('.social-card:hover::after { transform: translateX(300%) skewX(-14deg); }') !== -1);
+        ok('hover sheen sweep wired', cssFlat.indexOf('.social-card::after {') !== -1 && cssFlat.indexOf('.social-card:hover::after {\n  transform: translateX(300%) skewX(-14deg);\n  transition: transform .6s') !== -1);
+        ok('sheen sweep is one-way (base rule carries no transition)', !/\.social-card::after \{[^}]*transition/.test(cssFlat));
         ok('press sinks the tile with a fast down-stroke', cssFlat.indexOf('.social-card:active {
   transform: translateY(1px);
   transition-duration: .07s;') !== -1);

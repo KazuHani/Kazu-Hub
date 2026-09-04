@@ -650,7 +650,8 @@ ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtu
 // face, and a press that sinks the tile. Keep it that way.
 ok('social hover lifts straight up', cssFlat.includes('.social-card:hover {\n  transform: translateY(-3px);'));
 ok('no tilt anywhere in the socials hover', !/\.social-card(:hover|:active)?[^}]*rotate\(/.test(cssFlat));
-ok('hover sheen sweep wired', cssFlat.includes('.social-card::after {') && cssFlat.includes('.social-card:hover::after { transform: translateX(300%) skewX(-14deg); }'));
+ok('hover sheen sweep wired', cssFlat.includes('.social-card::after {') && cssFlat.includes('.social-card:hover::after {\n  transform: translateX(300%) skewX(-14deg);\n  transition: transform .6s'));
+ok('sheen sweep is one-way (base rule carries no transition)', !/\.social-card::after \{[^}]*transition/.test(cssFlat));
 ok('press sinks the tile with a fast down-stroke', cssFlat.includes('.social-card:active {\n  transform: translateY(1px);\n  transition-duration: .07s;'));
 ok('revealed social tiles keep the hover lift', cssFlat.includes('.social-card.scroll-reveal.is-visible:hover {\n  transform: translateY(-3px);'));
 ok('revealed social tiles keep the press', cssFlat.includes('.social-card.scroll-reveal.is-visible:active {\n  transform: translateY(1px);'));
