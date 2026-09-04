@@ -683,48 +683,76 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 }
 
 /* ---- Socials ---- */
-/* Bare brand marks: no tile, no border, no bevel — just the logo glyph, the
-   network name and the handle sitting straight on the page. Each network's
-   .social-card--<name> rule paints its glyph in the brand colour (CSS fill/
-   stroke beat the SVGs' white presentation attributes), so a new social =
-   copy a tile in index.html + one modifier rule here. Deliberately NOT .card
-   members: with no tile there is nothing to frost, so the glass layer skips
-   them entirely. */
-.socials-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 26px 44px; }
+/* Solid brand tiles: full-bleed brand gradient, glossy bevelled edges, and
+   the name + handle centred below a bare white logo -- the old boxed icon
+   badge is gone, so the mark sits straight on the tile. The whole design
+   hangs off two custom properties -- --brand-a (tile centre, lighter) and
+   --brand-b (tile edge, darker) -- so a new network only needs a
+   .social-card--<name> rule with its two brand stops; the bevel, gloss and
+   hover are inherited. Deliberately NOT .card members: there is no backdrop
+   to refract through a solid tile, so the glass layer and its displacement
+   maps skip them entirely. */
+.socials-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 16px; }
 .social-card {
+  --brand-a: #7c5cff; /* fallback centre stop (violet) */
+  --brand-b: #4a34b8; /* fallback edge stop */
   position: relative; z-index: 1;
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 10px 6px; border-radius: 18px;
-  text-decoration: none;
-  transition: transform .3s cubic-bezier(.34,1.45,.55,1), z-index .3s;
+  padding: 26px 16px 20px; border-radius: 22px;
+  text-decoration: none; color: #fff;
+  background: radial-gradient(125% 135% at 50% 28%, var(--brand-a) 0%, var(--brand-b) 82%);
+  box-shadow:
+    inset 0 2px 1px rgba(255,255,255,.38),   /* top light-catch */
+    inset 2px 0 5px rgba(255,255,255,.10),   /* left sheen */
+    inset -2px -4px 8px rgba(0,0,0,.30),     /* lower-right depth */
+    0 14px 28px rgba(0,0,0,.32);
+  transition: transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, z-index .3s;
   -webkit-tap-highlight-color: transparent;
 }
-.social-card:hover { transform: translateY(-3px); z-index: 2; }
-.social-card:active { transform: translateY(-1px); }
+/* Broad gloss across the top half, like light hitting a lacquered tile. */
+.social-card::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(178deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.05) 34%, rgba(255,255,255,0) 54%);
+  pointer-events: none;
+}
+.social-card:hover {
+  transform: translateY(-4px) scale(1.03); z-index: 2;
+  box-shadow:
+    inset 0 2px 1px rgba(255,255,255,.38),
+    inset 2px 0 5px rgba(255,255,255,.10),
+    inset -2px -4px 8px rgba(0,0,0,.30),
+    0 22px 42px rgba(0,0,0,.42);
+}
+.social-card:active { transform: translateY(-2px) scale(1.02); }
+/* The badge is just a positioning wrapper now: no frosted box, no rounded
+   background, no shadow -- the bare logo sits directly on the brand tile. */
 .social-badge {
-  width: 48px; height: 48px; margin-bottom: 8px;
+  width: 48px; height: 48px; margin-bottom: 12px;
   display: flex; align-items: center; justify-content: center;
   transition: transform .35s cubic-bezier(.34,1.6,.55,1);
 }
-.social-badge svg { width: 44px; height: 44px; display: block; filter: drop-shadow(0 3px 8px rgba(0,0,0,.3)); }
-.social-card:hover .social-badge { transform: scale(1.12) rotate(-5deg); }
-.social-badge--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: .03em; }
+.social-badge svg { width: 40px; height: 40px; display: block; }
+.social-card:hover .social-badge { transform: scale(1.1) rotate(-5deg); }
+.social-badge--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; color: #fff; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
 .social-badge--dots span { width: 24px; height: 24px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
-.social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); }
-.social-handle { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.social-handle { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.74); }
 .social-card:focus { outline: none; }
-.social-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.social-card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 
-/* Brand glyph colours -- one modifier per network. X and TikTok's marks are
-   monochrome, so they follow the ink; the rest take the brand hue (bright
-   enough to read on the AMOLED night sky and the lighter day sky alike). */
-.social-card--x .social-badge svg { fill: var(--ink); }
-.social-card--instagram .social-badge svg { stroke: #f2638f; }
-.social-card--youtube .social-badge svg { fill: #ff5147; }
-.social-card--reddit .social-badge svg { fill: #ff6a33; }
-.social-card--tiktok .social-badge svg { fill: var(--ink); }
-.social-card--mal .social-badge--text { color: #7fa8ff; }
-.social-card--letterboxd .social-badge { filter: drop-shadow(0 3px 8px rgba(0,0,0,.3)); }
+/* Brand stops -- one modifier per network. Adding a social = copy a tile in
+   index.html + one line here (lighter centre stop, darker edge stop). */
+.social-card--x { --brand-a: #3d3d44; --brand-b: #0e0e11; }
+.social-card--instagram {
+  background:
+    radial-gradient(125% 135% at 50% 28%, rgba(255,255,255,.14) 0%, rgba(0,0,0,.22) 82%),
+    linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+}
+.social-card--youtube { --brand-a: #f23a30; --brand-b: #a80f14; }
+.social-card--reddit { --brand-a: #ff6a30; --brand-b: #c22e00; }
+.social-card--tiktok { --brand-a: #2c2c34; --brand-b: #0b0b0f; }
+.social-card--mal { --brand-a: #4069c8; --brand-b: #1c3873; }
+.social-card--letterboxd { --brand-a: #3b4552; --brand-b: #14181d; }
 
 /* ---- Stories ---- */
 .stories-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
@@ -1016,15 +1044,15 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 
 /* .social-card also carries .scroll-reveal — restate its own transition here
    (higher specificity: two classes) so the fade-in transition above doesn't
-   clobber the snappier hover transform transition set on .social-card. */
+   clobber the snappier hover transform/box-shadow transition set on .social-card. */
 .social-card.scroll-reveal {
-  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.45,.55,1);
+  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, border-color .3s ease;
 }
 /* .scroll-reveal.is-visible pins transform: translateY(0) at equal specificity to
-   .social-card:hover and wins on source order, silently killing the hover lift
+   .social-card:hover and wins on source order, silently killing the hover scale
    once a card has revealed. Restate the hover transform here at higher specificity. */
 .social-card.scroll-reveal.is-visible:hover {
-  transform: translateY(-3px);
+  transform: scale(1.05);
 }
 
 @media (prefers-reduced-motion: reduce) {

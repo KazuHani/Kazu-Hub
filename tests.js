@@ -642,7 +642,7 @@ ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card
 ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
 ok('social tiles are solid brand tiles (not glass .card members)', !htmlSrc.includes('class="card social-card'));
 ok('every social tile carries a brand modifier', (htmlSrc.match(/class="social-card social-card--/g) || []).length === 7);
-ok('brand glyph colours exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every((n) => cssFlat.includes('.social-card--' + n + ' ')));
+ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every((n) => cssFlat.includes('.social-card--' + n + ' ')));
 
 // ---- Scroll reveal (static wiring checks) ----
 // Everything .scroll-reveal starts hidden and fades + slides in the first
