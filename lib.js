@@ -412,11 +412,16 @@
   }
 
   // Time-of-day page tint: a soft slate-blue palette that breathes with the
-  // UK day. Lightness rides the sun (9% in deep night, 22% at midday), while
-  // a gaussian blush around sunrise/sunset warms the hue from blue towards
-  // indigo-violet. script.js writes h/s/l onto CSS custom properties once a
-  // minute (registered @property transitions glide each step). Junk time
-  // input yields null so the page keeps its current tint.
+  // UK day. Lightness rides the sun (0% AMOLED black in deep night, 36% soft
+  // daylight at midday), while a gaussian blush around sunrise/sunset warms
+  // the hue from blue towards indigo-violet. `glow` (max of the two factors)
+  // scales the decorative gradient layers in --page-bg so the night sky can
+  // reach TRUE black, and `glowX` tracks the sun's horizontal position (pinned
+  // to the rising horizon before dawn, the setting horizon after dusk) so
+  // script.js can park a faint orange glow where the sun crosses.
+  // script.js writes h/s/l/glow onto CSS custom properties once a minute
+  // (registered @property transitions glide each step). Junk time input
+  // yields null so the page keeps its current tint.
   function skyTint(ukMinutes, dayOfYear) {
     var t = +ukMinutes;
     if (isNaN(t)) return null;
@@ -433,12 +438,22 @@
       return Math.exp(-(d * d) / 7200); // 2 * 60^2
     }
     var dusk = Math.max(bell(st.rise), bell(st.set));
+    // Sun's progress along its day arc (clock-anchored like skyBodyState),
+    // clamped to the horizons outside daylight so the pre-dawn glow sits on
+    // the rising (left) side and the post-sunset glow on the setting (right).
+    var sunP;
+    if (t <= st.rise) sunP = 0;
+    else if (t >= st.set) sunP = 1;
+    else sunP = t < 720 ? 0.5 * (t - st.rise) / (720 - st.rise)
+                        : 0.5 + 0.5 * (t - 720) / (st.set - 720);
     return {
       h: +(215 + 22 * dusk).toFixed(2),  // 215 soft blue -> 237 indigo at the horizon
       s: +(33 + 9 * dusk).toFixed(2),    // saturation deepens a touch at dusk
-      l: +(9 + 13 * day).toFixed(2),     // 9% deep night -> 22% gentle daylight
+      l: +(36 * day).toFixed(2),         // 0% AMOLED black night -> 36% gentle daylight
       daylight: +day.toFixed(4),
       dusk: +dusk.toFixed(4),
+      glow: +Math.max(day, dusk).toFixed(4),   // 0 at deep night -> gradient layers fade out
+      glowX: +(6 + sunP * 88).toFixed(2),      // horizon glow anchor, % across the scenery
     };
   }
 

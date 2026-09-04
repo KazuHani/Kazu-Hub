@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=28"></script>
+  <script src="lib.js?v=29"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -167,14 +167,17 @@
       eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
 
       // ---- skyTint + hslToHex (time-of-day page palette) ----
-      eq('summer midnight: deep-night palette', L.skyTint(0, 172), { h: 215.97, s: 33.4, l: 9, daylight: 0, dusk: 0.0439 });
-      eq('summer solar peak: gentle daylight', L.skyTint(780, 172), { h: 215, s: 33, l: 21.99, daylight: 0.9989, dusk: 0 });
-      eq('sunset: indigo dusk blush at full strength', L.skyTint(1290, 172), { h: 237, s: 42, l: 9, daylight: 0, dusk: 1 });
-      eq('winter midday still lightens', L.skyTint(760, 355), { h: 215.09, s: 33.03, l: 21.69, daylight: 0.976, dusk: 0.0039 });
+      eq('summer midnight: AMOLED deep-night palette', L.skyTint(0, 172), { h: 215.97, s: 33.4, l: 0, daylight: 0, dusk: 0.0439, glow: 0.0439, glowX: 6 });
+      eq('summer solar peak: lighter daylight', L.skyTint(780, 172), { h: 215, s: 33, l: 35.96, daylight: 0.9989, dusk: 0, glow: 0.9989, glowX: 54.63 });
+      eq('sunset: indigo dusk blush at full strength', L.skyTint(1290, 172), { h: 237, s: 42, l: 0, daylight: 0, dusk: 1, glow: 1, glowX: 94 });
+      eq('winter midday still lightens', L.skyTint(760, 355), { h: 215.09, s: 33.03, l: 35.14, daylight: 0.976, dusk: 0.0039, glow: 0.976, glowX: 57.33 });
       ok('night is darker than midday', L.skyTint(0, 172).l < L.skyTint(780, 172).l);
+      ok('deep night reaches true AMOLED black', L.skyTint(0, 172).l === 0);
+      ok('pre-dawn glow anchors to the rising (left) horizon', L.skyTint(300, 172).glowX === 6);
+      ok('post-sunset glow anchors to the setting (right) horizon', L.skyTint(1290, 172).glowX === 94);
       eq('junk tint time → null', L.skyTint('abc', 172), null);
       eq('hslToHex primaries', [L.hslToHex(0, 100, 50), L.hslToHex(-120, 100, 50), L.hslToHex(120, 100, 50)], ['#ff0000', '#0000ff', '#00ff00']);
-      eq('hslToHex night base matches the inline first paint', L.hslToHex(215, 33, 9), '#0f161f');
+      eq('hslToHex AMOLED night base matches the inline first paint', L.hslToHex(215, 33, 0), '#000000');
 
       // ---- openMeteoUrl (weather fetch URL builder) ----
       ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);
@@ -627,8 +630,8 @@
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=39', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=50', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=45', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=57', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2], swSrc = src[3];
@@ -667,6 +670,9 @@
         ok('page-height petal runway is wired', cssFlat.indexOf('.atmosphere.atmosphere--page { height: var(--atmosphere-height, 100vh); }') !== -1 && cssFlat.indexOf('var(--atmosphere-height, 100vh) - var(--spawn-y, 0px) + var(--exit-pad, 48px)') !== -1);
         ok('blossom bounds follow the live page height', scriptSrc.indexOf("classList.toggle('atmosphere--page', pagePetals)") !== -1 && scriptSrc.indexOf('new ResizeObserver(scheduleAtmosphereBounds).observe(pageEl)') !== -1);
         ok('petals keep a fresh branch cohort and seed the full runway', scriptSrc.indexOf('freshAtBranch') !== -1 && scriptSrc.indexOf('-randRange(0, fall)') !== -1);
+        ok('falling petals freeze their runway per-petal', scriptSrc.indexOf("setProperty('--fall-y'") !== -1 && cssFlat.indexOf('var(--fall-y, calc(var(--atmosphere-height, 100vh)') !== -1);
+        ok('petals are never retimed mid-flight', scriptSrc.indexOf('syncPetalDurations') === -1);
+        ok('grown pages gently re-seed the petal cohort', scriptSrc.indexOf('maybeReseedPetals') !== -1);
         [
           'rgba(40,40,110,.32), var(--glint)',   // discord
           'rgba(20,40,70,.32), var(--glint)',    // steam
@@ -685,17 +691,19 @@
         ok('low power stills the particle sky', scriptSrc.indexOf("if (LOW_POWER && !ATMOSPHERE_OVERRIDE) mode = 'none';") !== -1);
         ok('low power skips the liquid-glass refraction + the wheel lerp', scriptSrc.split("document.body.classList.contains('low-power')").length - 1 >= 2);
         ok('low power drops the frosted backdrop + ambient loops', cssFlat.indexOf('body.low-power { --card-blur: none; }') !== -1 && cssFlat.indexOf('body.low-power .scroll-reveal {') !== -1);
-        ok('canvas colour painted inline before the stylesheet', htmlSrc.indexOf('<style>html{background:#0f161f') !== -1 && htmlSrc.indexOf('<style>html{background:#0f161f') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+        ok('canvas colour painted inline before the stylesheet', htmlSrc.indexOf('<style>html{background:#000;') !== -1 && htmlSrc.indexOf('<style>html{background:#000;') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
         // ---- Single time-of-day palette (light theme + toggle fully removed) ----
         ok('no light theme selectors or bootstrap left', cssFlat.indexOf('data-theme="light"') === -1 && htmlSrc.indexOf('data-theme="light"') === -1 && scriptSrc.indexOf('data-theme') === -1);
         ok('theme toggle orb fully removed', htmlSrc.indexOf('theme-orb') === -1 && scriptSrc.indexOf('theme-orb') === -1 && cssFlat.indexOf('theme-orb') === -1 && htmlSrc.indexOf('kazu-dark') === -1 && scriptSrc.indexOf('kazu-dark') === -1);
         ok('registered tint properties glide the background', cssFlat.indexOf("@property --bg-h { syntax: '<number>';") !== -1 && cssFlat.indexOf('body[data-bg-live] {') !== -1);
         ok('sky tint written from the UK clock once a minute', scriptSrc.indexOf('applySkyTint(mins, doy)') !== -1 && scriptSrc.indexOf("document.body.dataset.bgLive = '1'") !== -1);
         ok('page gradient built from the live tint', cssFlat.indexOf('calc(var(--bg-l, 9) * 1%)') !== -1);
+        ok('gradient layers scale with the glow factor so night reaches black', cssFlat.indexOf('16 * var(--bg-glow, 1)') !== -1 && cssFlat.indexOf('@property --bg-glow') !== -1);
+        ok('dusk glow element + driver wired', htmlSrc.indexOf('class="sky-glow"') !== -1 && scriptSrc.indexOf('skyGlowEl.style.opacity') !== -1 && scriptSrc.indexOf('tint.glowX') !== -1);
         ok('fonts no longer render-blocking', htmlSrc.indexOf('rel="stylesheet" media="print" onload="this.media=\'all\'"') !== -1);
         ok('social tiles are solid brand tiles (not glass .card members)', htmlSrc.indexOf('class="card social-card') === -1);
         eq('every social tile carries a brand modifier', htmlSrc.split('class="social-card social-card--').length - 1, 7);
-        ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every(function (n) { return cssFlat.indexOf('.social-card--' + n + ' ') !== -1; }));
+        ok('brand glyph colours exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every(function (n) { return cssFlat.indexOf('.social-card--' + n + ' ') !== -1; }));
 
         // ---- Scroll reveal ----
         ok('scroll reveal uses an IntersectionObserver', scriptSrc.indexOf('IntersectionObserver') !== -1);

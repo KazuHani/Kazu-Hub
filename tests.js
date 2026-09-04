@@ -150,14 +150,17 @@ eq('junk time → null', L.skyBodyState('abc'), null);
 eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
 
 // ---- skyTint + hslToHex (time-of-day page palette) ----
-eq('summer midnight: deep-night palette', L.skyTint(0, 172), { h: 215.97, s: 33.4, l: 9, daylight: 0, dusk: 0.0439 });
-eq('summer solar peak: gentle daylight', L.skyTint(780, 172), { h: 215, s: 33, l: 21.99, daylight: 0.9989, dusk: 0 });
-eq('sunset: indigo dusk blush at full strength', L.skyTint(1290, 172), { h: 237, s: 42, l: 9, daylight: 0, dusk: 1 });
-eq('winter midday still lightens', L.skyTint(760, 355), { h: 215.09, s: 33.03, l: 21.69, daylight: 0.976, dusk: 0.0039 });
+eq('summer midnight: AMOLED deep-night palette', L.skyTint(0, 172), { h: 215.97, s: 33.4, l: 0, daylight: 0, dusk: 0.0439, glow: 0.0439, glowX: 6 });
+eq('summer solar peak: lighter daylight', L.skyTint(780, 172), { h: 215, s: 33, l: 35.96, daylight: 0.9989, dusk: 0, glow: 0.9989, glowX: 54.63 });
+eq('sunset: indigo dusk blush at full strength', L.skyTint(1290, 172), { h: 237, s: 42, l: 0, daylight: 0, dusk: 1, glow: 1, glowX: 94 });
+eq('winter midday still lightens', L.skyTint(760, 355), { h: 215.09, s: 33.03, l: 35.14, daylight: 0.976, dusk: 0.0039, glow: 0.976, glowX: 57.33 });
 ok('night is darker than midday', L.skyTint(0, 172).l < L.skyTint(780, 172).l);
+ok('deep night reaches true AMOLED black', L.skyTint(0, 172).l === 0);
+ok('pre-dawn glow anchors to the rising (left) horizon', L.skyTint(300, 172).glowX === 6);
+ok('post-sunset glow anchors to the setting (right) horizon', L.skyTint(1290, 172).glowX === 94);
 eq('junk tint time → null', L.skyTint('abc', 172), null);
 eq('hslToHex primaries', [L.hslToHex(0, 100, 50), L.hslToHex(-120, 100, 50), L.hslToHex(120, 100, 50)], ['#ff0000', '#0000ff', '#00ff00']);
-eq('hslToHex night base matches the inline first paint', L.hslToHex(215, 33, 9), '#0f161f');
+eq('hslToHex AMOLED night base matches the inline first paint', L.hslToHex(215, 33, 0), '#000000');
 
 // ---- openMeteoUrl (weather fetch URL builder) ----
 ok('openMeteoUrl carries coords', L.openMeteoUrl(52.414, -4.081).indexOf('latitude=52.414&longitude=-4.081') > -1);
@@ -639,7 +642,7 @@ ok('presence + story cards get the frosted backdrop', cssFlat.includes('.lb-card
 ok('refraction keys off .card so future cards join automatically', scriptSrc.includes("querySelectorAll('.card:not(.stat-card--bday), .toast')"));
 ok('social tiles are solid brand tiles (not glass .card members)', !htmlSrc.includes('class="card social-card'));
 ok('every social tile carries a brand modifier', (htmlSrc.match(/class="social-card social-card--/g) || []).length === 7);
-ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every((n) => cssFlat.includes('.social-card--' + n + ' ')));
+ok('brand glyph colours exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every((n) => cssFlat.includes('.social-card--' + n + ' ')));
 
 // ---- Scroll reveal (static wiring checks) ----
 // Everything .scroll-reveal starts hidden and fades + slides in the first
@@ -742,6 +745,9 @@ eq('petal fall rejects an unusable viewport', L.petalFallDuration(4000, 0, 0, 16
 ok('page-height petal runway is wired', cssFlat.includes('.atmosphere.atmosphere--page { height: var(--atmosphere-height, 100vh); }') && cssFlat.includes('var(--atmosphere-height, 100vh) - var(--spawn-y, 0px) + var(--exit-pad, 48px)'));
 ok('blossom bounds follow the live page height', scriptSrc.includes("classList.toggle('atmosphere--page', pagePetals)") && scriptSrc.includes('new ResizeObserver(scheduleAtmosphereBounds).observe(pageEl)'));
 ok('petals keep a fresh branch cohort and seed the full runway', scriptSrc.includes('freshAtBranch') && scriptSrc.includes('-randRange(0, fall)'));
+ok('falling petals freeze their runway per-petal', scriptSrc.includes("setProperty('--fall-y'") && cssFlat.includes('var(--fall-y, calc(var(--atmosphere-height, 100vh)'));
+ok('petals are never retimed mid-flight', !scriptSrc.includes('syncPetalDurations'));
+ok('grown pages gently re-seed the petal cohort', scriptSrc.includes('maybeReseedPetals'));
 ok('wheel hijacked non-passively', scriptSrc.includes("addEventListener('wheel'") && scriptSrc.includes('{ passive: false }'));
 ok('heavy scroll gated on reduced motion + KazuLib', scriptSrc.includes('KazuLib.wheelDeltaPx') && scriptSrc.includes('KazuLib.smoothScrollStep') && scriptSrc.includes('prefers-reduced-motion'));
 ok('heavy scroll feeds the real frame delta to the step', scriptSrc.includes('smoothScrollStep(window.scrollY, targetY, SMOOTH_EASE, dt, 0.5)'));
@@ -770,7 +776,7 @@ ok('low power reveals content without the observer', scriptSrc.includes("if (!LO
 ok('low power drops the frosted backdrop + ambient loops', cssFlat.includes('body.low-power { --card-blur: none; }') && cssFlat.includes('body.low-power .scroll-reveal {'));
 
 // ---- First paint: no white flash on a cold cache ----
-ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<style>html{background:#0f161f') && htmlSrc.indexOf('<style>html{background:#0f161f') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<style>html{background:#000;') && htmlSrc.indexOf('<style>html{background:#000;') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
 ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" onload="this.media=\'all\'"'));
 
 // ---- Single time-of-day palette (light theme + toggle fully removed) ----
@@ -779,6 +785,8 @@ ok('theme toggle orb fully removed', !htmlSrc.includes('theme-orb') && !scriptSr
 ok('registered tint properties glide the background', cssFlat.includes("@property --bg-h { syntax: '<number>';") && cssFlat.includes('body[data-bg-live] {'));
 ok('sky tint written from the UK clock once a minute', scriptSrc.includes('applySkyTint(mins, doy)') && scriptSrc.includes("document.body.dataset.bgLive = '1'"));
 ok('page gradient built from the live tint', cssFlat.includes('calc(var(--bg-l, 9) * 1%)'));
+ok('gradient layers scale with the glow factor so night reaches black', cssFlat.includes('16 * var(--bg-glow, 1)') && cssFlat.includes('@property --bg-glow'));
+ok('dusk glow element + driver wired', htmlSrc.includes('class="sky-glow"') && scriptSrc.includes('skyGlowEl.style.opacity') && scriptSrc.includes('tint.glowX'));
 
 // ---- Liquid glass: default-on + the LB ordering bug (regression guards) ----
 // The effect is the .card default: any future class="card ..." section gets

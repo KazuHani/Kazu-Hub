@@ -446,27 +446,46 @@
   };
 
   // Blossom mode owns a page-height runway. A ResizeObserver follows the
-  // natural .page height as live cards and responsive layouts settle, then a
-  // single CSS custom property updates every petal's transform-only endpoint.
-  // Rain and aurora intentionally retain their original one-viewport layer.
+  // natural .page height as live cards and responsive layouts settle, and the
+  // single CSS custom property resizes the layer so petals stay unclipped.
+  // Falling petals are NEVER retimed or re-pointed — each petal's runway is
+  // frozen onto it at spawn (--fall-y), so a right-now card loading in can no
+  // longer shift a single blossom mid-flight. When the page has grown a lot
+  // since the cohort was built, maybeReseedPetals() fades in a fresh,
+  // correctly-sized cohort instead. Rain and aurora intentionally retain
+  // their original one-viewport layer.
   function measureAtmosphereHeight() {
     if (!pageEl) return Math.max(window.innerHeight, document.documentElement.scrollHeight);
     const r = pageEl.getBoundingClientRect();
     return Math.max(window.innerHeight, Math.ceil(r.bottom + window.scrollY));
   }
 
-  function syncPetalDurations() {
-    if (!atmosphereEl) return;
-    atmosphereEl.querySelectorAll('.petal[data-base-fall]').forEach((petal) => {
-      const fall = petalFallDuration(
-        atmosphereHeight,
-        +petal.dataset.spawnY,
-        window.innerHeight,
-        +petal.dataset.baseFall,
-        +petal.dataset.exitPad
-      );
-      petal.style.animationDuration = fall.toFixed(2) + 's, ' + petal.dataset.swayDuration + 's, ' + petal.dataset.rockDuration + 's';
-    });
+  // One gentle cohort re-seed: the old petals dim out via WAAPI (which
+  // overrides the keyframe-driven opacity) and the replacements all detach
+  // from their spawn points with the natural fade-in — nothing teleports and
+  // nothing pops into existence mid-sky. Throttled, so the boot burst of live
+  // loads settles in one or two re-seeds rather than a shimmer.
+  let petalRunwayHeight = 0;   // page height the live cohort was sized for
+  let lastPetalReseed = 0;
+  function maybeReseedPetals() {
+    const mode = atmosphereCurrent;
+    if (mode !== 'blossom' && mode !== 'blossom-heavy') return;
+    if (!petalRunwayHeight || atmosphereHeight < petalRunwayHeight * 1.2 + 120) return;
+    const now = Date.now();
+    if (now - lastPetalReseed < 8000) return;
+    lastPetalReseed = now;
+    const heavy = mode === 'blossom-heavy';
+    if (!REDUCED_MOTION) {
+      atmosphereEl.querySelectorAll('.petal').forEach((p) => {
+        if (p.animate) p.animate([{ opacity: 0 }], { duration: 450, fill: 'forwards' });
+      });
+    }
+    setTimeout(() => {
+      if (atmosphereCurrent !== mode) return; // the weather flipped modes mid-fade
+      atmosphereEl.innerHTML = '';
+      atmosphereEl.appendChild(buildPetals(particleCount(heavy ? 48 : 30, PARTICLE_FLAGS), heavy ? 12 : 13, heavy ? 26 : 24, !heavy, true));
+      atmosphereEl.querySelectorAll('.petal').forEach(fxWatch);
+    }, REDUCED_MOTION ? 0 : 480);
   }
 
   function syncAtmosphereBounds() {
@@ -474,7 +493,7 @@
     if (!atmosphereEl) return;
     atmosphereHeight = measureAtmosphereHeight();
     atmosphereEl.style.setProperty('--atmosphere-height', atmosphereHeight + 'px');
-    syncPetalDurations();
+    maybeReseedPetals();
   }
 
   function scheduleAtmosphereBounds() {
@@ -532,7 +551,7 @@
   // size, sharpness, brightness and fall speed all follow it, so the drift
   // reads as a layered shower instead of a flat curtain of emoji. Opacity
   // travels via --po so fallY can fade fresh petals in as they detach.
-  function buildPetals(count, sizeMin, sizeMax, fromBranches) {
+  function buildPetals(count, sizeMin, sizeMax, fromBranches, allFresh) {
     const frag = document.createDocumentFragment();
     const spawns = fromBranches ? branchSpawnPoints() : null;
     for (let i = 0; i < count; i++) {
@@ -570,17 +589,19 @@
       const fall = petalFallDuration(atmosphereHeight, spawnY, window.innerHeight, baseFall, exitPad);
       const swayDuration = randRange(2.2, 3.8);
       const rockDuration = randRange(3.5, 6);
-      const freshAtBranch = fromBranches && i < Math.max(6, Math.round(count * 0.35));
+      // Freeze the runway length onto the petal (--fall-y): the shared
+      // keyframes read THIS instead of the mutable --atmosphere-height, so a
+      // growing document can never move a falling petal.
+      s.style.setProperty('--fall-y', (atmosphereHeight - spawnY + exitPad).toFixed(1) + 'px');
+      // allFresh re-seeds (grown page): every petal detaches with the natural
+      // fade-in — no phase-seeded cohort popping into existence mid-sky.
+      const freshAtBranch = allFresh || (fromBranches && i < Math.max(6, Math.round(count * 0.35)));
       const fallDelay = freshAtBranch ? randRange(0, 7) : -randRange(0, fall);
-      s.dataset.spawnY = spawnY.toFixed(1);
-      s.dataset.baseFall = baseFall.toFixed(2);
-      s.dataset.exitPad = exitPad.toFixed(1);
-      s.dataset.swayDuration = swayDuration.toFixed(1);
-      s.dataset.rockDuration = rockDuration.toFixed(1);
-      s.style.animationDuration = fall.toFixed(2) + 's, ' + s.dataset.swayDuration + 's, ' + s.dataset.rockDuration + 's';
+      s.style.animationDuration = fall.toFixed(2) + 's, ' + swayDuration.toFixed(1) + 's, ' + rockDuration.toFixed(1) + 's';
       s.style.animationDelay = fallDelay.toFixed(2) + 's, ' + (-randRange(0, 4)).toFixed(1) + 's, ' + (-randRange(0, 5)).toFixed(1) + 's';
       frag.appendChild(s);
     }
+    petalRunwayHeight = atmosphereHeight; // remember what this cohort was sized for
     return frag;
   }
 
@@ -641,6 +662,7 @@
   const skySceneEl = document.querySelector('.sakura-scene');
   const skyProfileEl = document.querySelector('.pfp');
   const skyBodyEl = document.querySelector('.sky-body');
+  const skyGlowEl = document.querySelector('.sky-glow');
   const skyCurveGuideEl = document.querySelector('.sky-curve-guide');
   const skyCurveGuidePaths = skyCurveGuideEl
     ? skyCurveGuideEl.querySelectorAll('.sky-curve-guide__glow, .sky-curve-guide__line')
@@ -705,12 +727,20 @@
       return Math.exp(-(dist * dist) / 7200); // 2 * 60^2
     };
     const dusk = Math.max(bell(rise), bell(set));
+    // Sun's day-arc progress clamped to the horizons, for the dusk glow anchor.
+    let sunP;
+    if (t <= rise) sunP = 0;
+    else if (t >= set) sunP = 1;
+    else sunP = t < 720 ? 0.5 * (t - rise) / (720 - rise)
+                        : 0.5 + 0.5 * (t - 720) / (set - 720);
     return {
       h: +(215 + 22 * dusk).toFixed(2),
       s: +(33 + 9 * dusk).toFixed(2),
-      l: +(9 + 13 * day).toFixed(2),
+      l: +(36 * day).toFixed(2), // 0% AMOLED black night -> 36% gentle daylight
       daylight: +day.toFixed(4),
       dusk: +dusk.toFixed(4),
+      glow: +Math.max(day, dusk).toFixed(4),
+      glowX: +(6 + sunP * 88).toFixed(2),
     };
   };
   const hslToHex = (KazuLib && KazuLib.hslToHex) || function (h, s, l) {
@@ -736,18 +766,22 @@
 
   // The whole page's blue breathes with the UK day: the tint lands on
   // documentElement so both <html> (overscroll canvas) and <body> (the
-  // gradient stack) track it. First write snaps; afterwards body carries
-  // data-bg-live and the registered @property transitions glide each
-  // per-minute step. Cheap by construction: three property writes a minute.
+  // gradient stack) track it. --bg-glow (max of the daylight and dusk bells)
+  // scales the decorative gradient layers so deep night reaches true AMOLED
+  // black. First write snaps; afterwards body carries data-bg-live and the
+  // registered @property transitions glide each per-minute step. Cheap by
+  // construction: four property writes a minute. Returns the tint so the
+  // sky-body pass can reuse it for the dusk glow.
   let skyTintSnapped = false;
-  let skyTintHex = '#0f161f'; // deep-night default, matches the inline first paint
+  let skyTintHex = '#000000'; // AMOLED deep-night default, matches the inline first paint
   function applySkyTint(mins, doy) {
     const tint = skyTint(mins, doy);
-    if (!tint) return;
+    if (!tint) return null;
     const root = document.documentElement.style;
     root.setProperty('--bg-h', tint.h);
     root.setProperty('--bg-s', tint.s);
     root.setProperty('--bg-l', tint.l);
+    root.setProperty('--bg-glow', tint.glow);
     skyTintHex = hslToHex(tint.h, tint.s, tint.l);
     if (!document.body.classList.contains('season-christmas')) setThemeColor(skyTintHex);
     if (!skyTintSnapped) {
@@ -756,6 +790,7 @@
         document.body.dataset.bgLive = '1';
       }));
     }
+    return tint;
   }
 
   // The scenery's coordinate frame is the viewport, while the profile picture
@@ -810,11 +845,24 @@
       // transition is restored a frame later for the per-minute updates.
       skyBodySnapped = true;
       skyBodyEl.style.transition = 'none';
-      requestAnimationFrame(() => requestAnimationFrame(() => { skyBodyEl.style.transition = ''; }));
+      if (skyGlowEl) skyGlowEl.style.transition = 'none';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        skyBodyEl.style.transition = '';
+        if (skyGlowEl) skyGlowEl.style.transition = '';
+      }));
     }
     skyBodyEl.style.left = st.x + '%';
     skyBodyEl.style.top = st.y + '%';
-    applySkyTint(mins, doy);
+    const tint = applySkyTint(mins, doy);
+    if (tint && skyGlowEl) {
+      // Faint orange horizon glow around sunrise/sunset: the x anchor comes
+      // from the sun's own day-arc progress, so the pre-dawn glow warms the
+      // LEFT horizon even while the moon is still the body on show, and the
+      // post-sunset glow lingers on the right. Opacity rides the dusk bell
+      // (60-minute sigma), so it is only ever visible near the crossings.
+      skyGlowEl.style.left = tint.glowX + '%';
+      skyGlowEl.style.opacity = (tint.dusk * 0.85).toFixed(3);
+    }
   }
   // Auto restores the stylesheet's responsive sky-body behaviour and keeps
   // the debug line hidden. On forces both the sky body and its visible guide

@@ -1,16 +1,20 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 /* Time-of-day palette. There is only ONE theme now — a soft slate blue that
-   breathes with the UK day: script.js rewrites --bg-h/--bg-s/--bg-l from
-   KazuLib.skyTint once a minute (lighter towards midday, darker and more
-   indigo towards sunset and night). They are registered <number> properties
-   so the per-minute step TRANSITIONS glide inside the gradients below
-   instead of jumping; browsers without @property just step once a minute.
-   The fallbacks in each var() are the deep-night values, matching the
-   critical inline first paint in index.html. */
+   breathes with the UK day: script.js rewrites --bg-h/--bg-s/--bg-l/--bg-glow
+   from KazuLib.skyTint once a minute (lighter towards midday, a faint orange
+   horizon glow around sunrise/sunset, true AMOLED black in deep night). They
+   are registered <number> properties so the per-minute step TRANSITIONS glide
+   inside the gradients below instead of jumping; browsers without @property
+   just step once a minute. --bg-glow (the larger of the daylight and dusk
+   factors) scales the decorative gradient layers, so the night sky can reach
+   #000 while day and golden hour keep their depth. The fallbacks in each
+   var() are the pre-registration night values; the critical inline first
+   paint in index.html matches the deep-night result. */
 @property --bg-h { syntax: '<number>'; inherits: true; initial-value: 215; }
 @property --bg-s { syntax: '<number>'; inherits: true; initial-value: 33; }
-@property --bg-l { syntax: '<number>'; inherits: true; initial-value: 9; }
+@property --bg-l { syntax: '<number>'; inherits: true; initial-value: 0; }
+@property --bg-glow { syntax: '<number>'; inherits: true; initial-value: 0; }
 /* html owns the canvas colour (and the overscroll fringe); body carries the
    tinted gradient on top. */
 html { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
@@ -29,19 +33,21 @@ body {
    the once-a-minute updates glide (registered properties above) but the
    initial set is instant rather than a 90-second fade from night. */
 body[data-bg-live] {
-  transition: --bg-h 90s linear, --bg-s 90s linear, --bg-l 90s linear;
+  transition: --bg-h 90s linear, --bg-s 90s linear, --bg-l 90s linear, --bg-glow 90s linear;
 }
 
 /* ---- Theme variables ---- */
 body {
   color-scheme: dark;
   /* One soft slate-blue palette, easy on the eyes: moderate saturation,
-     never pitch black, never bright. Every blue below is built from the
-     live --bg-* tint, so the whole sky lightens towards midday, dims and
-     warms towards indigo at sunset, and settles into deep night. The pink
-     bloom low-left stays static — it ties the sky to the blossom branches
-     whatever the hour. */
-  --page-bg: radial-gradient(720px 520px at 72% 8%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16) * 1%) / .5) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16) * 1%) / 0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,.07) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9) * 1%) / 0) 55%), radial-gradient(1000px 600px at 0% 5%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7) * 1%)) 0%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7) * 1%) / 0) 50%), linear-gradient(170deg, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 5) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)) 45%, hsl(calc(var(--bg-h, 215) + 8) calc((var(--bg-s, 33) + 4) * 1%) calc((var(--bg-l, 9) + 2) * 1%)) 100%);
+     lighter towards midday, true AMOLED black in deep night. Every blue
+     below is built from the live --bg-* tint, and every decorative layer is
+     scaled by --bg-glow (the larger of the daylight/dusk factors), so the
+     sky reaches #000 only when there is genuinely no light in it. The pink
+     bloom low-left ties the sky to the blossom branches whenever there IS
+     light. Around the horizon crossings the hue warms towards indigo and
+     the .sky-glow element adds the faint orange sunrise/sunset wash. */
+  --page-bg: radial-gradient(720px 520px at 72% 8%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16 * var(--bg-glow, 1)) * 1%) / .5) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16 * var(--bg-glow, 1)) * 1%) / 0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,calc(.07 * var(--bg-glow, 1))) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9 * var(--bg-glow, 1)) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9 * var(--bg-glow, 1)) * 1%) / 0) 55%), radial-gradient(1000px 600px at 0% 5%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7 * var(--bg-glow, 1)) * 1%)) 0%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7 * var(--bg-glow, 1)) * 1%) / 0) 50%), linear-gradient(170deg, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 5 * var(--bg-glow, 1)) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)) 45%, hsl(calc(var(--bg-h, 215) + 8) calc((var(--bg-s, 33) + 4) * 1%) calc((var(--bg-l, 9) + 2 * var(--bg-glow, 1)) * 1%)) 100%);
   --ink: #eaf4ff;
   --ink-soft: #9db8d4;
   --ink-faint: #6f8aac;
@@ -85,10 +91,17 @@ body {
   /* --y0 lets branch-spawned petals start exactly on their blossom (0vh);
      top-spawned ones keep the default above-screen lead-in. --dx is the
      total sideways wind drift across the whole fall (away from the branch),
-     so a petal visibly TRAVELS down and away instead of hovering in place. */
+     so a petal visibly TRAVELS down and away instead of hovering in place.
+     --fall-y is the runway length frozen onto each petal at spawn (script.js):
+     reading the shared --atmosphere-height here instead made every falling
+     petal teleport whenever a live card grew the page. The calc() default
+     keeps the no-JS fallback petals working. Petals dim out over the last
+     stretch, so a cohort sized for a shorter page never pops at its loop
+     point before the gentle re-seed lands. */
   0%   { transform: translate(0, var(--y0, -12vh)); opacity: 0; }
   7%   { opacity: var(--po, .7); }
-  100% { transform: translate(var(--dx, 0vw), calc(var(--atmosphere-height, 100vh) - var(--spawn-y, 0px) + var(--exit-pad, 48px))); opacity: var(--po, .7); }
+  88%  { opacity: var(--po, .7); }
+  100% { transform: translate(var(--dx, 0vw), var(--fall-y, calc(var(--atmosphere-height, 100vh) - var(--spawn-y, 0px) + var(--exit-pad, 48px)))); opacity: 0; }
 }
 /* Flutter: the only oscillation — kept tight so it reads as a wobble on top
    of the wind drift, never a shuttle back and forth. */
@@ -162,6 +175,18 @@ body {
   box-shadow: 0 0 70px 34px rgba(255,160,60,.38), 0 0 180px 90px rgba(255,120,40,.16);
 }
 .sky-body--moon.sky-body--low { opacity: .7; }
+/* Horizon glow: a broad, faint orange wash parked where the sun crosses the
+   horizon. script.js slides its x along the horizon once a minute and fades
+   it on the dusk bell (inline opacity), so it only ever shows around sunrise
+   and sunset. Rendered before the sun/moon + branches, so it sits behind
+   them. */
+.sky-glow {
+  position: absolute; left: 78%; top: 50%; transform: translate(-50%, -50%);
+  width: clamp(340px, 52vw, 780px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,148,54,.30) 0%, rgba(255,122,44,.13) 45%, rgba(255,110,40,0) 70%);
+  opacity: 0;
+  transition: left 1.8s ease, top 1.8s ease, opacity 2.4s ease;
+}
 .sakura-branch { position: absolute; display: block; height: auto; }
 .sakura-branch--a {
   top: 0; right: 0; width: clamp(270px, 30vw, 440px);
@@ -210,9 +235,13 @@ body.season-christmas .sakura-scene { display: none; }
    read "generated"). Fraunces at optical size with a quiet vertical ink
    sheen — from full ink into a whisper of the theme accent — keeps the colour
    tied to the palette without shouting. Seasonal themes still repaint it
-   below. Size pulled down from billboard to masthead scale. */
+   below. Size pulled down from billboard to masthead scale. The padding
+   gives the italic cap-height ascenders and the final letter's exit stroke
+   room: with background-clip:text any glyph pixel outside the element's box
+   loses its gradient and turns invisible, which used to clip the dot and
+   tail of the final "i". */
 .title {
-  position: relative; margin: 20px 0 6px;
+  position: relative; margin: 20px 0 6px; padding: .06em .14em;
   font-family: 'Fraunces', 'Fredoka', serif; font-weight: 560; font-style: italic;
   font-optical-sizing: auto;
   font-size: clamp(42px,7.4vw,80px); line-height: 1.04; letter-spacing: -.015em;
@@ -251,15 +280,18 @@ body.season-christmas .sakura-scene { display: none; }
 }
 
 /* ---- Stat strip ---- */
+/* Content centred and sized up so the text fills the tile: the card is a
+   vertical flex box pinning everything to the middle, and the value runs as
+   large as the narrowest tile allows (tabular-nums keeps the clock steady). */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 16px; margin-top: 34px; }
-.stat-card { border-radius: 22px; padding: 20px 22px; }
+.stat-card { border-radius: 22px; padding: 18px 14px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .stat-label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
-.stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(26px, 7vw, 38px); line-height: 1.05; margin-top: 6px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.stat-sub { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
-.stat-faint { font-size: 12px; font-weight: 700; color: var(--ink-faint); margin-top: 2px; }
-.stat-loading-text { font-size: 15px; font-weight: 700; color: var(--ink-faint); margin-top: 14px; }
+.stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(30px, 8vw, 42px); line-height: 1.05; margin-top: 6px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat-sub { font-size: 14px; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
+.stat-faint { font-size: 12.5px; font-weight: 700; color: var(--ink-faint); margin-top: 2px; }
+.stat-loading-text { font-size: 15px; font-weight: 700; color: var(--ink-faint); }
 .stat-card--bday {
-  background: linear-gradient(150deg,#0ea5e9,#7c5cff); border-radius: 22px; padding: 20px 22px;
+  background: linear-gradient(150deg,#0ea5e9,#7c5cff); border-radius: 22px; padding: 18px 14px;
   box-shadow: 0 16px 34px rgba(80,110,230,.3); color: #fff; backdrop-filter: none; border: none;
 }
 .stat-label--onbrand { color: rgba(255,255,255,.85); }
@@ -651,79 +683,48 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 }
 
 /* ---- Socials ---- */
-/* Solid brand tiles: full-bleed brand gradient, glossy bevelled edges, a
-   raised icon badge and the name + handle centred below. The whole design
-   hangs off two custom properties -- --brand-a (tile centre, lighter) and
-   --brand-b (tile edge, darker) -- so a new network only needs a
-   .social-card--<name> rule with its two brand stops; the bevel, gloss,
-   badge and hover are inherited. Deliberately NOT .card members: there is
-   no backdrop to refract through a solid tile, so the glass layer and its
-   displacement maps skip them entirely. */
-.socials-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 16px; }
+/* Bare brand marks: no tile, no border, no bevel — just the logo glyph, the
+   network name and the handle sitting straight on the page. Each network's
+   .social-card--<name> rule paints its glyph in the brand colour (CSS fill/
+   stroke beat the SVGs' white presentation attributes), so a new social =
+   copy a tile in index.html + one modifier rule here. Deliberately NOT .card
+   members: with no tile there is nothing to frost, so the glass layer skips
+   them entirely. */
+.socials-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap: 10px; }
 .social-card {
-  --brand-a: #7c5cff; /* fallback centre stop (violet) */
-  --brand-b: #4a34b8; /* fallback edge stop */
   position: relative; z-index: 1;
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 26px 16px 20px; border-radius: 22px;
-  text-decoration: none; color: #fff;
-  background: radial-gradient(125% 135% at 50% 28%, var(--brand-a) 0%, var(--brand-b) 82%);
-  box-shadow:
-    inset 0 2px 1px rgba(255,255,255,.38),   /* top light-catch */
-    inset 2px 0 5px rgba(255,255,255,.10),   /* left sheen */
-    inset -2px -4px 8px rgba(0,0,0,.30),     /* lower-right depth */
-    0 14px 28px rgba(0,0,0,.32);
-  transition: transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, z-index .3s;
+  padding: 14px 10px; border-radius: 18px;
+  text-decoration: none;
+  transition: transform .3s cubic-bezier(.34,1.45,.55,1), z-index .3s;
   -webkit-tap-highlight-color: transparent;
 }
-/* Broad gloss across the top half, like light hitting a lacquered tile. */
-.social-card::before {
-  content: ''; position: absolute; inset: 0; border-radius: inherit;
-  background: linear-gradient(178deg, rgba(255,255,255,.20) 0%, rgba(255,255,255,.05) 34%, rgba(255,255,255,0) 54%);
-  pointer-events: none;
-}
-.social-card:hover {
-  transform: translateY(-4px) scale(1.03); z-index: 2;
-  box-shadow:
-    inset 0 2px 1px rgba(255,255,255,.38),
-    inset 2px 0 5px rgba(255,255,255,.10),
-    inset -2px -4px 8px rgba(0,0,0,.30),
-    0 22px 42px rgba(0,0,0,.42);
-}
-.social-card:active { transform: translateY(-2px) scale(1.02); }
+.social-card:hover { transform: translateY(-3px); z-index: 2; }
+.social-card:active { transform: translateY(-1px); }
 .social-badge {
-  width: 68px; height: 68px; margin-bottom: 14px;
+  width: 60px; height: 60px; margin-bottom: 10px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 20px;
-  background: linear-gradient(160deg, rgba(255,255,255,.26), rgba(255,255,255,.07));
-  box-shadow:
-    inset 0 1.5px 1px rgba(255,255,255,.45),
-    inset 0 -3px 5px rgba(0,0,0,.16),
-    0 8px 16px rgba(0,0,0,.34);
   transition: transform .35s cubic-bezier(.34,1.6,.55,1);
 }
-.social-badge svg { width: 34px; height: 34px; display: block; }
-.social-card:hover .social-badge { transform: scale(1.1) rotate(-5deg); }
-.social-badge--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; color: #fff; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
-.social-badge--dots span { width: 15px; height: 15px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
-.social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
-.social-handle { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.74); }
+.social-badge svg { width: 44px; height: 44px; display: block; filter: drop-shadow(0 3px 8px rgba(0,0,0,.3)); }
+.social-card:hover .social-badge { transform: scale(1.12) rotate(-5deg); }
+.social-badge--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: .03em; }
+.social-badge--dots span { width: 18px; height: 18px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
+.social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); }
+.social-handle { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
 .social-card:focus { outline: none; }
-.social-card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.social-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-/* Brand stops -- one modifier per network. Adding a social = copy a tile in
-   index.html + one line here (lighter centre stop, darker edge stop). */
-.social-card--x { --brand-a: #3d3d44; --brand-b: #0e0e11; }
-.social-card--instagram {
-  background:
-    radial-gradient(125% 135% at 50% 28%, rgba(255,255,255,.14) 0%, rgba(0,0,0,.22) 82%),
-    linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
-}
-.social-card--youtube { --brand-a: #f23a30; --brand-b: #a80f14; }
-.social-card--reddit { --brand-a: #ff6a30; --brand-b: #c22e00; }
-.social-card--tiktok { --brand-a: #2c2c34; --brand-b: #0b0b0f; }
-.social-card--mal { --brand-a: #4069c8; --brand-b: #1c3873; }
-.social-card--letterboxd { --brand-a: #3b4552; --brand-b: #14181d; }
+/* Brand glyph colours -- one modifier per network. X and TikTok's marks are
+   monochrome, so they follow the ink; the rest take the brand hue (bright
+   enough to read on the AMOLED night sky and the lighter day sky alike). */
+.social-card--x .social-badge svg { fill: var(--ink); }
+.social-card--instagram .social-badge svg { stroke: #f2638f; }
+.social-card--youtube .social-badge svg { fill: #ff5147; }
+.social-card--reddit .social-badge svg { fill: #ff6a33; }
+.social-card--tiktok .social-badge svg { fill: var(--ink); }
+.social-card--mal .social-badge--text { color: #7fa8ff; }
+.social-card--letterboxd .social-badge { filter: drop-shadow(0 3px 8px rgba(0,0,0,.3)); }
 
 /* ---- Stories ---- */
 .stories-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
@@ -1015,15 +1016,15 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
 
 /* .social-card also carries .scroll-reveal — restate its own transition here
    (higher specificity: two classes) so the fade-in transition above doesn't
-   clobber the snappier hover transform/box-shadow transition set on .social-card. */
+   clobber the snappier hover transform transition set on .social-card. */
 .social-card.scroll-reveal {
-  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.45,.55,1), box-shadow .3s ease, border-color .3s ease;
+  transition: opacity .7s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.45,.55,1);
 }
 /* .scroll-reveal.is-visible pins transform: translateY(0) at equal specificity to
-   .social-card:hover and wins on source order, silently killing the hover scale
+   .social-card:hover and wins on source order, silently killing the hover lift
    once a card has revealed. Restate the hover transform here at higher specificity. */
 .social-card.scroll-reveal.is-visible:hover {
-  transform: scale(1.05);
+  transform: translateY(-3px);
 }
 
 @media (prefers-reduced-motion: reduce) {
