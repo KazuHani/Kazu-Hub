@@ -13,11 +13,11 @@
    ========================================================================== */
 'use strict';
 
-const CACHE = 'kazu-shell-v47';
+const CACHE = 'kazu-shell-v48';
 const PRECACHE = [
   './',
   './index.html',
-  './style.css?v=45',
+  './style.css?v=46',
   './script.js?v=57',
   './lib.js?v=29',
   './assets/favicon.png',
