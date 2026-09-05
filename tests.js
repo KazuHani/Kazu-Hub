@@ -731,6 +731,7 @@ ok('hero title repainted for christmas', cssFlat.includes('body.season-christmas
 ok('bday card repainted cranberry for christmas', cssFlat.includes('body.season-christmas .stat-card--bday {'));
 ok('presence cards repainted pine for christmas', cssFlat.includes('body.season-christmas .discord-card,') && cssFlat.includes('body.season-christmas .steam-card,') && cssFlat.includes('body.season-christmas .mal-card {'));
 ok('profile ring glows gold for christmas', cssFlat.includes('body.season-christmas .pfp-ring {'));
+ok('no floaty bob on the profile picture', !cssFlat.includes('floaty'));
 ok('tree lights twinkle with a reduced-motion kill switch', cssFlat.includes('@keyframes xmasTwinkle') && cssFlat.includes('.xmas-lights circle { animation: none; }'));
 ok('tree SVG upgraded: gradients, light string, presents', htmlSrc.includes('id="xmasG1"') && htmlSrc.includes('class="xmas-lights"') && htmlSrc.includes('id="xmasStar"'));
 ok('browser-chrome colour matches the new palette', scriptSrc.includes("'#071f16'") && !scriptSrc.includes("'#07251a'"));
