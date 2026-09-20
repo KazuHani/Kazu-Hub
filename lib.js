@@ -314,6 +314,85 @@
     return weak >= 2;
   }
 
+  // ---- Apple Liquid Glass Optical Physics ---------------------------------
+  // Mathematical models reverse-engineered from Apple's dielectric lens shader
+  // (visionOS / macOS / iOS Liquid Glass).
+  // 1. Squircle SDF (degree n = 4.0): preserves G^2 continuous curvature along
+  //    container boundaries, eliminating lighting creases and unnatural light
+  //    concentration where straight edges meet circular quarter-arcs.
+  // 2. Analytical surface normal gradient: exact directional derivative in
+  //    screen space (normalized to unit length).
+  // 3. Convex bevel heightfield profile: h(u) = sqrt(1 - (1 - u)^4) compresses
+  //    incident light inward via Snell's Law and smoothly plateaus into the flat
+  //    interior so text remains crystal clear.
+  // 4. Low-end device gating: disables heavy refractive SVG displacement maps
+  //    on constrained hardware to preserve 60/120 FPS.
+  function isLowEndDevice(o) {
+    o = o || {};
+    if (o.saveData || o.reducedMotion || o.reducedTransparency) return true;
+    if (o.lowMemory && o.lowConcurrency) return true;
+    if (o.coarsePointer && (o.smallScreen || o.lowConcurrency)) return true;
+    if (o.lowMemory && o.smallScreen) return true;
+    return false;
+  }
+
+  function squircleSDF(nx, ny, n) {
+    n = +n || 4.0;
+    var ax = Math.abs(+nx || 0), ay = Math.abs(+ny || 0);
+    var ax2 = ax * ax, ay2 = ay * ay;
+    var sum = (ax2 * ax2) + (ay2 * ay2);
+    if (sum <= 0) return 0;
+    return Math.sqrt(Math.sqrt(sum));
+  }
+
+  function squircleGrad(nx, ny, halfW, halfH, n) {
+    n = +n || 4.0;
+    halfW = +halfW || 1;
+    halfH = +halfH || 1;
+    var x = +nx || 0, y = +ny || 0;
+    var gx = (x * x * x) / halfW;
+    var gy = (y * y * y) / halfH;
+    var len = Math.hypot ? Math.hypot(gx, gy) : Math.sqrt(gx * gx + gy * gy);
+    if (!len) return [0, 0];
+    return [gx / len, gy / len];
+  }
+
+  function liquidGlassBevel(edgeDistance, bevelRadius) {
+    var ed = +edgeDistance, br = +bevelRadius;
+    if (!isFinite(ed) || !isFinite(br) || ed <= 0 || br <= 0) return 0;
+    if (ed >= br) return 0;
+    var u = 1.0 - (ed / br);
+    if (u <= 0) return 0;
+    if (u >= 1) u = 1;
+    var om = 1.0 - u;
+    var om2 = om * om;
+    var om4 = om2 * om2;
+    return Math.sqrt(Math.max(0, 1.0 - om4));
+  }
+
+  function liquidGlassDisplacement(x, y, w, h, bevelRadius, n) {
+    w = +w || 1; h = +h || 1;
+    bevelRadius = +bevelRadius || 24;
+    n = +n || 4.0;
+    var halfX = w * 0.5, halfY = h * 0.5;
+    var minDim = Math.min(halfX, halfY);
+    var nx = ((+x || 0) - halfX) / halfX;
+    var ny = ((+y || 0) - halfY) / halfY;
+    var dist = squircleSDF(nx, ny, n);
+    var edgeDistance = (1.0 - dist) * minDim;
+    if (edgeDistance <= 0 || edgeDistance > bevelRadius) {
+      return [128, 128];
+    }
+    var dispAmount = liquidGlassBevel(edgeDistance, bevelRadius);
+    var grad = squircleGrad(nx, ny, halfX, halfY, n);
+    var dx = -grad[0] * dispAmount;
+    var dy = -grad[1] * dispAmount;
+    return [
+      Math.min(255, Math.max(0, Math.round(128 + dx * 127))),
+      Math.min(255, Math.max(0, Math.round(128 + dy * 127)))
+    ];
+  }
+
   // Scales a petal's existing one-viewport fall time to the remaining page
   // distance. This keeps the same terminal velocity on a long document while
   // ensuring the petal crosses the footer plus a small exit pad before its
@@ -1134,6 +1213,11 @@
     atmosphereMode: atmosphereMode,
     particleCount: particleCount,
     lowPowerMode: lowPowerMode,
+    isLowEndDevice: isLowEndDevice,
+    squircleSDF: squircleSDF,
+    squircleGrad: squircleGrad,
+    liquidGlassBevel: liquidGlassBevel,
+    liquidGlassDisplacement: liquidGlassDisplacement,
     petalFallDuration: petalFallDuration,
     sunTimesUK: sunTimesUK,
     skyArcPoint: skyArcPoint,

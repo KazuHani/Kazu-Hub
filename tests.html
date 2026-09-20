@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=30"></script>
+  <script src="lib.js?v=31"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -632,6 +632,25 @@
       eq('low power: desktop keeps the full page', L.lowPowerMode({}), false);
       eq('low power: missing flags object keeps the full page', L.lowPowerMode(), false);
 
+      // ---- Apple Liquid Glass Optical Physics & Low-End Device Gating ----
+      eq('squircleSDF: center is 0', L.squircleSDF(0, 0), 0);
+      eq('squircleSDF: unit axis edge is 1', L.squircleSDF(1, 0), 1);
+      eq('squircleSDF: unit y axis edge is 1', L.squircleSDF(0, 1), 1);
+      ok('squircleSDF: diagonal corner is smoothly rounded', Math.abs(L.squircleSDF(1, 1) - Math.SQRT2 ** 0.5) < 1e-6);
+      eq('squircleGrad: normalized axis gradient points along normal', L.squircleGrad(1, 0, 100, 50), [1, 0]);
+      eq('liquidGlassBevel: zero distance yields zero', L.liquidGlassBevel(0, 24), 0);
+      eq('liquidGlassBevel: plateau yields zero', L.liquidGlassBevel(24, 24), 0);
+      ok('liquidGlassBevel: convex profile compresses light inward', L.liquidGlassBevel(12, 24) > 0.95);
+      eq('liquidGlassDisplacement: center remains neutral', L.liquidGlassDisplacement(100, 50, 200, 100, 24), [128, 128]);
+      eq('liquidGlassDisplacement: outside remains neutral', L.liquidGlassDisplacement(-10, -10, 200, 100, 24), [128, 128]);
+      ok('liquidGlassDisplacement: right bevel refracts inward', L.liquidGlassDisplacement(195, 50, 200, 100, 24)[0] < 128);
+      ok('liquidGlassDisplacement: left bevel refracts inward', L.liquidGlassDisplacement(5, 50, 200, 100, 24)[0] > 128);
+      eq('isLowEndDevice: save-data opts out', L.isLowEndDevice({ saveData: true }), true);
+      eq('isLowEndDevice: reduced motion opts out', L.isLowEndDevice({ reducedMotion: true }), true);
+      eq('isLowEndDevice: reduced transparency opts out', L.isLowEndDevice({ reducedTransparency: true }), true);
+      eq('isLowEndDevice: constrained CPU + RAM opts out', L.isLowEndDevice({ lowMemory: true, lowConcurrency: true }), true);
+      eq('isLowEndDevice: capable desktop is eligible', L.isLowEndDevice({}), false);
+
       var s = document.getElementById('summary');
       s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
       s.className = fail === 0 ? 'pass' : 'fail';
@@ -644,7 +663,7 @@
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('style.css?v=50', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=59', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=60', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2], swSrc = src[3];
@@ -722,18 +741,13 @@
         // The hover is a physical button: straight lift (no tilt, no grow -- the old
         // rotate(-5deg) badge tilt was vetoed), a one-shot sheen sweep across the
         // face, and a press that sinks the tile. Keep it that way.
-        ok('social hover lifts straight up', cssFlat.indexOf('.social-card:hover {
-  transform: translateY(-3px);') !== -1);
+        ok('social hover lifts straight up', cssFlat.indexOf('.social-card:hover {\n  transform: translateY(-3px);') !== -1);
         ok('no tilt anywhere in the socials hover', !/\.social-card(:hover|:active)?[^}]*rotate\(/.test(cssFlat));
         ok('hover sheen sweep wired', cssFlat.indexOf('.social-card::after {') !== -1 && cssFlat.indexOf('.social-card:hover::after {\n  transform: translateX(300%) skewX(-14deg);\n  transition: transform .6s') !== -1);
         ok('sheen sweep is one-way (base rule carries no transition)', !/\.social-card::after \{[^}]*transition/.test(cssFlat));
-        ok('press sinks the tile with a fast down-stroke', cssFlat.indexOf('.social-card:active {
-  transform: translateY(1px);
-  transition-duration: .07s;') !== -1);
-        ok('revealed social tiles keep the hover lift', cssFlat.indexOf('.social-card.scroll-reveal.is-visible:hover {
-  transform: translateY(-3px);') !== -1);
-        ok('revealed social tiles keep the press', cssFlat.indexOf('.social-card.scroll-reveal.is-visible:active {
-  transform: translateY(1px);') !== -1);
+        ok('press sinks the tile with a fast down-stroke', cssFlat.indexOf('.social-card:active {\n  transform: translateY(1px);\n  transition-duration: .07s;') !== -1);
+        ok('revealed social tiles keep the hover lift', cssFlat.indexOf('.social-card.scroll-reveal.is-visible:hover {\n  transform: translateY(-3px);') !== -1);
+        ok('revealed social tiles keep the press', cssFlat.indexOf('.social-card.scroll-reveal.is-visible:active {\n  transform: translateY(1px);') !== -1);
 
         // ---- Scroll reveal ----
         ok('scroll reveal uses an IntersectionObserver', scriptSrc.indexOf('IntersectionObserver') !== -1);
@@ -822,6 +836,12 @@
         ok('balloon canvas styled behind the content', cssFlat.indexOf('#balloon-canvas {') !== -1 && cssFlat.indexOf('z-index: 0') !== -1);
         ok('reduced motion skips the balloon canvas', scriptSrc.indexOf('function startBalloons()') !== -1 && scriptSrc.indexOf('prefers-reduced-motion: reduce') !== -1);
         ok('emoji balloons replaced by the physics canvas', htmlSrc.indexOf('bday-balloons') === -1 && cssFlat.indexOf('balloonRise') === -1);
+
+        // ---- Apple Liquid Glass Optical Physics (static wiring checks) ----
+        ok('liquid glass evaluates squircle curvature n=4', scriptSrc.indexOf('SQUIRCLE_N = 4.0') !== -1 && scriptSrc.indexOf('nx4 + ny4') !== -1);
+        ok('liquid glass uses convex heightfield profile', scriptSrc.indexOf('1.0 - (edgeDistance / mapBevel)') !== -1 && scriptSrc.indexOf('1.0 - om4') !== -1);
+        ok('liquid glass gates low-end hardware and reduced transparency', scriptSrc.indexOf('KazuLib.isLowEndDevice') !== -1 && scriptSrc.indexOf('prefers-reduced-transparency') !== -1);
+        ok('liquid glass decimates large cards for 75% fill-rate reduction', scriptSrc.indexOf('decimate = (w > 220 || h > 220)') !== -1 && scriptSrc.indexOf('0xFF808080') !== -1);
         s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
         s.className = fail === 0 ? 'pass' : 'fail';
       }).catch(function () {

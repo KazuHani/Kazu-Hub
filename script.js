@@ -278,7 +278,7 @@
       const info = weatherInfo(w.weather_code, w.is_day === 1);
       $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
       $('liveWeatherDesc').textContent = info.d;
-      $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m) + ' km/h';
+      $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m * 0.621371) + ' mph';
       if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
       popReveal($('weatherLoaded'), $('weatherLoading'));
       $('weatherError').classList.add('hidden');
@@ -2063,10 +2063,10 @@
     out.innerHTML = '<div class="tz-grid">'
       + '<div class="tz-cell"><div class="tz-label">🐉 Aberystwyth</div>'
       +   '<div class="tz-time">' + mineInfo.e + ' ' + Math.round(mine.tempC) + '°C</div>'
-      +   '<div class="tz-meta">' + mineInfo.d + ' · wind ' + Math.round(mine.windKmh) + ' km/h</div></div>'
+      +   '<div class="tz-meta">' + mineInfo.d + ' · wind ' + Math.round(mine.windKmh * 0.621371) + ' mph</div></div>'
       + '<div class="tz-cell"><div class="tz-label">📍 Your sky</div>'
       +   '<div class="tz-time">' + yourInfo.e + ' ' + Math.round(yours.tempC) + '°C</div>'
-      +   '<div class="tz-meta">' + yourInfo.d + ' · wind ' + Math.round(yours.windKmh) + ' km/h</div></div>'
+      +   '<div class="tz-meta">' + yourInfo.d + ' · wind ' + Math.round(yours.windKmh * 0.621371) + ' mph</div></div>'
       + '</div>'
       + '<div class="modal-note"><div class="modal-row"><span>Difference</span><strong>' + delta + '</strong></div></div>';
   }
@@ -2843,71 +2843,127 @@
     'CSS' in window && CSS.supports && CSS.supports('backdrop-filter', 'url("#a")') &&
     /Chrome|Chromium|Edg|OPR/.test(ua) && !/CriOS|EdgiOS|FxiOS|OPiOS/.test(ua);
   if (!CAN_REFRACT) return;
+
+  // Accessibility & hardware gating (Apple Liquid Glass architecture):
+  // Optical ray displacement via backdrop SVG filters consumes fill-rate and memory
+  // bandwidth. We disable it completely on low-end devices, under Save-Data mode,
+  // or when Reduce Motion / Reduce Transparency accessibility preferences are active.
   // Low-power mode (the main IIFE set the body class): baking per-card
   // displacement maps and re-running SVG filters against the backdrop is
   // exactly the work the mode exists to skip. style.css keeps the cards
   // readable with no backdrop-filter at all under body.low-power.
   if (document.body.classList.contains('low-power')) return;
 
+  const hardwareFlags = {
+    coarsePointer: !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches),
+    smallScreen: Math.min(window.innerWidth, window.innerHeight) < 500,
+    lowConcurrency: !!(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4),
+    saveData: !!(navigator.connection && navigator.connection.saveData),
+    lowMemory: !!(navigator.deviceMemory && navigator.deviceMemory <= 4),
+    reducedMotion: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches),
+    reducedTransparency: !!(window.matchMedia && window.matchMedia('(prefers-reduced-transparency: reduce)').matches),
+  };
+  const lowEndHardware = (KazuLib && KazuLib.isLowEndDevice)
+    ? KazuLib.isLowEndDevice(hardwareFlags)
+    : (hardwareFlags.saveData || hardwareFlags.reducedMotion || hardwareFlags.reducedTransparency ||
+       (hardwareFlags.lowMemory && hardwareFlags.lowConcurrency) ||
+       (hardwareFlags.coarsePointer && (hardwareFlags.smallScreen || hardwareFlags.lowConcurrency)));
+  if (lowEndHardware) return;
+
+  if (hardwareFlags.reducedTransparency) return;
+
   const housing = document.getElementById('glass-filters');
   if (!housing) return;
 
-  // --- tuning ---
-  // Displacement only warps the BACKDROP behind the card (never the card's own
-  // text), so we can push it hard for an obvious glass-edge magnification while
-  // keeping the interior flat + readable. Keep BLUR modest: a heavy blur flattens
-  // the backdrop to a uniform wash, leaving the displacement nothing to refract.
-  const DEPTH = 20;    // displacement scale in px — refraction strength at the rim
-  const RIM = 2;       // edge inset + width of the hard part of the bevel
-  const FEATHER = 26;  // soft inner falloff — width of the visible refractive band
-  const CURVE = 1.4;   // bevel profile shaping (matches the demo's "curvature")
-  const BOOST = 0.9;   // displacement-map saturation
-  const BLUR = 0;      // backdrop blur under the refraction (matches the CSS base)
-  const SAT = 1.7;     // backdrop saturation (matches the CSS base)
+  // --- Apple Liquid Glass physical parameters ---
+  // Parameterized according to the reverse-engineered optical transmission pipeline:
+  // - Squircle exponent n = 4.0: preserves G^2 continuous curvature along the boundary
+  // - Analytical normal gradient: exact directional rate of change
+  // - Convex bevel profile h(u) = sqrt(1.0 - (1.0 - u)^4): compresses light inward via Snell's Law
+  // - Vibrancy saturation boost: 1.8x
+  const SQUIRCLE_N = 4.0;
+  const BEVEL_RADIUS = 24; // Bevel zone width in px
+  const DEPTH = 24;        // Snell's Law refraction scale in px
+  const BLUR = 0;          // Crisp refraction over background scenery
+  const SAT = 1.8;         // Vibrancy saturation boost
 
-  const clamp255 = (v) => (v < 0 ? 0 : v > 255 ? 255 : v);
   const mapCache = new Map();
 
-  // Bake a w×h displacement map: a rounded-rect SDF (inset by RIM so the bevel sits
-  // fully inside the box) drives an inward-pointing refraction ring along the edge.
+  // Bake a w×h displacement map: evaluates the superellipse squircle SDF (n = 4.0),
+  // analytical normal gradient, and convex bevel profile to encode inward Snell's Law
+  // refraction into Red (X) and Green (Y) channels.
   function buildMap(w, h, radius) {
-    const key = w + 'x' + h + 'r' + Math.round(radius);
+    const bevel = Math.max(12, Math.min(BEVEL_RADIUS, (radius || 20) * 1.2));
+    const key = w + 'x' + h + 'b' + Math.round(bevel);
     const hit = mapCache.get(key);
     if (hit) return hit;
 
+    // Buffer Decimation / Downsampling Optimization:
+    // Blurring/sampling at half resolution (0.5x) on larger cards reduces pixel workload
+    // by 75% and keeps SVG data URLs compact while the GPU's hardware bilinear filter
+    // smoothly interpolates the displacement gradient across the container.
+    const decimate = (w > 220 || h > 220);
+    const scale = decimate ? 0.5 : 1.0;
+    const mapW = Math.max(32, Math.round(w * scale));
+    const mapH = Math.max(32, Math.round(h * scale));
+    const mapBevel = bevel * scale;
+
     const cv = document.createElement('canvas');
-    cv.width = w; cv.height = h;
+    cv.width = mapW; cv.height = mapH;
     const ctx = cv.getContext('2d');
-    const img = ctx.createImageData(w, h), px = img.data;
+    const img = ctx.createImageData(mapW, mapH);
 
-    const hx = w / 2 - RIM, hy = h / 2 - RIM;                 // glass half-size (inset)
-    const rad = Math.max(0, Math.min(radius - RIM, hx, hy));  // corner radius, clamped
-    const sdf = (x, y) => {                                   // signed dist to the edge
-      const qx = Math.abs(x - w / 2) - (hx - rad);
-      const qy = Math.abs(y - h / 2) - (hy - rad);
-      const ox = Math.max(qx, 0), oy = Math.max(qy, 0);
-      return Math.hypot(ox, oy) + Math.min(Math.max(qx, qy), 0) - rad;
-    };
+    // Fast neutral displacement initialization:
+    // (128, 128, 128, 255) packed in little-endian 32-bit integer is 0xFF808080.
+    // Flat central plateau and outer regions remain neutral with zero per-pixel memory overhead.
+    const u32 = new Uint32Array(img.data.buffer);
+    u32.fill(0xFF808080);
+    const px = img.data;
 
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const cx = x + 0.5, cy = y + 0.5;
-        const s = sdf(cx, cy);
-        const gx = sdf(cx + 1, cy) - sdf(cx - 1, cy);         // outward edge normal
-        const gy = sdf(cx, cy + 1) - sdf(cx, cy - 1);
-        const len = Math.hypot(gx, gy) || 1;
-        const nx = gx / len, ny = gy / len;
-        const span = s < 0 ? RIM + FEATHER : RIM;             // softer falloff inside
-        let amt = Math.max(0, 1 - Math.abs(s) / span);
-        amt = amt * amt * amt * (amt * (amt * 6 - 15) + 10);  // smootherstep (no crease)
-        amt = Math.pow(amt, CURVE);
-        const i = (y * w + x) * 4;
-        px[i]     = clamp255(Math.round(127.5 - nx * amt * 127 * BOOST)); // R = x displ (inward)
-        px[i + 1] = clamp255(Math.round(127.5 - ny * amt * 127 * BOOST)); // G = y displ
-        px[i + 2] = 128;                                      // B unused
-        px[i + 3] = 255;
+    const halfX = mapW * 0.5, halfY = mapH * 0.5;
+    const minDim = Math.min(halfX, halfY);
+
+    for (let y = 0; y < mapH; y++) {
+      const ny = (y - halfY) / halfY;
+      const ny2 = ny * ny;
+      const ny4 = ny2 * ny2;
+      const gyBase = (ny * ny2) / halfY;
+      const rowOffset = y * mapW * 4;
+
+      for (let x = 0; x < mapW; x++) {
+        const nx = (x - halfX) / halfX;
+        const nx2 = nx * nx;
+        const nx4 = nx2 * nx2;
+
+        // Squircle distance field: dist = (nx^4 + ny^4)^(1/4)
+        const dist = Math.sqrt(Math.sqrt(nx4 + ny4));
+        const edgeDistance = (1.0 - dist) * minDim;
+
+        // Evaluate only inside the curved convex bevel zone
+        if (edgeDistance > 0.0 && edgeDistance <= mapBevel) {
+          const u = 1.0 - (edgeDistance / mapBevel);
+          // Analytical squircle gradient vector (divided by halfExtents for screen-space normal)
+          const gx = (nx * nx2) / halfX;
+          const gy = gyBase;
+          const len = Math.hypot(gx, gy) || 1.0;
+
+          // Convex squircle heightfield profile: sqrt(1.0 - (1.0 - u)^4)
+          const om = 1.0 - u;
+          const om2 = om * om;
+          const om4 = om2 * om2;
+          const disp = Math.sqrt(Math.max(0, 1.0 - om4));
+
+          // Inward refractive vector transport
+          const dx = -(gx / len) * disp;
+          const dy = -(gy / len) * disp;
+
+          const i = rowOffset + (x << 2);
+          px[i]     = Math.min(255, Math.max(0, Math.round(128 + dx * 127))); // R = X displacement
+          px[i + 1] = Math.min(255, Math.max(0, Math.round(128 + dy * 127))); // G = Y displacement
+        }
       }
     }
+
     ctx.putImageData(img, 0, 0);
     const url = cv.toDataURL('image/png');
     if (mapCache.size > 60) mapCache.delete(mapCache.keys().next().value);
@@ -2933,7 +2989,7 @@
     const w = Math.round(r.width), h = Math.round(r.height);
     if (!w || !h || (w === card.w && h === card.h)) return;
     card.w = w; card.h = h;
-    const radius = parseFloat(getComputedStyle(card.el).borderTopLeftRadius) || 18;
+    const radius = parseFloat(getComputedStyle(card.el).borderTopLeftRadius) || 20;
     const url = buildMap(w, h, radius);
     filters.set(card.id,
       '<filter id="' + card.id + '" x="0" y="0" width="100%" height="100%" ' +

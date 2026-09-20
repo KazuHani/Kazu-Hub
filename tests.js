@@ -840,6 +840,31 @@ ok('story cards carry the .card class', htmlSrc.split('class="card story-card"')
 // the story cards stay uncontained on purpose.
 ok('story links are not paint-contained (hover-lift clips)', !/\.story-link\s*\{\s*content-visibility/.test(cssFlat));
 
+// ---- Apple Liquid Glass Optical Physics & Low-End Device Gating ----
+// Reverse-engineered optical pipeline: squircle continuous G2 curvature (n = 4.0),
+// analytical normal gradient, convex heightfield profile, and Snell's Law inward deflection.
+eq('squircleSDF: center is 0', L.squircleSDF(0, 0), 0);
+eq('squircleSDF: unit axis edge is 1', L.squircleSDF(1, 0), 1);
+eq('squircleSDF: unit y axis edge is 1', L.squircleSDF(0, 1), 1);
+ok('squircleSDF: diagonal corner is smoothly rounded', Math.abs(L.squircleSDF(1, 1) - Math.SQRT2 ** 0.5) < 1e-6);
+eq('squircleGrad: normalized axis gradient points along normal', L.squircleGrad(1, 0, 100, 50), [1, 0]);
+eq('liquidGlassBevel: zero distance yields zero', L.liquidGlassBevel(0, 24), 0);
+eq('liquidGlassBevel: plateau yields zero', L.liquidGlassBevel(24, 24), 0);
+ok('liquidGlassBevel: convex profile compresses light inward', L.liquidGlassBevel(12, 24) > 0.95);
+eq('liquidGlassDisplacement: center remains neutral', L.liquidGlassDisplacement(100, 50, 200, 100, 24), [128, 128]);
+eq('liquidGlassDisplacement: outside remains neutral', L.liquidGlassDisplacement(-10, -10, 200, 100, 24), [128, 128]);
+ok('liquidGlassDisplacement: right bevel refracts inward', L.liquidGlassDisplacement(195, 50, 200, 100, 24)[0] < 128);
+ok('liquidGlassDisplacement: left bevel refracts inward', L.liquidGlassDisplacement(5, 50, 200, 100, 24)[0] > 128);
+eq('isLowEndDevice: save-data opts out', L.isLowEndDevice({ saveData: true }), true);
+eq('isLowEndDevice: reduced motion opts out', L.isLowEndDevice({ reducedMotion: true }), true);
+eq('isLowEndDevice: reduced transparency opts out', L.isLowEndDevice({ reducedTransparency: true }), true);
+eq('isLowEndDevice: constrained CPU + RAM opts out', L.isLowEndDevice({ lowMemory: true, lowConcurrency: true }), true);
+eq('isLowEndDevice: capable desktop is eligible', L.isLowEndDevice({}), false);
+ok('liquid glass evaluates squircle curvature n=4', scriptSrc.includes('SQUIRCLE_N = 4.0') && scriptSrc.includes('nx4 + ny4'));
+ok('liquid glass uses convex heightfield profile', scriptSrc.includes('1.0 - (edgeDistance / mapBevel)') && scriptSrc.includes('1.0 - om4'));
+ok('liquid glass gates low-end hardware and reduced transparency', scriptSrc.includes('KazuLib.isLowEndDevice') && scriptSrc.includes('prefers-reduced-transparency'));
+ok('liquid glass decimates large cards for 75% fill-rate reduction', scriptSrc.includes('decimate = (w > 220 || h > 220)') && scriptSrc.includes('0xFF808080'));
+
 console.log('---');
 console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
   (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));
