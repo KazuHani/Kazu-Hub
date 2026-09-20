@@ -662,8 +662,8 @@
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=50', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=60', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=52', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=61', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2], swSrc = src[3];
@@ -823,6 +823,8 @@
         ok('presence cards repainted pine for christmas', cssFlat.indexOf('body.season-christmas .discord-card,') !== -1 && cssFlat.indexOf('body.season-christmas .steam-card,') !== -1 && cssFlat.indexOf('body.season-christmas .mal-card {') !== -1);
         ok('profile ring glows gold for christmas', cssFlat.indexOf('body.season-christmas .pfp-ring {') !== -1);
         ok('no floaty bob on the profile picture', cssFlat.indexOf('floaty') === -1);
+        ok('no idle sway on the sakura branches', cssFlat.indexOf('sakuraSway') === -1);
+        ok('sakura scenery layer sits still without ambient fade', cssFlat.indexOf('.sakura-scene { animation:') === -1 && cssFlat.indexOf('.atmosphere { animation: ambientFade') === -1);
         ok('tree lights twinkle with a reduced-motion kill switch', cssFlat.indexOf('@keyframes xmasTwinkle') !== -1 && cssFlat.indexOf('.xmas-lights circle { animation: none; }') !== -1);
         ok('tree SVG upgraded: gradients, light string, presents', htmlSrc.indexOf('id="xmasG1"') !== -1 && htmlSrc.indexOf('class="xmas-lights"') !== -1 && htmlSrc.indexOf('id="xmasStar"') !== -1);
         ok('browser-chrome colour matches the new palette', scriptSrc.indexOf("'#071f16'") !== -1 && scriptSrc.indexOf("'#07251a'") === -1);

@@ -132,7 +132,6 @@ body {
   --sakura-petal-deep: #e2709c;
   --sakura-bud: #d95f8f;
   --sakura-stamen: #ffe9f2;
-  animation: ambientFade 2.2s ease both;
 }
 /* Dev-only trajectory overlay. The SVG uses the same percentage frame as
    skyArcPoint(), so it scales with the scenery without JS resize work. It is
@@ -190,15 +189,13 @@ body {
 .sakura-branch--a {
   top: 0; right: 0; width: clamp(270px, 30vw, 440px);
   transform-origin: 100% 0;
-  animation: sakuraSwayA 9s ease-in-out infinite alternate;
+  /* No idle sway: the branches sit still so foreground animations never appear to move the background. */
 }
 .sakura-branch--b {
   left: 0; top: 46%; width: clamp(190px, 21vw, 300px);
   transform-origin: 0 80%;
-  animation: sakuraSwayB 11s ease-in-out infinite alternate;
+  /* No idle sway: sits still alongside the cards. */
 }
-@keyframes sakuraSwayA { from { transform: rotate(-1.1deg); } to { transform: rotate(1.3deg); } }
-@keyframes sakuraSwayB { from { transform: rotate(1deg); } to { transform: rotate(-1.3deg); } }
 /* Christmas owns a pine/cranberry/gold palette + its own tree scene; the
    pink branches would clash, so they sit the season out. */
 body.season-christmas .sakura-scene { display: none; }
@@ -1045,13 +1042,7 @@ body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
   from { opacity: 0; transform: translateY(26px); filter: blur(12px); }
   to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
 }
-@keyframes ambientFade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-/* Ambient petal layer eases in instead of popping */
-.atmosphere { animation: ambientFade 1.6s ease both; }
+/* Ambient petal layer and scenery stay steady from first paint */
 
 /* Hero accents */
 .hero .pfp { animation: revealPop .85s ease-out .14s both; }
