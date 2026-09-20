@@ -636,6 +636,8 @@ eq('PC specs use four grouped glass cards', htmlSrc.split('class="card pc-spec-c
 ].forEach((spec) => ok('PC spec present: ' + spec.replace(/<[^>]+>/g, ''), htmlSrc.includes(spec)));
 ok('PC specs use the asymmetric 7/5 bento', cssSrc.includes('grid-template-columns: repeat(12,minmax(0,1fr));') && cssSrc.includes('.pc-spec-card--graphics {\n  grid-column: span 7;') && cssSrc.includes('.pc-spec-card--platform { grid-column: span 5; }'));
 ok('PC specs collapse to one column on compact screens', cssSrc.includes('@media (max-width: 860px)') && cssSrc.includes('.pc-spec-card { grid-column: 1 / -1; }'));
+ok('stat grid uses 2-column bento on compact screens', cssSrc.includes('@media (max-width: 560px)') && cssSrc.includes('grid-template-columns: repeat(2, minmax(0, 1fr));'));
+ok('custom scrollbar hidden on compact screens', cssSrc.includes('@media (max-width: 768px)') && cssSrc.includes('.cscroll { display: none !important; }'));
 
 // ---- Liquid glass on the content cards (static wiring checks) ----
 // The presence/music/story cards joined the glass set: translucent fills,

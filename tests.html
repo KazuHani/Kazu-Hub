@@ -696,6 +696,8 @@
         ].forEach(function (spec) { ok('PC spec present: ' + spec.replace(/<[^>]+>/g, ''), htmlSrc.indexOf(spec) !== -1); });
         ok('PC specs use the asymmetric 7/5 bento', cssSrc.indexOf('grid-template-columns: repeat(12,minmax(0,1fr));') !== -1 && cssSrc.indexOf('.pc-spec-card--graphics {\n  grid-column: span 7;') !== -1 && cssSrc.indexOf('.pc-spec-card--platform { grid-column: span 5; }') !== -1);
         ok('PC specs collapse to one column on compact screens', cssSrc.indexOf('@media (max-width: 860px)') !== -1 && cssSrc.indexOf('.pc-spec-card { grid-column: 1 / -1; }') !== -1);
+        ok('stat grid uses 2-column bento on compact screens', cssSrc.indexOf('@media (max-width: 560px)') !== -1 && cssSrc.indexOf('grid-template-columns: repeat(2, minmax(0, 1fr));') !== -1);
+        ok('custom scrollbar hidden on compact screens', cssSrc.indexOf('@media (max-width: 768px)') !== -1 && cssSrc.indexOf('.cscroll { display: none !important; }') !== -1);
 
         // ---- Liquid glass on the content cards ----
         var cssFlat = cssSrc.replace(/\r/g, '');

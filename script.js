@@ -3093,7 +3093,7 @@
    local fallbacks keep it alive if lib.js fails.
    ========================================================================== */
 (() => {
-  if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return;
+  if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches || window.innerWidth <= 768) return;
 
   const KazuLib = window.KazuLib;
   // Owned by lib.js (single source of truth, gate-tested); local copies below.

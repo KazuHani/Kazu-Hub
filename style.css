@@ -1,4 +1,4 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }
 /* Time-of-day palette. There is only ONE theme now — a soft slate blue that
    breathes with the UK day: script.js rewrites --bg-h/--bg-s/--bg-l/--bg-glow
@@ -203,11 +203,16 @@ body {
    pink branches would clash, so they sit the season out. */
 body.season-christmas .sakura-scene { display: none; }
 /* Phones: no left branch (no horizontal room), smaller corner branch, and no
-   sky body — it just reads as a smudge behind the hero avatar. */
+   sky body — it just reads as a smudge behind the hero avatar. Custom scrollbar
+   is hidden on touch / compact screens so native inertial scrolling prevails. */
 @media (max-width: 768px) {
   .sakura-branch--b { display: none; }
   .sakura-branch--a { width: clamp(180px, 50vw, 260px); }
   .sky-body { display: none; }
+  .cscroll { display: none !important; }
+}
+@media (pointer: coarse) {
+  .cscroll { display: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sakura-scene, .sakura-branch--a, .sakura-branch--b { animation: none; }
@@ -216,6 +221,8 @@ body.season-christmas .sakura-scene { display: none; }
 .container {
   position: relative; z-index: 1; max-width: 1120px; margin: 0 auto;
   padding: clamp(28px,5vw,64px) clamp(18px,4vw,40px) 64px;
+  padding-left: max(clamp(18px,4vw,40px), env(safe-area-inset-left));
+  padding-right: max(clamp(18px,4vw,40px), env(safe-area-inset-right));
 }
 
 /* ---- Hero ---- */
@@ -841,7 +848,12 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   transform: translateY(14px) scale(.85);
   pointer-events: none;
 }
-@media (max-width: 480px) { .to-top { width: 48px; height: 48px; font-size: 20px; right: 16px; bottom: 24px; } }
+@media (max-width: 480px) {
+  .to-top {
+    width: 44px; height: 44px; font-size: 18px; right: 14px;
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .to-top { transition: none; }
@@ -1300,6 +1312,9 @@ body.low-power .populated-in { animation: none; }
 .stat-card[data-modal]:hover::after,
 .stat-card[data-modal]:focus-visible::after { opacity: .65; }
 .stat-card--bday[data-modal]::after { color: rgba(255,255,255,.9); }
+@media (pointer: coarse), (max-width: 768px) {
+  .stat-card[data-modal]::after { opacity: .45; }
+}
 
 body.modal-open { overflow: hidden; }
 
@@ -1787,5 +1802,217 @@ body.low-power .scroll-reveal {
   transform: none !important;
   transition: none !important;
 }
+
+/* ============ SMARTPHONE & MOBILE RESPONSIVE OPTIMIZATIONS (<= 560px) ============ */
+@media (max-width: 560px) {
+  .container {
+    padding-top: clamp(20px, 4vh, 36px);
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+    padding-bottom: max(48px, env(safe-area-inset-bottom));
+  }
+
+  /* Hero: balanced avatar and typography */
+  .hero { padding: 2px 0 6px; }
+  .pfp { width: clamp(124px, 32vw, 154px); height: clamp(124px, 32vw, 154px); }
+  .title {
+    font-size: clamp(36px, 9.2vw, 54px);
+    margin: 12px 0 4px;
+    padding: .04em .1em;
+  }
+  .quote-box { padding: 0 16px; }
+  .quote-box.visible { padding: 12px 16px; margin-top: 2px; }
+  .quote-text { font-size: 14.5px; line-height: 1.4; }
+  .quote-author { font-size: 11px; margin-top: 6px; }
+
+  /* Stat strip: punchy 2x2 bento grid */
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .stat-card {
+    border-radius: 18px;
+    padding: 14px 8px;
+  }
+  .stat-label { font-size: 11px; letter-spacing: .08em; }
+  .stat-value {
+    font-size: clamp(19px, 5.2vw, 25px);
+    margin-top: 4px;
+    line-height: 1.1;
+  }
+  .stat-sub { font-size: 12px; margin-top: 3px; }
+  .stat-faint { font-size: 11px; }
+  .stat-loading-text { font-size: 13px; }
+
+  /* Section titles */
+  .section-title {
+    font-size: 22px;
+    margin: 32px 0 12px;
+    gap: 8px;
+  }
+
+  /* Right now cards */
+  .right-now-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .discord-card, .steam-card, .mal-card, .lb-card {
+    border-radius: 20px;
+    padding: 16px 14px;
+  }
+  .card-head { margin-bottom: 12px; }
+  .avatar-img, .steam-avatar {
+    width: 52px; height: 52px; border-radius: 15px;
+  }
+  .status-dot { width: 16px; height: 16px; border-width: 2.5px; }
+  .presence-name { font-size: 18px; }
+  .presence-status { font-size: 12px; }
+  .info-pill {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    gap: 10px;
+  }
+  .info-pill-emoji { font-size: 22px; }
+  .info-pill-icon { width: 26px; height: 26px; }
+  .info-pill-value { font-size: 15px; }
+  .info-pill-sub { font-size: 11.5px; }
+  .spotify-art { width: 38px; height: 38px; }
+  .spotify-song { font-size: 14.5px; }
+  .mal-row { padding: 8px 6px; }
+  .mal-thumb { width: 38px; height: 52px; border-radius: 8px; }
+  .mal-title { font-size: 14px; }
+  .mal-sub { font-size: 11.5px; }
+  .lb-entry { gap: 12px; }
+  .lb-poster { width: 48px; border-radius: 7px; }
+  .lb-title { font-size: 15.5px; }
+
+  /* PC Specs */
+  .pc-spec-card {
+    border-radius: 20px;
+    padding: 16px 14px;
+  }
+  .pc-spec-card-title { font-size: 14px; margin-bottom: 10px; }
+  .pc-spec-feature-name { font-size: clamp(20px, 5.2vw, 26px); }
+  .pc-gpu-mark { padding-top: 12px; }
+  .pc-gpu-mark strong { font-size: clamp(40px, 11vw, 54px); }
+  .pc-gpu-mark span { font-size: 10px; }
+  .pc-storage-entry { grid-template-columns: 68px minmax(0, 1fr); gap: 10px; }
+  .pc-storage-entry dt { font-size: 20px; }
+  .pc-storage-entry dd { font-size: 13px; }
+  .pc-spec-entry dt { font-size: 11px; margin-bottom: 2px; }
+  .pc-spec-entry dd { font-size: 15px; }
+  .pc-spec-list { gap: 12px; }
+
+  /* YouTube Music Playlist */
+  .music-card {
+    border-radius: 20px;
+    padding: 16px 14px;
+  }
+  .music-cover-wrap { width: 110px; height: 110px; border-radius: 16px; }
+  .music-playlist-name { font-size: clamp(20px, 5.2vw, 24px); }
+  .music-playlist-sub { font-size: 12px; }
+  .music-track-row { padding: 9px 4px; gap: 10px; }
+  .music-track-num { font-size: 13.5px; width: 14px; }
+  .music-track-name { font-size: 14.5px; }
+  .music-track-artist { font-size: 11.5px; }
+
+  /* Socials: clean 2-column grid */
+  .socials-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .social-card {
+    padding: 18px 10px 14px;
+    border-radius: 18px;
+  }
+  .social-card:last-child:nth-child(odd) {
+    grid-column: span 2;
+    padding: 16px 14px 14px;
+  }
+  .social-badge { width: 36px; height: 36px; margin-bottom: 8px; }
+  .social-badge svg { width: 30px; height: 30px; }
+  .social-name { font-size: 15px; }
+  .social-handle { font-size: 12px; }
+
+  /* Stories */
+  .stories-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .story-card {
+    border-radius: 20px;
+    padding: 20px 16px;
+  }
+  .story-title { font-size: clamp(22px, 6vw, 26px); margin: 10px 0 6px; }
+  .story-desc { font-size: 13.5px; max-width: 100%; }
+  .story-cta { margin-top: 14px; padding: 8px 14px; font-size: 12.5px; }
+
+  /* Modals: mobile dynamic viewport */
+  .modal-overlay { padding: 10px; }
+  .modal-panel {
+    padding: 20px 14px 22px;
+    border-radius: 20px;
+    max-height: min(90vh, calc(100dvh - 20px));
+  }
+  .modal-title { font-size: 20px; margin: 2px 34px 14px 2px; }
+  .modal-close { top: 10px; right: 10px; width: 36px; height: 36px; font-size: 22px; }
+  .countdown { gap: 6px; }
+  .cd-cell { padding: 8px 3px; border-radius: 12px; }
+  .cd-num { font-size: clamp(19px, 5.2vw, 25px); }
+  .cd-label { font-size: 10px; letter-spacing: .05em; }
+  .forecast-strip { gap: 6px; }
+  .forecast-day { padding: 8px 3px; }
+  .forecast-emoji { font-size: 20px; }
+  .forecast-temps { font-size: 13px; }
+  .fun-grid { gap: 8px; }
+  .fun-cell { padding: 8px 10px; border-radius: 12px; gap: 8px; }
+  .fun-emoji { font-size: 22px; }
+  .fun-num { font-size: 16px; }
+  .toast {
+    width: min(calc(100vw - 24px), 380px);
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .dev-panel {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: 340px;
+    margin: 0 auto;
+    bottom: max(14px, env(safe-area-inset-bottom, 14px));
+  }
+
+  /* Tactile active feedback for touch */
+  .card[role="button"]:active,
+  .stat-card[data-modal]:active,
+  .pill-link:active,
+  .retry-btn:active,
+  .modal-btn:active,
+  .modal-close:active,
+  .story-cta:active,
+  .quote-box:active {
+    transform: scale(0.97);
+    transition-duration: .08s;
+  }
+}
+
+/* Extra small devices (<= 360px) */
+@media (max-width: 360px) {
+  .container {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+  .stat-grid { gap: 8px; }
+  .stat-card { padding: 12px 6px; }
+  .stat-value { font-size: 18px; }
+  .socials-grid { gap: 8px; }
+  .social-card { padding: 14px 6px 12px; }
+  .cd-num { font-size: 18px; }
+  .cd-label { font-size: 9px; }
+}
+
 
 
