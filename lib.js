@@ -609,6 +609,31 @@
     };
   }
 
+  // ---- Discord presence (localStorage fallback when Lanyard is down) --------
+  // Reads the stored Discord presence snapshot (written after every successful
+  // fetch or WebSocket update). When Lanyard is unreachable or blocked, the
+  // card renders the last good profile instead of an error state. Forces
+  // status to offline so stale presence is never represented as active.
+  function discordCacheParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    var data = payload && (payload.data || payload);
+    var u = data && data.discord_user;
+    if (!u || typeof u !== 'object') return null;
+    if (typeof u.username !== 'string' || !u.username) return null;
+    return {
+      discord_user: {
+        id: typeof u.id === 'string' ? u.id : String(u.id || ''),
+        username: u.username,
+        global_name: (typeof u.global_name === 'string' && u.global_name) ? u.global_name : ((typeof u.display_name === 'string' && u.display_name) ? u.display_name : u.username),
+        avatar: typeof u.avatar === 'string' ? u.avatar : null,
+      },
+      discord_status: 'offline',
+      activities: [],
+    };
+  }
+
   // Reads the localStorage fallback copy of the MAL card (written after every
   // successful fetch). Jikan's user endpoints 504 whenever MyAnimeList refuses
   // its scraper, so the card renders the last good rows instead of an error
@@ -1119,6 +1144,7 @@
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,
     steamHoursText: steamHoursText,
+    discordCacheParse: discordCacheParse,
     malRow: malRow,
     malListRow: malListRow,
     malCacheParse: malCacheParse,

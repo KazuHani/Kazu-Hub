@@ -146,8 +146,8 @@ These are load-bearing; read before editing.
 - **Service worker.** `sw.js` must never serve stale content while online:
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
-- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-mal-cache`,
-  `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`.
+- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-discord-cache`,
+  `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`.
   Don't collide.
 
 ## Working agreements (from CLAUDE.md)

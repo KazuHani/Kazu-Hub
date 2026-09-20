@@ -220,10 +220,14 @@
   // free cors.sh key is public by design and pinned to this site's Origin —
   // paste it into CORS_PROXY_KEY and every loader below picks it up.
   const CORS_PROXY_KEY = '';
-  function proxyFetch(target) {
+  async function proxyFetch(target) {
     const opts = { cache: 'no-store' };
     if (CORS_PROXY_KEY) opts.headers = { 'x-cors-api-key': CORS_PROXY_KEY };
-    return fetchT('https://proxy.cors.sh/' + target, opts);
+    try {
+      const r = await (function () { return fetchT('https://proxy.cors.sh/' + target, opts); })();
+      if (r && r.ok) return r;
+    } catch (e) {}
+    return fetchT('https://api.cors.lol/?url=' + encodeURIComponent(target), { cache: 'no-store' });
   }
 
   // ---------- Render dedup signatures ----------
@@ -982,7 +986,45 @@
   let lastDiscordFallbackAvatar = '';
 
   // ---- Extra Lanyard presence state (set by renderDiscord, animated by tick) ----
-  let discordUsername = '';
+  const DISCORD_CACHE_KEY = 'kazu-discord-cache';
+
+  function discordCacheRead() {
+    const parse = (KazuLib && KazuLib.discordCacheParse) || function (raw) {
+      if (typeof raw !== 'string' || !raw) return null;
+      try {
+        const p = JSON.parse(raw);
+        const data = p && (p.data || p);
+        const u = data && data.discord_user;
+        if (u && u.username) {
+          return {
+            discord_user: {
+              id: typeof u.id === 'string' ? u.id : String(u.id || ''),
+              username: u.username,
+              global_name: (typeof u.global_name === 'string' && u.global_name) ? u.global_name : ((typeof u.display_name === 'string' && u.display_name) ? u.display_name : u.username),
+              avatar: typeof u.avatar === 'string' ? u.avatar : null,
+            },
+            discord_status: 'offline',
+            activities: [],
+          };
+        }
+      } catch (e) {}
+      return null;
+    };
+    try { return parse(localStorage.getItem(DISCORD_CACHE_KEY)); } catch (e) { return null; }
+  }
+
+  const DISCORD_STATIC_FALLBACK = {
+    discord_user: {
+      id: DISCORD_ID,
+      username: 'kazu_hani',
+      global_name: 'Kazu | ハニ 🍜',
+      avatar: null,
+    },
+    discord_status: 'offline',
+    activities: [],
+  };
+
+  let discordUsername = 'kazu_hani';
   let discordHasData = false; // true after the first successful render
   let spotifyTimes = null;   // { start, end } in ms while listening
   let gameStartMs = null;    // activity start in ms while playing
@@ -1075,20 +1117,26 @@
       let j;
       try {
         const r = await fetchT(url, { cache: 'no-store' });
+        if (!r.ok) throw new Error('status ' + r.status);
         j = await r.json();
       } catch (e) {
         const r2 = await proxyFetch(url);
+        if (!r2.ok) throw new Error('proxy status ' + r2.status);
         j = await r2.json();
       }
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
       if (lanyardWsLive) return; // a socket update beat this response
       renderDiscord(j.data);
+      try { localStorage.setItem(DISCORD_CACHE_KEY, JSON.stringify({ at: Date.now(), data: j.data })); } catch (e) {}
     } catch (e) {
       // With data already on screen, stay silent: stale beats an error card.
-      if (!discordHasData && !lanyardWsLive) {
-        $('discordLoading').classList.add('hidden');
-        $('discordError').classList.remove('hidden');
+      if (discordHasData || lanyardWsLive) return;
+      const cached = discordCacheRead();
+      if (cached) {
+        renderDiscord(cached);
+        return;
       }
+      renderDiscord(DISCORD_STATIC_FALLBACK);
     }
   }
 
@@ -1099,13 +1147,17 @@
 
     const displayName = u.global_name || u.display_name || u.username;
     lastDiscordFallbackAvatar = discordAvatarUrl(u);
-    $('discordAvatar').src = sharedAvatarUrl || lastDiscordFallbackAvatar;
+    const avatarEl = $('discordAvatar');
+    if (avatarEl) {
+      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : 'assets/profile.webp');
+      avatarEl.onerror = () => { avatarEl.src = 'assets/profile.webp'; };
+    }
     $('discordName').textContent = displayName;
 
-    discordUsername = u.username || '';
+    discordUsername = u.username || 'kazu_hani';
     const handleEl = $('discordUsername');
     if (handleEl) {
-      if (u.username) { handleEl.textContent = '@' + u.username; handleEl.classList.remove('hidden'); }
+      if (discordUsername) { handleEl.textContent = '@' + discordUsername; handleEl.classList.remove('hidden'); }
       else handleEl.classList.add('hidden');
     }
 
@@ -1205,6 +1257,9 @@
     discordHasData = true;
     popReveal($('discordLoaded'), $('discordLoading'));
     $('discordError').classList.add('hidden');
+    if (u.username && (u.avatar || displayName)) {
+      try { localStorage.setItem(DISCORD_CACHE_KEY, JSON.stringify({ at: Date.now(), data: dc })); } catch (e) {}
+    }
   }
 
   // ---- Lanyard WebSocket: instant presence, REST poll as fallback ----
@@ -1219,8 +1274,21 @@
   let lanyardBackoff = 1000;  // doubles on each failed attempt, capped at 30s
 
   function startLanyard() {
-    if (lanyardWanted) return;
+    if (lanyardWanted && (lanyardSocket || lanyardReconnect)) return;
     lanyardWanted = true;
+    connectLanyard();
+  }
+
+  function restartLanyard() {
+    lanyardWanted = true;
+    lanyardBackoff = 1000;
+    if (lanyardHeartbeat) { clearInterval(lanyardHeartbeat); lanyardHeartbeat = null; }
+    if (lanyardReconnect) { clearTimeout(lanyardReconnect); lanyardReconnect = null; }
+    if (lanyardSocket) {
+      const s = lanyardSocket;
+      lanyardSocket = null;
+      try { s.close(); } catch (e) {}
+    }
     connectLanyard();
   }
 
@@ -1258,6 +1326,10 @@
           lanyardWsLive = true;
           lanyardBackoff = 1000; // healthy traffic resets the reconnect backoff
           renderDiscord(msg.d);
+          try { localStorage.setItem(DISCORD_CACHE_KEY, JSON.stringify({ at: Date.now(), data: msg.d })); } catch (e) {}
+        } else if (!discordHasData) {
+          const cached = discordCacheRead();
+          renderDiscord(cached || DISCORD_STATIC_FALLBACK);
         }
       }
     };
@@ -2652,7 +2724,7 @@
     $('discordError').classList.add('hidden');
     $('discordLoading').classList.remove('hidden');
     loadDiscord();
-    startLanyard(); // also re-arm the socket if it was the one that failed
+    restartLanyard(); // re-arm the socket, reset backoff, and reconnect
   });
   const malRetryBtn = $('malRetry');
   if (malRetryBtn) malRetryBtn.addEventListener('click', () => {

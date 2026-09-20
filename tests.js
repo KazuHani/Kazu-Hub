@@ -228,6 +228,19 @@ eq('malListRow coerces bad watched/img', (function () {
   return [r.watched, r.img];
 })(), [0, '']);
 
+// ---- discordCacheParse (localStorage fallback when Lanyard is down) ----
+const discordCached = {
+  discord_user: { id: '346360416827473921', username: 'kazu_hani', global_name: 'Kazu | ハニ 🍜', avatar: 'd102a6d0085aa76bbdc7969b4235943d' },
+  discord_status: 'offline',
+  activities: []
+};
+eq('discordCacheParse round-trips a written payload', L.discordCacheParse(JSON.stringify({ at: 1, data: discordCached })), discordCached);
+eq('discordCacheParse bad JSON → null', L.discordCacheParse('{nope'), null);
+eq('discordCacheParse null → null', L.discordCacheParse(null), null);
+eq('discordCacheParse missing discord_user → null', L.discordCacheParse(JSON.stringify({ at: 1, data: {} })), null);
+eq('discordCacheParse user without username → null', L.discordCacheParse(JSON.stringify({ data: { discord_user: { id: '1' } } })), null);
+eq('discordCacheParse forces status to offline', L.discordCacheParse(JSON.stringify({ data: { discord_user: { username: 'kazu' }, discord_status: 'online' } })).discord_status, 'offline');
+
 // ---- malCacheParse (localStorage fallback when Jikan is down) ----
 const cacheRow = { url: 'https://myanimelist.net/anime/1/x', title: 'Cowboy Bebop', watched: 7, total: 26, pct: 27, img: 'https://img/s.jpg' };
 const cacheRows = L.malCacheParse(JSON.stringify({ at: 1752700000000, rows: [cacheRow] }));
@@ -689,6 +702,8 @@ ok('scroll-reveal section present in the stylesheet', cssFlat.includes('========
 const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
 ok('discord REST bypasses the HTTP cache', scriptSrc.includes("'https://api.lanyard.rest/v1/users/' + DISCORD_ID") && scriptSrc.includes("fetchT(url, { cache: 'no-store' })"));
 ok('discord REST falls back through the CORS proxy when lanyard is unreachable', scriptSrc.includes('const r2 = await proxyFetch(url);'));
+ok('discord card falls back to cache on failure', scriptSrc.includes('discordCacheRead') && scriptSrc.includes("DISCORD_CACHE_KEY = 'kazu-discord-cache'"));
+ok('discord retry re-arms websocket', scriptSrc.includes('restartLanyard') && scriptSrc.includes('discordRetryBtn'));
 ok('steam fetches bypass the HTTP cache', scriptSrc.includes('const r = await proxyFetch(STEAM_URL);') && scriptSrc.includes("fetchT(STEAM_URL, { cache: 'no-store' })"));
 ok('jikan anime + manga bypass the HTTP cache', scriptSrc.includes("'/animelist?status=watching', { cache: 'no-store' }") && scriptSrc.includes("'/mangalist?status=reading', { cache: 'no-store' }"));
 ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split('const r2 = await proxyFetch(listUrl);').length - 1 === 2);
