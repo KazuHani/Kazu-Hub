@@ -283,7 +283,7 @@
     try {
       const url = (KazuLib && KazuLib.openMeteoUrl)
         ? KazuLib.openMeteoUrl(52.414, -4.081)
-        : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
+        : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day,cloud_cover,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
       const r = await fetchT(url);
       const j = await r.json();
       const w = j.current;
@@ -291,12 +291,14 @@
       weatherCurrent = {
         code: w.weather_code, isDay: w.is_day === 1,
         tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
+        cloudCover: w.cloud_cover, windDir: w.wind_direction_10m, // feed the desktop weather layers
       };
       const info = weatherInfo(w.weather_code, w.is_day === 1);
       $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
       $('liveWeatherDesc').textContent = info.d;
       $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m * 0.621371) + ' mph';
       if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
+      syncWeatherFx(); // desktop only: rain / snow / wind / clouds for this weather
       popReveal($('weatherLoaded'), $('weatherLoading'));
       $('weatherError').classList.add('hidden');
       weatherDone = true;
@@ -708,6 +710,10 @@
     // sakuraInBloom) the sky stays clear instead. Rain and aurora are weather,
     // not blossom, so they are untouched; an explicit ?atmosphere= preview wins.
     if (!sakuraLive && !ATMOSPHERE_OVERRIDE && (mode === 'blossom' || mode === 'blossom-heavy')) mode = 'none';
+    // Desktop visitors get real rain and snow from the weather-fx canvas (see
+    // "Weather FX" below), so the older DOM rain drops and snow-petal shower
+    // stand down there; phones and low-power devices keep them untouched.
+    if ((mode === 'rain' || mode === 'blossom-heavy') && weatherFxOwnsPrecip()) mode = 'none';
     if (mode === atmosphereCurrent) return;
     // Low-power devices get a still sky — an explicit ?atmosphere= preview
     // param still wins (it's a deliberate look, not the weather's idea).
@@ -738,6 +744,91 @@
     atmosphereEl.appendChild(buildPetals(particleCount(30, PARTICLE_FLAGS), 13, 24, true));
     atmosphereEl.querySelectorAll('.petal').forEach(fxWatch);
   }
+
+  // ---------- Weather FX (desktop only): rain / snow / wind / clouds ----------
+  // The live UK weather (weatherCurrent, from the Open-Meteo fetch above) is
+  // drawn on a single background canvas by weather-fx.js, which combines
+  // layers only when the weather says so (cloudy + raining plays both).
+  // Not for mobile: KazuLib.weatherFxAllowed refuses phones and tablets
+  // (coarse pointer, no hover, mobile UA, or a mobile-width window), reduced
+  // motion, save-data and low-power devices, and for those visitors the file
+  // is never even requested. It is injected on an idle slice for everyone else
+  // so it can't compete with the staged boot. If the window is resized down to
+  // mobile width (or a media query flips), the layers stop and the older
+  // atmosphere takes back over.
+  // Preview: ?weather=rain,wind,clouds,snow,storm,all,none (each optionally
+  // :0..1, e.g. rain:1) forces layers on any weather; still desktop-only.
+  const WEATHER_FX_SRC = 'weather-fx.js?v=1';
+  const WEATHER_FX_RAW = (() => {
+    try { return new URLSearchParams(location.search).get('weather') || ''; } catch (e) { return ''; }
+  })();
+  const weatherFxMQ = window.matchMedia
+    ? ['(pointer: coarse)', '(hover: none)', '(max-width: 768px)', '(prefers-reduced-motion: reduce)'].map((q) => window.matchMedia(q))
+    : [];
+  let weatherFxState = 'idle'; // idle | loading | ready | failed
+  let weatherFxOwned = null;   // last value of weatherFxOwnsPrecip(), to re-run the atmosphere when it flips
+  let skyFxLight = null;       // { daylight, dusk } from the latest sky tint, for cloud colours
+
+  function weatherFxAllowedNow() {
+    if (!(KazuLib && KazuLib.weatherFxAllowed) || weatherFxMQ.length < 4) return false;
+    return KazuLib.weatherFxAllowed({
+      coarsePointer: weatherFxMQ[0].matches,
+      hoverNone: weatherFxMQ[1].matches,
+      narrow: weatherFxMQ[2].matches,
+      reducedMotion: weatherFxMQ[3].matches,
+      uaMobile: /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent || '') || !!(navigator.userAgentData && navigator.userAgentData.mobile),
+      saveData: PARTICLE_FLAGS.saveData,
+      lowPower: LOW_POWER,
+    });
+  }
+  // Is the weather-fx canvas (rather than the older rain drops / snow petals)
+  // responsible for precipitation right now? An explicit ?atmosphere= preview
+  // keeps the old system, and so does a failed download.
+  function weatherFxOwnsPrecip() {
+    return weatherFxState !== 'failed' && !(ATMOSPHERE_OVERRIDE && !WEATHER_FX_RAW) && weatherFxAllowedNow();
+  }
+
+  function feedWeatherFx() {
+    const fx = window.KazuWeatherFx;
+    if (!fx) return;
+    if (skyFxLight) fx.setSky(skyFxLight);
+    fx.update(
+      weatherCurrent
+        ? { code: weatherCurrent.code, cloudCover: weatherCurrent.cloudCover, windKmh: weatherCurrent.windKmh, windDir: weatherCurrent.windDir }
+        : null,
+      WEATHER_FX_RAW ? fx.forcedParse(WEATHER_FX_RAW) : null
+    );
+  }
+
+  function syncWeatherFx() {
+    const owns = weatherFxOwnsPrecip();
+    if (owns !== weatherFxOwned) { // hand precipitation between the two systems
+      weatherFxOwned = owns;
+      if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);
+    }
+    if (!weatherFxAllowedNow()) { // mobile / low power / reduced motion: make sure it is off
+      if (window.KazuWeatherFx) window.KazuWeatherFx.stop();
+      return;
+    }
+    if (weatherFxState === 'failed') return;
+    if (ATMOSPHERE_OVERRIDE && !WEATHER_FX_RAW) return; // previewing the older atmosphere
+    if (!weatherCurrent && !WEATHER_FX_RAW) return;     // nothing to draw until the weather is known
+    if (window.KazuWeatherFx) { weatherFxState = 'ready'; feedWeatherFx(); return; }
+    if (weatherFxState === 'loading') return;           // feedWeatherFx runs from onload
+    weatherFxState = 'loading';
+    scheduleIdle(() => {
+      const s = document.createElement('script');
+      s.src = WEATHER_FX_SRC;
+      s.async = true;
+      s.onload = () => { weatherFxState = 'ready'; syncWeatherFx(); };
+      s.onerror = () => { weatherFxState = 'failed'; syncWeatherFx(); };
+      document.head.appendChild(s);
+    }, 2000);
+  }
+  weatherFxMQ.forEach((mq) => {
+    if (mq.addEventListener) mq.addEventListener('change', syncWeatherFx);
+    else if (mq.addListener) mq.addListener(syncWeatherFx);
+  });
 
   // ---------- Sky body (sun/moon arc on UK time) ----------
   // The scenery layer's sun (by day) or moon (by night) rides an arc from
@@ -873,6 +964,8 @@
     root.setProperty('--bg-l', tint.l);
     root.setProperty('--bg-glow', tint.glow);
     skyTintHex = hslToHex(tint.h, tint.s, tint.l);
+    skyFxLight = { daylight: tint.daylight, dusk: tint.dusk }; // cloud colours follow the time of day
+    if (window.KazuWeatherFx) window.KazuWeatherFx.setSky(skyFxLight);
     if (!document.body.classList.contains('season-christmas')) setThemeColor(skyTintHex);
     if (!skyTintSnapped) {
       skyTintSnapped = true;

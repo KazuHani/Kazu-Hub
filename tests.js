@@ -13,6 +13,8 @@
 
 require('./lib.js');
 const L = globalThis.KazuLib;
+require('./weather-fx.js');
+const FX = globalThis.KazuWeatherFx;
 
 let pass = 0, fail = 0;
 function ok(name, cond, detail) {
@@ -564,6 +566,158 @@ eq('seasonDevParse empty string → null', L.seasonDevParse(''), null);
 eq('seasonDevParse array payload → null', L.seasonDevParse('["on"]'), null);
 eq('seasonDevParse scalar payload → null', L.seasonDevParse('"on"'), null);
 
+// ---- Live weather layers (weather-fx.js): rain / snow / wind / clouds, desktop only ----
+// The rule set is DOM-free so it is pinned here: what weather shows which layers,
+// who is allowed to see them at all, the physics, and the draw budget.
+ok('KazuWeatherFx loaded', !!FX);
+
+// Who gets it: desktop only. Every "keep quiet" signal alone turns it off.
+eq('weatherFxAllowed: a plain desktop is allowed', L.weatherFxAllowed({}), true);
+eq('weatherFxAllowed: no flags at all reads as a desktop', L.weatherFxAllowed(), true);
+eq('weatherFxAllowed: coarse pointer (phone / tablet) is refused', L.weatherFxAllowed({ coarsePointer: true }), false);
+eq('weatherFxAllowed: no-hover device is refused', L.weatherFxAllowed({ hoverNone: true }), false);
+eq('weatherFxAllowed: mobile-width window is refused', L.weatherFxAllowed({ narrow: true }), false);
+eq('weatherFxAllowed: mobile user agent is refused', L.weatherFxAllowed({ uaMobile: true }), false);
+eq('weatherFxAllowed: reduced motion is refused', L.weatherFxAllowed({ reducedMotion: true }), false);
+eq('weatherFxAllowed: save-data is refused', L.weatherFxAllowed({ saveData: true }), false);
+eq('weatherFxAllowed: low-power mode is refused', L.weatherFxAllowed({ lowPower: true }), false);
+eq('weatherFxAllowed: a phone stack is refused', L.weatherFxAllowed({ coarsePointer: true, hoverNone: true, narrow: true, uaMobile: true }), false);
+ok('the weather request asks for cloud cover + wind direction', L.openMeteoUrl(52.414, -4.081).indexOf('cloud_cover') > -1 && L.openMeteoUrl(52.414, -4.081).indexOf('wind_direction_10m') > -1);
+
+// Weather -> layers.
+function fxLayers(w) { return FX.layersFor(w); }
+eq('clear sky shows nothing', fxLayers({ code: 0, cloudCover: 3, windKmh: 10 }).active, false);
+eq('mainly clear with a few clouds shows nothing', fxLayers({ code: 1, cloudCover: 15, windKmh: 12 }).active, false);
+ok('overcast (code 3, no cover figure) shows clouds only', (function () { var l = fxLayers({ code: 3, windKmh: 12 }); return l.clouds >= 0.9 && !l.rain && !l.snow && !l.wind; })());
+ok('partly cloudy is a lighter cloud layer than overcast', (function () { var p = fxLayers({ code: 2, windKmh: 5 }).clouds, o = fxLayers({ code: 3, windKmh: 5 }).clouds; return p > 0.2 && p < o; })());
+ok('a reported cloud cover beats the code default (clear code, 80% cover)', fxLayers({ code: 0, cloudCover: 80, windKmh: 5 }).clouds > 0.5);
+eq('cloud cover under the threshold draws no clouds (24%)', fxLayers({ code: 3, cloudCover: 24, windKmh: 0 }).clouds, 0);
+eq('cloud cover at the threshold starts the layer (25%)', fxLayers({ code: 3, cloudCover: 25, windKmh: 0 }).clouds, 0.2);
+eq('fog reads as full cloud', fxLayers({ code: 45, windKmh: 3 }).clouds, 1);
+ok('every rain code rains, is cloudy, and never snows', [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].every(function (c) { var l = fxLayers({ code: c, windKmh: 0 }); return l.rain > 0 && l.clouds >= 0.7 && l.snow === 0; }));
+ok('every snow code snows, is cloudy, and never rains', [71, 73, 75, 77, 85, 86].every(function (c) { var l = fxLayers({ code: c, windKmh: 0 }); return l.snow > 0 && l.clouds >= 0.7 && l.rain === 0; }));
+ok('rain and snow never overlap for any weather code', (function () { for (var c = 0; c <= 99; c++) { var l = fxLayers({ code: c, cloudCover: 50, windKmh: 40 }); if (l.rain > 0 && l.snow > 0) return false; } return true; })());
+ok('rain keeps its cloud even when the API reports a clear-ish sky', fxLayers({ code: 61, cloudCover: 10, windKmh: 0 }).clouds >= 0.7);
+ok('rain intensity grows with the code (drizzle < rain < heavy rain < heavy showers)', fxLayers({ code: 51 }).rain < fxLayers({ code: 61 }).rain && fxLayers({ code: 61 }).rain < fxLayers({ code: 65 }).rain && fxLayers({ code: 65 }).rain < fxLayers({ code: 82 }).rain);
+ok('snow intensity grows with the code (light < moderate < heavy)', fxLayers({ code: 71 }).snow < fxLayers({ code: 73 }).snow && fxLayers({ code: 73 }).snow < fxLayers({ code: 75 }).snow);
+eq('wind below 20 mph shows nothing (31.9 km/h)', fxLayers({ code: 0, windKmh: 31.9 }).wind, 0);
+eq('wind from 20 mph starts the streaks (32 km/h)', fxLayers({ code: 0, windKmh: 32 }).wind, 0.2);
+eq('a gale is full strength (80 km/h)', fxLayers({ code: 0, windKmh: 80 }).wind, 1);
+eq('wind is capped past a gale (200 km/h)', fxLayers({ code: 0, windKmh: 200 }).wind, 1);
+ok('wind strength only ever rises with speed', (function () { var prev = 0; for (var k = 0; k <= 120; k += 2) { var w = fxLayers({ code: 0, windKmh: k }).wind; if (w < prev) return false; prev = w; } return true; })());
+ok('a windy clear day is wind only', (function () { var l = fxLayers({ code: 0, cloudCover: 5, windKmh: 55 }); return l.wind > 0.4 && !l.clouds && !l.rain && !l.snow; })());
+ok('cloudy + raining + windy plays all three together', (function () { var l = fxLayers({ code: 63, cloudCover: 100, windKmh: 50 }); return l.rain > 0 && l.clouds > 0 && l.wind > 0 && l.snow === 0; })());
+ok('cloudy + snowing + windy plays all three together', (function () { var l = fxLayers({ code: 73, cloudCover: 100, windKmh: 50 }); return l.snow > 0 && l.clouds > 0 && l.wind > 0 && l.rain === 0; })());
+ok('a still cloudy day with no rain does not rain', (function () { var l = fxLayers({ code: 3, cloudCover: 100, windKmh: 5 }); return l.rain === 0 && l.snow === 0 && l.wind === 0 && l.clouds === 1; })());
+eq('live-API sanity (29 Sep 2026: overcast, 33.1 km/h from 126 degrees)', (function () { var l = fxLayers({ code: 3, cloudCover: 100, windKmh: 33.1, windDir: 126 }); return [l.rain, l.snow, l.clouds, l.wind, l.windSign]; })(), [0, 0, 1, 0.22, -1]);
+eq('junk weather shows nothing (null / {} / bad code / bad wind)', [fxLayers(null).active, fxLayers({}).active, fxLayers({ code: 'abc', windKmh: 'x' }).active, fxLayers({ code: 999, windKmh: NaN }).active], [false, false, false, false]);
+eq('westerly wind blows left to right', FX.windSignFor(270), 1);
+eq('easterly wind blows right to left', FX.windSignFor(90), -1);
+eq('missing / junk / due north-south wind falls back to left to right', [FX.windSignFor(undefined), FX.windSignFor(null), FX.windSignFor('x'), FX.windSignFor(0), FX.windSignFor(180)], [1, 1, 1, 1, 1]);
+
+// Preview override (?weather=).
+eq('forced: names + strengths', (function () { var f = FX.forcedParse('rain,wind:1,clouds:0.4'); return [f.rain, f.wind, f.clouds, f.snow]; })(), [0.7, 1, 0.4, 0]);
+eq('forced: none forces a clear sky', FX.forcedParse('none').active, false);
+eq('forced: storm = full rain + wind + clouds', (function () { var f = FX.forcedParse('storm'); return [f.rain, f.wind, f.clouds, f.snow, f.active]; })(), [1, 1, 1, 0, true]);
+eq('forced: all = rain + wind + clouds (never snow)', (function () { var f = FX.forcedParse('all'); return [f.rain > 0, f.wind > 0, f.clouds > 0, f.snow]; })(), [true, true, true, 0]);
+eq('forced: snow defaults to 0.7 and is case/space tolerant', FX.forcedParse(' SNOW , Cloudy:0.5 ').snow, 0.7);
+eq('forced: strength is clamped to 0..1', [FX.forcedParse('rain:5').rain, FX.forcedParse('rain:-2').rain], [1, 0]);
+eq('forced: junk and non-strings fall back to the real weather', [FX.forcedParse('banana'), FX.forcedParse(''), FX.forcedParse(null), FX.forcedParse(3)], [null, null, null, null]);
+
+// Quality governor.
+eq('governor: a healthy 60 fps page keeps full quality', FX.qualityStep(0, 16.7), 0);
+eq('governor: exactly at the threshold holds', FX.qualityStep(0, FX.SLOW_FRAME_MS), 0);
+eq('governor: a slow page steps down one level', FX.qualityStep(0, 40), 1);
+eq('governor: keeps stepping while slow, then switches off', [FX.qualityStep(1, 40), FX.qualityStep(2, 40), FX.qualityStep(3, 40)], [2, 3, 4]);
+eq('governor: off stays off (never oscillates back on)', [FX.qualityStep(4, 5), FX.qualityStep(7, 5)], [4, 7]);
+eq('governor: quality factors fall at every step, off = 0', [0, 1, 2, 3, 4].map(FX.qualityFactor), [1, 0.6, 0.35, 0.18, 0]);
+eq('governor: junk level is treated as full quality', [FX.qualityStep('x', 10), FX.qualityFactor(-3)], [0, 1]);
+eq('particle count scales with intensity and quality, and is capped', [FX.countFor('rain', 1, 1), FX.countFor('rain', 0.5, 1), FX.countFor('rain', 1, 0.35), FX.countFor('rain', 9, 9), FX.countFor('clouds', 1, 1)], [240, 120, 84, 240, 14]);
+eq('particle count is zero for a negligible layer', [FX.countFor('snow', 0.01, 1), FX.countFor('snow', 0, 1), FX.countFor('snow', 'x', 1)], [0, 0, 0]);
+
+// Cloud colours follow the time of day.
+ok('clouds are brighter by day than at night', (function () { var n = FX.cloudRgb({ daylight: 0, dusk: 0 }), d = FX.cloudRgb({ daylight: 1, dusk: 0 }); return d[0] > n[0] && d[1] > n[1] && d[2] > n[2]; })());
+ok('clouds warm towards orange at the horizon crossings', (function () { var s = FX.cloudRgb({ daylight: 0.4, dusk: 1 }), n = FX.cloudRgb({ daylight: 0.4, dusk: 0 }); return (s[0] - s[2]) > (n[0] - n[2]) + 20; })());
+ok('cloud opacity is fainter at night than by day', FX.cloudAlpha({ daylight: 0 }) < FX.cloudAlpha({ daylight: 1 }));
+eq('cloud colour key is stable for the same sky and moves with a real change', [FX.cloudKey({ daylight: 0.5, dusk: 0 }) === FX.cloudKey({ daylight: 0.5, dusk: 0 }), FX.cloudKey({ daylight: 0, dusk: 0 }) !== FX.cloudKey({ daylight: 1, dusk: 0 })], [true, true]);
+eq('junk sky colours never produce NaN', FX.cloudRgb({ daylight: 'x', dusk: null }).every(function (n) { return isFinite(n); }), true);
+
+// Particle physics (seeded, so exact).
+function fxStubCtx() {
+  var c = { ops: 0, bad: null };
+  ['clearRect', 'beginPath', 'moveTo', 'lineTo', 'stroke', 'fill', 'arc', 'quadraticCurveTo', 'drawImage', 'scale', 'setTransform'].forEach(function (m) {
+    c[m] = function () { c.ops++; for (var i = 0; i < arguments.length; i++) { var a = arguments[i]; if (typeof a === 'number' && !isFinite(a)) c.bad = m + ' got ' + a; } };
+  });
+  c.createRadialGradient = function () { c.ops++; return { addColorStop: function () { c.ops++; } }; };
+  return c;
+}
+function fxStubCanvas(w, h) { return { width: w, height: h, getContext: function () { return fxStubCtx(); } }; }
+function fxRun(target, seconds, quality, seed) {
+  var sc = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas, seed: seed == null ? 7 : seed });
+  if (quality != null) sc.quality = quality;
+  for (var i = 0; i < seconds * 30; i++) FX.stepScene(sc, 1 / 30, target);
+  return sc;
+}
+var fxStorm = FX.forcedParse('storm'), fxSnowy = FX.forcedParse('snow:1,wind:1,clouds:1');
+ok('the same seed replays the same scene', (function () { var a = fxRun(fxStorm, 4), b = fxRun(fxStorm, 4); for (var i = 0; i < 60; i++) { if (a.rain.x[i] !== b.rain.x[i] || a.rain.y[i] !== b.rain.y[i]) return false; } return a.wisps.length === b.wisps.length; })());
+ok('a different seed gives a different scene', fxRun(fxStorm, 4, null, 1).rain.x[3] !== fxRun(fxStorm, 4, null, 2).rain.x[3]);
+ok('layers fade in linearly instead of popping (0.4 per second)', (function () { var sc = fxRun(fxStorm, 1); return Math.abs(sc.cur.rain - 0.4) < 0.02 && sc.cur.clouds < 0.5; })());
+ok('layers reach their target', fxRun(fxStorm, 4).cur.rain === 1);
+ok('rain, snow, clouds and wind all stay inside their bounds (no NaN, no runaway) after 20s of gale', (function () {
+  var sc = fxRun(fxStorm, 20), W = sc.W, H = sc.H, i;
+  for (i = 0; i < sc.nRain; i++) { var y = sc.rain.y[i], x = sc.rain.x[i]; if (!(y >= -90 && y <= H + 100) || !(x >= -H * 0.7 - 100 && x <= W + H * 0.7 + 100)) return false; }
+  for (i = 0; i < sc.nClouds; i++) { var cx = sc.clouds.x[i]; if (!(cx >= -460 * 1.65 - 1 && cx <= W + 1)) return false; }
+  for (i = 0; i < sc.wisps.length; i++) if (!(sc.wisps[i].age < sc.wisps[i].ttl)) return false;
+  var sn = fxRun(fxSnowy, 20);
+  for (i = 0; i < sn.nSnow; i++) { var sx = sn.snow.x[i], sy = sn.snow.y[i]; if (!(sx >= -12 && sx <= W + 12) || !(sy >= -8 && sy <= H + 12)) return false; }
+  return true;
+})());
+ok('rain falls straight in a calm and leans with the wind', (function () {
+  var calm = FX.forcedParse('rain:1'); calm.windKmh = 0;
+  var a = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas, seed: 3 }), b = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas, seed: 3 });
+  var x0 = a.rain.x[0], y0 = a.rain.y[0], gale = FX.forcedParse('rain:1,wind:1');
+  for (var i = 0; i < 40; i++) { FX.stepScene(a, 1 / 60, calm); FX.stepScene(b, 1 / 60, gale); }
+  var moved = b.rain.x[0] - x0;
+  return a.rain.x[0] === x0 && a.rain.y[0] > y0 && b.rain.y[0] > y0 && moved > 40;
+})());
+ok('wind direction flips the lean and the cloud drift', (function () {
+  var east = FX.forcedParse('rain:1,wind:1,clouds:1'), west = FX.forcedParse('rain:1,wind:1,clouds:1'); west.windSign = -1;
+  var a = fxRun(east, 3, null, 5), b = fxRun(west, 3, null, 5);
+  var a2 = fxRun(east, 3, null, 5), b2 = fxRun(west, 3, null, 5);
+  FX.stepScene(a2, 1 / 30, east); FX.stepScene(b2, 1 / 30, west);
+  var cA = a2.clouds.x[0] - a.clouds.x[0], cB = b2.clouds.x[0] - b.clouds.x[0];
+  return cA > 0 && cB < 0;
+})());
+ok('quality lowers the particle counts actually simulated', fxRun(fxStorm, 4, 1).nRain > fxRun(fxStorm, 4, 0.35).nRain && fxRun(fxStorm, 4, 0.35).nRain > fxRun(fxStorm, 4, 0.18).nRain);
+ok('a cleared sky fades out and reports idle so the canvas can be removed', (function () {
+  var sc = fxRun(fxStorm, 3), clear = FX.forcedParse('none'), busy = true;
+  for (var i = 0; i < 30 * 10 && busy; i++) busy = FX.stepScene(sc, 1 / 30, clear);
+  return busy === false && sc.cur.rain === 0 && sc.cur.clouds === 0 && sc.wisps.length === 0;
+})());
+ok('nothing to show means nothing is busy from the first step', FX.stepScene(FX.createScene(800, 600, { makeCanvas: fxStubCanvas }), 1 / 30, FX.forcedParse('none')) === false);
+
+// Draw budget: the deterministic stand-in for "does not tank performance".
+function fxOps(target, quality) {
+  var sc = fxRun(target, 6, quality), ctx = fxStubCtx();
+  FX.drawScene(sc, ctx);
+  return { ops: ctx.ops, bad: ctx.bad };
+}
+ok('clear sky draws nothing but the clear (1 canvas call)', fxOps(FX.forcedParse('none')).ops === 1);
+ok('rain + wind + clouds stays under 700 canvas calls a frame', (function () { var r = fxOps(fxStorm); return r.ops > 100 && r.ops < 700; })());
+ok('snow + wind + clouds stays under 700 canvas calls a frame', (function () { var r = fxOps(fxSnowy); return r.ops > 100 && r.ops < 700; })());
+ok('even every layer at full strength stays under 1100 calls', fxOps(FX.forcedParse('rain:1,snow:1,clouds:1,wind:1')).ops < 1100);
+ok('clouds alone are 14 sprite blits at most', (function () { var r = fxOps(FX.forcedParse('clouds:1')); return r.ops <= 20; })());
+ok('lower quality draws fewer calls', fxOps(fxStorm, 0.35).ops < fxOps(fxStorm, 1).ops);
+ok('no non-finite number ever reaches the canvas', fxOps(fxStorm).bad === null && fxOps(fxSnowy).bad === null && fxOps(FX.forcedParse('rain:1,snow:1,clouds:1,wind:1'), 0.18).bad === null);
+ok('cloud sprites are built once per colour step, not per frame', (function () {
+  var built = 0, sc = FX.createScene(1920, 1080, { makeCanvas: function (w, h) { built++; return fxStubCanvas(w, h); } });
+  var t = FX.forcedParse('clouds:1');
+  for (var i = 0; i < 60; i++) { FX.stepScene(sc, 1 / 30, t); FX.drawScene(sc, fxStubCtx()); }
+  var first = built;
+  sc.sky = { daylight: 1, dusk: 0 }; FX.drawScene(sc, fxStubCtx());
+  return first === 3 && built === 6;
+})());
+
 // ---- balloonDriftStep (birthday balloon body physics) ----
 const bb = { x: 100, y: 500, vx: 0, vy: 0 };
 for (let bi = 0; bi < 1200; bi++) L.balloonDriftStep(bb, { dt: 0.016, t: bi * 0.016, buoy: 9, drag: 0.22, windAmp: 0, phase: 0 });
@@ -698,6 +852,7 @@ ok('custom scrollbar hidden on compact screens', cssSrc.includes('@media (max-wi
 // glint rims, frosted backdrop, and the Chromium refraction list in script.js.
 const cssFlat = cssSrc.replace(/\r/g, '');
 const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8').replace(/\r\n/g, '\n');
+const fxSrc = fs.readFileSync(__dirname + '/weather-fx.js', 'utf8').replace(/\r\n/g, '\n');
 ['rgba(40,40,110,.32), var(--glint)',   // discord
  'rgba(20,40,70,.32), var(--glint)',    // steam
  'rgba(20,40,100,.32), var(--glint)',   // myanimelist
@@ -995,6 +1150,25 @@ ok('petal modes are gated by the season; rain, aurora and explicit previews are 
 ok('the gate re-runs with the weather\'s request when the season flips', scriptSrc.includes('atmosphereWanted = mode;') && scriptSrc.includes('if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);'));
 ok('dev panel has a Sakura Auto/On/Off row', scriptSrc.includes("['sakura', '🌸 Sakura'],"));
 ok('sky body sits outside the branch gate (still rendered out of season)', htmlSrc.includes('<div class="sky-body sky-body--moon"></div>') && !cssFlat.includes('html.no-sakura .sky-body'));
+// ---- Live weather layers: wiring (mobile gating, lazy load, hand-off, CSS guard) ----
+ok('weather-fx.js is never a static script tag (mobile never requests it)', htmlSrc.indexOf('weather-fx.js') === -1);
+ok('the service worker does not precache weather-fx.js (phones would download it on install)', swSrc.indexOf('weather-fx') === -1);
+ok('script.js injects weather-fx.js only after the eligibility check', scriptSrc.indexOf("const WEATHER_FX_SRC = 'weather-fx.js?v=1';") !== -1 && scriptSrc.indexOf("document.createElement('script')") !== -1 && scriptSrc.indexOf('KazuLib.weatherFxAllowed({') !== -1 && scriptSrc.indexOf('if (!weatherFxAllowedNow()) {') !== -1);
+ok('eligibility reads coarse pointer, no-hover, narrow width, reduced motion, mobile UA, save-data and low power', ['(pointer: coarse)', '(hover: none)', '(max-width: 768px)', '(prefers-reduced-motion: reduce)'].every(function (q) { return scriptSrc.indexOf("'" + q + "'") !== -1; }) && scriptSrc.indexOf('/Android|iPhone|iPad|iPod|Mobi/i') !== -1 && scriptSrc.indexOf('userAgentData.mobile') !== -1 && scriptSrc.indexOf('saveData: PARTICLE_FLAGS.saveData,') !== -1 && scriptSrc.indexOf('lowPower: LOW_POWER,') !== -1);
+ok('a missing lib.js means no weather layers (fails safe)', scriptSrc.indexOf('if (!(KazuLib && KazuLib.weatherFxAllowed) || weatherFxMQ.length < 4) return false;') !== -1);
+ok('the layers stop when a media query flips to mobile', scriptSrc.indexOf("mq.addEventListener('change', syncWeatherFx)") !== -1 && scriptSrc.indexOf('window.KazuWeatherFx.stop();') !== -1);
+ok('the file loads on an idle slice and a failed download falls back to the old atmosphere', scriptSrc.indexOf('scheduleIdle(() => {') !== -1 && scriptSrc.indexOf("s.onerror = () => { weatherFxState = 'failed'; syncWeatherFx(); };") !== -1 && scriptSrc.indexOf("weatherFxState !== 'failed'") !== -1);
+ok('desktop rain and snow hand over from the old drops / snow petals to the canvas', scriptSrc.indexOf("if ((mode === 'rain' || mode === 'blossom-heavy') && weatherFxOwnsPrecip()) mode = 'none';") !== -1);
+ok('an explicit ?atmosphere= preview keeps the old system', scriptSrc.indexOf('!(ATMOSPHERE_OVERRIDE && !WEATHER_FX_RAW)') !== -1);
+ok('the weather fetch feeds cloud cover + wind direction and starts the layers', scriptSrc.indexOf('cloudCover: w.cloud_cover, windDir: w.wind_direction_10m') !== -1 && scriptSrc.indexOf('syncWeatherFx(); // desktop only') !== -1 && scriptSrc.indexOf('wind_speed_10m,is_day,cloud_cover,wind_direction_10m') !== -1);
+ok('the sky tint feeds the cloud colours', scriptSrc.indexOf('skyFxLight = { daylight: tint.daylight, dusk: tint.dusk };') !== -1 && scriptSrc.indexOf('window.KazuWeatherFx.setSky(skyFxLight)') !== -1);
+ok('?weather= preview is wired', scriptSrc.indexOf("get('weather')") !== -1 && scriptSrc.indexOf('fx.forcedParse(WEATHER_FX_RAW)') !== -1);
+ok('CSS: fixed, behind the content, click-through', cssFlat.indexOf('.weather-fx {\n  position: fixed; inset: 0; width: 100vw; height: 100vh;\n  z-index: 0; pointer-events: none;\n}') !== -1);
+ok('CSS guard: hidden on coarse pointers, no-hover, narrow windows, reduced motion and low power', cssFlat.indexOf('@media (pointer: coarse), (hover: none), (max-width: 768px), (prefers-reduced-motion: reduce) {\n  .weather-fx { display: none !important; }\n}') !== -1 && cssFlat.indexOf('body.low-power .weather-fx { display: none !important; }') !== -1);
+ok('engine: one rAF loop, no timers polling, fps-capped, half resolution', fxSrc.indexOf('requestAnimationFrame(frame)') !== -1 && fxSrc.indexOf('setInterval') === -1 && fxSrc.indexOf('var FAST_FPS = 30;') !== -1 && fxSrc.indexOf('var SLOW_FPS = 12;') !== -1 && fxSrc.indexOf('var SCALE = 0.5;') !== -1);
+ok('engine: pauses behind modals, slows while scrolling, resets after a hidden tab', fxSrc.indexOf("classList.contains('modal-open')") !== -1 && fxSrc.indexOf("classList.contains('glass-scrolling')") !== -1 && fxSrc.indexOf("document.addEventListener('visibilitychange', onVisibility)") !== -1);
+ok('engine: mounts on demand between .sakura-scene and .atmosphere, and removes itself when clear', fxSrc.indexOf("ref.parentNode.insertBefore(canvas, ref)") !== -1 && fxSrc.indexOf("querySelector('.atmosphere')") !== -1 && fxSrc.indexOf('if (!busy) unmount();') !== -1);
+ok('engine: the governor can switch it off for the session', fxSrc.indexOf('disabled = true; unmount(); return;') !== -1 && fxSrc.indexOf('if (disabled) return null;') !== -1);
 ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" onload="this.media=\'all\'"'));
 
 // ---- Single time-of-day palette (light theme + toggle fully removed) ----

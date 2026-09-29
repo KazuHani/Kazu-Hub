@@ -202,6 +202,22 @@ html.sky-pending .sky-body { opacity: 0; }
   transform-origin: 0 80%;
   /* No idle sway: sits still alongside the cards. */
 }
+/* Live weather layers (rain / snow / wind / clouds), drawn by weather-fx.js on
+   one fixed canvas behind the content. script.js only creates it for desktop
+   visitors, and only loads that file for them; this block is the second,
+   independent guard: on phones and tablets (coarse pointer, no hover, mobile
+   width), with reduced motion, or in low-power mode it is never displayed
+   even if something creates it. It sits after .sakura-scene in the DOM (so
+   clouds drift in front of the sun/moon and rain falls in front of the
+   branches) and before .atmosphere (petals stay on top). */
+.weather-fx {
+  position: fixed; inset: 0; width: 100vw; height: 100vh;
+  z-index: 0; pointer-events: none;
+}
+@media (pointer: coarse), (hover: none), (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .weather-fx { display: none !important; }
+}
+body.low-power .weather-fx { display: none !important; }
 /* Cherry-blossom season only (20 Mar - 10 May, UK date; lib.js sakuraInBloom):
    outside it the branches are not drawn. The sun/moon share this layer, so
    only the branches go. html.no-sakura is set by the inline #boot-tint script

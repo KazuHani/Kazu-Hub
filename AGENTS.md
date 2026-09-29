@@ -34,12 +34,14 @@ moon-by-night sky body arcing left→right on the UK clock; hidden during
 the Christmas season), and custom scrollbars. The blossom branches and the
 falling petals only appear during Japan's cherry-blossom season (20 March to
 10 May, on the UK date; see "Cherry-blossom season" below); the sun and
-moon stay all year.
+moon stay all year. On desktop only, the live UK weather is also drawn behind
+the page as rain, snow, wind streaks and clouds that combine when the
+weather does (see "Live weather layers" below); mobile never gets it.
 
 ## Code layout
 
-- `index.html` (~850 lines) — the whole page. Loads `style.css?v=54`,
-  `lib.js?v=33`, `script.js?v=64` (version query strings; see cache-busting
+- `index.html` (~850 lines) — the whole page. Loads `style.css?v=55`,
+  `lib.js?v=34`, `script.js?v=65` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -63,12 +65,20 @@ moon stay all year.
   for the lib helpers it needs, so the page still works if `lib.js` fails to
   load. User-facing IDs (`DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`, `LB_USER`,
   `LISTENBRAINZ_USER`) are constants near the top of each section.
+- `weather-fx.js` — the live weather layers (rain, snow, wind, clouds) on one
+  background canvas, **desktop only and loaded on demand**: never a static
+  `<script>` tag and never precached, `script.js` injects it after
+  `KazuLib.weatherFxAllowed` says yes (see "Live weather layers" below).
+  Pure, DOM-free core (weather -> layers, quality governor, seeded particle
+  physics, colours) exposed as `KazuWeatherFx`, plus a thin DOM shell at the
+  bottom. Versioned by the `WEATHER_FX_SRC` constant in `script.js`.
 - `style.css` (~1440 lines) — all styling, including seasonal and
   weather-atmosphere variants and the sakura scenery layer.
 - `sw.js` — service worker. Network-first for navigations, cache-first for
   same-origin versioned assets, cross-origin requests (live APIs, fonts)
   untouched. Precache list mirrors the `?v=` URLs from `index.html`.
-- `tests.js` — headless gate tests for `lib.js`, plain Node, no dependencies.
+  (`weather-fx.js` is deliberately absent: phones would download it on install.)
+- `tests.js` — headless gate tests for `lib.js` and `weather-fx.js`, plain Node, no dependencies.
 - `tests.html` — the same assertions run in the browser (open the file).
 - `404.html`, `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
   plumbing. `assets/` holds images/icons.
@@ -91,7 +101,13 @@ Preview/dev affordances built into the page:
   that doesn't name it leaves the blossoms on the calendar.
 - `?atmosphere=rain|blossom|blossom-heavy|aurora|none` forces the particle mode.
   `blossom` / `blossom-heavy` also bring the branches back out of season, so
-  the preview looks like the real in-season page.
+  the preview looks like the real in-season page. It previews the OLDER
+  atmosphere: on desktop it also keeps the live weather layers off.
+- `?weather=rain,wind,clouds,snow,storm,all,none` (comma-combinable, each with
+  an optional strength, e.g. `rain:1,clouds:0.4`) forces the desktop weather
+  layers on any real weather; `none` forces a clear sky. Still desktop-only:
+  a phone or a window under 769px shows nothing. Widen the window and it
+  starts without a reload.
 - Typing `kazudev` anywhere on the page opens a dev settings panel with
   per-season Auto/On/Off overrides (Birthday, Christmas, Pride, Sakura)
   persisted to localStorage. Typing it again or Esc closes it.
@@ -162,6 +178,36 @@ These are load-bearing; read before editing.
   `setAtmosphere` gates the petal modes on the same flag and re-runs when it
   flips. Sakura is a fourth dev-panel season (`seasonDevApply` keys). Snowy
   weather out of season shows a clear sky, not petals.
+- **Live weather layers (desktop only).** `weather-fx.js` draws rain, snow,
+  wind streaks and clouds from the UK weather `script.js` already fetches
+  (Open-Meteo now also asks for `cloud_cover` and `wind_direction_10m`).
+  Layers combine only when the weather says so: rain and snow come from one
+  weather code so they never overlap, precipitation implies cloud, cloud
+  needs >= 25% cover, wind starts at 32 km/h (20 mph) and full strength is
+  80 km/h; a westerly blows left to right. All of that lives in
+  `KazuWeatherFx.layersFor` and is table-tested; change the rules there.
+  - *Not for mobile.* Three independent guards: (1) `KazuLib.weatherFxAllowed`
+    refuses coarse pointers, no-hover devices, a mobile UA, a window <= 768px,
+    reduced motion, save-data and `lowPower`, and `script.js` never even
+    requests the file for those visitors; (2) the CSS media query + `body.low-power`
+    rule hide `.weather-fx` regardless; (3) media-query `change` listeners
+    stop the layers live if the window narrows. Phones keep the older DOM
+    rain drops / snow petals exactly as before. On desktop the canvas owns
+    rain and snow, so `setAtmosphere` turns its `rain` and `blossom-heavy`
+    modes into `none` there (`weatherFxOwnsPrecip`), and hands them back if the
+    file fails to load.
+  - *Performance budget.* One fixed canvas at half resolution behind the
+    content, ~570 canvas calls per frame worst case (gate-tested, with a
+    no-NaN check), 30 fps (12 fps clouds-only, halved while scrolling), paused
+    behind modals and in hidden tabs, nothing mounted at all when the sky is
+    clear. A frame-time governor steps density down (1 -> .6 -> .35 -> .18)
+    when the average rAF interval exceeds 28 ms, then switches the effect off
+    for the session. Measured at maximum load on a 144 Hz desktop: 6.94 ms per
+    frame with it running vs 6.96 ms without, 0.2 ms per drawn frame.
+  - The canvas is inserted between `.sakura-scene` and `.atmosphere`, so
+    clouds pass in front of the sun/moon and rain falls in front of the
+    branches while petals stay on top. New always-on visuals in this layer
+    must keep the same rules: no timers, batched paths, an op budget test.
 - **Social tiles are solid brand tiles.** `.social-card` is deliberately NOT
   a `.card` member (no glass/refraction — nothing to refract through). The
   design hangs off two custom properties: each network gets a

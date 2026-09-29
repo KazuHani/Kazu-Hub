@@ -252,7 +252,7 @@
   // 5-day strip).
   function openMeteoUrl(lat, lon, includeDaily) {
     var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
-      '&current=temperature_2m,weather_code,wind_speed_10m,is_day';
+      '&current=temperature_2m,weather_code,wind_speed_10m,is_day,cloud_cover,wind_direction_10m';
     if (includeDaily !== false) {
       url += '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
         '&forecast_days=5&timezone=Europe%2FLondon';
@@ -312,6 +312,22 @@
     if (o.coarsePointer) weak++;
     if (o.smallScreen) weak++;
     return weak >= 2;
+  }
+
+  // Should the live weather layers (weather-fx.js: rain, snow, wind, clouds)
+  // run for this visitor? Desktop only, and only when nothing says the page
+  // should stay quiet. Phones and tablets never get it (coarse primary
+  // pointer, no hover, a mobile UA, or a mobile-width window), nor do
+  // visitors who asked for less motion or data, nor weak hardware
+  // (lowPowerMode). Missing flags read as "not set", so a bare desktop is
+  // allowed; script.js passes every flag explicitly and never loads the
+  // file when this says no. `o` flags: coarsePointer, hoverNone, narrow,
+  // uaMobile, reducedMotion, saveData, lowPower.
+  function weatherFxAllowed(o) {
+    o = o || {};
+    if (o.coarsePointer || o.hoverNone || o.narrow || o.uaMobile) return false;
+    if (o.reducedMotion || o.saveData || o.lowPower) return false;
+    return true;
   }
 
   // ---- Apple Liquid Glass Optical Physics ---------------------------------
@@ -1281,6 +1297,7 @@
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
     sakuraInBloom: sakuraInBloom,
+    weatherFxAllowed: weatherFxAllowed,
     seasonDevApply: seasonDevApply,
     seasonDevParse: seasonDevParse,
     devModeParse: devModeParse,
