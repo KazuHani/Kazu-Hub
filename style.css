@@ -830,23 +830,28 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
     inset 0 10px 18px rgba(0,0,0,.32),
     0 5px 12px rgba(0,0,0,.30);
 }
-/* The badge is just a positioning wrapper now: no frosted box, no rounded
+/* The mark is just a positioning wrapper now: no frosted box, no rounded
    background, no shadow -- the bare logo sits directly on the brand tile.
-   Badge, name and handle are raised above the sheen sweep so the light
-   passes across the lacquer, not the print. */
-.social-badge, .social-name, .social-handle { position: relative; z-index: 1; }
-.social-badge {
+   Mark, name and handle are raised above the sheen sweep so the light
+   passes across the lacquer, not the print.
+   Do NOT call it .social-badge: EasyList / Fanboy's Social Blocking list ship
+   a generic `##.social-badge` hide rule, so uBlock Origin and Adblock Plus
+   users saw every logo vanish (the tiles collapsed to name + handle). Keep
+   class names in this section off those lists (evals/adblock-filters.js
+   checks the live lists; tests.js pins the known offenders). */
+.social-mark, .social-name, .social-handle { position: relative; z-index: 1; }
+.social-mark {
   width: 48px; height: 48px; margin-bottom: 12px;
   display: flex; align-items: center; justify-content: center;
   transition: transform .28s cubic-bezier(.34,1.3,.5,1);
 }
-.social-badge svg { width: 40px; height: 40px; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.28)); transition: filter .28s ease; }
+.social-mark svg { width: 40px; height: 40px; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.28)); transition: filter .28s ease; }
 /* No tilt: the mark lifts straight up with the tile and grows a touch, its
    shadow softening as if it floated a little off the face. */
-.social-card:hover .social-badge { transform: translateY(-2px) scale(1.07); }
-.social-card:hover .social-badge svg { filter: drop-shadow(0 5px 9px rgba(0,0,0,.38)); }
-.social-badge--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; color: #fff; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
-.social-badge--dots span { width: 24px; height: 24px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
+.social-card:hover .social-mark { transform: translateY(-2px) scale(1.07); }
+.social-card:hover .social-mark svg { filter: drop-shadow(0 5px 9px rgba(0,0,0,.38)); }
+.social-mark--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; color: #fff; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.social-mark--dots span { width: 24px; height: 24px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
 .social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
 .social-handle { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.74); transition: color .22s ease; }
 .social-card:hover .social-handle { color: #fff; }
@@ -870,8 +875,8 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 /* Reduced motion: the lift/press/sheen are decorative — the tile simply
    changes its shadows, with no movement at all. */
 @media (prefers-reduced-motion: reduce) {
-  .social-card, .social-card::after, .social-card:hover::after, .social-badge, .social-badge svg, .social-handle { transition: none; }
-  .social-card:hover, .social-card:active, .social-card:hover .social-badge { transform: none; }
+  .social-card, .social-card::after, .social-card:hover::after, .social-mark, .social-mark svg, .social-handle { transition: none; }
+  .social-card:hover, .social-card:active, .social-card:hover .social-mark { transform: none; }
 }
 
 /* ---- Stories ---- */
@@ -2205,8 +2210,8 @@ body.low-power .scroll-reveal {
     grid-column: span 2;
     padding: 16px 14px 14px;
   }
-  .social-badge { width: 36px; height: 36px; margin-bottom: 8px; }
-  .social-badge svg { width: 30px; height: 30px; }
+  .social-mark { width: 36px; height: 36px; margin-bottom: 8px; }
+  .social-mark svg { width: 30px; height: 30px; }
   .social-name { font-size: 15px; }
   .social-handle { font-size: 12px; }
 

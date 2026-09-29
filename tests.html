@@ -1086,7 +1086,7 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=59', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=60', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=68', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
@@ -1437,6 +1437,21 @@
         ok('social tiles are solid brand tiles (not glass .card members)', htmlSrc.indexOf('class="card social-card') === -1);
         eq('every social tile carries a brand modifier', htmlSrc.split('class="social-card social-card--').length - 1, 7);
         ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every(function (n) { return cssFlat.indexOf('.social-card--' + n + ' ') !== -1; }));
+
+        // ---- Social tiles vs. ad-block cosmetic filters ----
+        // EasyList / Fanboy's Social Blocking list hide `.social-badge` on every
+        // site (`##.social-badge`), which blanked every logo for uBlock Origin /
+        // Adblock Plus users. The wrapper is `.social-mark`. Class names below are
+        // real generic rules from those lists; tests.js also runs the full parser
+        // check and evals/adblock-filters.js checks the live lists.
+        var socialsStart = htmlSrc.indexOf('<section class="socials-grid">');
+        var socialsHtml = htmlSrc.slice(socialsStart, htmlSrc.indexOf('</section>', socialsStart));
+        eq('all seven tiles carry a .social-mark logo wrapper', (socialsHtml.match(/<span class="social-mark[ "]/g) || []).length, 7);
+        ok('no class name known to be hidden by ad-block lists in the socials section or the stylesheet',
+          ['social-badge', 'social-badges', 'social-follow', 'social-profiles', 'social-share', 'social-widget'].every(function (n) {
+            var re = new RegExp('[."\\s]' + n + '(?![-_a-zA-Z0-9])');
+            return !re.test(socialsHtml) && !re.test(cssFlat.replace(/\/\*[\s\S]*?\*\//g, ''));
+          }));
 
         // ---- Social tile hover feel (static wiring checks) ----
         // The hover is a physical button: straight lift (no tilt, no grow -- the old

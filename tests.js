@@ -1004,6 +1004,33 @@ ok('social tiles are solid brand tiles (not glass .card members)', !htmlSrc.incl
 ok('every social tile carries a brand modifier', (htmlSrc.match(/class="social-card social-card--/g) || []).length === 7);
 ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every((n) => cssFlat.includes('.social-card--' + n + ' ')));
 
+// ---- Social tiles vs. ad-block cosmetic filters ----
+// Bug this pins: EasyList / Fanboy's Social Blocking list carry a GENERIC
+// `##.social-badge` hide rule (uBlock Origin / Adblock Plus apply it to every
+// site). The logo wrapper used to be `.social-badge`, so with an ad blocker
+// (reported on Firefox) every logo vanished and the tiles collapsed to name +
+// handle. The wrapper is `.social-mark` now. The rules below are real lines
+// from those lists; evals/adblock-filters.js runs the same check against the
+// live lists (network, periodic).
+const adblock = require('./evals/adblock-filters.js');
+const FILTER_FIXTURE = [
+  '! Title: fixture of real generic hide rules',
+  '##.social-badge', '##.social-badges', '##.social-follow', '##.social-profiles', '##.social-share', '##.social-widget',
+  '##AD-SLOT', '##div.social-mark[class*="hidden-by-list"]',
+  'hevodata.com##.social-handle',   // domain-specific: must be ignored
+  'example.com#@#.social-badge',    // exception: must be ignored
+  '##.social-badge > .x',           // combinator: out of scope, skipped
+].join('\n');
+const filterRules = adblock.genericHideRules(FILTER_FIXTURE);
+eq('filter parser keeps only generic simple rules', filterRules.map((r) => r.selector), ['.social-badge', '.social-badges', '.social-follow', '.social-profiles', '.social-share', '.social-widget', 'AD-SLOT', 'div.social-mark[class*="hidden-by-list"]']);
+const pageEls = adblock.elementsIn(htmlSrc).concat(adblock.cssElements(cssSrc));
+eq('no class or id on the page is hidden by the known ad-block rules', adblock.hits(filterRules, pageEls).map((h) => h.selector + ' -> ' + h.el.classes.join('.')), []);
+const socialsHtml = htmlSrc.slice(htmlSrc.indexOf('<section class="socials-grid">'), htmlSrc.indexOf('</section>', htmlSrc.indexOf('<section class="socials-grid">')));
+eq('all seven tiles carry a .social-mark logo wrapper', (socialsHtml.match(/<span class="social-mark[ "]/g) || []).length, 7);
+ok('no .social-badge left in the socials markup or the stylesheet rules (comments may name it)', !/social-badge/.test(socialsHtml) && !/social-badge/.test(cssSrc.replace(/\/\*[\s\S]*?\*\//g, '')));
+const oldTile = '<section class="socials-grid"><a class="social-card"><span class="social-badge"><svg></svg></span></a></section>';
+eq('the check WOULD have caught the old .social-badge markup', adblock.hits(filterRules, adblock.elementsIn(oldTile)).map((h) => h.selector + ' in-section=' + h.el.section), ['.social-badge in-section=true']);
+
 // ---- Social tile hover feel (static wiring checks) ----
 // The hover is a physical button: straight lift (no tilt, no grow -- the old
 // rotate(-5deg) badge tilt was vetoed), a one-shot sheen sweep across the

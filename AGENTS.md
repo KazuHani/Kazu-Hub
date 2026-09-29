@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` (~850 lines) — the whole page. Loads `style.css?v=57`,
+- `index.html` (~850 lines) — the whole page. Loads `style.css?v=60`,
   `lib.js?v=35`, `script.js?v=68` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
@@ -82,6 +82,11 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   (`weather-fx.js` is deliberately absent: phones would download it on install.)
 - `tests.js` — headless gate tests for `lib.js` and `weather-fx.js`, plain Node, no dependencies.
 - `tests.html` — the same assertions run in the browser (open the file).
+- `evals/adblock-filters.js` — periodic eval (network, plain Node, no
+  dependencies): downloads the public ad-block cosmetic lists and fails if any
+  of their generic hide rules would hide a class or id the page uses (see
+  "Ad-block safe class names" below). Its pure parser is also exercised by
+  `tests.js`.
 - `404.html`, `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
   plumbing. `assets/` holds images/icons.
 - `.github/workflows/test.yml` — the only CI (see Testing).
@@ -275,9 +280,21 @@ These are load-bearing; read before editing.
   design hangs off two custom properties: each network gets a
   `.social-card--<name>` rule in style.css with `--brand-a` (centre, lighter)
   and `--brand-b` (edge, darker); the bevel, gloss, badge and hover are all
-  inherited. To add a social: copy a tile in index.html, swap href / badge /
+  inherited. To add a social: copy a tile in index.html, swap href / mark /
   name / handle, add one modifier rule — then bump the tile count in the
   structural assertions in tests.js and tests.html.
+- **Ad-block safe class names.** uBlock Origin / Adblock Plus apply generic
+  cosmetic rules from EasyList and Fanboy's lists to every site, and they hide
+  by class name. The logo wrapper on each social tile used to be
+  `.social-badge`, which Fanboy's Social Blocking list hides (`##.social-badge`),
+  so for visitors with an ad blocker (seen on Firefox) every logo vanished and
+  the tiles collapsed to name + handle. It is `.social-mark` now. Keep new
+  class names near social/share/ad vocabulary off those lists: run
+  `node evals/adblock-filters.js` (the eval checks the live lists and exits 1
+  on a hit inside the Socials section; `node evals/adblock-filters.js <folder>`
+  checks another revision), and `tests.js` pins the known offenders
+  (`social-badge`, `social-badges`, `social-follow`, `social-profiles`,
+  `social-share`, `social-widget`).
 - **Timezone rule.** Anything age/birthday-related must run in the
   Europe/London wall-clock frame via `KazuLib.ukWallParts` / `ukWallMs`
   (calendar arithmetic happens in a fake-UTC frame so results are identical on
