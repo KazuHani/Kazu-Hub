@@ -924,7 +924,216 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   .to-top { transition: none; }
 }
 
-.footer { text-align: center; margin-top: 54px; font-size: 13px; font-weight: 700; color: var(--ink-faint); }
+/* ============ MEADOW FOOTER (a grassy field with a house) ============ */
+/* The last thing on the page: a full-bleed illustrated field with a cottage,
+   trees, a picket fence, a path and wildflowers, the credit line resting on the
+   grass. It is one decorative inline SVG (index.html: 1440x340 units, the hills
+   running far past both edges so any width fills) painted entirely from the
+   --mf-* tokens below, so it follows the same clock as the sky:
+     - Day and night. --m-day is 0 in deep night and 1 by day, read from the live
+       page tint (--bg-l: 0% black night .. ~36% at noon; full colour once the sky
+       is ~22% light) plus a little of the sunset glow, so at dusk the field is
+       still half lit by the low sun. Every colour is a colour-mix() between its
+       --d-* (day) and --n-* (night) value. The window glass runs the other way:
+       pale sky by day, warm amber once it is dark, with a soft halo (--m-lit),
+       so the lights come on at dusk.
+     - Sunset. --m-warm folds up to 24% orange (--sunset, from KazuLib.sunsetGlow)
+       into everything except the glass and the blossom.
+     - Cherry-blossom season. The pink blossom on the big tree is only there
+       while html:not(.no-sakura), the same 20 Mar - 10 May window as the branches.
+     - Christmas repaints it as a snowy field with the lights on all day.
+   Static paint, no animation, so it costs nothing and shows on every device.
+   Browsers without colour-mix() keep the plain day colours. It sits at
+   z-index 0 (above the weather canvases, below .container) so the fixed
+   back-to-top button, which lives inside .container, stays on top of it. */
+.footer.meadow {
+  position: relative; z-index: 0; margin-top: -34px; overflow: hidden; text-align: center;
+  --m-day: clamp(0, calc((var(--bg-l, 36) + var(--sunset, 0) * 9) / 22), 1);
+  --m-dp: calc(var(--m-day) * 100%);
+  --m-lit: calc(1 - var(--m-day));
+  --m-warm: calc(var(--sunset, 0) * 24%);
+  /* Day colours (--d-*) and night colours (--n-*). --mf-* below are what the scene paints with. */
+  --d-far: #8fc3a0; --n-far: #0e1d2c;
+  --d-far-hi: #b7dfbd; --n-far-hi: #1b3a49;
+  --d-far-tree: #6fae86; --n-far-tree: #0b1826;
+  --d-mid: #63b46e; --n-mid: #10261f;
+  --d-mid-hi: #93d582; --n-mid-hi: #1d4a3a;
+  --d-near: #48a259; --n-near: #12301f;
+  --d-near-hi: #82ca6c; --n-near-hi: #1f5236;
+  --d-fg: #2e7f45; --n-fg: #0e2a1b;
+  --d-fg-hi: #4fa457; --n-fg-hi: #184129;
+  --d-blade: #8fd67d; --n-blade: #24583a;
+  --d-blade-fg: #56b060; --n-blade-fg: #1a4a2d;
+  --d-path: #e8d6ae; --n-path: #3b3f4e;
+  --d-stone: #f1e3c0; --n-stone: #4a5064;
+  --d-wall: #f8edd9; --n-wall: #38425e;
+  --d-wall-2: #e5d3b5; --n-wall-2: #2c3550;
+  --d-base: #b8b1a5; --n-base: #2a3040;
+  --d-roof: #c9583f; --n-roof: #33263f;
+  --d-roof-2: #a8452f; --n-roof-2: #281d33;
+  --d-trim: #fff4e0; --n-trim: #465074;
+  --d-chimney: #a9513c; --n-chimney: #2d2233;
+  --d-cap: #7d3b2c; --n-cap: #211a2b;
+  --d-door: #7c4b2d; --n-door: #2c2130;
+  --d-door-2: #5f3720; --n-door-2: #221925;
+  --d-frame: #fffaf0; --n-frame: #4a5478;
+  --d-glass: #c4e4f8; --n-glass: #ffd27a;
+  --d-box: #8b5b37; --n-box: #2a2230;
+  --d-trunk: #7d5634; --n-trunk: #22201f;
+  --d-leaf-1: #2f8a4a; --n-leaf-1: #10301f;
+  --d-leaf-2: #47a857; --n-leaf-2: #163c27;
+  --d-leaf-3: #7dcd6b; --n-leaf-3: #22503a;
+  --d-bush: #3b9c50; --n-bush: #12331f;
+  --d-fence: #faf6ee; --n-fence: #4d5771;
+  --d-blossom: #f9b9d1; --n-blossom: #5b4360;
+  --mf-far: var(--d-far);
+  --mf-far-hi: var(--d-far-hi);
+  --mf-far-tree: var(--d-far-tree);
+  --mf-mid: var(--d-mid);
+  --mf-mid-hi: var(--d-mid-hi);
+  --mf-near: var(--d-near);
+  --mf-near-hi: var(--d-near-hi);
+  --mf-fg: var(--d-fg);
+  --mf-fg-hi: var(--d-fg-hi);
+  --mf-blade: var(--d-blade);
+  --mf-blade-fg: var(--d-blade-fg);
+  --mf-path: var(--d-path);
+  --mf-stone: var(--d-stone);
+  --mf-wall: var(--d-wall);
+  --mf-wall-2: var(--d-wall-2);
+  --mf-base: var(--d-base);
+  --mf-roof: var(--d-roof);
+  --mf-roof-2: var(--d-roof-2);
+  --mf-trim: var(--d-trim);
+  --mf-chimney: var(--d-chimney);
+  --mf-cap: var(--d-cap);
+  --mf-door: var(--d-door);
+  --mf-door-2: var(--d-door-2);
+  --mf-frame: var(--d-frame);
+  --mf-glass: var(--d-glass);
+  --mf-box: var(--d-box);
+  --mf-trunk: var(--d-trunk);
+  --mf-leaf-1: var(--d-leaf-1);
+  --mf-leaf-2: var(--d-leaf-2);
+  --mf-leaf-3: var(--d-leaf-3);
+  --mf-bush: var(--d-bush);
+  --mf-fence: var(--d-fence);
+  --mf-blossom: var(--d-blossom);
+}
+@supports (color: color-mix(in oklab, red 50%, blue)) {
+  .footer.meadow {
+    --mf-far: color-mix(in oklab, color-mix(in oklab, var(--d-far) var(--m-dp), var(--n-far)), #ff9a4a var(--m-warm));
+    --mf-far-hi: color-mix(in oklab, color-mix(in oklab, var(--d-far-hi) var(--m-dp), var(--n-far-hi)), #ff9a4a var(--m-warm));
+    --mf-far-tree: color-mix(in oklab, color-mix(in oklab, var(--d-far-tree) var(--m-dp), var(--n-far-tree)), #ff9a4a var(--m-warm));
+    --mf-mid: color-mix(in oklab, color-mix(in oklab, var(--d-mid) var(--m-dp), var(--n-mid)), #ff9a4a var(--m-warm));
+    --mf-mid-hi: color-mix(in oklab, color-mix(in oklab, var(--d-mid-hi) var(--m-dp), var(--n-mid-hi)), #ff9a4a var(--m-warm));
+    --mf-near: color-mix(in oklab, color-mix(in oklab, var(--d-near) var(--m-dp), var(--n-near)), #ff9a4a var(--m-warm));
+    --mf-near-hi: color-mix(in oklab, color-mix(in oklab, var(--d-near-hi) var(--m-dp), var(--n-near-hi)), #ff9a4a var(--m-warm));
+    --mf-fg: color-mix(in oklab, color-mix(in oklab, var(--d-fg) var(--m-dp), var(--n-fg)), #ff9a4a var(--m-warm));
+    --mf-fg-hi: color-mix(in oklab, color-mix(in oklab, var(--d-fg-hi) var(--m-dp), var(--n-fg-hi)), #ff9a4a var(--m-warm));
+    --mf-blade: color-mix(in oklab, color-mix(in oklab, var(--d-blade) var(--m-dp), var(--n-blade)), #ff9a4a var(--m-warm));
+    --mf-blade-fg: color-mix(in oklab, color-mix(in oklab, var(--d-blade-fg) var(--m-dp), var(--n-blade-fg)), #ff9a4a var(--m-warm));
+    --mf-path: color-mix(in oklab, color-mix(in oklab, var(--d-path) var(--m-dp), var(--n-path)), #ff9a4a var(--m-warm));
+    --mf-stone: color-mix(in oklab, color-mix(in oklab, var(--d-stone) var(--m-dp), var(--n-stone)), #ff9a4a var(--m-warm));
+    --mf-wall: color-mix(in oklab, color-mix(in oklab, var(--d-wall) var(--m-dp), var(--n-wall)), #ff9a4a var(--m-warm));
+    --mf-wall-2: color-mix(in oklab, color-mix(in oklab, var(--d-wall-2) var(--m-dp), var(--n-wall-2)), #ff9a4a var(--m-warm));
+    --mf-base: color-mix(in oklab, color-mix(in oklab, var(--d-base) var(--m-dp), var(--n-base)), #ff9a4a var(--m-warm));
+    --mf-roof: color-mix(in oklab, color-mix(in oklab, var(--d-roof) var(--m-dp), var(--n-roof)), #ff9a4a var(--m-warm));
+    --mf-roof-2: color-mix(in oklab, color-mix(in oklab, var(--d-roof-2) var(--m-dp), var(--n-roof-2)), #ff9a4a var(--m-warm));
+    --mf-trim: color-mix(in oklab, color-mix(in oklab, var(--d-trim) var(--m-dp), var(--n-trim)), #ff9a4a var(--m-warm));
+    --mf-chimney: color-mix(in oklab, color-mix(in oklab, var(--d-chimney) var(--m-dp), var(--n-chimney)), #ff9a4a var(--m-warm));
+    --mf-cap: color-mix(in oklab, color-mix(in oklab, var(--d-cap) var(--m-dp), var(--n-cap)), #ff9a4a var(--m-warm));
+    --mf-door: color-mix(in oklab, color-mix(in oklab, var(--d-door) var(--m-dp), var(--n-door)), #ff9a4a var(--m-warm));
+    --mf-door-2: color-mix(in oklab, color-mix(in oklab, var(--d-door-2) var(--m-dp), var(--n-door-2)), #ff9a4a var(--m-warm));
+    --mf-frame: color-mix(in oklab, color-mix(in oklab, var(--d-frame) var(--m-dp), var(--n-frame)), #ff9a4a var(--m-warm));
+    --mf-glass: color-mix(in oklab, var(--d-glass) var(--m-dp), var(--n-glass));
+    --mf-box: color-mix(in oklab, color-mix(in oklab, var(--d-box) var(--m-dp), var(--n-box)), #ff9a4a var(--m-warm));
+    --mf-trunk: color-mix(in oklab, color-mix(in oklab, var(--d-trunk) var(--m-dp), var(--n-trunk)), #ff9a4a var(--m-warm));
+    --mf-leaf-1: color-mix(in oklab, color-mix(in oklab, var(--d-leaf-1) var(--m-dp), var(--n-leaf-1)), #ff9a4a var(--m-warm));
+    --mf-leaf-2: color-mix(in oklab, color-mix(in oklab, var(--d-leaf-2) var(--m-dp), var(--n-leaf-2)), #ff9a4a var(--m-warm));
+    --mf-leaf-3: color-mix(in oklab, color-mix(in oklab, var(--d-leaf-3) var(--m-dp), var(--n-leaf-3)), #ff9a4a var(--m-warm));
+    --mf-bush: color-mix(in oklab, color-mix(in oklab, var(--d-bush) var(--m-dp), var(--n-bush)), #ff9a4a var(--m-warm));
+    --mf-fence: color-mix(in oklab, color-mix(in oklab, var(--d-fence) var(--m-dp), var(--n-fence)), #ff9a4a var(--m-warm));
+    --mf-blossom: color-mix(in oklab, var(--d-blossom) var(--m-dp), var(--n-blossom));
+  }
+}
+.meadow-art {
+  display: block; position: relative; left: 50%; translate: -50% 0;
+  width: clamp(860px, 100%, 1800px); height: auto; aspect-ratio: 1440 / 340; overflow: visible;
+}
+/* Phones only ever see the middle of the scene (the svg is never narrower than
+   860px); nudge the window so the tree-and-house group sits centred. */
+@media (max-width: 600px) { .meadow-art { translate: calc(-50% - 44px) 0; } }
+.mf-c-far { fill: var(--mf-far); }
+.mf-c-mid { fill: var(--mf-mid); }
+.mf-c-near { fill: var(--mf-near); }
+.mf-c-fg { fill: var(--mf-fg); }
+.mf-c-path { fill: var(--mf-path); }
+.mf-c-stone { fill: var(--mf-stone); }
+.mf-c-wall { fill: var(--mf-wall); }
+.mf-c-wall2 { fill: var(--mf-wall-2); }
+.mf-c-base { fill: var(--mf-base); }
+.mf-c-roof { fill: var(--mf-roof); }
+.mf-c-roof2 { fill: var(--mf-roof-2); }
+.mf-c-trim { fill: var(--mf-trim); }
+.mf-c-chimney { fill: var(--mf-chimney); }
+.mf-c-cap { fill: var(--mf-cap); }
+.mf-c-door { fill: var(--mf-door); }
+.mf-c-door2 { fill: var(--mf-door-2); }
+.mf-c-frame { fill: var(--mf-frame); }
+.mf-c-glass { fill: var(--mf-glass); }
+.mf-c-box { fill: var(--mf-box); }
+.mf-c-trunk { fill: var(--mf-trunk); }
+.mf-c-leaf1 { fill: var(--mf-leaf-1); }
+.mf-c-leaf2 { fill: var(--mf-leaf-2); }
+.mf-c-leaf3 { fill: var(--mf-leaf-3); }
+.mf-c-fence { fill: var(--mf-fence); }
+.mf-s-farhi { stroke: var(--mf-far-hi); }
+.mf-s-midhi { stroke: var(--mf-mid-hi); }
+.mf-s-nearhi { stroke: var(--mf-near-hi); }
+.mf-s-fghi { stroke: var(--mf-fg-hi); }
+.mf-s-blade { stroke: var(--mf-blade); }
+.mf-s-bladefg { stroke: var(--mf-blade-fg); }
+.mf-far-tree { fill: var(--mf-far-tree); }
+.mf-bush { fill: var(--mf-bush); }
+.mf-blossom { fill: var(--mf-blossom); }
+.mf-shadow { fill: #04140a; opacity: .22; }
+.mf-crest { fill: none; stroke-width: 3; stroke-linecap: round; opacity: .55; }
+.mf-blades { fill: none; stroke-width: 1.9; stroke-linecap: round; }
+.mf-line { fill: none; stroke: var(--mf-frame); stroke-width: 2.4; }
+.mf-courses { fill: none; stroke: var(--mf-roof-2); stroke-width: 1.6; opacity: .5; }
+.mf-trimline { fill: none; stroke: var(--mf-trim); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
+.mf-doorline { fill: none; stroke: var(--mf-door-2); stroke-width: 1.6; }
+.mf-smoke { fill: none; stroke: #e8eef5; stroke-width: 4; stroke-linecap: round; opacity: calc(.18 + .3 * var(--m-day)); }
+.mf-glow { opacity: var(--m-lit); }
+.mf-flowers { opacity: calc(.45 + .55 * var(--m-day)); }
+html.no-sakura .mf-blossom { display: none; }
+/* A soft shade at the bottom keeps the credit line readable at any scale and
+   time of day; the line itself rests on the foreground grass. */
+.meadow::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; pointer-events: none;
+  background: linear-gradient(to top, rgba(4,26,12,.55), rgba(4,26,12,0));
+}
+.meadow-credit {
+  position: absolute; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom, 0px)); z-index: 1;
+  margin: 0; padding: 0 16px; font-size: 13px; font-weight: 800; letter-spacing: .02em;
+  color: #f4f8e6; text-shadow: 0 1px 3px rgba(4,24,12,.75);
+}
+/* Fade in only: the generic .scroll-reveal also slides the element 28px, and a
+   full-bleed element at the very bottom of the page would grow the document. */
+.footer.meadow.scroll-reveal, .footer.meadow.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }
+/* Christmas: a snowy field, snowy roof, pines with snow-tipped boughs, lights on. */
+body.season-christmas .footer.meadow {
+  --d-far: #cfe0ea; --d-far-hi: #eef6fb; --d-far-tree: #9fbccb;
+  --d-mid: #e3eff6; --d-mid-hi: #ffffff; --d-near: #eff6fa; --d-near-hi: #ffffff;
+  --d-fg: #d3e4ee; --d-fg-hi: #f1f8fc; --d-blade: #ffffff; --d-blade-fg: #cfe2ed;
+  --d-path: #c9b58e; --d-stone: #efe4c6; --d-roof: #f3f8fb; --d-roof-2: #d6e5ef; --d-trim: #ffffff;
+  --d-leaf-1: #1d6b46; --d-leaf-2: #24825a; --d-leaf-3: #e9f5f0; --d-bush: #2a7a55;
+  --d-glass: #ffd98a; --d-fence: #ffffff; --d-wall: #f6ead4;
+}
+body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }
+body.season-christmas .meadow-credit { color: #0f3b2a; text-shadow: 0 1px 0 rgba(255,255,255,.65); }
+body.season-christmas .meadow::after { display: none; }
 
 /* ============ SEASONAL EFFECTS ============ */
 /* These rules intentionally sit AFTER the base palette block so the
@@ -1782,10 +1991,6 @@ body.modal-open > .cscroll { display: none; }
    inner .story-card by 4px, which overflows the link's border box — with
    content-visibility's paint containment that clipped the card's top edge on
    hover. Two small cards aren't worth the containment anyway. */
-.footer {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 80px;
-}
 
 /* Scroll-idle refraction: while the page is actively scrolling, script.js
    sets html.glass-scrolling and the Chromium cards rest their inline SVG

@@ -198,6 +198,25 @@ These are load-bearing; read before editing.
   it shows on phones and in low-power mode too; only Christmas hides it.
   Changing the timing means editing `sunsetGlow` AND the matching numbers in
   the boot script. The gradient stops live in `style.css` (`.sunset-sky`).
+- **Meadow footer (a grassy field with a house).** The last thing on the
+  page is a full-bleed illustrated field: cottage, trees, picket fences, a
+  path and wildflowers, with the credit line resting on the grass. It is one
+  decorative inline SVG (`<footer class="footer meadow">`, a sibling AFTER
+  `.container` so it can run edge to edge; 1440x340 view box, the hills extend
+  far past both sides so any width fills; the page scales it between 860px and
+  1800px and centres it, phones see the middle). Every colour is a `--mf-*`
+  token in `style.css` ("MEADOW FOOTER"), a `color-mix()` of a day (`--d-*`)
+  and a night (`--n-*`) value: `--m-day` comes from the live sky tint
+  (`--bg-l`, plus a little `--sunset`), the window glass runs pale sky -> warm
+  amber with a halo so the lights come on at dusk, `--m-warm` folds the sunset
+  orange in, the pink blossom on the big tree only shows in blossom season
+  (`html:not(.no-sakura)`), and Christmas repaints it as a snowy field. Static
+  paint (no animation), shown on every device. It is `z-index: 0` so the fixed
+  back-to-top button (inside `.container`, z-index 1) stays on top. To change
+  the art, edit the SVG in `index.html`; every class it uses must be styled and
+  no fill may be hard-coded except the flowers (tests enforce both). `tests.html`
+  also runs live checks against the real page (day/dusk/night colours, layout,
+  phone width, button stacking).
 - **Live weather layers (desktop only).** `weather-fx.js` draws rain, snow,
   wind streaks and clouds from the UK weather `script.js` already fetches
   (Open-Meteo now also asks for `cloud_cover` and `wind_direction_10m`).
