@@ -666,7 +666,8 @@
         fetch('script.js?v=62', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
-        var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2], swSrc = src[3];
+        // CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
+        var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2], swSrc = src[3];
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
         ok('hover effect gated to desktop (hover + fine pointer)', cssSrc.indexOf('@media (hover: hover) and (pointer: fine)') !== -1 && cssSrc.indexOf('.music-card:hover .music-viz') !== -1);
         ok('bars paused until hover, run on hover', cssSrc.indexOf('animation-play-state: paused') !== -1 && cssSrc.indexOf('.music-card:hover .music-viz span { animation-play-state: running; }') !== -1);

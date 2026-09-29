@@ -602,7 +602,8 @@ eq('smooth step clamps a hidden-tab gap to 100ms', L.smoothScrollStep(0, 100, 0.
 // and the reduced-motion kill switch.
 const fs = require('fs');
 const htmlSrc = fs.readFileSync(__dirname + '/index.html', 'utf8');
-const cssSrc = fs.readFileSync(__dirname + '/style.css', 'utf8');
+// CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
+const cssSrc = fs.readFileSync(__dirname + '/style.css', 'utf8').replace(/\r\n/g, '\n');
 ok('viz markup lives in the music card', htmlSrc.includes('Songs that SLAP') && htmlSrc.includes('class="music-viz" aria-hidden="true"'));
 ok('hover effect gated to desktop (hover + fine pointer)', cssSrc.includes('@media (hover: hover) and (pointer: fine)') && cssSrc.includes('.music-card:hover .music-viz'));
 ok('bars paused until hover, run on hover', cssSrc.includes('animation-play-state: paused') && cssSrc.includes('.music-card:hover .music-viz span { animation-play-state: running; }'));
