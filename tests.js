@@ -1391,7 +1391,8 @@ ok('clouds are on their own page-scrolling canvas; rain/snow/wind stay on the fi
   ok('meadow: full-bleed, so it is a sibling after the width-limited .container and inside .page', /<\/div>\s*<!-- MEADOW FOOTER[\s\S]*?-->\s*<footer class="footer meadow scroll-reveal">/.test(htmlSrc) && /<\/footer>\s*<\/div>\s*<!-- Card detail pop-up/.test(htmlSrc));
   ok('meadow: the scene is decorative (aria-hidden, not focusable, no text or title)', svg.indexOf('aria-hidden="true"') !== -1 && svg.indexOf('focusable="false"') !== -1 && svg.indexOf('viewBox="0 0 1440 340"') !== -1 && svg.indexOf('<title') === -1 && svg.indexOf('<text') === -1);
   ok('meadow: the field, hills, house, trees, fences, path and flowers are all there', ['mf-house', 'mf-tree', 'mf-fence', 'mf-flowers', 'mf-blossom', 'mf-c-far', 'mf-c-mid', 'mf-c-near', 'mf-c-fg', 'mf-c-path', 'mf-c-roof', 'mf-c-door', 'mf-c-wall', 'mf-c-chimney', 'mf-smoke'].every(function (c) { return svg.indexOf('"' + c + '"') !== -1 || svg.indexOf('"' + c + ' ') !== -1 || svg.indexOf(' ' + c + '"') !== -1; }) && count(svg, 'class="mf-tree"') === 3 && count(svg, 'class="mf-fence"') === 2);
-  ok('meadow: two windows, the attic window and the lantern all have glass and a night glow', count(svg, 'mf-c-glass') === 4 && count(svg, 'class="mf-glow"') === 4);
+ok('meadow: two windows, the attic window and the lantern all have glass and a halo; the windows and attic also get a lit pane', count(svg, 'mf-c-glass') === 4 && count(svg, 'fill="url(#mf-glow)"') === 4 && count(svg, 'fill="url(#mf-pane)"') === 3);
+ok('meadow: warm light pools on the grass in front of both windows, the door and the lantern', count(svg, 'fill="url(#mf-pool)"') === 4 && svg.indexOf('<g class="mf-glow"><ellipse') !== -1);
   ok('meadow: every hill runs far past both edges of the view box, so any screen width is filled', (svg.match(/class="mf-c-(far|mid|near|fg)" d="M-1000 \d+C[^"]* 2440 \d+V340H-1000Z"/g) || []).length === 4);
   ok('meadow: nothing is hard-coded to a day colour (only the flowers, knob and window-box blooms)', (function () {
     var allowed = ['#f7a1c4', '#ffd95a', '#ffffff', '#b9a4ff', '#ff9a55', '#f2c14e', '#ff7f9c'];
@@ -1418,10 +1419,40 @@ ok('clouds are on their own page-scrolling canvas; rain/snow/wind stay on the fi
     var everyUsedDefined = Object.keys(used).every(function (k) { return defs[k] === 2; }); // once as the fallback, once inside @supports
     return Object.keys(d).length >= 30 && dk === nk && Object.keys(defs).sort().join() === dk && everyUsedDefined;
   })());
-  ok('meadow: day/night comes from the live page tint, the sunset warms it, and colour-mix() is guarded', css.indexOf('--m-day: clamp(0, calc((var(--bg-l, 36) + var(--sunset, 0) * 9) / 22), 1);') !== -1 && css.indexOf('--m-warm: calc(var(--sunset, 0) * 24%);') !== -1 && css.indexOf('--m-lit: calc(1 - var(--m-day));') !== -1 && css.indexOf('@supports (color: color-mix(in oklab, red 50%, blue)) {') !== -1 && css.indexOf('.mf-glow { opacity: var(--m-lit); }') !== -1);
-  ok('meadow: the window glass turns from pale sky (day) to warm amber (night)', /--d-glass: #[0-9a-f]{6}; --n-glass: #ffd27a;/.test(css) && (function () { var g = /--d-glass: (#[0-9a-f]{6});/.exec(css)[1]; return parseInt(g.slice(5, 7), 16) > parseInt(g.slice(1, 3), 16); })());
+ok('meadow: day/night comes from the live page tint, the sunset warms it, and colour-mix() is guarded', css.indexOf('--m-day: clamp(0, calc((var(--bg-l, 36) + var(--sunset, 0) * 9) / 22), 1);') !== -1 && css.indexOf('--m-warm: calc(var(--sunset, 0) * 24%);') !== -1 && css.indexOf('--m-lit: clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1);') !== -1 && css.indexOf('--m-lp: calc(var(--m-lit) * 100%);') !== -1 && css.indexOf('@supports (color: color-mix(in oklab, red 50%, blue)) {') !== -1 && css.indexOf('.mf-glow { opacity: var(--m-lit); }') !== -1);
+ok('meadow: the window glass is pale sky by day, dark when unlit at night, and amber once the lights are on', (function () {
+  var m = /--d-glass: (#[0-9a-f]{6}); --n-glass: (#[0-9a-f]{6});/.exec(css), lit = /--lit-glass: (#[0-9a-f]{6});/.exec(css);
+  return !!m && !!lit && parseInt(m[1].slice(5, 7), 16) > parseInt(m[1].slice(1, 3), 16) && lumOf(m[2]) < 0.06 &&
+    parseInt(lit[1].slice(1, 3), 16) > parseInt(lit[1].slice(5, 7), 16) + 60 &&
+    css.indexOf('--mf-glass: color-mix(in oklab, var(--lit-glass) var(--m-lp), color-mix(in oklab, var(--d-glass) var(--m-dp), var(--n-glass)));') !== -1;
+})());
+var lightsFail = null;
+ok('meadow: the window lights switch on when it is dark enough, in every season (timing pinned from the real CSS constants)', (function () {
+  var md = /--m-day: clamp\(0, calc\(\(var\(--bg-l, (\d+)\) \+ var\(--sunset, 0\) \* ([\d.]+)\) \/ ([\d.]+)\), 1\);/.exec(css);
+  var ml = /--m-lit: clamp\(0, calc\(\(\(1 - var\(--m-day\)\) - ([\d.]+)\) \/ ([\d.]+)\), 1\);/.exec(css);
+  if (!md || !ml) { lightsFail = 'could not read the constants from style.css'; return false; }
+  var kSun = +md[2], kSky = +md[3], lo = +ml[1], span = +ml[2];
+  function c01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+  function lit(mins, doy) { return c01(((1 - c01((L.skyTint(mins, doy).l + L.sunsetGlow(mins, doy).glow * kSun) / kSky)) - lo) / span); }
+  var doy, m, st, prev, v;
+  for (doy = 1; doy <= 366 && !lightsFail; doy += 5) {
+    st = L.sunTimesUK(doy);
+    // off through the whole day, sunset included
+    for (m = st.rise + 100; m <= st.set && !lightsFail; m++) if (lit(m, doy) !== 0) lightsFail = 'day ' + doy + ': lit at minute ' + m + ' while it is light';
+    // fully on from an hour after sunset, all night, until shortly after sunrise
+    for (m = st.set + 60; m < 1440 + st.rise + 15 && !lightsFail; m++) if (lit(m % 1440, doy) !== 1) lightsFail = 'day ' + doy + ': not fully on at minute ' + (m % 1440);
+    // coming on: only after sunset, monotone, and a real fade (not a pop, not a creep)
+    prev = 0;
+    for (m = st.set; m <= st.set + 90 && !lightsFail; m++) { v = lit(m, doy); if (v < prev - 1e-9) lightsFail = 'day ' + doy + ': evening ramp not monotone at ' + m; prev = v; }
+    // going off: monotone after sunrise
+    prev = 1;
+    for (m = st.rise; m <= st.rise + 120 && !lightsFail; m++) { v = lit(m, doy); if (v > prev + 1e-9) lightsFail = 'day ' + doy + ': morning ramp not monotone at ' + m; prev = v; }
+    if (!lightsFail && !(lit(st.set + 15, doy) < 0.05 && lit(st.set + 40, doy) > 0.3 && lit(st.set + 40, doy) < 0.7)) lightsFail = 'day ' + doy + ': wrong dusk timing (15 min after sunset should still be off, 40 min about half on)';
+  }
+  return !lightsFail;
+})(), lightsFail);
   ok('meadow: the blossom on the tree follows the cherry-blossom season', svg.indexOf('<g class="mf-blossom">') !== -1 && css.indexOf('html.no-sakura .mf-blossom { display: none; }') !== -1);
-  ok('meadow: Christmas repaints it as a snowy field with the flowers and blossom put away', css.indexOf('body.season-christmas .footer.meadow {') !== -1 && css.indexOf('--d-roof: #f3f8fb') !== -1 && css.indexOf('--d-mid: #e3eff6') !== -1 && css.indexOf('body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }') !== -1);
+  ok('meadow: Christmas repaints it as a snowy field with the flowers and blossom put away', css.indexOf('body.season-christmas .footer.meadow {') !== -1 && css.indexOf('--m-lit: max(0.75, clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1));') !== -1 && css.indexOf('--d-roof: #f3f8fb') !== -1 && css.indexOf('--d-mid: #e3eff6') !== -1 && css.indexOf('body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }') !== -1);
   ok('meadow: the credit line stays legible on the grass (WCAG AA) by day, at night and on Christmas snow', (function () {
     var credit = /\.meadow-credit \{[^}]*color: (#[0-9a-f]{6});/.exec(css)[1];
     var dfg = /--d-fg: (#[0-9a-f]{6});/.exec(css)[1], nfg = /--n-fg: (#[0-9a-f]{6});/.exec(css)[1];

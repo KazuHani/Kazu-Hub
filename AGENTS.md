@@ -207,8 +207,13 @@ These are load-bearing; read before editing.
   1800px and centres it, phones see the middle). Every colour is a `--mf-*`
   token in `style.css` ("MEADOW FOOTER"), a `color-mix()` of a day (`--d-*`)
   and a night (`--n-*`) value: `--m-day` comes from the live sky tint
-  (`--bg-l`, plus a little `--sunset`), the window glass runs pale sky -> warm
-  amber with a halo so the lights come on at dusk, `--m-warm` folds the sunset
+  (`--bg-l`, plus a little `--sunset`), the window lights are their own "dark enough" switch
+  (`--m-lit`: off all day and through the sunset itself, easing on from about
+  20 minutes after sunset to fully on by about 55, off again within an hour of
+  sunrise; when on the glass turns amber, each pane gets a bright centre, the
+  windows, attic and door lantern get halos and warm light pools on the grass;
+  `tests.js` reads the thresholds out of `style.css` and pins the timing for
+  every season, and without `color-mix()` the panes and pools still light up), `--m-warm` folds the sunset
   orange in, the pink blossom on the big tree only shows in blossom season
   (`html:not(.no-sakura)`), and Christmas repaints it as a snowy field. Static
   paint (no animation), shown on every device. It is `z-index: 0` so the fixed

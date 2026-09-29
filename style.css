@@ -934,9 +934,16 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
        page tint (--bg-l: 0% black night .. ~36% at noon; full colour once the sky
        is ~22% light) plus a little of the sunset glow, so at dusk the field is
        still half lit by the low sun. Every colour is a colour-mix() between its
-       --d-* (day) and --n-* (night) value. The window glass runs the other way:
-       pale sky by day, warm amber once it is dark, with a soft halo (--m-lit),
-       so the lights come on at dusk.
+       --d-* (day) and --n-* (night) value.
+     - The window lights. --m-lit is a proper "dark enough" switch, not a creep:
+       0 while it is light (through the whole day and the sunset itself), easing
+       on once the afterglow has faded (--m-day below 0.4, i.e. from about 20
+       minutes after sunset, fully on by about 55) and easing off again about an
+       hour after sunrise (tests.js pins the timing for every season). When it
+       is on, the window glass turns amber, each pane gets a bright lit centre, a
+       soft halo surrounds the windows, the attic window and the door lantern, and
+       warm light pools on the grass and the path. Even without colour-mix() the
+       panes and pools (plain gradients) still light up.
      - Sunset. --m-warm folds up to 24% orange (--sunset, from KazuLib.sunsetGlow)
        into everything except the glass and the blossom.
      - Cherry-blossom season. The pink blossom on the big tree is only there
@@ -950,7 +957,8 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   position: relative; z-index: 0; margin-top: -34px; overflow: hidden; text-align: center;
   --m-day: clamp(0, calc((var(--bg-l, 36) + var(--sunset, 0) * 9) / 22), 1);
   --m-dp: calc(var(--m-day) * 100%);
-  --m-lit: calc(1 - var(--m-day));
+  --m-lit: clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1);
+  --m-lp: calc(var(--m-lit) * 100%);
   --m-warm: calc(var(--sunset, 0) * 24%);
   /* Day colours (--d-*) and night colours (--n-*). --mf-* below are what the scene paints with. */
   --d-far: #8fc3a0; --n-far: #0e1d2c;
@@ -977,7 +985,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   --d-door: #7c4b2d; --n-door: #2c2130;
   --d-door-2: #5f3720; --n-door-2: #221925;
   --d-frame: #fffaf0; --n-frame: #4a5478;
-  --d-glass: #c4e4f8; --n-glass: #ffd27a;
+  --d-glass: #c4e4f8; --n-glass: #2b3656;
   --d-box: #8b5b37; --n-box: #2a2230;
   --d-trunk: #7d5634; --n-trunk: #22201f;
   --d-leaf-1: #2f8a4a; --n-leaf-1: #10301f;
@@ -986,6 +994,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   --d-bush: #3b9c50; --n-bush: #12331f;
   --d-fence: #faf6ee; --n-fence: #4d5771;
   --d-blossom: #f9b9d1; --n-blossom: #5b4360;
+  --lit-glass: #ffd27a; /* the lit window colour: the lights, once they are on */
   --mf-far: var(--d-far);
   --mf-far-hi: var(--d-far-hi);
   --mf-far-tree: var(--d-far-tree);
@@ -1046,7 +1055,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
     --mf-door: color-mix(in oklab, color-mix(in oklab, var(--d-door) var(--m-dp), var(--n-door)), #ff9a4a var(--m-warm));
     --mf-door-2: color-mix(in oklab, color-mix(in oklab, var(--d-door-2) var(--m-dp), var(--n-door-2)), #ff9a4a var(--m-warm));
     --mf-frame: color-mix(in oklab, color-mix(in oklab, var(--d-frame) var(--m-dp), var(--n-frame)), #ff9a4a var(--m-warm));
-    --mf-glass: color-mix(in oklab, var(--d-glass) var(--m-dp), var(--n-glass));
+    --mf-glass: color-mix(in oklab, var(--lit-glass) var(--m-lp), color-mix(in oklab, var(--d-glass) var(--m-dp), var(--n-glass)));
     --mf-box: color-mix(in oklab, color-mix(in oklab, var(--d-box) var(--m-dp), var(--n-box)), #ff9a4a var(--m-warm));
     --mf-trunk: color-mix(in oklab, color-mix(in oklab, var(--d-trunk) var(--m-dp), var(--n-trunk)), #ff9a4a var(--m-warm));
     --mf-leaf-1: color-mix(in oklab, color-mix(in oklab, var(--d-leaf-1) var(--m-dp), var(--n-leaf-1)), #ff9a4a var(--m-warm));
@@ -1129,7 +1138,8 @@ body.season-christmas .footer.meadow {
   --d-fg: #d3e4ee; --d-fg-hi: #f1f8fc; --d-blade: #ffffff; --d-blade-fg: #cfe2ed;
   --d-path: #c9b58e; --d-stone: #efe4c6; --d-roof: #f3f8fb; --d-roof-2: #d6e5ef; --d-trim: #ffffff;
   --d-leaf-1: #1d6b46; --d-leaf-2: #24825a; --d-leaf-3: #e9f5f0; --d-bush: #2a7a55;
-  --d-glass: #ffd98a; --d-fence: #ffffff; --d-wall: #f6ead4;
+  --d-fence: #ffffff; --d-wall: #f6ead4;
+  --m-lit: max(0.75, clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1)); /* cosy lights on all day */
 }
 body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }
 body.season-christmas .meadow-credit { color: #0f3b2a; text-shadow: 0 1px 0 rgba(255,255,255,.65); }
