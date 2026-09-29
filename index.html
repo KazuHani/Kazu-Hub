@@ -59,7 +59,9 @@
      writes the same --bg-h/s/l/glow properties script.js writes (same maths as
      KazuLib.skyTint / hslToHex; tests.js pins the two copies together over a
      year-wide sweep), then the canvas <style> above, and the theme-color meta.
-     It also adds html.no-sakura outside the cherry-blossom window (same
+     It writes --sunset / --sunset-late too (KazuLib.sunsetGlow), so a page
+     opened at dusk starts with the sunset sky already in place, and honours
+     ?time=HH:MM for previews. It also adds html.no-sakura outside the cherry-blossom window (same
      rule as KazuLib.sakuraInBloom; the sweep in tests.js covers every day of
      the year) so the branches are never drawn out of season, and raises
      html.sky-pending so the sun/moon element (whose pose needs
@@ -78,6 +80,10 @@
     var o = {};
     for (var i = 0; i < parts.length; i++) o[parts[i].type] = +parts[i].value;
     var t = (o.hour % 24) * 60 + o.minute;
+    // Dev preview: ?time=HH:MM moves the sky to that UK time (same pattern as
+    // KazuLib.timeOverrideParse; the on-page clock stays real).
+    var tm = /[?&]time=(\d{1,2}):(\d{2})(?:[&#]|$)/.exec(location.search);
+    if (tm && +tm[1] < 24 && +tm[2] < 60) t = +tm[1] * 60 + +tm[2];
     // Cherry-blossom season, 20 Mar - 10 May on the UK date (same window as
     // KazuLib.sakuraInBloom): outside it the branches are hidden from the start.
     var md = (o.month - 1) * 100 + o.day;
@@ -97,6 +103,12 @@
     var s = +(33 + 9 * dusk).toFixed(2);
     var l = +(36 * day).toFixed(2);
     var glow = +Math.max(day, dusk).toFixed(4);
+    // Sunset sky (same maths as KazuLib.sunsetGlow): eases in 110 min before
+    // sunset, full from sunset for 12 min, gone 85 min later; `sl` crossfades
+    // the palette from golden to rose/violet around sunset.
+    var dt = t - set;
+    var ss = function (v) { v = v < 0 ? 0 : v > 1 ? 1 : v; return v * v * (3 - 2 * v); };
+    var sg = dt < -110 || dt > 97 ? 0 : dt < 0 ? ss((dt + 110) / 110) : dt <= 12 ? 1 : 1 - ss((dt - 12) / 85);
     var c = (1 - Math.abs(2 * (l / 100) - 1)) * (s / 100);
     var x = c * (1 - Math.abs((h / 60) % 2 - 1));
     var m = l / 100 - c / 2;
@@ -110,6 +122,8 @@
     de.style.setProperty('--bg-s', s);
     de.style.setProperty('--bg-l', l);
     de.style.setProperty('--bg-glow', glow);
+    de.style.setProperty('--sunset', +sg.toFixed(3));
+    de.style.setProperty('--sunset-late', +ss((dt + 10) / 50).toFixed(3));
     var canvas = document.getElementById('boot-canvas');
     if (canvas) canvas.textContent = 'html{background:' + hex + ';color-scheme:dark}';
     var meta = document.querySelector('meta[name="theme-color"]');
@@ -124,7 +138,7 @@
      text swap). noscript keeps the plain render-blocking link for no-JS. -->
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=55">
+<link rel="stylesheet" href="style.css?v=56">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -149,6 +163,12 @@
 </script>
 </head>
 <body>
+
+  <!-- sunset sky: the orange evening gradient. First in the body so the sun,
+       moon and branches paint in front of it. Its strength and palette come
+       from --sunset / --sunset-late (KazuLib.sunsetGlow); it is invisible the
+       rest of the day. Decorative and static, so it shows on every device. -->
+  <div class="sunset-sky" aria-hidden="true"></div>
 
   <!-- moonlit sakura scenery: glowing moon + branches reaching in from the
        page edges. Purely decorative; hidden during the Christmas season. -->
@@ -858,8 +878,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=34"></script>
-<script src="script.js?v=65"></script>
+<script src="lib.js?v=35"></script>
+<script src="script.js?v=66"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

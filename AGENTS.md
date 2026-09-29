@@ -36,12 +36,14 @@ falling petals only appear during Japan's cherry-blossom season (20 March to
 10 May, on the UK date; see "Cherry-blossom season" below); the sun and
 moon stay all year. On desktop only, the live UK weather is also drawn behind
 the page as rain, snow, wind streaks and clouds that combine when the
-weather does (see "Live weather layers" below); mobile never gets it.
+weather does (see "Live weather layers" below); mobile never gets it. Each
+evening a static orange-to-violet sunset gradient sits behind the sky (see
+"Sunset sky" below); it shows on every device.
 
 ## Code layout
 
-- `index.html` (~850 lines) — the whole page. Loads `style.css?v=55`,
-  `lib.js?v=34`, `script.js?v=65` (version query strings; see cache-busting
+- `index.html` (~850 lines) — the whole page. Loads `style.css?v=56`,
+  `lib.js?v=35`, `script.js?v=66` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -103,6 +105,10 @@ Preview/dev affordances built into the page:
   `blossom` / `blossom-heavy` also bring the branches back out of season, so
   the preview looks like the real in-season page. It previews the OLDER
   atmosphere: on desktop it also keeps the live weather layers off.
+- `?time=HH:MM` (UK wall time, e.g. `?time=18:20`) moves the whole sky to that
+  time: sun/moon position, the time-of-day tint, the sunset gradient, and the
+  cloud colours. The on-page clock stays real. Handy for previewing sunset:
+  today's is ~18:20, and it varies by season (`KazuLib.sunTimesUK`).
 - `?weather=rain,wind,clouds,snow,storm,all,none` (comma-combinable, each with
   an optional strength, e.g. `rain:1,clouds:0.4`) forces the desktop weather
   layers on any real weather; `none` forces a clear sky. Still desktop-only:
@@ -178,6 +184,20 @@ These are load-bearing; read before editing.
   `setAtmosphere` gates the petal modes on the same flag and re-runs when it
   flips. Sakura is a fourth dev-panel season (`seasonDevApply` keys). Snowy
   weather out of season shows a clear sky, not petals.
+- **Sunset sky.** `<div class="sunset-sky">` (first child of `<body>`, so the
+  sun, moon and branches paint over it) is an orange evening gradient whose
+  strength is `--sunset` and whose palette mix is `--sunset-late`, both from
+  `KazuLib.sunsetGlow` (evening only, no sunrise version): it eases in 110
+  minutes before the day's sunset, is full from sunset for 12 minutes, and is
+  gone 85 minutes later; the palette crossfades from golden orange to
+  rose/violet from 10 minutes before to 40 after. `script.js` writes the two
+  variables each minute (in `applySkyTint`), and the inline `#boot-tint`
+  script carries a compact copy so a page opened at dusk starts with the
+  sunset in place; the year-wide sweep in `tests.js` pins the two. It is
+  static CSS (no transition, no animation; the value steps ~1% a minute), so
+  it shows on phones and in low-power mode too; only Christmas hides it.
+  Changing the timing means editing `sunsetGlow` AND the matching numbers in
+  the boot script. The gradient stops live in `style.css` (`.sunset-sky`).
 - **Live weather layers (desktop only).** `weather-fx.js` draws rain, snow,
   wind streaks and clouds from the UK weather `script.js` already fetches
   (Open-Meteo now also asks for `cloud_cover` and `wind_direction_10m`).

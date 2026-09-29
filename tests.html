@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=34"></script>
+  <script src="lib.js?v=35"></script>
   <script src="weather-fx.js?v=1"></script>
   <script>
     (function () {
@@ -869,8 +869,8 @@
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=55', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=65', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=56', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=66', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=1', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
@@ -942,8 +942,8 @@
         var bootMatch = /<script id="boot-tint">([\s\S]*?)<\/script>/.exec(htmlSrc);
         ok('boot-tint script present in index.html', !!bootMatch);
         var bootSrc = bootMatch ? bootMatch[1] : '';
-        var bootFn = new Function('document', 'Date', 'Intl', 'setTimeout', bootSrc);
-        function runBoot(instantMs, IntlImpl) {
+        var bootFn = new Function('document', 'Date', 'Intl', 'setTimeout', 'location', bootSrc);
+        function runBoot(instantMs, IntlImpl, search) {
           var vars = {}, timers = [], classes = {};
           var meta = { content: '#000000', setAttribute: function (k, v) { if (k === 'content') this.content = v; } };
           var canvas = { textContent: 'html{background:#000;color-scheme:dark}' };
@@ -958,14 +958,14 @@
           var FakeDate = function () { return arguments.length ? new (Function.prototype.bind.apply(Date, [null].concat([].slice.call(arguments))))() : new Date(instantMs); };
           FakeDate.UTC = Date.UTC;
           var threw = null;
-          try { bootFn(doc, FakeDate, IntlImpl || Intl, function (fn, ms) { timers.push({ fn: fn, ms: ms }); }); } catch (e) { threw = e; }
+          try { bootFn(doc, FakeDate, IntlImpl || Intl, function (fn, ms) { timers.push({ fn: fn, ms: ms }); }, { search: search || '' }); } catch (e) { threw = e; }
           return { vars: vars, meta: meta, canvas: canvas, classes: classes, timers: timers, threw: threw };
         }
         function expectedBoot(instantMs) {
           var w = L.ukWallParts(new Date(instantMs));
           var doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
           var tint = L.skyTint(w.hours * 60 + w.minutes, doy);
-          return { tint: tint, hex: L.hslToHex(tint.h, tint.s, tint.l) };
+          return { tint: tint, hex: L.hslToHex(tint.h, tint.s, tint.l), sunset: L.sunsetGlow(w.hours * 60 + w.minutes, doy) };
         }
         var noon = runBoot(Date.UTC(2026, 8, 29, 11, 9));
         ok('daytime boot: lightness is the day tint, not the night 0', noon.vars['--bg-l'] > 30, noon.vars['--bg-l']);
@@ -983,7 +983,7 @@
             var at = Date.UTC(d[0], d[1], d[2], 0, m);
             var r = runBoot(at), e = expectedBoot(at);
             sweepRuns++;
-            var good = !r.threw && r.vars['--bg-h'] === e.tint.h && r.vars['--bg-s'] === e.tint.s && r.vars['--bg-l'] === e.tint.l && r.vars['--bg-glow'] === e.tint.glow &&
+            var good = !r.threw && r.vars['--bg-h'] === e.tint.h && r.vars['--bg-s'] === e.tint.s && r.vars['--bg-l'] === e.tint.l && r.vars['--bg-glow'] === e.tint.glow && r.vars['--sunset'] === e.sunset.glow && r.vars['--sunset-late'] === e.sunset.late &&
               r.meta.content === e.hex && r.canvas.textContent === 'html{background:' + e.hex + ';color-scheme:dark}';
             if (!good) sweepBad = { at: new Date(at).toISOString(), got: r.vars, wantTint: e.tint, gotHex: r.meta.content, wantHex: e.hex, threw: String(r.threw) };
           }
@@ -1012,6 +1012,71 @@
         eq('boot: 19 Mar 23:59 UTC is still out (GMT)', !!runBoot(Date.UTC(2027, 2, 19, 23, 59)).classes['no-sakura'], true);
         eq('boot: 20 Mar 00:00 UTC is the first day (GMT)', !!runBoot(Date.UTC(2027, 2, 20, 0, 0)).classes['no-sakura'], false);
         eq('boot: today-style midsummer date is out of season', !!runBoot(Date.UTC(2026, 8, 29, 11, 9)).classes['no-sakura'], true);
+        // ---- Sunset sky (orange evening gradient: KazuLib.sunsetGlow + the boot copy) ----
+        // Eases in 110 min before the day's sunset, full from sunset for 12 min, gone 85
+        // min later; only the evening (no sunrise version). late = golden -> rose palette.
+        function sunAt(doy, offsetMin) { return L.sunsetGlow(L.sunTimesUK(doy).set + offsetMin, doy); }
+        var sunDays = [1, 45, 100, 172, 200, 272, 300, 355, 366];
+        ok('sunset: nothing before the lead-in, on every season', sunDays.every(function (d) { return sunAt(d, -111).glow === 0 && sunAt(d, -110).glow === 0 && sunAt(d, -240).glow === 0; }));
+        eq('sunset: exactly half strength halfway up the ramp (55 min before sunset)', sunDays.map(function (d) { return sunAt(d, -55).glow; }), sunDays.map(function () { return 0.5; }));
+        ok('sunset: full strength at sunset and through the hold, on every season', sunDays.every(function (d) { return sunAt(d, 0).glow === 1 && sunAt(d, 6).glow === 1 && sunAt(d, 12).glow === 1; }));
+        eq('sunset: half strength halfway down the afterglow fade', sunDays.map(function (d) { return sunAt(d, 54.5).glow; }), sunDays.map(function () { return 0.5; }));
+        ok('sunset: gone 85 minutes after the hold, and stays gone', sunDays.every(function (d) { return sunAt(d, 97).glow === 0 && sunAt(d, 98).glow === 0 && sunAt(d, 300).glow === 0; }));
+        ok('sunset: rises monotonically into sunset and falls monotonically out of it', sunDays.every(function (d) {
+          var prev = -1, i, v;
+          for (i = -110; i <= 0; i++) { v = sunAt(d, i).glow; if (v < prev) return false; prev = v; }
+          prev = 2;
+          for (i = 12; i <= 97; i++) { v = sunAt(d, i).glow; if (v > prev) return false; prev = v; }
+          return true;
+        }));
+        ok('sunset: only the evening, never the morning (no glow around sunrise or all day)', sunDays.every(function (d) {
+          var rise = L.sunTimesUK(d).rise, set = L.sunTimesUK(d).set;
+          for (var m = 0; m < set - 110; m++) { if (L.sunsetGlow(m, d).glow !== 0) return false; }
+          return L.sunsetGlow(rise, d).glow === 0 && L.sunsetGlow(rise - 30, d).glow === 0 && L.sunsetGlow(720, d).glow === 0;
+        }));
+        ok('sunset: follows the season (21:30 is sunset in June, deep night in December)', L.sunsetGlow(1290, 172).glow === 1 && L.sunsetGlow(1290, 355).glow === 0 && L.sunsetGlow(960, 355).glow === 1 && L.sunsetGlow(960, 172).glow === 0);
+        ok('sunset: palette is golden until just before sunset, rose/violet by 40 min after', sunDays.every(function (d) { return sunAt(d, -10).late === 0 && sunAt(d, -60).late === 0 && sunAt(d, 40).late === 1 && sunAt(d, 90).late === 1; }));
+        eq('sunset: palette is half-way at 15 min after sunset', sunAt(272, 15).late, 0.5);
+        ok('sunset: palette only ever moves golden -> rose', sunDays.every(function (d) { var prev = -1; for (var i = -20; i <= 60; i++) { var v = sunAt(d, i).late; if (v < prev) return false; prev = v; } return true; }));
+        ok('sunset: every minute of every season stays in 0..1 and finite', (function () { for (var d = 1; d <= 366; d += 5) { for (var m = 0; m < 1440; m += 7) { var g = L.sunsetGlow(m, d); if (!(g.glow >= 0 && g.glow <= 1 && g.late >= 0 && g.late <= 1)) return false; } } return true; })());
+        eq('sunset: junk time is null', [L.sunsetGlow('abc', 172), L.sunsetGlow(NaN, 172), L.sunsetGlow(undefined, 172)], [null, null, null]);
+        ok('sunset: junk day of year falls back to the summer solstice instead of throwing', L.sunsetGlow(1290, 'x').glow === 1);
+        ok('sunset: a Sept evening (set 18:20): 17:30 is on the way up, 18:20 full, 19:10 fading, 20:00 gone', (function () { var a = L.sunsetGlow(1050, 272), b = L.sunsetGlow(1100, 272), c = L.sunsetGlow(1150, 272), d = L.sunsetGlow(1200, 272); return a.glow > 0.4 && a.glow < 0.7 && b.glow === 1 && c.glow > 0.4 && c.glow < 1 && d.glow === 0; })());
+
+        // The ?time=HH:MM sky preview.
+        eq('timeOverrideParse: a valid time', [L.timeOverrideParse('?time=18:20'), L.timeOverrideParse('?time=06:05'), L.timeOverrideParse('?time=6:05'), L.timeOverrideParse('?time=00:00'), L.timeOverrideParse('?time=23:59')], [1100, 365, 365, 0, 1439]);
+        eq('timeOverrideParse: found among other params', [L.timeOverrideParse('?x=1&time=07:30&y=2'), L.timeOverrideParse('?time=07:30#top'), L.timeOverrideParse('?weather=rain&time=12:00')], [450, 450, 720]);
+        eq('timeOverrideParse: out of range, malformed or missing is null', [L.timeOverrideParse('?time=24:00'), L.timeOverrideParse('?time=12:60'), L.timeOverrideParse('?time=12:5'), L.timeOverrideParse('?time=07:300'), L.timeOverrideParse('?timer=07:30'), L.timeOverrideParse('?atime=07:30'), L.timeOverrideParse(''), L.timeOverrideParse(null), L.timeOverrideParse(undefined)], [null, null, null, null, null, null, null, null, null]);
+
+        // The inline boot copy must give the very first paint the same sunset (first paint = no flash).
+        (function () {
+          var sep29 = function (h, m) { return Date.UTC(2026, 8, 29, h - 1, m); }; // UK is BST (UTC+1) on 29 Sep
+          var at1820 = runBoot(sep29(18, 20)), atNoon = runBoot(sep29(12, 9)), at1910 = runBoot(sep29(19, 10));
+          var g1910 = L.sunsetGlow(19 * 60 + 10, 272);
+          eq('boot: writes the sunset at sunset (full strength, golden/rose mix from the lib)', [at1820.vars['--sunset'], at1820.vars['--sunset-late']], [1, L.sunsetGlow(1100, 272).late]);
+          eq('boot: no sunset at midday', [atNoon.vars['--sunset'], atNoon.vars['--sunset-late']], [0, 0]);
+          eq('boot: 19:10 matches the lib', [at1910.vars['--sunset'], at1910.vars['--sunset-late']], [g1910.glow, g1910.late]);
+          // ?time= preview: same instant (UK noon), different requested times.
+          var searches = ['', '?time=18:20', '?time=06:05', '?time=6:05', '?time=24:00', '?time=12:60', '?time=12:5', '?x=1&time=19:10&y=2', '?time=19:10#top', '?timer=19:10', '?atime=19:10', '?time=00:00', '?time=23:59'];
+          var bad = null;
+          searches.forEach(function (s) {
+            if (bad) return;
+            var parsed = L.timeOverrideParse(s), mins = parsed === null ? 12 * 60 + 9 : parsed;
+            var r = runBoot(sep29(12, 9), undefined, s), tint = L.skyTint(mins, 272), sun = L.sunsetGlow(mins, 272);
+            if (r.threw || r.vars['--bg-l'] !== tint.l || r.vars['--bg-h'] !== tint.h || r.vars['--sunset'] !== sun.glow || r.vars['--sunset-late'] !== sun.late) bad = JSON.stringify(s) + ' -> ' + JSON.stringify(r.vars) + ' want mins ' + mins;
+          });
+          ok('boot: honours ?time= exactly like lib.js timeOverrideParse (valid, malformed, mid-string, out of range)', !bad, bad);
+          ok('boot: ?time=18:20 previews a full sunset at midday', runBoot(sep29(12, 9), undefined, '?time=18:20').vars['--sunset'] === 1);
+        })();
+
+        // Wiring.
+        ok('sunset element is the first thing in the body (sun, moon and branches paint over it)', htmlSrc.indexOf('<div class="sunset-sky" aria-hidden="true"></div>') !== -1 && htmlSrc.indexOf('<div class="sunset-sky"') > htmlSrc.indexOf('<body>') && htmlSrc.indexOf('<div class="sunset-sky"') < htmlSrc.indexOf('<div class="sakura-scene"'));
+        ok('sunset CSS: layer strength is --sunset, two palettes crossfade on --sunset-late', cssFlat.indexOf('opacity: var(--sunset, 0);') !== -1 && cssFlat.indexOf('opacity: calc(1 - var(--sunset-late, 0));') !== -1 && cssFlat.indexOf('opacity: var(--sunset-late, 0);') !== -1);
+        ok('sunset CSS: golden palette holds orange + a wide horizon glow, rose palette holds magenta/violet', cssFlat.indexOf('rgba(255,150,45,') !== -1 && cssFlat.indexOf('rgba(255,152,60,') !== -1 && cssFlat.indexOf('rgba(238,92,124,') !== -1 && cssFlat.indexOf('rgba(112,62,152,') !== -1);
+        ok('sunset CSS: static (no transition or animation) and click-through', !/\.sunset-sky[^{]*\{[^}]*(transition|animation)/.test(cssFlat) && /\.sunset-sky \{\n  position: absolute; top: 0; left: 0; right: 0; height: 100vh;\n  z-index: 0; pointer-events: none;/.test(cssFlat));
+        ok('sunset CSS: only Christmas hides it (phones and low-power keep the static gradient)', cssFlat.indexOf('body.season-christmas .sunset-sky { display: none; }') !== -1 && (cssFlat.match(/\.sunset-sky[^{]*\{[^}]*display/g) || []).length === 1 && !/body\.low-power[^{]*\.sunset-sky/.test(cssFlat));
+        ok('script.js writes --sunset / --sunset-late from KazuLib.sunsetGlow every minute', scriptSrc.indexOf('KazuLib.sunsetGlow(mins, doy)') !== -1 && scriptSrc.indexOf("root.setProperty('--sunset', sunset.glow);") !== -1 && scriptSrc.indexOf("root.setProperty('--sunset-late', sunset.late);") !== -1);
+        ok('script.js applies the ?time= preview before the sun/moon and tint are computed', scriptSrc.indexOf('KazuLib.timeOverrideParse(location.search)') !== -1 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') !== -1 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') < scriptSrc.indexOf('const st = skyBodyState(mins, doy, skyArcPeakY());'));
         var bootAt = htmlSrc.indexOf('<script id="boot-tint">');
         ok('boot script runs in the head before the stylesheet, after the canvas style + theme-color meta', bootAt > htmlSrc.indexOf('<style id="boot-canvas">') && bootAt > htmlSrc.indexOf('<meta name="theme-color"') && bootAt < htmlSrc.indexOf('<link rel="stylesheet" href="style.css') && bootAt < htmlSrc.indexOf('</head>'));
         ok('boot script is synchronous (no async/defer/module)', bootAt !== -1 && !/<script[^>]*id="boot-tint"[^>]*(async|defer|type=)/.test(htmlSrc));

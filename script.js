@@ -963,6 +963,13 @@
     root.setProperty('--bg-s', tint.s);
     root.setProperty('--bg-l', tint.l);
     root.setProperty('--bg-glow', tint.glow);
+    // Sunset gradient (style.css .sunset-sky): strength + golden->rose palette
+    // mix. Without lib.js it simply keeps the value the boot script set.
+    const sunset = KazuLib && KazuLib.sunsetGlow ? KazuLib.sunsetGlow(mins, doy) : null;
+    if (sunset) {
+      root.setProperty('--sunset', sunset.glow);
+      root.setProperty('--sunset-late', sunset.late);
+    }
     skyTintHex = hslToHex(tint.h, tint.s, tint.l);
     skyFxLight = { daylight: tint.daylight, dusk: tint.dusk }; // cloud colours follow the time of day
     if (window.KazuWeatherFx) window.KazuWeatherFx.setSky(skyFxLight);
@@ -1004,6 +1011,11 @@
   }
   let skyBodySnapped = false;
   let skyBodyLast = ''; // 'sun' | 'moon': which body the previous update showed
+  // Dev preview: ?time=HH:MM (UK wall time) moves the whole sky — sun/moon,
+  // tint, sunset gradient — to that time; the on-page clock stays real. Ignored
+  // if lib.js failed to load. The inline boot script in index.html reads the
+  // same param so the first paint already matches.
+  const SKY_TIME_OVERRIDE = (KazuLib && KazuLib.timeOverrideParse) ? KazuLib.timeOverrideParse(location.search) : null;
   function updateSkyBody() {
     if (!skyBodyEl) return;
     // UK wall frame via lib.js; visitor-local is an acceptable fallback for
@@ -1018,6 +1030,7 @@
       mins = now.getHours() * 60 + now.getMinutes();
       doy = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(now.getFullYear(), 0, 1)) / 86400000) + 1;
     }
+    if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;
     const st = skyBodyState(mins, doy, skyArcPeakY());
     if (!st) return;
     // Sun -> moon (sunset) and moon -> sun (sunrise) swap while the body is off

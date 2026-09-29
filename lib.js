@@ -566,6 +566,50 @@
     };
   }
 
+  // ---- Sunset sky --------------------------------------------------------
+  // The orange sunset gradient behind the page (style.css .sunset-sky). Only
+  // the evening: it eases in SUNSET_LEAD minutes before the day's sunset as
+  // the sun sinks towards the horizon, holds full strength from sunset for
+  // SUNSET_HOLD minutes, then fades out over SUNSET_FADE minutes of twilight.
+  // Returns { glow, late }, both 0..1:
+  //   glow  overall strength of the gradient layer
+  //   late  which palette: 0 = golden/orange (sun still up), 1 = rose/violet
+  //         afterglow (sun gone); it crossfades from 10 minutes before sunset
+  //         to 40 minutes after, so the sky warms, then deepens.
+  // script.js writes these to --sunset / --sunset-late once a minute; the
+  // inline #boot-tint script in index.html carries a compact copy so the very
+  // first paint is already right (tests.js pins the two over a year-wide
+  // sweep). Junk time input yields null.
+  var SUNSET_LEAD = 110, SUNSET_HOLD = 12, SUNSET_FADE = 85;
+  function smoothstep01(x) {
+    x = x < 0 ? 0 : (x > 1 ? 1 : x);
+    return x * x * (3 - 2 * x);
+  }
+  function sunsetGlow(ukMinutes, dayOfYear) {
+    var t = +ukMinutes;
+    if (isNaN(t)) return null;
+    t = ((t % 1440) + 1440) % 1440;
+    var dt = t - sunTimesUK(dayOfYear).set; // minutes after sunset (negative before)
+    var glow;
+    if (dt < -SUNSET_LEAD || dt > SUNSET_HOLD + SUNSET_FADE) glow = 0;
+    else if (dt < 0) glow = smoothstep01((dt + SUNSET_LEAD) / SUNSET_LEAD);
+    else if (dt <= SUNSET_HOLD) glow = 1;
+    else glow = 1 - smoothstep01((dt - SUNSET_HOLD) / SUNSET_FADE);
+    return { glow: +glow.toFixed(3), late: +smoothstep01((dt + 10) / 50).toFixed(3) };
+  }
+
+  // Dev preview: ?time=HH:MM moves the sky (sun/moon, tint, sunset) to that UK
+  // wall-clock time; the on-page clock stays real. Returns minutes since UK
+  // midnight, or null when the query string has no valid time. The same
+  // pattern lives in the #boot-tint script (tests.js checks they agree).
+  function timeOverrideParse(search) {
+    var m = /[?&]time=(\d{1,2}):(\d{2})(?:[&#]|$)/.exec(String(search == null ? '' : search));
+    if (!m) return null;
+    var h = +m[1], mi = +m[2];
+    if (h > 23 || mi > 59) return null;
+    return h * 60 + mi;
+  }
+
   // hsl -> '#rrggbb' for the theme-color meta (which the bg tint follows).
   function hslToHex(h, s, l) {
     h = ((+h % 360) + 360) % 360;
@@ -1297,6 +1341,8 @@
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
     sakuraInBloom: sakuraInBloom,
+    sunsetGlow: sunsetGlow,
+    timeOverrideParse: timeOverrideParse,
     weatherFxAllowed: weatherFxAllowed,
     seasonDevApply: seasonDevApply,
     seasonDevParse: seasonDevParse,
