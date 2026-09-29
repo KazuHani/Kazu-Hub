@@ -247,6 +247,10 @@ html.sky-pending .sky-body { opacity: 0; }
   position: fixed; inset: 0; width: 100vw; height: 100vh;
   z-index: 0; pointer-events: none;
 }
+/* Clouds live on their own canvas that scrolls WITH the page (like the sky
+   scenery, viewport-tall at the top), so they stay put as you scroll instead
+   of following you; rain, snow and wind stay on the fixed canvas. */
+.weather-fx--clouds { position: absolute; inset: auto; top: 0; left: 0; right: 0; height: 100vh; }
 @media (pointer: coarse), (hover: none), (max-width: 768px), (prefers-reduced-motion: reduce) {
   .weather-fx { display: none !important; }
 }

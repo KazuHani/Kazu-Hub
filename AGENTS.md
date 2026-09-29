@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` (~850 lines) — the whole page. Loads `style.css?v=56`,
-  `lib.js?v=35`, `script.js?v=67` (version query strings; see cache-busting
+- `index.html` (~850 lines) — the whole page. Loads `style.css?v=57`,
+  `lib.js?v=35`, `script.js?v=68` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -238,6 +238,10 @@ These are load-bearing; read before editing.
     if any particle changes faster than its fade rate. Measured in a real
     browser: painted alpha ramps 0 -> full over ~4 s with no step above 4% of
     the final value.
+  - *Clouds scroll with the page.* They draw to their own canvas
+    (`.weather-fx--clouds`, `position: absolute`, viewport-tall at the top like
+    the sky scenery) so they stay put and scroll away with the hero, natively
+    smooth; rain, snow and wind stay on the fixed canvas.
   - The canvas is inserted between `.sakura-scene` and `.atmosphere`, so
     clouds pass in front of the sun/moon and rain falls in front of the
     branches while petals stay on top. New always-on visuals in this layer

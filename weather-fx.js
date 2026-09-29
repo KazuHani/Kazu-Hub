@@ -406,9 +406,15 @@
   var FADE_ALPHA = [1, 0.6, 0.25];
   function fadeBucket(f) { return f >= 0.85 ? 0 : (f >= 0.45 ? 1 : 2); }
 
-  function drawScene(sc, ctx) {
+  // `cctx` (optional) is a second context just for the clouds: the page gives
+  // them their own canvas that scrolls with the page (they are part of the sky
+  // at the top and scroll away with the hero, natively smooth), while rain,
+  // snow and wind stay on the fixed canvas. Without it everything shares ctx.
+  function drawScene(sc, ctx, cctx) {
     var W = sc.W, H = sc.H, cur = sc.cur, i, f;
+    var cc = cctx || ctx;
     ctx.clearRect(0, 0, W, H);
+    if (cctx) cctx.clearRect(0, 0, W, H);
 
     // Clouds (behind everything else in this layer).
     if (sc.hiClouds > 0 && ensureSprites(sc)) {
@@ -416,10 +422,10 @@
       for (i = 0; i < sc.hiClouds; i++) {
         f = cl.f[i];
         if (f <= 0) continue;
-        ctx.globalAlpha = a0 * f * (0.45 + 0.55 * cl.z[i]);
-        ctx.drawImage(sc.sprites[cl.v[i]], cl.x[i], cl.y[i], SPRITE_W * cl.s[i], SPRITE_H * cl.s[i]);
+        cc.globalAlpha = a0 * f * (0.45 + 0.55 * cl.z[i]);
+        cc.drawImage(sc.sprites[cl.v[i]], cl.x[i], cl.y[i], SPRITE_W * cl.s[i], SPRITE_H * cl.s[i]);
       }
-      ctx.globalAlpha = 1;
+      cc.globalAlpha = 1;
     }
 
     // Wind streaks: two strokes each (a faint wide one under a brighter thin one).
@@ -513,6 +519,8 @@
     S.canvas.width = Math.ceil(W * SCALE);
     S.canvas.height = Math.ceil(H * SCALE);
     S.ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    S.cloudCanvas.width = S.canvas.width; S.cloudCanvas.height = S.canvas.height;
+    S.cctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
     var old = S.sc, sc = createScene(W, H, { makeCanvas: domMakeCanvas });
     if (old) { // a resize re-scatters the particles but must not restart the fade-in
       sc.cur = old.cur; sc.wisps = old.wisps;
@@ -544,14 +552,19 @@
     var canvas = document.createElement('canvas');
     canvas.className = 'weather-fx';
     canvas.setAttribute('aria-hidden', 'true');
+    // Clouds get their own canvas that scrolls with the page (position:absolute
+    // in style.css); it goes in first so rain and wind paint over the clouds.
+    var cloudCanvas = document.createElement('canvas');
+    cloudCanvas.className = 'weather-fx weather-fx--clouds';
+    cloudCanvas.setAttribute('aria-hidden', 'true');
     var ref = document.querySelector('.atmosphere');
-    if (ref && ref.parentNode) ref.parentNode.insertBefore(canvas, ref);
-    else document.body.insertBefore(canvas, document.body.firstChild);
-    var ctx = canvas.getContext('2d');
-    if (!ctx) { canvas.parentNode.removeChild(canvas); return; }
+    if (ref && ref.parentNode) { ref.parentNode.insertBefore(cloudCanvas, ref); ref.parentNode.insertBefore(canvas, ref); }
+    else { document.body.insertBefore(canvas, document.body.firstChild); document.body.insertBefore(cloudCanvas, canvas); }
+    var ctx = canvas.getContext('2d'), cctx = cloudCanvas.getContext('2d');
+    if (!ctx || !cctx) { canvas.parentNode.removeChild(canvas); cloudCanvas.parentNode.removeChild(cloudCanvas); return; }
     var now = performance.now();
     S = {
-      canvas: canvas, ctx: ctx, sc: null, target: {}, fast: false, raf: 0,
+      canvas: canvas, ctx: ctx, cloudCanvas: cloudCanvas, cctx: cctx, sc: null, target: {}, fast: false, raf: 0,
       lastRaf: now, lastDraw: 0, statN: 0, statSum: 0, warmUntil: now + 2500,
       level: 0, drawMs: 0, drawn: 0, resizeT: 0
     };
@@ -568,6 +581,7 @@
     window.removeEventListener('resize', onResize);
     document.removeEventListener('visibilitychange', onVisibility);
     if (S.canvas.parentNode) S.canvas.parentNode.removeChild(S.canvas);
+    if (S.cloudCanvas.parentNode) S.cloudCanvas.parentNode.removeChild(S.cloudCanvas);
     S = null;
   }
 
@@ -602,7 +616,7 @@
     var t0 = performance.now();
     var busy = stepScene(S.sc, Math.min(0.1, since / 1000), S.target);
     S.fast = sceneFast(S.sc); // rain that is fading out keeps its smooth frame rate
-    drawScene(S.sc, S.ctx);
+    drawScene(S.sc, S.ctx, S.cctx);
     var ms = performance.now() - t0;
     S.drawMs = S.drawn ? S.drawMs * 0.9 + ms * 0.1 : ms;
     S.drawn++;
