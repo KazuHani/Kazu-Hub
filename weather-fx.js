@@ -46,6 +46,10 @@
   var SLOW_FPS = 12;          // clouds only (they drift a few px a second)
   var SCALE = 0.5;            // canvas resolution relative to CSS px
   var EASE_RATE = 0.4;        // layer intensity change per second (fade in / out ~2.5s)
+  var FADE_PARTICLE = 1.25;   // per second: each raindrop / flake fades in or out over ~0.8s
+  var FADE_CLOUD = 0.5;       // per second: each cloud fades in or out over ~2s
+  var WIND_EASE_KMH = 12;     // km/h per second: a new wind speed leans the rain over gradually
+  var DIR_EASE = 0.6;         // per second: a reversed wind swings everything round through vertical
   var SPRITE_W = 460, SPRITE_H = 220; // cloud sprite size in CSS px at scale 1
 
   // ---- Weather -> layers ------------------------------------------------
@@ -208,6 +212,16 @@
 
   // ---- Scene: particle state + physics ------------------------------------
   // All coordinates are CSS px; the canvas transform applies SCALE.
+  //
+  // Nothing may pop. Every raindrop, flake and cloud carries its own fade
+  // factor f (0..1): a particle that becomes active ramps 0 -> 1
+  // (FADE_PARTICLE / FADE_CLOUD per second), and one that is retired (a layer
+  // easing out, the quality governor stepping density down) keeps moving while
+  // it ramps back to 0. Density therefore rises and falls smoothly instead of
+  // drops switching on and off at full strength. Wind speed and direction ease
+  // the same way (a new reading leans the rain over gradually, a reversed wind
+  // swings everything round through vertical), and a wind streak keeps the
+  // direction it was born with.
   function createScene(W, H, opts) {
     opts = opts || {};
     var rng = makeRng(opts.seed != null ? opts.seed : 0x5EED);
@@ -215,14 +229,15 @@
     var sc = {
       W: W, H: H, rng: rng,
       cur: { rain: 0, snow: 0, clouds: 0, wind: 0 },
-      sign: 1, windKmh: 0, quality: 1,
+      dir: 1, windKmh: 0, primed: false, quality: 1,
       sky: { daylight: 0.5, dusk: 0 },
       makeCanvas: opts.makeCanvas || null,
       sprites: null, spriteKey: '',
-      nRain: 0, nSnow: 0, nClouds: 0,
-      rain: { x: new Float32Array(MAX.rain), y: new Float32Array(MAX.rain), z: new Float32Array(MAX.rain) },
-      snow: { x: new Float32Array(MAX.snow), y: new Float32Array(MAX.snow), z: new Float32Array(MAX.snow), p: new Float32Array(MAX.snow) },
-      clouds: { x: new Float32Array(MAX.clouds), y: new Float32Array(MAX.clouds), z: new Float32Array(MAX.clouds), s: new Float32Array(MAX.clouds), v: new Uint8Array(MAX.clouds) },
+      nRain: 0, nSnow: 0, nClouds: 0,       // target active counts
+      hiRain: 0, hiSnow: 0, hiClouds: 0,    // 1 + highest index still visible (active or fading out)
+      rain: { x: new Float32Array(MAX.rain), y: new Float32Array(MAX.rain), z: new Float32Array(MAX.rain), f: new Float32Array(MAX.rain) },
+      snow: { x: new Float32Array(MAX.snow), y: new Float32Array(MAX.snow), z: new Float32Array(MAX.snow), p: new Float32Array(MAX.snow), f: new Float32Array(MAX.snow) },
+      clouds: { x: new Float32Array(MAX.clouds), y: new Float32Array(MAX.clouds), z: new Float32Array(MAX.clouds), s: new Float32Array(MAX.clouds), v: new Uint8Array(MAX.clouds), f: new Float32Array(MAX.clouds) },
       wisps: []
     };
     for (i = 0; i < MAX.rain; i++) { sc.rain.x[i] = rng() * W; sc.rain.y[i] = rng() * H; sc.rain.z[i] = rng(); }
@@ -239,13 +254,36 @@
     return sc;
   }
 
+  // Moves v towards `to` by at most maxStep.
+  function approach(v, to, maxStep) {
+    return v < to ? Math.min(to, v + maxStep) : Math.max(to, v - maxStep);
+  }
+
+  // Fades particles [0, n) in and every other visible one out, at `rate` per
+  // second. Returns the new "highest visible index + 1" so loops only walk
+  // particles that are still on screen.
+  function stepFades(f, hi, n, dt, rate) {
+    var up = rate * dt, lim = hi > n ? hi : n, newHi = 0, i, v;
+    for (i = 0; i < lim; i++) {
+      v = f[i];
+      if (i < n) { if (v < 1) { v += up; if (v > 1) v = 1; } }
+      else if (v > 0) { v -= up; if (v < 0) v = 0; }
+      f[i] = v;
+      if (v > 0) newHi = i + 1;
+    }
+    return newHi;
+  }
+
   // Advance the scene by dt seconds towards `target` (a layersFor result).
   // Returns true while anything is still visible or should be.
   function stepScene(sc, dt, target) {
     var W = sc.W, H = sc.H, rng = sc.rng, i, k;
     target = target || {};
-    sc.sign = target.windSign === -1 ? -1 : 1;
-    sc.windKmh = +target.windKmh || 0;
+    // Wind: the very first look starts at the real wind; after that a new
+    // reading (10-minute poll) or a reversed direction eases in.
+    var tw = +target.windKmh || 0, td = target.windSign === -1 ? -1 : 1;
+    if (!sc.primed) { sc.windKmh = tw; sc.dir = td; sc.primed = true; }
+    else { sc.windKmh = approach(sc.windKmh, tw, WIND_EASE_KMH * dt); sc.dir = approach(sc.dir, td, DIR_EASE * dt); }
     // Ease each layer's intensity so weather changes fade rather than pop.
     var names = ['rain', 'snow', 'clouds', 'wind'], step = EASE_RATE * dt;
     for (k = 0; k < names.length; k++) {
@@ -255,21 +293,24 @@
     sc.nRain = countFor('rain', sc.cur.rain, sc.quality);
     sc.nSnow = countFor('snow', sc.cur.snow, sc.quality);
     sc.nClouds = countFor('clouds', sc.cur.clouds, sc.quality);
+    sc.hiRain = stepFades(sc.rain.f, sc.hiRain, sc.nRain, dt, FADE_PARTICLE);
+    sc.hiSnow = stepFades(sc.snow.f, sc.hiSnow, sc.nSnow, dt, FADE_PARTICLE);
+    sc.hiClouds = stepFades(sc.clouds.f, sc.hiClouds, sc.nClouds, dt, FADE_CLOUD);
 
     // Rain: falls fast, leans with the wind.
-    var slant = Math.min(0.6, sc.windKmh / 90), span = H * slant, sign = sc.sign;
-    var r = sc.rain, n = sc.nRain, sp;
+    var dir = sc.dir, slant = Math.min(0.6, sc.windKmh / 90), span = H * slant;
+    var r = sc.rain, n = sc.hiRain, sp;
     for (i = 0; i < n; i++) {
       sp = 700 + 800 * r.z[i];
       r.y[i] += sp * dt;
-      r.x[i] += sign * slant * sp * dt;
+      r.x[i] += dir * slant * sp * dt;
       if (r.y[i] > H + 40) {
         r.y[i] = -20 - rng() * 60;
-        r.x[i] = rng() * (W + span) - (sign > 0 ? span : 0);
+        r.x[i] = rng() * (W + span) - (dir >= 0 ? span : 0);
       }
     }
     // Snow: slow fall, gentle sway, pushed sideways by the wind.
-    var s = sc.snow, ns = sc.nSnow, drift = sign * sc.windKmh * 0.9;
+    var s = sc.snow, ns = sc.hiSnow, drift = dir * sc.windKmh * 0.9;
     for (i = 0; i < ns; i++) {
       s.y[i] += (30 + 70 * s.z[i]) * dt;
       s.p[i] += dt * (0.6 + s.z[i]);
@@ -278,15 +319,16 @@
       if (s.x[i] > W + 12) s.x[i] = -12; else if (s.x[i] < -12) s.x[i] = W + 12;
     }
     // Clouds: drift with the wind, wrapping round the edges.
-    var cl = sc.clouds, nc = sc.nClouds;
-    var base = sign * (4 + sc.windKmh * 0.55);
+    var cl = sc.clouds, nc = sc.hiClouds;
+    var base = dir * (4 + sc.windKmh * 0.55);
     for (i = 0; i < nc; i++) {
       var sw = SPRITE_W * cl.s[i];
       cl.x[i] += base * (0.35 + 0.65 * cl.z[i]) * dt;
-      if (sign > 0 && cl.x[i] > W) cl.x[i] = -sw;
-      else if (sign < 0 && cl.x[i] + sw < 0) cl.x[i] = W;
+      if (base > 0 && cl.x[i] > W) cl.x[i] = -sw;
+      else if (base < 0 && cl.x[i] + sw < 0) cl.x[i] = W;
     }
-    // Wind: long faint streaks that sweep across and fade.
+    // Wind: long faint streaks that sweep across and fade (they fade in and
+    // out over their own life, and keep the direction they were born with).
     var w = sc.wisps, wi = sc.cur.wind;
     for (i = w.length - 1; i >= 0; i--) {
       w[i].age += dt;
@@ -296,13 +338,22 @@
     if (w.length < want && rng() < Math.min(1, dt * 6)) {
       var len = 160 + rng() * 300;
       w.push({
-        x0: rng() * (W + len) - len, y: H * (0.04 + rng() * 0.78), len: len,
+        x0: rng() * (W + len) - len, y: H * (0.04 + rng() * 0.78), len: len, sg: dir >= 0 ? 1 : -1,
         speed: (380 + rng() * 520) * (0.6 + 0.6 * wi), age: 0, ttl: 1.4 + rng() * 1.8,
         amp: 4 + rng() * 12, ph: rng() * TAU
       });
     }
     return sc.cur.rain > 0.005 || sc.cur.snow > 0.005 || sc.cur.clouds > 0.005 || sc.cur.wind > 0.005 ||
-      w.length > 0 || (+target.rain > 0) || (+target.snow > 0) || (+target.clouds > 0) || (+target.wind > 0);
+      sc.hiRain > 0 || sc.hiSnow > 0 || sc.hiClouds > 0 || w.length > 0 ||
+      (+target.rain > 0) || (+target.snow > 0) || (+target.clouds > 0) || (+target.wind > 0);
+  }
+
+  // Is anything fast-moving (rain, snow, wind) still visible? Drives the frame
+  // rate: 30 fps while it is, 12 fps for clouds alone. Uses what is on screen
+  // rather than the target, so rain that is fading out keeps its smooth 30 fps.
+  function sceneFast(sc) {
+    return sc.cur.rain > 0.005 || sc.cur.snow > 0.005 || sc.cur.wind > 0.005 ||
+      sc.hiRain > 0 || sc.hiSnow > 0 || sc.wisps.length > 0;
   }
 
   // ---- Cloud sprites ----------------------------------------------------
@@ -337,17 +388,35 @@
     sc.spriteKey = cloudKey(sc.sky);
   }
 
+  // Builds (or refreshes, when the colour has moved a step) the cloud sprites.
+  // The DOM shell calls it as soon as cloud weather arrives, so the one-off
+  // cost lands outside an animation frame. False when the scene can't make
+  // canvases (Node tests without a stub).
+  function ensureSprites(sc) {
+    if (!sc.makeCanvas) return false;
+    if (!sc.sprites || sc.spriteKey !== cloudKey(sc.sky)) buildSprites(sc);
+    return true;
+  }
+
   // ---- Drawing ----------------------------------------------------------
+  // Rain and snow stay batched (a handful of strokes/fills per frame, not one
+  // per particle): particles are grouped into 2 depth buckets x 3 fade buckets
+  // (fully in, mid fade, just starting), each drawn as one path at that
+  // bucket's alpha. Clouds are few enough for a true per-cloud alpha.
+  var FADE_ALPHA = [1, 0.6, 0.25];
+  function fadeBucket(f) { return f >= 0.85 ? 0 : (f >= 0.45 ? 1 : 2); }
+
   function drawScene(sc, ctx) {
-    var W = sc.W, H = sc.H, cur = sc.cur, i;
+    var W = sc.W, H = sc.H, cur = sc.cur, i, f;
     ctx.clearRect(0, 0, W, H);
 
     // Clouds (behind everything else in this layer).
-    if (sc.nClouds > 0 && sc.makeCanvas) {
-      if (!sc.sprites || sc.spriteKey !== cloudKey(sc.sky)) buildSprites(sc);
+    if (sc.hiClouds > 0 && ensureSprites(sc)) {
       var cl = sc.clouds, a0 = cloudAlpha(sc.sky) * Math.min(1, cur.clouds * 1.3);
-      for (i = 0; i < sc.nClouds; i++) {
-        ctx.globalAlpha = a0 * (0.45 + 0.55 * cl.z[i]);
+      for (i = 0; i < sc.hiClouds; i++) {
+        f = cl.f[i];
+        if (f <= 0) continue;
+        ctx.globalAlpha = a0 * f * (0.45 + 0.55 * cl.z[i]);
         ctx.drawImage(sc.sprites[cl.v[i]], cl.x[i], cl.y[i], SPRITE_W * cl.s[i], SPRITE_H * cl.s[i]);
       }
       ctx.globalAlpha = 1;
@@ -360,7 +429,7 @@
       ctx.lineCap = 'round';
       for (i = 0; i < w.length; i++) {
         var q = w[i];
-        var hx = q.x0 + sc.sign * q.speed * q.age, tx = hx - sc.sign * q.len;
+        var hx = q.x0 + q.sg * q.speed * q.age, tx = hx - q.sg * q.len;
         if ((hx < -20 && tx < -20) || (hx > W + 20 && tx > W + 20)) continue;
         var a = Math.sin(Math.PI * q.age / q.ttl) * (0.1 + 0.14 * cur.wind);
         var y = q.y + Math.sin(q.age * 2 + q.ph) * 6;
@@ -373,47 +442,55 @@
         ctx.lineWidth = 1;
         ctx.globalAlpha = a;
         ctx.beginPath();
-        ctx.moveTo(tx + sc.sign * q.len * 0.3, y - q.amp * 0.15);
+        ctx.moveTo(tx + q.sg * q.len * 0.3, y - q.amp * 0.15);
         ctx.quadraticCurveTo((tx + hx) / 2, y - q.amp, hx, y + q.amp * 0.3);
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
     }
 
-    // Rain: one batched stroke per depth bucket.
-    if (sc.nRain > 0) {
-      var r = sc.rain, slant = Math.min(0.6, sc.windKmh / 90) * sc.sign;
+    // Rain: one batched stroke per (depth, fade) bucket.
+    if (sc.hiRain > 0) {
+      var r = sc.rain, slant = Math.min(0.6, sc.windKmh / 90) * sc.dir;
       var norm = 1 / Math.sqrt(1 + slant * slant), la = Math.min(1, cur.rain * 1.4);
       ctx.lineCap = 'butt';
-      for (var pass = 0; pass < 2; pass++) {
-        var near = pass === 1;
-        ctx.strokeStyle = 'rgba(200,220,255,' + (la * (near ? 0.34 : 0.17)).toFixed(3) + ')';
-        ctx.lineWidth = near ? 1.6 : 1;
-        ctx.beginPath();
-        for (i = 0; i < sc.nRain; i++) {
-          if ((r.z[i] >= 0.5) !== near) continue;
+      for (var pass = 0; pass < 6; pass++) {
+        var near = pass >= 3, fb = pass % 3, started = false;
+        for (i = 0; i < sc.hiRain; i++) {
+          f = r.f[i];
+          if (f <= 0 || (r.z[i] >= 0.5) !== near || fadeBucket(f) !== fb) continue;
+          if (!started) {
+            started = true;
+            ctx.strokeStyle = 'rgba(200,220,255,' + (la * (near ? 0.34 : 0.17) * FADE_ALPHA[fb]).toFixed(3) + ')';
+            ctx.lineWidth = near ? 1.6 : 1;
+            ctx.beginPath();
+          }
           var len = 10 + 26 * r.z[i];
           ctx.moveTo(r.x[i], r.y[i]);
           ctx.lineTo(r.x[i] - slant * norm * len, r.y[i] - norm * len);
         }
-        ctx.stroke();
+        if (started) ctx.stroke();
       }
     }
 
-    // Snow: one batched fill per depth bucket.
-    if (sc.nSnow > 0) {
+    // Snow: one batched fill per (depth, fade) bucket.
+    if (sc.hiSnow > 0) {
       var s = sc.snow, sa = Math.min(1, cur.snow * 1.4);
-      for (var ps = 0; ps < 2; ps++) {
-        var close = ps === 1;
-        ctx.fillStyle = 'rgba(255,255,255,' + (sa * (close ? 0.85 : 0.5)).toFixed(3) + ')';
-        ctx.beginPath();
-        for (i = 0; i < sc.nSnow; i++) {
-          if ((s.z[i] >= 0.5) !== close) continue;
+      for (var ps = 0; ps < 6; ps++) {
+        var close = ps >= 3, sb = ps % 3, began = false;
+        for (i = 0; i < sc.hiSnow; i++) {
+          f = s.f[i];
+          if (f <= 0 || (s.z[i] >= 0.5) !== close || fadeBucket(f) !== sb) continue;
+          if (!began) {
+            began = true;
+            ctx.fillStyle = 'rgba(255,255,255,' + (sa * (close ? 0.85 : 0.5) * FADE_ALPHA[sb]).toFixed(3) + ')';
+            ctx.beginPath();
+          }
           var rad = 1 + 2.6 * s.z[i];
           ctx.moveTo(s.x[i] + rad, s.y[i]);
           ctx.arc(s.x[i], s.y[i], rad, 0, TAU);
         }
-        ctx.fill();
+        if (began) ctx.fill();
       }
     }
   }
@@ -437,7 +514,12 @@
     S.canvas.height = Math.ceil(H * SCALE);
     S.ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
     var old = S.sc, sc = createScene(W, H, { makeCanvas: domMakeCanvas });
-    if (old) { sc.cur = old.cur; sc.wisps = []; }
+    if (old) { // a resize re-scatters the particles but must not restart the fade-in
+      sc.cur = old.cur; sc.wisps = old.wisps;
+      sc.rain.f.set(old.rain.f); sc.snow.f.set(old.snow.f); sc.clouds.f.set(old.clouds.f);
+      sc.hiRain = old.hiRain; sc.hiSnow = old.hiSnow; sc.hiClouds = old.hiClouds;
+      sc.windKmh = old.windKmh; sc.dir = old.dir; sc.primed = old.primed;
+    }
     sc.sky = skyNow;
     sc.quality = qualityFactor(S.level);
     S.sc = sc;
@@ -519,6 +601,7 @@
 
     var t0 = performance.now();
     var busy = stepScene(S.sc, Math.min(0.1, since / 1000), S.target);
+    S.fast = sceneFast(S.sc); // rain that is fading out keeps its smooth frame rate
     drawScene(S.sc, S.ctx);
     var ms = performance.now() - t0;
     S.drawMs = S.drawn ? S.drawMs * 0.9 + ms * 0.1 : ms;
@@ -532,11 +615,15 @@
     var L = forced || layersFor(weather);
     lastLayers = L;
     if (!L.active) {
-      if (S) { S.target = L; S.fast = false; } // fade out, then frame() unmounts
+      if (S) S.target = L; // fade out, then frame() unmounts
       return L;
     }
     if (!S) mount();
-    if (S) { S.target = L; S.fast = L.rain > 0 || L.snow > 0 || L.wind > 0; }
+    if (S) {
+      S.target = L;
+      S.fast = S.fast || L.rain > 0 || L.snow > 0 || L.wind > 0;
+      if (L.clouds > 0 && S.sc) ensureSprites(S.sc); // build the cloud sprites now, not mid-fade
+    }
     return L;
   }
 
@@ -580,7 +667,13 @@
     createScene: createScene,
     stepScene: stepScene,
     drawScene: drawScene,
+    ensureSprites: ensureSprites,
+    sceneFast: sceneFast,
     MAX: MAX,
+    FADE_PARTICLE: FADE_PARTICLE,
+    FADE_CLOUD: FADE_CLOUD,
+    WIND_EASE_KMH: WIND_EASE_KMH,
+    DIR_EASE: DIR_EASE,
     QUALITY_LEVELS: QUALITY_LEVELS,
     SLOW_FRAME_MS: SLOW_FRAME_MS,
     WIND_MIN_KMH: WIND_MIN_KMH,

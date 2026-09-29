@@ -758,7 +758,7 @@
   // atmosphere takes back over.
   // Preview: ?weather=rain,wind,clouds,snow,storm,all,none (each optionally
   // :0..1, e.g. rain:1) forces layers on any weather; still desktop-only.
-  const WEATHER_FX_SRC = 'weather-fx.js?v=1';
+  const WEATHER_FX_SRC = 'weather-fx.js?v=2';
   const WEATHER_FX_RAW = (() => {
     try { return new URLSearchParams(location.search).get('weather') || ''; } catch (e) { return ''; }
   })();

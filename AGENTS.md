@@ -43,7 +43,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 ## Code layout
 
 - `index.html` (~850 lines) — the whole page. Loads `style.css?v=56`,
-  `lib.js?v=35`, `script.js?v=66` (version query strings; see cache-busting
+  `lib.js?v=35`, `script.js?v=67` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -224,6 +224,20 @@ These are load-bearing; read before editing.
     when the average rAF interval exceeds 28 ms, then switches the effect off
     for the session. Measured at maximum load on a 144 Hz desktop: 6.94 ms per
     frame with it running vs 6.96 ms without, 0.2 ms per drawn frame.
+  - *Nothing pops.* Each layer's intensity eases at 0.4/s, and on top of that
+    every raindrop, flake and cloud has its own fade factor (`stepFades`;
+    drops/flakes 0.8 s, clouds 2 s): a particle that becomes active ramps in,
+    one that is retired (a layer easing out, the governor stepping down)
+    keeps moving while it ramps out. Rain and snow stay batched by drawing in
+    2 depth x 3 fade-alpha buckets. Wind speed eases (12 km/h per second),
+    a reversed wind swings round through vertical (0.6/s), wind streaks keep
+    the direction they were born with, the frame rate follows what is
+    visible, cloud sprites are built before the fade starts, and a resize
+    keeps the fade state. `tests.js` traces every particle's fade factor
+    through a scripted storm/drizzle/downpour/snow/clear sequence and fails
+    if any particle changes faster than its fade rate. Measured in a real
+    browser: painted alpha ramps 0 -> full over ~4 s with no step above 4% of
+    the final value.
   - The canvas is inserted between `.sakura-scene` and `.atmosphere`, so
     clouds pass in front of the sun/moon and rain falls in front of the
     branches while petals stay on top. New always-on visuals in this layer

@@ -22,7 +22,7 @@
   <div id="out"></div>
 
   <script src="lib.js?v=35"></script>
-  <script src="weather-fx.js?v=1"></script>
+  <script src="weather-fx.js?v=2"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -735,6 +735,142 @@
         return first === 3 && built === 6;
       })());
 
+      // ---- Weather layers fade in and out instead of popping ----
+      // Every raindrop / flake / cloud has its own fade factor, retired particles fade
+      // out while still moving, and wind speed + direction ease. These trace the fade
+      // factors frame by frame through scripted weather changes.
+      function fxFadeTrace(steps) {
+        var sc = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas, seed: 11 });
+        var kinds = ['rain', 'snow', 'clouds'];
+        var prev = {}, out = {};
+        kinds.forEach(function (k) { prev[k] = new Float32Array(sc[k].f); out[k] = { up: 0, down: 0 }; });
+        steps.forEach(function (st) {
+          for (var i = 0; i < Math.round(st[1] * 30); i++) {
+            FX.stepScene(sc, 1 / 30, st[0]);
+            kinds.forEach(function (k) {
+              var f = sc[k].f, p = prev[k];
+              for (var j = 0; j < f.length; j++) {
+                var d = f[j] - p[j];
+                if (d > out[k].up) out[k].up = d;
+                if (d < out[k].down) out[k].down = d;
+                p[j] = f[j];
+              }
+            });
+          }
+        });
+        return { sc: sc, jumps: out };
+      }
+      var fxStepP = FX.FADE_PARTICLE / 30 + 1e-5, fxStepC = FX.FADE_CLOUD / 30 + 1e-5;
+      var fxTrace = fxFadeTrace([
+        [FX.forcedParse('none'), 0.5], [FX.forcedParse('storm'), 5], [FX.forcedParse('rain:0.3,clouds:0.4'), 5],
+        [FX.forcedParse('rain:1,clouds:1,wind:1'), 5], [FX.forcedParse('snow:1,clouds:0.2'), 5], [FX.forcedParse('none'), 9]
+      ]);
+      ok('no raindrop ever appears or vanishes faster than its fade rate, across storm / drizzle / downpour / snow / clear', fxTrace.jumps.rain.up <= fxStepP && fxTrace.jumps.rain.down >= -fxStepP, JSON.stringify(fxTrace.jumps.rain));
+      ok('no snowflake ever appears or vanishes faster than its fade rate', fxTrace.jumps.snow.up <= fxStepP && fxTrace.jumps.snow.down >= -fxStepP, JSON.stringify(fxTrace.jumps.snow));
+      ok('no cloud ever appears or vanishes faster than its (slower) fade rate', fxTrace.jumps.clouds.up <= fxStepC && fxTrace.jumps.clouds.down >= -fxStepC, JSON.stringify(fxTrace.jumps.clouds));
+      ok('the fade test is not vacuous: particles really do fade at the full rate', fxTrace.jumps.rain.up > fxStepP * 0.9 && fxTrace.jumps.rain.down < -fxStepP * 0.9 && fxTrace.jumps.clouds.up > fxStepC * 0.9 && fxTrace.jumps.clouds.down < -fxStepC * 0.9);
+      ok('everything has faded away and the scene reports idle after the sky clears', (function () { var sc = fxTrace.sc; return sc.hiRain === 0 && sc.hiSnow === 0 && sc.hiClouds === 0 && sc.wisps.length === 0 && FX.stepScene(sc, 1 / 30, FX.forcedParse('none')) === false; })());
+      ok('the first frame of a storm shows no fully opaque drop or cloud', (function () {
+        var sc = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas, seed: 4 });
+        FX.stepScene(sc, 0.1, FX.forcedParse('storm')); // the DOM shell clamps its first frame to 0.1s
+        var maxR = 0, maxC = 0, i;
+        for (i = 0; i < sc.rain.f.length; i++) maxR = Math.max(maxR, sc.rain.f[i]);
+        for (i = 0; i < sc.clouds.f.length; i++) maxC = Math.max(maxC, sc.clouds.f[i]);
+        return maxR <= FX.FADE_PARTICLE * 0.1 + 1e-5 && maxC <= FX.FADE_CLOUD * 0.1 + 1e-5 && sc.cur.rain <= 0.041;
+      })());
+      ok('a fade-in takes real time: nothing is opaque after 0.5s, everything active is by 6s', (function () {
+        var early = fxRun(fxStorm, 0.5), late = fxRun(fxStorm, 6), i, maxEarly = 0, allIn = true;
+        for (i = 0; i < early.rain.f.length; i++) maxEarly = Math.max(maxEarly, early.rain.f[i]);
+        for (i = 0; i < late.nRain; i++) if (late.rain.f[i] !== 1) allIn = false;
+        for (i = 0; i < late.nClouds; i++) if (late.clouds.f[i] !== 1) allIn = false;
+        return maxEarly < 0.7 && allIn;
+      })());
+
+      // Retiring particles (quality governor, layer easing out) fades them; it never removes them.
+      ok('the governor stepping quality down fades the retired drops out instead of deleting them', (function () {
+        var sc = fxRun(fxStorm, 6), before = sc.hiRain;
+        sc.quality = 0.18;
+        FX.stepScene(sc, 1 / 30, fxStorm);
+        var stillThere = sc.hiRain > sc.nRain && sc.hiRain >= before - 1;
+        for (var i = 0; i < 45; i++) FX.stepScene(sc, 1 / 30, fxStorm);
+        return stillThere && sc.hiRain === sc.nRain && sc.nRain < before;
+      })());
+      ok('a retired drop keeps falling while it fades out', (function () {
+        var sc = fxRun(fxStorm, 6);
+        sc.quality = 0.18;
+        FX.stepScene(sc, 1 / 30, fxStorm);
+        var idx = sc.nRain + 5, y0 = sc.rain.y[idx], f0 = sc.rain.f[idx];
+        FX.stepScene(sc, 1 / 30, fxStorm);
+        return f0 > 0 && sc.rain.f[idx] < f0 && (sc.rain.y[idx] > y0 || sc.rain.y[idx] < 0);
+      })());
+      ok('fast frame rate is kept while drops are still fading out (even after the rain layer hits 0), and dropped once only clouds remain', (function () {
+        var sc = fxRun(FX.forcedParse('rain:1'), 6), cloudsOnly = FX.forcedParse('clouds:1'), sawFadeOnly = false;
+        for (var i = 0; i < 30 * 8; i++) {
+          FX.stepScene(sc, 1 / 30, cloudsOnly);
+          if (sc.cur.rain === 0 && sc.hiRain > 0) { sawFadeOnly = true; if (!FX.sceneFast(sc)) return false; }
+        }
+        return sawFadeOnly && FX.sceneFast(sc) === false;
+      })());
+
+      // Draw: partly faded particles go into their own (fainter) batches; settled ones don't.
+      function fxRecCtx() {
+        var c = fxStubCtx();
+        c.styles = [];
+        ['strokeStyle', 'fillStyle'].forEach(function (p) {
+          var v;
+          Object.defineProperty(c, p, { get: function () { return v; }, set: function (x) { v = x; c.styles.push(p + ':' + x); } });
+        });
+        return c;
+      }
+      function fxDistinctStyles(target, seconds) {
+        var sc = fxRun(target, seconds), ctx = fxRecCtx(), seen = {};
+        FX.drawScene(sc, ctx);
+        ctx.styles.forEach(function (s) { seen[s] = true; });
+        return Object.keys(seen).length;
+      }
+      ok('mid fade-in draws extra, fainter rain batches; settled rain is just near + far', fxDistinctStyles(FX.forcedParse('rain:1'), 1.2) >= 3 && fxDistinctStyles(FX.forcedParse('rain:1'), 6) === 2);
+      ok('mid fade-in draws extra, fainter snow batches; settled snow is just near + far', fxDistinctStyles(FX.forcedParse('snow:1'), 1.2) >= 3 && fxDistinctStyles(FX.forcedParse('snow:1'), 6) === 2);
+      ok('fading still stays inside the draw budget', (function () { var sc = fxRun(fxStorm, 1.2), ctx = fxStubCtx(); FX.drawScene(sc, ctx); return ctx.ops < 700 && ctx.bad === null; })());
+
+      // Wind eases instead of snapping.
+      ok('the first look starts at the real wind (nothing visible yet, so no swing)', (function () {
+        var sc = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas }), t = FX.layersFor({ code: 63, cloudCover: 100, windKmh: 55, windDir: 90 });
+        FX.stepScene(sc, 1 / 30, t);
+        return sc.windKmh === 55 && sc.dir === -1;
+      })());
+      ok('a new wind reading leans the rain over gradually (12 km/h per second) and settles', (function () {
+        var sc = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas }), calm = FX.layersFor({ code: 63, windKmh: 10, windDir: 270 }), gale = FX.layersFor({ code: 63, windKmh: 60, windDir: 270 });
+        FX.stepScene(sc, 1 / 30, calm);
+        var prev = sc.windKmh, maxStep = 0, monotone = true;
+        for (var i = 0; i < 30 * 6; i++) { FX.stepScene(sc, 1 / 30, gale); maxStep = Math.max(maxStep, sc.windKmh - prev); if (sc.windKmh < prev) monotone = false; prev = sc.windKmh; }
+        return maxStep <= FX.WIND_EASE_KMH / 30 + 1e-6 && monotone && sc.windKmh === 60;
+      })());
+      ok('a reversed wind swings round through vertical instead of flipping (0.6 per second)', (function () {
+        var sc = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas }), west = FX.layersFor({ code: 63, windKmh: 50, windDir: 270 }), east = FX.layersFor({ code: 63, windKmh: 50, windDir: 90 });
+        FX.stepScene(sc, 1 / 30, west);
+        var prev = sc.dir, maxStep = 0, crossedZero = false;
+        for (var i = 0; i < 30 * 6; i++) { FX.stepScene(sc, 1 / 30, east); maxStep = Math.max(maxStep, Math.abs(sc.dir - prev)); if (sc.dir > 0 !== prev > 0 && sc.dir !== prev) crossedZero = true; if (Math.abs(sc.dir) < 0.3) crossedZero = true; prev = sc.dir; }
+        return sc.dir === -1 && maxStep <= FX.DIR_EASE / 30 + 1e-6 && crossedZero;
+      })());
+      ok('clouds and snow never jump when the wind reverses (their drift speed is continuous)', (function () {
+        var sc = fxRun(FX.forcedParse('clouds:1'), 6), east = FX.forcedParse('clouds:1,wind:1'), west = FX.forcedParse('clouds:1,wind:1');
+        west.windSign = -1;
+        for (var i = 0; i < 30; i++) FX.stepScene(sc, 1 / 30, east);
+        var maxMove = 0;
+        for (i = 0; i < 30 * 5; i++) { var x0 = sc.clouds.x[0]; FX.stepScene(sc, 1 / 30, west); var dx = Math.abs(sc.clouds.x[0] - x0); if (dx < 100) maxMove = Math.max(maxMove, dx); }
+        return maxMove < 3; // px per frame: at most the gale drift (~48 px/s * 1/30), never a jump
+      })());
+      ok('a wind streak keeps the direction it was born with when the wind reverses', (function () {
+        var sc = FX.createScene(1920, 1080, { makeCanvas: fxStubCanvas, seed: 21 }), west = FX.forcedParse('wind:1'), east = FX.forcedParse('wind:1');
+        east.windSign = -1;
+        var born = [], i, j;
+        for (i = 0; i < 30 * 3; i++) { FX.stepScene(sc, 1 / 30, west); for (j = 0; j < sc.wisps.length; j++) if (born.indexOf(sc.wisps[j]) < 0) born.push(sc.wisps[j]); }
+        var ok1 = born.length > 0 && born.every(function (w) { return w.sg === 1; });
+        var later = [];
+        for (i = 0; i < 30 * 8; i++) { FX.stepScene(sc, 1 / 30, east); for (j = 0; j < sc.wisps.length; j++) if (born.indexOf(sc.wisps[j]) < 0 && later.indexOf(sc.wisps[j]) < 0) later.push(sc.wisps[j]); }
+        return ok1 && born.every(function (w) { return w.sg === 1; }) && later.length > 0 && later.some(function (w) { return w.sg === -1; });
+      })());
+
       // ---- balloonDriftStep (birthday balloon body physics) ----
       var bb = { x: 100, y: 500, vx: 0, vy: 0 };
       for (var bi = 0; bi < 1200; bi++) L.balloonDriftStep(bb, { dt: 0.016, t: bi * 0.016, buoy: 9, drag: 0.22, windAmp: 0, phase: 0 });
@@ -870,9 +1006,9 @@
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('style.css?v=56', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=66', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=67', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('weather-fx.js?v=1', { cache: 'no-store' }).then(function (r) { return r.text(); })
+        fetch('weather-fx.js?v=2', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         // CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
         var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2].replace(/\r\n/g, '\n'), swSrc = src[3], fxSrc = src[4].replace(/\r\n/g, '\n');
@@ -1104,7 +1240,7 @@
         // ---- Live weather layers: wiring (mobile gating, lazy load, hand-off, CSS guard) ----
         ok('weather-fx.js is never a static script tag (mobile never requests it)', htmlSrc.indexOf('weather-fx.js') === -1);
         ok('the service worker does not precache weather-fx.js (phones would download it on install)', swSrc.indexOf('weather-fx') === -1);
-        ok('script.js injects weather-fx.js only after the eligibility check', scriptSrc.indexOf("const WEATHER_FX_SRC = 'weather-fx.js?v=1';") !== -1 && scriptSrc.indexOf("document.createElement('script')") !== -1 && scriptSrc.indexOf('KazuLib.weatherFxAllowed({') !== -1 && scriptSrc.indexOf('if (!weatherFxAllowedNow()) {') !== -1);
+        ok('script.js injects weather-fx.js only after the eligibility check', scriptSrc.indexOf("const WEATHER_FX_SRC = 'weather-fx.js?v=2';") !== -1 && scriptSrc.indexOf("document.createElement('script')") !== -1 && scriptSrc.indexOf('KazuLib.weatherFxAllowed({') !== -1 && scriptSrc.indexOf('if (!weatherFxAllowedNow()) {') !== -1);
         ok('eligibility reads coarse pointer, no-hover, narrow width, reduced motion, mobile UA, save-data and low power', ['(pointer: coarse)', '(hover: none)', '(max-width: 768px)', '(prefers-reduced-motion: reduce)'].every(function (q) { return scriptSrc.indexOf("'" + q + "'") !== -1; }) && scriptSrc.indexOf('/Android|iPhone|iPad|iPod|Mobi/i') !== -1 && scriptSrc.indexOf('userAgentData.mobile') !== -1 && scriptSrc.indexOf('saveData: PARTICLE_FLAGS.saveData,') !== -1 && scriptSrc.indexOf('lowPower: LOW_POWER,') !== -1);
         ok('a missing lib.js means no weather layers (fails safe)', scriptSrc.indexOf('if (!(KazuLib && KazuLib.weatherFxAllowed) || weatherFxMQ.length < 4) return false;') !== -1);
         ok('the layers stop when a media query flips to mobile', scriptSrc.indexOf("mq.addEventListener('change', syncWeatherFx)") !== -1 && scriptSrc.indexOf('window.KazuWeatherFx.stop();') !== -1);
@@ -1120,6 +1256,9 @@
         ok('engine: pauses behind modals, slows while scrolling, resets after a hidden tab', fxSrc.indexOf("classList.contains('modal-open')") !== -1 && fxSrc.indexOf("classList.contains('glass-scrolling')") !== -1 && fxSrc.indexOf("document.addEventListener('visibilitychange', onVisibility)") !== -1);
         ok('engine: mounts on demand between .sakura-scene and .atmosphere, and removes itself when clear', fxSrc.indexOf("ref.parentNode.insertBefore(canvas, ref)") !== -1 && fxSrc.indexOf("querySelector('.atmosphere')") !== -1 && fxSrc.indexOf('if (!busy) unmount();') !== -1);
         ok('engine: the governor can switch it off for the session', fxSrc.indexOf('disabled = true; unmount(); return;') !== -1 && fxSrc.indexOf('if (disabled) return null;') !== -1);
+        ok('engine: every particle carries a fade factor; retired ones fade out rather than vanish', fxSrc.indexOf('function stepFades(') !== -1 && fxSrc.indexOf('var FADE_PARTICLE = 1.25;') !== -1 && fxSrc.indexOf('var FADE_CLOUD = 0.5;') !== -1 && fxSrc.indexOf('sc.hiRain = stepFades(sc.rain.f, sc.hiRain, sc.nRain, dt, FADE_PARTICLE);') !== -1);
+        ok('engine: wind speed and direction ease, and wind streaks keep their birth direction', fxSrc.indexOf('approach(sc.windKmh, tw, WIND_EASE_KMH * dt)') !== -1 && fxSrc.indexOf('approach(sc.dir, td, DIR_EASE * dt)') !== -1 && fxSrc.indexOf('sg: dir >= 0 ? 1 : -1') !== -1);
+        ok('engine: frame rate follows what is visible, cloud sprites are built before the fade, a resize keeps the fade', fxSrc.indexOf('S.fast = sceneFast(S.sc);') !== -1 && fxSrc.indexOf('ensureSprites(S.sc)') !== -1 && fxSrc.indexOf('sc.rain.f.set(old.rain.f)') !== -1);
         ok('fonts no longer render-blocking', htmlSrc.indexOf('rel="stylesheet" media="print" onload="this.media=\'all\'"') !== -1);
         ok('social tiles are solid brand tiles (not glass .card members)', htmlSrc.indexOf('class="card social-card') === -1);
         eq('every social tile carries a brand modifier', htmlSrc.split('class="social-card social-card--').length - 1, 7);
