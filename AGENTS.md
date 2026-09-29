@@ -35,9 +35,10 @@ the Christmas season), and custom scrollbars.
 
 ## Code layout
 
-- `index.html` (~750 lines) — the whole page. Loads `style.css?v=35`,
-  `lib.js?v=21`, `script.js?v=43` (version query strings; see cache-busting
-  below). Inline JSON-LD schema in the `<head>`.
+- `index.html` (~850 lines) — the whole page. Loads `style.css?v=53`,
+  `lib.js?v=31`, `script.js?v=62` (version query strings; see cache-busting
+  below). Inline JSON-LD schema and the `#boot-tint` first-paint script
+  (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
@@ -120,6 +121,22 @@ These are load-bearing; read before editing.
   low-power (`LOW_POWER`) and reduced-motion devices (instant swap).
   Any new always-on animated layer (infinite CSS loops, canvas rAF) must
   register with `fxWatch(el)` so it pauses off-screen via `.fx-paused`.
+- **First paint = live tint (no night-black flash).** `script.js` runs at the
+  end of `<body>`, so anything it writes lands AFTER the first paint. The
+  inline `<script id="boot-tint">` in `<head>` therefore writes the
+  time-of-day palette itself before the first paint: `--bg-h/s/l/glow` on
+  `<html>`, the `#boot-canvas` `<style>` colour, and the `theme-color` meta.
+  It is a compact copy of `KazuLib.skyTint` + `hslToHex` + the UK-clock read;
+  `tests.js`/`tests.html` run the real script against stubs and compare it to
+  `lib.js` across a year-wide sweep, so if you change the tint maths in
+  `lib.js` you MUST change the boot script to match (the sweep fails
+  otherwise). It also raises `html.sky-pending`, which hides `.sky-body`
+  until `updateSkyBody`'s first snap places it (`script.js` lifts the class;
+  an 8s timeout is the failsafe). Any new state that `script.js` sets on
+  load and that changes the look of the first screen belongs in the same
+  boot script or it will flash. Known gap: on Dec 25 the Christmas palette
+  is still applied by `script.js` (`body.season-christmas`), so that one day
+  shows the blue tint briefly before the pine palette.
 - **Social tiles are solid brand tiles.** `.social-card` is deliberately NOT
   a `.card` member (no glass/refraction — nothing to refract through). The
   design hangs off two custom properties: each network gets a

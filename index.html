@@ -45,17 +45,79 @@
 <link rel="dns-prefetch" href="//avatars.steamstatic.com">
 <link rel="dns-prefetch" href="//a.ltrbxd.com">
 <!-- Critical first paint: the stylesheets below are render-blocking, so on a
-     cold cache the page used to sit WHITE until style.css arrived. Paint the
-     canvas the AMOLED deep-night base colour inline — script.js replaces it
-     with the live time-of-day tint within a frame (keep this in sync with
-     the --bg-* initial values at the top of style.css). -->
-<style>html{background:#000;color-scheme:dark}</style>
+     cold cache the page used to sit WHITE until style.css arrived. This tag
+     paints the canvas inline; #boot-tint below overwrites its colour with the
+     live time-of-day tint. #000 (AMOLED deep night, matching the --bg-*
+     initial values at the top of style.css) is only the no-JS / Intl-less
+     fallback. -->
+<style id="boot-canvas">html{background:#000;color-scheme:dark}</style>
+<!-- Boot tint: script.js sits at the end of <body>, so before this existed the
+     first paint ALWAYS used the night defaults (black canvas, black gradient,
+     black theme-color, moon in the sky) and only snapped to the real
+     time-of-day palette once script.js had downloaded and run — a visible
+     black flash on any daytime load. This runs before the first paint and
+     writes the same --bg-h/s/l/glow properties script.js writes (same maths as
+     KazuLib.skyTint / hslToHex; tests.js pins the two copies together over a
+     year-wide sweep), then the canvas <style> above, and the theme-color meta.
+     It also raises html.sky-pending so the sun/moon element (whose pose needs
+     layout and lives in script.js) stays hidden until script.js has placed it
+     and lifts the class itself; the timeout is only a failsafe for a
+     script.js that never arrives. Wrapped in try/catch: any failure leaves
+     the plain night defaults, exactly the old behaviour. -->
+<script id="boot-tint">
+(function () {
+  try {
+    var de = document.documentElement;
+    var parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', hour12: false
+    }).formatToParts(new Date());
+    var o = {};
+    for (var i = 0; i < parts.length; i++) o[parts[i].type] = +parts[i].value;
+    var t = (o.hour % 24) * 60 + o.minute;
+    var doy = Math.round((Date.UTC(o.year, o.month - 1, o.day) - Date.UTC(o.year, 0, 1)) / 86400000) + 1;
+    var w = 2 * Math.PI * (doy - 172) / 365;
+    var rise = Math.round(397.5 - 97.5 * Math.cos(w));
+    var set = Math.round(1125 + 165 * Math.cos(w));
+    var day = t > rise && t < set ? Math.sin(Math.PI * (t - rise) / (set - rise)) : 0;
+    var bell = function (c) {
+      var d = Math.abs(t - c);
+      d = Math.min(d, 1440 - d);
+      return Math.exp(-(d * d) / 7200);
+    };
+    var dusk = Math.max(bell(rise), bell(set));
+    var h = +(215 + 22 * dusk).toFixed(2);
+    var s = +(33 + 9 * dusk).toFixed(2);
+    var l = +(36 * day).toFixed(2);
+    var glow = +Math.max(day, dusk).toFixed(4);
+    var c = (1 - Math.abs(2 * (l / 100) - 1)) * (s / 100);
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l / 100 - c / 2;
+    var rgb = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+    var hex = '#';
+    for (var k = 0; k < 3; k++) {
+      var n = Math.round((rgb[k] + m) * 255);
+      hex += (n < 16 ? '0' : '') + n.toString(16);
+    }
+    de.style.setProperty('--bg-h', h);
+    de.style.setProperty('--bg-s', s);
+    de.style.setProperty('--bg-l', l);
+    de.style.setProperty('--bg-glow', glow);
+    var canvas = document.getElementById('boot-canvas');
+    if (canvas) canvas.textContent = 'html{background:' + hex + ';color-scheme:dark}';
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', hex);
+    de.classList.add('sky-pending');
+    setTimeout(function () { de.classList.remove('sky-pending'); }, 8000);
+  } catch (e) {}
+})();
+</script>
 <!-- Fonts no longer block the first paint: the stylesheet loads off the
      critical path and applies once it lands (display=swap already covers the
      text swap). noscript keeps the plain render-blocking link for no-JS. -->
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=52">
+<link rel="stylesheet" href="style.css?v=53">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -790,7 +852,7 @@
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
 <script src="lib.js?v=31"></script>
-<script src="script.js?v=61"></script>
+<script src="script.js?v=62"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

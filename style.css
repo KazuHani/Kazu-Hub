@@ -155,8 +155,14 @@ body {
 .sky-body {
   position: absolute; left: 78%; top: 16%; transform: translate(-50%, -50%);
   width: clamp(92px, 10vw, 148px); aspect-ratio: 1; border-radius: 50%;
-  transition: left 1.8s ease, top 1.8s ease;
+  transition: left 1.8s ease, top 1.8s ease, opacity 1.2s ease;
 }
+/* Raised by the inline #boot-tint script in <head>, lifted by script.js once
+   updateSkyBody has picked sun/moon and placed the body. Until then the
+   markup's no-JS pose (a moon, upper right) would show at any time of day and
+   then hop; instead the body fades in, already in position. Without JS the
+   class never appears, so the no-JS moon still renders. */
+html.sky-pending .sky-body { opacity: 0; }
 .sky-body--moon {
   background: radial-gradient(circle at 38% 34%, #fffdf6 0%, #f8eed6 46%, #eedcae 74%, rgba(238,220,174,0) 78%);
   box-shadow: 0 0 46px 22px rgba(255,240,205,.12), 0 0 130px 64px rgba(186,212,255,.07);

@@ -816,7 +816,76 @@ ok('low power reveals content without the observer', scriptSrc.includes("if (!LO
 ok('low power drops the frosted backdrop + ambient loops', cssFlat.includes('body.low-power { --card-blur: none; }') && cssFlat.includes('body.low-power .scroll-reveal {'));
 
 // ---- First paint: no white flash on a cold cache ----
-ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<style>html{background:#000;') && htmlSrc.indexOf('<style>html{background:#000;') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<style id="boot-canvas">html{background:#000;') && htmlSrc.indexOf('<style id="boot-canvas">html{background:#000;') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+
+// ---- First paint: no night-black flash on a daytime load (regression) ----
+// script.js sits at the end of <body>, so the first paint used to ALWAYS be the
+// night defaults (black canvas/gradient/theme-color, moon in the sky) until
+// script.js downloaded and ran. The inline #boot-tint script in <head> now
+// writes the live tint before the first paint. These tests run that real
+// script against stubs and pin it to KazuLib.skyTint / hslToHex.
+const bootMatch = /<script id="boot-tint">([\s\S]*?)<\/script>/.exec(htmlSrc);
+ok('boot-tint script present in index.html', !!bootMatch);
+const bootSrc = bootMatch ? bootMatch[1] : '';
+const bootFn = new Function('document', 'Date', 'Intl', 'setTimeout', bootSrc);
+function runBoot(instantMs, IntlImpl) {
+  const vars = {}, timers = [], classes = {};
+  const meta = { content: '#000000', setAttribute: function (k, v) { if (k === 'content') this.content = v; } };
+  const canvas = { textContent: 'html{background:#000;color-scheme:dark}' };
+  const doc = {
+    documentElement: {
+      style: { setProperty: function (k, v) { vars[k] = v; } },
+      classList: { add: function (c) { classes[c] = true; }, remove: function (c) { delete classes[c]; } },
+    },
+    getElementById: function (id) { return id === 'boot-canvas' ? canvas : null; },
+    querySelector: function (sel) { return sel === 'meta[name="theme-color"]' ? meta : null; },
+  };
+  const FakeDate = function () { return arguments.length ? new (Function.prototype.bind.apply(Date, [null].concat([].slice.call(arguments))))() : new Date(instantMs); };
+  FakeDate.UTC = Date.UTC;
+  let threw = null;
+  try { bootFn(doc, FakeDate, IntlImpl || Intl, function (fn, ms) { timers.push({ fn: fn, ms: ms }); }); } catch (e) { threw = e; }
+  return { vars: vars, meta: meta, canvas: canvas, classes: classes, timers: timers, threw: threw };
+}
+function expectedBoot(instantMs) {
+  const w = L.ukWallParts(new Date(instantMs));
+  const doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
+  const tint = L.skyTint(w.hours * 60 + w.minutes, doy);
+  return { tint: tint, hex: L.hslToHex(tint.h, tint.s, tint.l) };
+}
+// Daytime is the case that used to flash: UK noon on 29 Sep 2026 (BST = 11:00 UTC).
+const noon = runBoot(Date.UTC(2026, 8, 29, 11, 9));
+ok('daytime boot: lightness is the day tint, not the night 0', noon.vars['--bg-l'] > 30, noon.vars['--bg-l']);
+ok('daytime boot: canvas is not black', noon.canvas.textContent !== 'html{background:#000;color-scheme:dark}' && /^html\{background:#[0-9a-f]{6};color-scheme:dark\}$/.test(noon.canvas.textContent), noon.canvas.textContent);
+ok('daytime boot: theme-color meta follows the tint', noon.meta.content !== '#000000' && /^#[0-9a-f]{6}$/.test(noon.meta.content), noon.meta.content);
+const midnight = runBoot(Date.UTC(2026, 0, 15, 0, 0));
+eq('deep-night boot still lands on true AMOLED black', [midnight.vars['--bg-l'], midnight.meta.content], [0, '#000000']);
+ok('boot raises html.sky-pending and schedules a failsafe lift', noon.classes['sky-pending'] === true && noon.timers.length === 1 && noon.timers[0].ms === 8000);
+if (noon.timers[0]) noon.timers[0].fn();
+ok('failsafe timer lifts sky-pending', noon.timers.length === 1 && !noon.classes['sky-pending']);
+// Year-wide sweep: 12 dates x every 10 minutes, GMT + BST + both DST change days,
+// so the inline copy of the maths can never drift from lib.js.
+const sweepDays = [[2026, 0, 1], [2026, 1, 14], [2026, 2, 29], [2026, 3, 20], [2026, 4, 11], [2026, 5, 21], [2026, 6, 15], [2026, 7, 30], [2026, 8, 29], [2026, 9, 25], [2026, 10, 30], [2026, 11, 21], [2028, 11, 31]];
+let sweepRuns = 0, sweepBad = null;
+sweepDays.forEach(function (d) {
+  for (let m = 0; m < 1440 && !sweepBad; m += 10) {
+    const at = Date.UTC(d[0], d[1], d[2], 0, m);
+    const r = runBoot(at), e = expectedBoot(at);
+    sweepRuns++;
+    const good = !r.threw && r.vars['--bg-h'] === e.tint.h && r.vars['--bg-s'] === e.tint.s && r.vars['--bg-l'] === e.tint.l && r.vars['--bg-glow'] === e.tint.glow &&
+      r.meta.content === e.hex && r.canvas.textContent === 'html{background:' + e.hex + ';color-scheme:dark}';
+    if (!good) sweepBad = { at: new Date(at).toISOString(), got: r.vars, wantTint: e.tint, gotHex: r.meta.content, wantHex: e.hex, threw: String(r.threw) };
+  }
+});
+ok('boot script matches KazuLib.skyTint + hslToHex across the year (' + sweepRuns + ' instants)', !sweepBad && sweepRuns === sweepDays.length * 144, JSON.stringify(sweepBad));
+// Failure path: no Intl / a throwing Intl leaves the plain night defaults untouched.
+const noIntl = runBoot(Date.UTC(2026, 8, 29, 11, 9), { DateTimeFormat: function () { throw new Error('no Intl'); } });
+ok('boot failure never throws and leaves the night defaults alone', !noIntl.threw && Object.keys(noIntl.vars).length === 0 && noIntl.meta.content === '#000000' && noIntl.canvas.textContent === 'html{background:#000;color-scheme:dark}' && !noIntl.classes['sky-pending'] && noIntl.timers.length === 0);
+// Placement + hand-off wiring.
+const bootAt = htmlSrc.indexOf('<script id="boot-tint">');
+ok('boot script runs in the head before the stylesheet, after the canvas style + theme-color meta', bootAt > htmlSrc.indexOf('<style id="boot-canvas">') && bootAt > htmlSrc.indexOf('<meta name="theme-color"') && bootAt < htmlSrc.indexOf('<link rel="stylesheet" href="style.css') && bootAt < htmlSrc.indexOf('</head>'));
+ok('boot script is synchronous (no async/defer/module)', htmlSrc.indexOf('<script id="boot-tint">') !== -1 && !/<script[^>]*id="boot-tint"[^>]*(async|defer|type=)/.test(htmlSrc));
+ok('sky body hidden while html.sky-pending, and fades in', cssFlat.includes('html.sky-pending .sky-body { opacity: 0; }') && /\.sky-body \{[^}]*transition: left 1\.8s ease, top 1\.8s ease, opacity 1\.2s ease;/.test(cssFlat));
+ok('script.js lifts sky-pending only after the first snap is in place', scriptSrc.includes("document.documentElement.classList.remove('sky-pending')") && scriptSrc.indexOf("classList.remove('sky-pending')") > scriptSrc.indexOf("skyBodyEl.style.transition = 'none'"));
 ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" onload="this.media=\'all\'"'));
 
 // ---- Single time-of-day palette (light theme + toggle fully removed) ----

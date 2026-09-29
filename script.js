@@ -903,6 +903,9 @@
       requestAnimationFrame(() => requestAnimationFrame(() => {
         skyBodyEl.style.transition = '';
         if (skyGlowEl) skyGlowEl.style.transition = '';
+        // Reveal: the body is now in place, so the boot-time hide (set by the
+        // inline #boot-tint script in index.html) lifts and it fades in.
+        document.documentElement.classList.remove('sky-pending');
       }));
     }
     skyBodyEl.style.left = st.x + '%';

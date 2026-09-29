@@ -662,8 +662,8 @@
       // is blocked. Summary is re-rendered once these land.
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=52', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=61', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=53', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=62', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         var htmlSrc = src[0], cssSrc = src[1], scriptSrc = src[2], swSrc = src[3];
@@ -725,7 +725,68 @@
         ok('low power stills the particle sky', scriptSrc.indexOf("if (LOW_POWER && !ATMOSPHERE_OVERRIDE) mode = 'none';") !== -1);
         ok('low power skips the liquid-glass refraction + the wheel lerp', scriptSrc.split("document.body.classList.contains('low-power')").length - 1 >= 2);
         ok('low power drops the frosted backdrop + ambient loops', cssFlat.indexOf('body.low-power { --card-blur: none; }') !== -1 && cssFlat.indexOf('body.low-power .scroll-reveal {') !== -1);
-        ok('canvas colour painted inline before the stylesheet', htmlSrc.indexOf('<style>html{background:#000;') !== -1 && htmlSrc.indexOf('<style>html{background:#000;') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+        ok('canvas colour painted inline before the stylesheet', htmlSrc.indexOf('<style id="boot-canvas">html{background:#000;') !== -1 && htmlSrc.indexOf('<style id="boot-canvas">html{background:#000;') < htmlSrc.indexOf('<link rel="stylesheet" href="style.css'));
+
+        // ---- First paint: no night-black flash on a daytime load (regression) ----
+        // Mirror of tests.js: run the real inline #boot-tint script against stubs
+        // and pin it to KazuLib.skyTint / hslToHex.
+        var bootMatch = /<script id="boot-tint">([\s\S]*?)<\/script>/.exec(htmlSrc);
+        ok('boot-tint script present in index.html', !!bootMatch);
+        var bootSrc = bootMatch ? bootMatch[1] : '';
+        var bootFn = new Function('document', 'Date', 'Intl', 'setTimeout', bootSrc);
+        function runBoot(instantMs, IntlImpl) {
+          var vars = {}, timers = [], classes = {};
+          var meta = { content: '#000000', setAttribute: function (k, v) { if (k === 'content') this.content = v; } };
+          var canvas = { textContent: 'html{background:#000;color-scheme:dark}' };
+          var doc = {
+            documentElement: {
+              style: { setProperty: function (k, v) { vars[k] = v; } },
+              classList: { add: function (c) { classes[c] = true; }, remove: function (c) { delete classes[c]; } }
+            },
+            getElementById: function (id) { return id === 'boot-canvas' ? canvas : null; },
+            querySelector: function (sel) { return sel === 'meta[name="theme-color"]' ? meta : null; }
+          };
+          var FakeDate = function () { return arguments.length ? new (Function.prototype.bind.apply(Date, [null].concat([].slice.call(arguments))))() : new Date(instantMs); };
+          FakeDate.UTC = Date.UTC;
+          var threw = null;
+          try { bootFn(doc, FakeDate, IntlImpl || Intl, function (fn, ms) { timers.push({ fn: fn, ms: ms }); }); } catch (e) { threw = e; }
+          return { vars: vars, meta: meta, canvas: canvas, classes: classes, timers: timers, threw: threw };
+        }
+        function expectedBoot(instantMs) {
+          var w = L.ukWallParts(new Date(instantMs));
+          var doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
+          var tint = L.skyTint(w.hours * 60 + w.minutes, doy);
+          return { tint: tint, hex: L.hslToHex(tint.h, tint.s, tint.l) };
+        }
+        var noon = runBoot(Date.UTC(2026, 8, 29, 11, 9));
+        ok('daytime boot: lightness is the day tint, not the night 0', noon.vars['--bg-l'] > 30, noon.vars['--bg-l']);
+        ok('daytime boot: canvas is not black', noon.canvas.textContent !== 'html{background:#000;color-scheme:dark}' && /^html\{background:#[0-9a-f]{6};color-scheme:dark\}$/.test(noon.canvas.textContent), noon.canvas.textContent);
+        ok('daytime boot: theme-color meta follows the tint', noon.meta.content !== '#000000' && /^#[0-9a-f]{6}$/.test(noon.meta.content), noon.meta.content);
+        var midnightBoot = runBoot(Date.UTC(2026, 0, 15, 0, 0));
+        eq('deep-night boot still lands on true AMOLED black', [midnightBoot.vars['--bg-l'], midnightBoot.meta.content], [0, '#000000']);
+        ok('boot raises html.sky-pending and schedules a failsafe lift', noon.classes['sky-pending'] === true && noon.timers.length === 1 && noon.timers[0].ms === 8000);
+        if (noon.timers[0]) noon.timers[0].fn();
+        ok('failsafe timer lifts sky-pending', noon.timers.length === 1 && !noon.classes['sky-pending']);
+        var sweepDays = [[2026, 0, 1], [2026, 1, 14], [2026, 2, 29], [2026, 3, 20], [2026, 4, 11], [2026, 5, 21], [2026, 6, 15], [2026, 7, 30], [2026, 8, 29], [2026, 9, 25], [2026, 10, 30], [2026, 11, 21], [2028, 11, 31]];
+        var sweepRuns = 0, sweepBad = null;
+        sweepDays.forEach(function (d) {
+          for (var m = 0; m < 1440 && !sweepBad; m += 10) {
+            var at = Date.UTC(d[0], d[1], d[2], 0, m);
+            var r = runBoot(at), e = expectedBoot(at);
+            sweepRuns++;
+            var good = !r.threw && r.vars['--bg-h'] === e.tint.h && r.vars['--bg-s'] === e.tint.s && r.vars['--bg-l'] === e.tint.l && r.vars['--bg-glow'] === e.tint.glow &&
+              r.meta.content === e.hex && r.canvas.textContent === 'html{background:' + e.hex + ';color-scheme:dark}';
+            if (!good) sweepBad = { at: new Date(at).toISOString(), got: r.vars, wantTint: e.tint, gotHex: r.meta.content, wantHex: e.hex, threw: String(r.threw) };
+          }
+        });
+        ok('boot script matches KazuLib.skyTint + hslToHex across the year (' + sweepRuns + ' instants)', !sweepBad && sweepRuns === sweepDays.length * 144, JSON.stringify(sweepBad));
+        var noIntl = runBoot(Date.UTC(2026, 8, 29, 11, 9), { DateTimeFormat: function () { throw new Error('no Intl'); } });
+        ok('boot failure never throws and leaves the night defaults alone', !noIntl.threw && Object.keys(noIntl.vars).length === 0 && noIntl.meta.content === '#000000' && noIntl.canvas.textContent === 'html{background:#000;color-scheme:dark}' && !noIntl.classes['sky-pending'] && noIntl.timers.length === 0);
+        var bootAt = htmlSrc.indexOf('<script id="boot-tint">');
+        ok('boot script runs in the head before the stylesheet, after the canvas style + theme-color meta', bootAt > htmlSrc.indexOf('<style id="boot-canvas">') && bootAt > htmlSrc.indexOf('<meta name="theme-color"') && bootAt < htmlSrc.indexOf('<link rel="stylesheet" href="style.css') && bootAt < htmlSrc.indexOf('</head>'));
+        ok('boot script is synchronous (no async/defer/module)', bootAt !== -1 && !/<script[^>]*id="boot-tint"[^>]*(async|defer|type=)/.test(htmlSrc));
+        ok('sky body hidden while html.sky-pending, and fades in', cssFlat.indexOf('html.sky-pending .sky-body { opacity: 0; }') !== -1 && /\.sky-body \{[^}]*transition: left 1\.8s ease, top 1\.8s ease, opacity 1\.2s ease;/.test(cssFlat));
+        ok('script.js lifts sky-pending only after the first snap is in place', scriptSrc.indexOf("document.documentElement.classList.remove('sky-pending')") !== -1 && scriptSrc.indexOf("classList.remove('sky-pending')") > scriptSrc.indexOf("skyBodyEl.style.transition = 'none'"));
         // ---- Single time-of-day palette (light theme + toggle fully removed) ----
         ok('no light theme selectors or bootstrap left', cssFlat.indexOf('data-theme="light"') === -1 && htmlSrc.indexOf('data-theme="light"') === -1 && scriptSrc.indexOf('data-theme') === -1);
         ok('theme toggle orb fully removed', htmlSrc.indexOf('theme-orb') === -1 && scriptSrc.indexOf('theme-orb') === -1 && cssFlat.indexOf('theme-orb') === -1 && htmlSrc.indexOf('kazu-dark') === -1 && scriptSrc.indexOf('kazu-dark') === -1);
