@@ -728,9 +728,12 @@
     let crest = crestY == null ? 19 : +crestY;
     if (isNaN(crest)) crest = 19;
     crest = Math.min(52, Math.max(0, crest));
-    const alt = Math.sin(Math.PI * p);
+    // Same overshoot as lib.js: the arc runs on past the horizon points so
+    // both ends are off-screen (0.16 = SKY_ARC_OVERSHOOT).
+    const q = -0.16 + p * (1 + 2 * 0.16);
+    const alt = Math.sin(Math.PI * q);
     return {
-      x: +(6 + p * 88).toFixed(2),
+      x: +(6 + q * 88).toFixed(2),
       y: +(52 - alt * (52 - crest)).toFixed(2),
       alt: +alt.toFixed(3),
     };
@@ -863,7 +866,7 @@
   // measured from the profile picture, then redrawn when the viewport changes.
   function renderSkyCurveGuide() {
     if (!skyCurveGuideEl) return;
-    const steps = 48;
+    const steps = 64; // the curve runs past both screen edges, so ~1.3x the old 48 for the same smoothness
     const crestY = skyArcPeakY();
     let d = '';
     for (let i = 0; i <= steps; i++) {
@@ -874,6 +877,7 @@
     skyCurveGuidePaths.forEach((path) => path.setAttribute('d', d));
   }
   let skyBodySnapped = false;
+  let skyBodyLast = ''; // 'sun' | 'moon': which body the previous update showed
   function updateSkyBody() {
     if (!skyBodyEl) return;
     // UK wall frame via lib.js; visitor-local is an acceptable fallback for
@@ -890,6 +894,13 @@
     }
     const st = skyBodyState(mins, doy, skyArcPeakY());
     if (!st) return;
+    // Sun -> moon (sunset) and moon -> sun (sunrise) swap while the body is off
+    // the right / left edge, so the hop to the other end of the arc must be a
+    // teleport: with the glide left on, a page open at that minute would
+    // watch the new body sweep across the whole sky in 1.8s.
+    const swapped = skyBodySnapped && skyBodyLast !== st.body;
+    skyBodyLast = st.body;
+    if (swapped) skyBodyEl.style.transition = 'none';
     skyBodyEl.classList.toggle('sky-body--sun', st.body === 'sun');
     skyBodyEl.classList.toggle('sky-body--moon', st.body === 'moon');
     skyBodyEl.classList.toggle('sky-body--low', !!st.low);
@@ -910,6 +921,10 @@
     }
     skyBodyEl.style.left = st.x + '%';
     skyBodyEl.style.top = st.y + '%';
+    if (swapped) {
+      void skyBodyEl.offsetWidth; // commit the jump before the glide is switched back on
+      skyBodyEl.style.transition = '';
+    }
     const tint = applySkyTint(mins, doy);
     if (tint && skyGlowEl) {
       // Faint orange horizon glow around sunrise/sunset: the x anchor comes

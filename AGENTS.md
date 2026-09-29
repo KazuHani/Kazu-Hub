@@ -36,7 +36,7 @@ the Christmas season), and custom scrollbars.
 ## Code layout
 
 - `index.html` (~850 lines) — the whole page. Loads `style.css?v=53`,
-  `lib.js?v=31`, `script.js?v=62` (version query strings; see cache-busting
+  `lib.js?v=32`, `script.js?v=63` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -47,6 +47,11 @@ the Christmas season), and custom scrollbars.
   years asleep, breaths), calendar export (`.ics`, Google Calendar URL), HTML
   escaping, Steam/MAL data shaping, dev-code matching, scrollbar thumb
   geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
+  The arc (`skyArcPoint`) is one sine that runs on past the horizon points
+  until both ends are off-screen (`SKY_ARC_OVERSHOOT`, x = -8.08% .. 108.08%),
+  so the body slides in and out through the page edges and the sun<->moon
+  hand-overs happen off-screen. `script.js` keeps an inline fallback copy of
+  `skyArcPoint`; the gate tests run it against `lib.js` so they cannot drift.
 - `script.js` (~2400 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,

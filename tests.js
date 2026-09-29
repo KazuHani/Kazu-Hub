@@ -129,25 +129,56 @@ eq('summer solstice sun times', L.sunTimesUK(172), { rise: 300, set: 1290 });
 eq('winter solstice sun times', L.sunTimesUK(355), { rise: 495, set: 960 });
 eq('junk day → solstice default', L.sunTimesUK('nope'), { rise: 300, set: 1290 });
 eq('out-of-range day → solstice default', L.sunTimesUK(400), { rise: 300, set: 1290 });
-eq('skyArcPoint starts at the left horizon', L.skyArcPoint(0), { x: 6, y: 52, alt: 0 });
+eq('skyArcPoint starts beyond the left edge, below the horizon', L.skyArcPoint(0), { x: -8.08, y: 67.9, alt: -0.482 });
 eq('skyArcPoint crests at the default profile height', L.skyArcPoint(0.5), { x: 50, y: 19, alt: 1 });
 eq('skyArcPoint accepts the responsive profile height', L.skyArcPoint(0.5, 23.5), { x: 50, y: 23.5, alt: 1 });
-eq('skyArcPoint ends at the right horizon', L.skyArcPoint(1), { x: 94, y: 52, alt: 0 });
-eq('skyArcPoint clamps off-path progress', L.skyArcPoint(-1), { x: 6, y: 52, alt: 0 });
+eq('skyArcPoint ends beyond the right edge, below the horizon', L.skyArcPoint(1), { x: 108.08, y: 67.9, alt: -0.482 });
+eq('skyArcPoint clamps off-path progress', L.skyArcPoint(-1), { x: -8.08, y: 67.9, alt: -0.482 });
 eq('skyArcPoint rejects junk progress', L.skyArcPoint('nope'), null);
 eq('clock noon: summer sun crests dead centre behind the profile', L.skyBodyState(720, 172), { body: 'sun', x: 50, y: 19, alt: 1, low: false });
 eq('clock noon: winter sun crests dead centre too', L.skyBodyState(720, 355), { body: 'sun', x: 50, y: 19, alt: 1, low: false });
 eq('clock midnight: summer moon crests dead centre', L.skyBodyState(0, 172), { body: 'moon', x: 50, y: 19, alt: 1, low: false });
 eq('clock midnight: winter moon crests dead centre too', L.skyBodyState(0, 355), { body: 'moon', x: 50, y: 19, alt: 1, low: false });
-eq('summer 1pm: sun past the crest, descending', L.skyBodyState(780, 172), { body: 'sun', x: 54.63, y: 19.45, alt: 0.986, low: false });
-eq('sunrise: left horizon, golden', L.skyBodyState(300, 172), { body: 'sun', x: 6, y: 52, alt: 0, low: true });
-eq('just before sunset: right horizon, golden', L.skyBodyState(1289, 172), { body: 'sun', x: 93.92, y: 51.91, alt: 0.003, low: true });
-eq('winter midday is still the sun', L.skyBodyState(727, 355), { body: 'sun', x: 51.28, y: 19.03, alt: 0.999, low: false });
-eq('winter 1am: moon past the top', L.skyBodyState(60, 355), { body: 'moon', x: 55.33, y: 19.6, alt: 0.982, low: false });
+eq('summer 1pm: sun past the crest, descending', L.skyBodyState(780, 172), { body: 'sun', x: 56.11, y: 19.78, alt: 0.976, low: false });
+eq('sunrise: sun starts beyond the left edge, golden', L.skyBodyState(300, 172), { body: 'sun', x: -8.08, y: 67.9, alt: -0.482, low: true });
+eq('just before sunset: sun leaving past the right edge, golden', L.skyBodyState(1289, 172), { body: 'sun', x: 107.98, y: 67.79, alt: -0.479, low: true });
+eq('winter midday is still the sun', L.skyBodyState(727, 355), { body: 'sun', x: 51.69, y: 19.06, alt: 0.998, low: false });
+eq('winter 1am: moon past the top', L.skyBodyState(60, 355), { body: 'moon', x: 57.04, y: 20.04, alt: 0.969, low: false });
 eq('clock noon follows a supplied profile height', L.skyBodyState(720, 172, 23.5), { body: 'sun', x: 50, y: 23.5, alt: 1, low: false });
 ok('arc travels left → right through the day', L.skyBodyState(600, 172).x < L.skyBodyState(900, 172).x);
 eq('junk time → null', L.skyBodyState('abc'), null);
 eq('null time coerces to UK midnight (moon)', L.skyBodyState(null).body, 'moon');
+
+// The arc leaves the screen: the sky body enters beyond the left edge and exits
+// beyond the right, and the sun<->moon swaps therefore happen off-screen.
+ok('arc ends are fully off-screen (widest half-disc is ~6% of the viewport)', L.skyArcPoint(0).x < -6 && L.skyArcPoint(1).x > 106, JSON.stringify([L.skyArcPoint(0), L.skyArcPoint(1)]));
+(function () {
+  let symOk = true, monoOk = true, prevX = -Infinity, edge = null;
+  for (let i = 0; i <= 2000; i++) {
+    const p = i / 2000, a = L.skyArcPoint(p), b = L.skyArcPoint(1 - p);
+    if (Math.abs(a.x + b.x - 100) > 0.011 || Math.abs(a.y - b.y) > 0.011) symOk = false;
+    if (a.x <= prevX) monoOk = false;
+    prevX = a.x;
+    if (edge === null || Math.abs(a.x) < Math.abs(edge.x)) edge = a;
+  }
+  ok('arc is mirror-symmetric about the crest', symOk);
+  ok('arc travels strictly left to right', monoOk);
+  ok('arc is already ~59% high where it crosses the left screen edge (the sine, continued)', Math.abs(edge.x) < 0.05 && edge.y > 58.5 && edge.y < 59.5, JSON.stringify(edge));
+})();
+(function () {
+  let bad = null;
+  [1, 60, 100, 172, 250, 300, 355, 366].forEach(function (d) {
+    const st = L.sunTimesUK(d);
+    const checks = [
+      ['sunrise minute', L.skyBodyState(st.rise, d), 'sun', function (x) { return x < -6; }],
+      ['last sun minute', L.skyBodyState(st.set - 1, d), 'sun', function (x) { return x > 106; }],
+      ['first moon minute', L.skyBodyState(st.set, d), 'moon', function (x) { return x < -6; }],
+      ['last moon minute', L.skyBodyState(st.rise - 1, d), 'moon', function (x) { return x > 106; }],
+    ];
+    checks.forEach(function (c) { if (!bad && !(c[1].body === c[2] && c[3](c[1].x))) bad = 'day ' + d + ' ' + c[0] + ' ' + JSON.stringify(c[1]); });
+  });
+  ok('sun/moon hand-overs happen off-screen on every season (no mid-sky pop)', !bad, bad);
+})();
 
 // ---- skyTint + hslToHex (time-of-day page palette) ----
 eq('summer midnight: AMOLED deep-night palette', L.skyTint(0, 172), { h: 215.97, s: 33.4, l: 0, daylight: 0, dusk: 0.0439, glow: 0.0439, glowX: 6 });
@@ -644,7 +675,7 @@ ok('custom scrollbar hidden on compact screens', cssSrc.includes('@media (max-wi
 // The presence/music/story cards joined the glass set: translucent fills,
 // glint rims, frosted backdrop, and the Chromium refraction list in script.js.
 const cssFlat = cssSrc.replace(/\r/g, '');
-const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8');
+const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8').replace(/\r\n/g, '\n');
 ['rgba(40,40,110,.32), var(--glint)',   // discord
  'rgba(20,40,70,.32), var(--glint)',    // steam
  'rgba(20,40,100,.32), var(--glint)',   // myanimelist
@@ -738,6 +769,26 @@ ok('sky curve mode persists separately', scriptSrc.includes("DEV_CURVE_KEY = 'ka
 ok('sky curve has Auto / On / Off controls', scriptSrc.includes('data-setting="curve"') && scriptSrc.includes('aria-label="Sky curve guide mode"'));
 ok('sky curve Auto / On / Off is applied', scriptSrc.includes('applySkyCurveMode') && scriptSrc.includes("devCurveMode === 'on'") && scriptSrc.includes("devCurveMode === 'off'"));
 ok('sky curve keeps the guide and live body on the responsive profile centre', htmlSrc.includes('class="sky-curve-guide"') && cssFlat.includes('.sky-curve-guide__line') && scriptSrc.includes('renderSkyCurveGuide') && scriptSrc.includes('skyArcPeakY') && scriptSrc.includes('skyArcPoint(i / steps, crestY)') && scriptSrc.includes('skyBodyState(mins, doy, skyArcPeakY())') && scriptSrc.includes("window.addEventListener('resize', scheduleSkyLayout"));
+
+ok('sky guide is sampled finely enough for the longer curve', scriptSrc.includes('const steps = 64;'));
+ok('sun/moon swap teleports instead of gliding across the sky', scriptSrc.includes('const swapped = skyBodySnapped && skyBodyLast !== st.body;') && scriptSrc.includes("if (swapped) skyBodyEl.style.transition = 'none';") && scriptSrc.includes('void skyBodyEl.offsetWidth;'));
+// script.js keeps an inline copy of skyArcPoint for a lib.js that fails to load;
+// run it against the real one so the two can never drift apart.
+(function () {
+  const m = /const skyArcPoint = \(KazuLib && KazuLib\.skyArcPoint\) \|\| (function \(progress, crestY\) \{[\s\S]*?\n  \});\n  const skyBodyState/.exec(scriptSrc);
+  ok('script.js inline skyArcPoint fallback found', !!m);
+  if (!m) return;
+  const fallback = new Function('return ' + m[1])();
+  let bad = null;
+  [undefined, null, 0, 19, 23.5, 40, 52, 80, 'junk'].forEach(function (crest) {
+    for (let i = -2; i <= 102 && !bad; i++) {
+      const p = i / 100, a = L.skyArcPoint(p, crest), b = fallback(p, crest);
+      if (JSON.stringify(a) !== JSON.stringify(b)) bad = 'p=' + p + ' crest=' + crest + ' lib=' + JSON.stringify(a) + ' fallback=' + JSON.stringify(b);
+    }
+  });
+  ok('script.js skyArcPoint fallback matches lib.js (incl. off-path progress + junk crest)', !bad, bad);
+  eq('fallback rejects junk progress like lib.js', fallback('nope'), null);
+})();
 
 // ---- Christmas theme (cozy classic: pine + cranberry + gold) ----
 // The palette vars moved to a pine base with a warm gold accent, and every

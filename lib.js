@@ -414,9 +414,9 @@
 
   // ---- Sky body (sun/moon arc) ---------------------------------------------
   // The scenery layer's celestial body: the sun by day, the moon by night,
-  // both travelling the same arc — rising at the left edge of the page,
-  // climbing to the top of the sky, setting at the right edge. Timed to the
-  // Europe/London wall clock (script.js feeds in ukWallParts).
+  // both travelling the same arc — rising from beyond the left edge of the
+  // page, climbing to the top of the sky, setting beyond the right edge.
+  // Timed to the Europe/London wall clock (script.js feeds in ukWallParts).
 
   // Approximate Aberystwyth sunrise/sunset in UK wall minutes from the day of
   // year: a sinusoid between the solstices (21 Jun ≈ 05:00–21:30, 21 Dec ≈
@@ -432,11 +432,24 @@
     };
   }
 
-  // A point on the sky body's 0..1 journey from the left horizon to the
-  // right horizon. It is shared by the live sun/moon position and the dev
-  // guide so the drawn curve can never drift away from the real path.
+  // A point on the sky body's 0..1 journey from sunrise to sunset. It is
+  // shared by the live sun/moon position and the dev guide so the drawn curve
+  // can never drift away from the real path.
+  // The arc is one sine that does not stop at the horizon points (x = 6% and
+  // 94%, y = 52%): it keeps sinking past them until both ends are fully
+  // off-screen, so the body slides in from beyond the left edge and out past
+  // the right edge instead of popping in and out mid-sky. The journey p in
+  // [0, 1] is stretched over that longer curve by SKY_ARC_OVERSHOOT (extra
+  // curve on each side, as a fraction of the 6%..94% span): 0.16 puts the
+  // ends at x = -8.08% / 108.08%, clear of the widest sun disc (~6% of the
+  // viewport at the narrowest width it is shown), at y ≈ 68% (the curve is
+  // already ~59% high at the screen edge itself). The crest (p = 0.5) is
+  // unchanged: dead centre, behind the profile picture.
+  // `alt` is the true height on the drawn arc: 1 at the crest, 0 at the
+  // horizon points, negative on the off-screen tails.
   // `crestY` is optional: the page supplies the profile picture's live
   // centre, placing the noon sun / midnight moon directly behind it.
+  var SKY_ARC_OVERSHOOT = 0.16;
   function skyArcPoint(progress, crestY) {
     var p = +progress;
     if (isNaN(p)) return null;
@@ -444,9 +457,10 @@
     var crest = crestY == null ? 19 : +crestY;
     if (isNaN(crest)) crest = 19;
     crest = Math.min(52, Math.max(0, crest));
-    var alt = Math.sin(Math.PI * p);
+    var q = -SKY_ARC_OVERSHOOT + p * (1 + 2 * SKY_ARC_OVERSHOOT);
+    var alt = Math.sin(Math.PI * q);
     return {
-      x: +(6 + p * 88).toFixed(2),
+      x: +(6 + q * 88).toFixed(2),
       y: +(52 - alt * (52 - crest)).toFixed(2),
       alt: +alt.toFixed(3),
     };
