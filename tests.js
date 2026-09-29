@@ -516,14 +516,36 @@ ok('devCodeMatch non-string key → false', !L.devCodeMatch(['k', 'a', 'z', 'u',
 eq('devCodeMatch null → false', L.devCodeMatch(null), false);
 
 // ---- seasonDevApply (dev panel season-trigger overrides) ----
-const clockState = { birthday: false, christmas: false, pride: true };
+const clockState = { birthday: false, christmas: false, pride: true, sakura: false };
 eq('auto passes the clock state through untouched', L.seasonDevApply(clockState, {}), clockState);
 eq('on forces a season live', L.seasonDevApply(clockState, { christmas: 'on' }).christmas, true);
 eq('off forces a live season dark', L.seasonDevApply(clockState, { pride: 'off' }).pride, false);
-eq('mixed overrides compose', L.seasonDevApply({ birthday: true, christmas: false, pride: false }, { birthday: 'off', christmas: 'on' }), { birthday: false, christmas: true, pride: false });
+eq('mixed overrides compose', L.seasonDevApply({ birthday: true, christmas: false, pride: false }, { birthday: 'off', christmas: 'on' }), { birthday: false, christmas: true, pride: false, sakura: false });
 eq('junk values + unknown keys are ignored', L.seasonDevApply(clockState, { birthday: 'yes', wat: 'on' }), clockState);
 eq('null overrides → passthrough', L.seasonDevApply(clockState, null), clockState);
-eq('null state → all seasons false', L.seasonDevApply(null, null), { birthday: false, christmas: false, pride: false });
+eq('null state → all seasons false', L.seasonDevApply(null, null), { birthday: false, christmas: false, pride: false, sakura: false });
+eq('sakura: on forces the blossoms in out of season', L.seasonDevApply({ sakura: false }, { sakura: 'on' }).sakura, true);
+eq('sakura: off forces the blossoms away in season', L.seasonDevApply({ sakura: true }, { sakura: 'off' }).sakura, false);
+eq('sakura: auto follows the clock state', [L.seasonDevApply({ sakura: true }, {}).sakura, L.seasonDevApply({ sakura: false }, {}).sakura], [true, false]);
+eq('seasonDevParse keeps a stored sakura override', L.seasonDevParse('{"sakura":"off","pride":"on"}'), { pride: 'on', sakura: 'off' });
+
+// ---- sakuraInBloom (cherry-blossom season: 20 Mar - 10 May, inclusive) ----
+// The branches and petals only exist while Japan's cherry trees flower.
+// Months are 0-indexed like BIRTH: 2 = March, 4 = May.
+eq('sakura: 19 Mar is still out', L.sakuraInBloom(2, 19), false);
+eq('sakura: 20 Mar is the first day', L.sakuraInBloom(2, 20), true);
+eq('sakura: 31 Mar in bloom', L.sakuraInBloom(2, 31), true);
+eq('sakura: all of April in bloom', [1, 10, 15, 20, 30].map(function (d) { return L.sakuraInBloom(3, d); }), [true, true, true, true, true]);
+eq('sakura: 10 May is the last day', L.sakuraInBloom(4, 10), true);
+eq('sakura: 11 May is out', L.sakuraInBloom(4, 11), false);
+eq('sakura: winter is out', [L.sakuraInBloom(0, 1), L.sakuraInBloom(1, 28), L.sakuraInBloom(1, 29), L.sakuraInBloom(11, 25), L.sakuraInBloom(11, 31)], [false, false, false, false, false]);
+eq('sakura: summer and autumn are out', [L.sakuraInBloom(5, 21), L.sakuraInBloom(6, 15), L.sakuraInBloom(8, 29), L.sakuraInBloom(10, 9)], [false, false, false, false]);
+eq('sakura: junk input is out', [L.sakuraInBloom('x', 1), L.sakuraInBloom(3, undefined), L.sakuraInBloom(null, null)], [false, false, false]);
+ok('sakura: exactly 52 days a year are in bloom (20 Mar - 31 Mar = 12, April = 30, 1 - 10 May = 10)', (function () {
+  let n = 0;
+  for (let m = 0; m < 12; m++) for (let d = 1; d <= [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m]; d++) if (L.sakuraInBloom(m, d)) n++;
+  return n === 52;
+})());
 ok('input state object is not mutated', (function () { const s = { birthday: true }; L.seasonDevApply(s, { birthday: 'off' }); return s.birthday === true; })());
 
 // ---- seasonDevParse (localStorage copy of the overrides) ----
@@ -932,12 +954,47 @@ ok('boot script matches KazuLib.skyTint + hslToHex across the year (' + sweepRun
 // Failure path: no Intl / a throwing Intl leaves the plain night defaults untouched.
 const noIntl = runBoot(Date.UTC(2026, 8, 29, 11, 9), { DateTimeFormat: function () { throw new Error('no Intl'); } });
 ok('boot failure never throws and leaves the night defaults alone', !noIntl.threw && Object.keys(noIntl.vars).length === 0 && noIntl.meta.content === '#000000' && noIntl.canvas.textContent === 'html{background:#000;color-scheme:dark}' && !noIntl.classes['sky-pending'] && noIntl.timers.length === 0);
+// Cherry-blossom season on first paint: html.no-sakura must be present exactly
+// on the days lib.js says are out of season, for EVERY day of a normal year and
+// a leap year (so the two copies of the 20 Mar - 10 May window cannot drift).
+(function () {
+  let days = 0, bad = null, inBloom = 0;
+  [2027, 2028].forEach(function (y) {
+    for (let d = new Date(Date.UTC(y, 0, 1)); d.getUTCFullYear() === y && !bad; d = new Date(d.getTime() + 86400000)) {
+      const at = Date.UTC(y, d.getUTCMonth(), d.getUTCDate(), 12, 0); // UK midday: same date as UTC all year
+      const r = runBoot(at), want = !L.sakuraInBloom(d.getUTCMonth(), d.getUTCDate());
+      days++;
+      if (!r.threw && !r.classes['no-sakura'] === want) bad = y + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate() + ' boot no-sakura=' + !!r.classes['no-sakura'] + ' want ' + want;
+      if (!want) inBloom++;
+    }
+  });
+  ok('boot script agrees with sakuraInBloom on every day of 2027 + 2028 (' + days + ' days, ' + inBloom + ' in bloom)', !bad && days === 365 + 366 && inBloom === 52 * 2, bad);
+})();
+// The season is the UK calendar date, not the visitor's or UTC: at 23:30 UTC on
+// 10 May the UK (BST) has already rolled to 11 May, at 23:59 UTC on 19 Mar the UK
+// (GMT) is still on 19 Mar.
+eq('boot: 10 May 23:30 UTC is already 11 May in the UK, so out of season', !!runBoot(Date.UTC(2027, 4, 10, 23, 30)).classes['no-sakura'], true);
+eq('boot: 10 May 22:30 UTC is still 10 May in the UK (23:30 BST), so in season', !!runBoot(Date.UTC(2027, 4, 10, 22, 30)).classes['no-sakura'], false);
+eq('boot: 19 Mar 23:59 UTC is still out (GMT)', !!runBoot(Date.UTC(2027, 2, 19, 23, 59)).classes['no-sakura'], true);
+eq('boot: 20 Mar 00:00 UTC is the first day (GMT)', !!runBoot(Date.UTC(2027, 2, 20, 0, 0)).classes['no-sakura'], false);
+eq('boot: today-style midsummer date is out of season', !!runBoot(Date.UTC(2026, 8, 29, 11, 9)).classes['no-sakura'], true);
 // Placement + hand-off wiring.
 const bootAt = htmlSrc.indexOf('<script id="boot-tint">');
 ok('boot script runs in the head before the stylesheet, after the canvas style + theme-color meta', bootAt > htmlSrc.indexOf('<style id="boot-canvas">') && bootAt > htmlSrc.indexOf('<meta name="theme-color"') && bootAt < htmlSrc.indexOf('<link rel="stylesheet" href="style.css') && bootAt < htmlSrc.indexOf('</head>'));
 ok('boot script is synchronous (no async/defer/module)', htmlSrc.indexOf('<script id="boot-tint">') !== -1 && !/<script[^>]*id="boot-tint"[^>]*(async|defer|type=)/.test(htmlSrc));
 ok('sky body hidden while html.sky-pending, and fades in', cssFlat.includes('html.sky-pending .sky-body { opacity: 0; }') && /\.sky-body \{[^}]*transition: left 1\.8s ease, top 1\.8s ease, opacity 1\.2s ease;/.test(cssFlat));
 ok('script.js lifts sky-pending only after the first snap is in place', scriptSrc.includes("document.documentElement.classList.remove('sky-pending')") && scriptSrc.indexOf("classList.remove('sky-pending')") > scriptSrc.indexOf("skyBodyEl.style.transition = 'none'"));
+// ---- Cherry-blossom season wiring (branches + petals only 20 Mar - 10 May) ----
+ok('branches are hidden out of season, the sun/moon layer is not', cssFlat.includes('html.no-sakura .sakura-branch { display: none; }') && !/html\.no-sakura \.sakura-scene/.test(cssFlat));
+ok('static fallback petals stay hidden out of season until script.js builds its own', cssFlat.includes('html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }') && scriptSrc.includes("atmosphereEl.dataset.built = '1';"));
+ok('script.js keeps html.no-sakura in sync with the season state', scriptSrc.includes("document.documentElement.classList.toggle('no-sakura', !s.sakura);"));
+ok('seasonState carries sakura (clock rule on the UK date, dev-overridable)', scriptSrc.includes('const sakura = sakuraInBloom(bM, bD)') && scriptSrc.includes('sakura,                                             // 20 Mar - 10 May, UK date') && scriptSrc.includes("['birthday', 'christmas', 'pride', 'sakura'].forEach"));
+ok('?season=sakura only forces the blossoms on; other params leave them on the clock', scriptSrc.includes("if (set.includes('sakura') || set.includes('blossom')) o.sakura = true;") && scriptSrc.includes("return { birthday: true, christmas: true, pride: true, sakura: true };") && scriptSrc.includes('Object.assign({ sakura }, SEASON_OVERRIDE)'));
+ok('an explicit ?atmosphere=blossom preview brings the branches with it', scriptSrc.includes("ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy'"));
+ok('petal modes are gated by the season; rain, aurora and explicit previews are not', scriptSrc.includes("if (!sakuraLive && !ATMOSPHERE_OVERRIDE && (mode === 'blossom' || mode === 'blossom-heavy')) mode = 'none';"));
+ok('the gate re-runs with the weather\'s request when the season flips', scriptSrc.includes('atmosphereWanted = mode;') && scriptSrc.includes('if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);'));
+ok('dev panel has a Sakura Auto/On/Off row', scriptSrc.includes("['sakura', '🌸 Sakura'],"));
+ok('sky body sits outside the branch gate (still rendered out of season)', htmlSrc.includes('<div class="sky-body sky-body--moon"></div>') && !cssFlat.includes('html.no-sakura .sky-body'));
 ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" onload="this.media=\'all\'"'));
 
 // ---- Single time-of-day palette (light theme + toggle fully removed) ----

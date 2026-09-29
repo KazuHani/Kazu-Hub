@@ -59,7 +59,10 @@
      writes the same --bg-h/s/l/glow properties script.js writes (same maths as
      KazuLib.skyTint / hslToHex; tests.js pins the two copies together over a
      year-wide sweep), then the canvas <style> above, and the theme-color meta.
-     It also raises html.sky-pending so the sun/moon element (whose pose needs
+     It also adds html.no-sakura outside the cherry-blossom window (same
+     rule as KazuLib.sakuraInBloom; the sweep in tests.js covers every day of
+     the year) so the branches are never drawn out of season, and raises
+     html.sky-pending so the sun/moon element (whose pose needs
      layout and lives in script.js) stays hidden until script.js has placed it
      and lifts the class itself; the timeout is only a failsafe for a
      script.js that never arrives. Wrapped in try/catch: any failure leaves
@@ -75,6 +78,10 @@
     var o = {};
     for (var i = 0; i < parts.length; i++) o[parts[i].type] = +parts[i].value;
     var t = (o.hour % 24) * 60 + o.minute;
+    // Cherry-blossom season, 20 Mar - 10 May on the UK date (same window as
+    // KazuLib.sakuraInBloom): outside it the branches are hidden from the start.
+    var md = (o.month - 1) * 100 + o.day;
+    if (md < 220 || md > 410) de.classList.add('no-sakura');
     var doy = Math.round((Date.UTC(o.year, o.month - 1, o.day) - Date.UTC(o.year, 0, 1)) / 86400000) + 1;
     var w = 2 * Math.PI * (doy - 172) / 365;
     var rise = Math.round(397.5 - 97.5 * Math.cos(w));
@@ -117,7 +124,7 @@
      text swap). noscript keeps the plain render-blocking link for no-JS. -->
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=53">
+<link rel="stylesheet" href="style.css?v=54">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -851,8 +858,8 @@
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=32"></script>
-<script src="script.js?v=63"></script>
+<script src="lib.js?v=33"></script>
+<script src="script.js?v=64"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

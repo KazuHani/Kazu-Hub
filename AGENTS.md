@@ -31,12 +31,15 @@ detach from the branches and drift down-wind; the layer is anchored to the
 top of the page, so it scrolls away with the hero), a "moonlit sakura"
 scenery layer (SVG branches from the page edges plus a sun-by-day /
 moon-by-night sky body arcing left→right on the UK clock; hidden during
-the Christmas season), and custom scrollbars.
+the Christmas season), and custom scrollbars. The blossom branches and the
+falling petals only appear during Japan's cherry-blossom season (20 March to
+10 May, on the UK date; see "Cherry-blossom season" below); the sun and
+moon stay all year.
 
 ## Code layout
 
-- `index.html` (~850 lines) — the whole page. Loads `style.css?v=53`,
-  `lib.js?v=32`, `script.js?v=63` (version query strings; see cache-busting
+- `index.html` (~850 lines) — the whole page. Loads `style.css?v=54`,
+  `lib.js?v=33`, `script.js?v=64` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -82,12 +85,16 @@ python -m http.server 8000
 
 Preview/dev affordances built into the page:
 
-- `?season=birthday|christmas|pride|all` (comma-combinable) forces seasonal
-  themes on any date. The `?season=` param wins over the dev panel.
+- `?season=birthday|christmas|pride|sakura|all` (comma-combinable) forces
+  seasonal themes on any date. The `?season=` param wins over the dev panel.
+  `sakura` (the blossom branches + petals) is only ever forced ON: a param
+  that doesn't name it leaves the blossoms on the calendar.
 - `?atmosphere=rain|blossom|blossom-heavy|aurora|none` forces the particle mode.
+  `blossom` / `blossom-heavy` also bring the branches back out of season, so
+  the preview looks like the real in-season page.
 - Typing `kazudev` anywhere on the page opens a dev settings panel with
-  per-season Auto/On/Off overrides persisted to localStorage. Typing it again
-  or Esc closes it.
+  per-season Auto/On/Off overrides (Birthday, Christmas, Pride, Sakura)
+  persisted to localStorage. Typing it again or Esc closes it.
 
 ## Testing
 
@@ -142,6 +149,19 @@ These are load-bearing; read before editing.
   boot script or it will flash. Known gap: on Dec 25 the Christmas palette
   is still applied by `script.js` (`body.season-christmas`), so that one day
   shows the blue tint briefly before the pine palette.
+- **Cherry-blossom season.** The branches (`.sakura-branch`) and the petal
+  modes (`blossom`, `blossom-heavy`) only exist from 20 March to 10 May
+  inclusive (first blooms in Kyushu/Tokyo to the last Hokkaido petals),
+  judged on the UK date. Rain and aurora are weather and unaffected; the
+  sun/moon share the `.sakura-scene` layer, so hide branches, never the
+  layer. The window is `SAKURA_FIRST` / `SAKURA_LAST` in `lib.js`
+  (`sakuraInBloom`) and the matching numbers in the `#boot-tint` script
+  (`md < 220 || md > 410`); a year-wide gate test fails if they disagree.
+  `html.no-sakura` is set by the boot script before first paint and kept in
+  sync by `applySeasons` (dev overrides, page left open across the edges);
+  `setAtmosphere` gates the petal modes on the same flag and re-runs when it
+  flips. Sakura is a fourth dev-panel season (`seasonDevApply` keys). Snowy
+  weather out of season shows a clear sky, not petals.
 - **Social tiles are solid brand tiles.** `.social-card` is deliberately NOT
   a `.card` member (no glass/refraction — nothing to refract through). The
   design hangs off two custom properties: each network gets a

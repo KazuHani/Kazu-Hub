@@ -202,6 +202,15 @@ html.sky-pending .sky-body { opacity: 0; }
   transform-origin: 0 80%;
   /* No idle sway: sits still alongside the cards. */
 }
+/* Cherry-blossom season only (20 Mar - 10 May, UK date; lib.js sakuraInBloom):
+   outside it the branches are not drawn. The sun/moon share this layer, so
+   only the branches go. html.no-sakura is set by the inline #boot-tint script
+   before first paint and kept in sync by script.js; the static fallback
+   petals in index.html stay hidden out of season until script.js has built
+   its own (data-built), which is also what lets an explicit ?atmosphere=
+   preview show petals out of season. */
+html.no-sakura .sakura-branch { display: none; }
+html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }
 /* Christmas owns a pine/cranberry/gold palette + its own tree scene; the
    pink branches would clash, so they sit the season out. */
 body.season-christmas .sakura-scene { display: none; }

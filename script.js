@@ -41,19 +41,23 @@
   };
 
   // ---------- Seasons ----------
-  // Preview any season on any date: ?season=birthday|christmas|pride|all (comma-combinable, e.g. ?season=birthday,christmas)
+  // Preview any season on any date: ?season=birthday|christmas|pride|sakura|all (comma-combinable, e.g. ?season=birthday,christmas)
+  // `sakura` (the cherry-blossom branches + petals) is only ever forced ON here;
+  // a param that doesn't name it leaves the blossoms following the calendar.
   const SEASON_OVERRIDE = (() => {
     try {
       const p = new URLSearchParams(location.search).get('season');
       if (!p) return null;
       const v = p.toLowerCase();
-      if (v === 'all') return { birthday: true, christmas: true, pride: true };
+      if (v === 'all') return { birthday: true, christmas: true, pride: true, sakura: true };
       const set = v.split(',').map((s) => s.trim());
-      return {
+      const o = {
         birthday: set.includes('birthday') || set.includes('bday'),
         christmas: set.includes('christmas') || set.includes('xmas'),
         pride: set.includes('pride'),
       };
+      if (set.includes('sakura') || set.includes('blossom')) o.sakura = true;
+      return o;
     } catch (e) { return null; }
   })();
 
@@ -86,9 +90,9 @@
   };
   const seasonDevApply = (KazuLib && KazuLib.seasonDevApply) || function (state, overrides) {
     const s = state || {};
-    const out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride };
+    const out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride, sakura: !!s.sakura };
     overrides = overrides || {};
-    ['birthday', 'christmas', 'pride'].forEach((k) => {
+    ['birthday', 'christmas', 'pride', 'sakura'].forEach((k) => {
       if (overrides[k] === 'on') out[k] = true;
       else if (overrides[k] === 'off') out[k] = false;
     });
@@ -120,19 +124,32 @@
     } catch (e) {}
   }
 
+  // Cherry-blossom season: 20 Mar - 10 May, when Japan's cherry trees flower
+  // (lib.js sakuraInBloom; the local copy keeps the page working without lib.js).
+  const sakuraInBloom = (KazuLib && KazuLib.sakuraInBloom) || function (month, day) {
+    const key = +month * 100 + +day;
+    return key >= 220 && key <= 410;
+  };
+
   function seasonState(now) {
-    if (SEASON_OVERRIDE) return SEASON_OVERRIDE; // the ?season= param beats even the dev panel
     const m = now.getMonth(), d = now.getDate(); // visitor-local: Christmas & pride are ambient
-    // The birthday season follows the UK wall clock: it's Kazu's day, in the UK.
+    // The birthday and blossom seasons follow the UK wall clock (the birthday
+    // is Kazu's day, in the UK; the blossom window matches the boot script).
     let bM = m, bD = d;
     if (KazuLib && KazuLib.ukWallParts) {
       const w = KazuLib.ukWallParts(now);
       bM = w.month; bD = w.day;
     }
+    // An explicit ?atmosphere=blossom preview brings the branches with it, so
+    // the preview looks like the real in-season page.
+    const sakura = sakuraInBloom(bM, bD) || ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy';
+    // The ?season= param beats even the dev panel (and only names sakura to force it on).
+    if (SEASON_OVERRIDE) return Object.assign({ sakura }, SEASON_OVERRIDE);
     return seasonDevApply({
       birthday: (bM === BIRTH_MONTH && bD === BIRTH_DAY), // Nov 9, UK time
       christmas: (m === 11 && d === 25),                  // Dec 25
       pride: (m === 5),                                   // all of June
+      sakura,                                             // 20 Mar - 10 May, UK date
     }, devSeasons);
   }
 
@@ -295,7 +312,8 @@
   // ---------- Weather-reactive atmosphere ----------
   // Ambient particles follow the live weather: rain streaks when it's
   // raining, a heavier petal shower when it's actually snowing, and the
-  // cherry-blossom default otherwise. The mode mapping lives in lib.js
+  // cherry-blossom default otherwise (the petal modes only run during the
+  // blossom season, see setAtmosphere). The mode mapping lives in lib.js
   // (KazuLib.atmosphereMode) so it's gate-tested; the local copy keeps the
   // page working if lib.js fails to load.
   const atmosphereMode = (KazuLib && KazuLib.atmosphereMode) || function (code) {
@@ -310,6 +328,12 @@
   const atmosphereEl = document.querySelector('.atmosphere');
   const pageEl = document.querySelector('.page');
   let atmosphereCurrent = null;
+  // What the weather (or a preview param) asked for, before the blossom-season
+  // gate below: applySeasons re-runs setAtmosphere with it when the season flips.
+  let atmosphereWanted = null;
+  // Is it cherry-blossom season right now? Kept current by applySeasons;
+  // the initial value is the same clock rule so a first build can never race it.
+  let sakuraLive = seasonState(new Date()).sakura;
   let atmosphereHeight = window.innerHeight;
   let atmosphereBoundsFrame = 0;
   const BLOSSOM_GLYPHS = ['🌸'];
@@ -678,11 +702,20 @@
   // changed). The hardcoded petals in index.html are the no-JS fallback;
   // the first call replaces them.
   function setAtmosphere(mode) {
-    if (!atmosphereEl || mode === atmosphereCurrent) return;
+    if (!atmosphereEl) return;
+    atmosphereWanted = mode;
+    // Petals are cherry blossoms: outside the bloom window (see lib.js
+    // sakuraInBloom) the sky stays clear instead. Rain and aurora are weather,
+    // not blossom, so they are untouched; an explicit ?atmosphere= preview wins.
+    if (!sakuraLive && !ATMOSPHERE_OVERRIDE && (mode === 'blossom' || mode === 'blossom-heavy')) mode = 'none';
+    if (mode === atmosphereCurrent) return;
     // Low-power devices get a still sky — an explicit ?atmosphere= preview
     // param still wins (it's a deliberate look, not the weather's idea).
     if (LOW_POWER && !ATMOSPHERE_OVERRIDE) mode = 'none';
     atmosphereCurrent = mode;
+    // The static fallback petals in index.html are hidden out of season until
+    // this first build has replaced them (style.css: .atmosphere:not([data-built])).
+    atmosphereEl.dataset.built = '1';
     atmosphereEl.innerHTML = '';
     const pagePetals = mode === 'blossom' || mode === 'blossom-heavy';
     atmosphereEl.classList.toggle('atmosphere--page', pagePetals);
@@ -2305,6 +2338,15 @@
     body.classList.toggle('season-birthday', s.birthday);
     body.classList.toggle('season-christmas', s.christmas);
     body.classList.toggle('season-pride', s.pride);
+    // Blossom season: outside it the branches are not drawn (html.no-sakura; the
+    // inline #boot-tint script set the same class before first paint, this keeps
+    // it honest for dev overrides and a page left open across 20 Mar / 10 May)
+    // and the petals stop falling (setAtmosphere re-applies its gate).
+    document.documentElement.classList.toggle('no-sakura', !s.sakura);
+    if (sakuraLive !== !!s.sakura) {
+      sakuraLive = !!s.sakura;
+      if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);
+    }
     // Christmas owns the palette, so it owns the browser-chrome colour too;
     // otherwise follow the current time-of-day tint.
     setThemeColor(s.christmas ? '#071f16' : skyTintHex);
@@ -2613,6 +2655,7 @@
     ['birthday', '🎂 Birthday'],
     ['christmas', '🎄 Christmas'],
     ['pride', '🏳️‍🌈 Pride'],
+    ['sakura', '🌸 Sakura'],
   ];
   const devRecent = [];
   let devPanel = null;

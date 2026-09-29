@@ -1025,14 +1025,33 @@
     return true;
   }
 
+  // ---- Cherry-blossom season (sakura) ---------------------------------------
+  // The blossom branches and the falling petals belong to the time of year
+  // when Japan's cherry trees flower: first blooms in Kyushu and Tokyo around
+  // 20 March, the front reaching Tohoku in mid-April and Hokkaido in the
+  // first days of May, the last petals gone by about 10 May. (Okinawa's
+  // January/February bloom is a different tree and is left out on purpose.)
+  // Inclusive on both ends. `month` is 0-indexed like BIRTH; the page passes
+  // the UK wall date, like the birthday season. The same two numbers live in
+  // the inline #boot-tint script in index.html (it sets html.no-sakura before
+  // first paint); tests.js fails if the two disagree on any day of the year.
+  var SAKURA_FIRST = 2 * 100 + 20; // 20 March  (month * 100 + day)
+  var SAKURA_LAST = 4 * 100 + 10;  // 10 May
+  function sakuraInBloom(month, day) {
+    var m = +month, d = +day;
+    if (isNaN(m) || isNaN(d)) return false;
+    var key = m * 100 + d;
+    return key >= SAKURA_FIRST && key <= SAKURA_LAST;
+  }
+
   // Season-trigger overrides from the dev panel. Each season is 'auto'
   // (follow the clock — the default, never stored), 'on' (forced live), or
   // 'off' (forced dark). Unknown keys and values are ignored, so a
   // hand-edited localStorage blob can never wedge the seasons.
-  var DEV_SEASON_KEYS = ['birthday', 'christmas', 'pride'];
+  var DEV_SEASON_KEYS = ['birthday', 'christmas', 'pride', 'sakura'];
   function seasonDevApply(state, overrides) {
     var s = state || {};
-    var out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride };
+    var out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride, sakura: !!s.sakura };
     overrides = overrides || {};
     for (var i = 0; i < DEV_SEASON_KEYS.length; i++) {
       var k = DEV_SEASON_KEYS[i];
@@ -1261,6 +1280,7 @@
     forecastRows: forecastRows,
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
+    sakuraInBloom: sakuraInBloom,
     seasonDevApply: seasonDevApply,
     seasonDevParse: seasonDevParse,
     devModeParse: devModeParse,
