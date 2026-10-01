@@ -1023,10 +1023,32 @@
             var f = document.createElement('iframe');
             f.style.cssText = 'position:absolute;left:-9999px;top:0;height:640px;border:0;width:' + width + 'px';
             var timer = setTimeout(function () { reject(new Error('frame timeout')); }, 15000);
-            f.onload = function () { clearTimeout(timer); setTimeout(function () { resolve(f); }, 500); };
+            f.onload = function () { clearTimeout(timer); setTimeout(function () { pcLayoutCheck(f, width); resolve(f); }, 500); };
             f.src = 'index.html?' + query;
             document.body.appendChild(f);
           });
+        }
+        // Live layout eval: use the actual fonts and rendered boxes in each
+        // desktop/phone seasonal fixture, including the cards below the fold.
+        function pcLayoutCheck(f, width) {
+          var d = f.contentDocument, w = f.contentWindow;
+          var cards = Array.prototype.slice.call(d.querySelectorAll('.pc-spec-card'));
+          cards.forEach(function (c) { c.style.contentVisibility = 'visible'; c.classList.add('is-visible'); c.style.transition = 'none'; });
+          var overflow = [];
+          cards.forEach(function (c) {
+            var cr = c.getBoundingClientRect();
+            Array.prototype.forEach.call(c.querySelectorAll('dt, dd, .pc-spec-feature-name, .pc-gpu-mark'), function (e) {
+              var r = e.getBoundingClientRect();
+              if (e.scrollWidth > e.clientWidth + 1 || r.left < cr.left - 1 || r.right > cr.right + 1 || r.bottom > cr.bottom + 1) overflow.push(e.textContent.trim());
+            });
+          });
+          ok('PC live (' + width + 'px): all specs fit their cards', cards.length === 4 && overflow.length === 0, overflow.join(', '));
+          if (width > 860) {
+            var platform = d.querySelector('.pc-spec-card--platform');
+            var last = platform.querySelector('.pc-spec-entry:last-child');
+            var bottom = platform.getBoundingClientRect().bottom - parseFloat(w.getComputedStyle(platform).paddingBottom);
+            ok('PC live (' + width + 'px): platform text fills the card height with larger type', Math.abs(last.getBoundingClientRect().bottom - bottom) < 2 && parseFloat(w.getComputedStyle(last.querySelector('dd')).fontSize) >= 20);
+          }
         }
         // Set the tint on the meadow itself (script.js rewrites the root's copy every minute).
         function probe(w, meadow, l, sunset) {
@@ -1122,7 +1144,7 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=63', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=65', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=70', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
@@ -1160,6 +1182,8 @@
         ].forEach(function (spec) { ok('PC spec present: ' + spec.replace(/<[^>]+>/g, ''), htmlSrc.indexOf(spec) !== -1); });
         ok('PC specs use the asymmetric 7/5 bento', cssSrc.indexOf('grid-template-columns: repeat(12,minmax(0,1fr));') !== -1 && cssSrc.indexOf('.pc-spec-card--graphics {\n  grid-column: span 7;') !== -1 && cssSrc.indexOf('.pc-spec-card--platform { grid-column: span 5; }') !== -1);
         ok('PC specs collapse to one column on compact screens', cssSrc.indexOf('@media (max-width: 860px)') !== -1 && cssSrc.indexOf('.pc-spec-card { grid-column: 1 / -1; }') !== -1);
+        ok('PC type scales with its card width', cssSrc.indexOf('container-type: inline-size;') !== -1 && cssSrc.indexOf('font-size: clamp(22px,6.5cqi,28px);') !== -1 && !/\.pc-spec-feature-name \{[^}]*max-width/.test(cssSrc));
+        ok('PC lists fill the shared card height', cssSrc.indexOf('.pc-spec-list, .pc-storage-list { margin: 0; flex: 1; }') !== -1 && cssSrc.indexOf('align-content: space-between;') !== -1);
         ok('stat grid uses 2-column bento on compact screens', cssSrc.indexOf('@media (max-width: 560px)') !== -1 && cssSrc.indexOf('grid-template-columns: repeat(2, minmax(0, 1fr));') !== -1);
         ok('custom scrollbar hidden on compact screens', cssSrc.indexOf('@media (max-width: 768px)') !== -1 && cssSrc.indexOf('.cscroll { display: none !important; }') !== -1);
 
@@ -1401,8 +1425,8 @@
           eq('worker: another document cannot replace the offline home page', writes, []);
           await request('index.html', 'cors', 'no-store');
           ok('worker: explicit fresh-source fetches bypass all caching', response === null && writes.length === 0 && requested.length === 0);
-          await request('style.css?v=63', 'cors');
-          ok('worker: versioned assets still use the normal asset strategy', requested.length === 1 && writes.length === 1 && writes[0].url.indexOf('style.css?v=63') !== -1);
+          await request('style.css?v=65', 'cors');
+          ok('worker: versioned assets still use the normal asset strategy', requested.length === 1 && writes.length === 1 && writes[0].url.indexOf('style.css?v=65') !== -1);
         }
 
 
