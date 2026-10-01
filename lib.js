@@ -531,7 +531,8 @@
   // script.js writes h/s/l/glow onto CSS custom properties once a minute
   // (registered @property transitions glide each step). Junk time input
   // yields null so the page keeps its current tint.
-  function skyTint(ukMinutes, dayOfYear) {
+  // Halloween changes only the hue/saturation; light and sky timing stay real.
+  function skyTint(ukMinutes, dayOfYear, season) {
     var t = +ukMinutes;
     if (isNaN(t)) return null;
     t = ((t % 1440) + 1440) % 1440;
@@ -556,8 +557,8 @@
     else sunP = t < 720 ? 0.5 * (t - st.rise) / (720 - st.rise)
                         : 0.5 + 0.5 * (t - 720) / (st.set - 720);
     return {
-      h: +(215 + 22 * dusk).toFixed(2),  // 215 soft blue -> 237 indigo at the horizon
-      s: +(33 + 9 * dusk).toFixed(2),    // saturation deepens a touch at dusk
+      h: +(season === 'halloween' ? 275 + 8 * dusk : 215 + 22 * dusk).toFixed(2),
+      s: +(season === 'halloween' ? 28 + 6 * dusk : 33 + 9 * dusk).toFixed(2),
       l: +(36 * day).toFixed(2),         // 0% AMOLED black night -> 36% gentle daylight
       daylight: +day.toFixed(4),
       dusk: +dusk.toFixed(4),
@@ -1108,10 +1109,10 @@
   // (follow the clock — the default, never stored), 'on' (forced live), or
   // 'off' (forced dark). Unknown keys and values are ignored, so a
   // hand-edited localStorage blob can never wedge the seasons.
-  var DEV_SEASON_KEYS = ['birthday', 'christmas', 'pride', 'sakura'];
+  var DEV_SEASON_KEYS = ['birthday', 'christmas', 'pride', 'sakura', 'halloween'];
   function seasonDevApply(state, overrides) {
     var s = state || {};
-    var out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride, sakura: !!s.sakura };
+    var out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride, sakura: !!s.sakura, halloween: !!s.halloween };
     overrides = overrides || {};
     for (var i = 0; i < DEV_SEASON_KEYS.length; i++) {
       var k = DEV_SEASON_KEYS[i];

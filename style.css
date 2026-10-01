@@ -965,6 +965,17 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   --m-lit: clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1);
   --m-lp: calc(var(--m-lit) * 100%);
   --m-warm: calc(var(--sunset, 0) * 24%);
+  /* October lanterns: paint shares the cottage's daylight and light switch. */
+  --d-pumpkin: #ce7535; --n-pumpkin: #653421;
+  --d-pumpkin-rib: #ad5228; --n-pumpkin-rib: #42241f;
+  --d-pumpkin-face: #3c242b; --n-pumpkin-face: #ffd48b;
+  --d-pumpkin-stem: #596b43; --n-pumpkin-stem: #283c30;
+  --d-pumpkin-lit: #ffd48b; --n-pumpkin-lit: #ffd48b;
+  --mf-pumpkin: var(--d-pumpkin);
+  --mf-pumpkin-rib: var(--d-pumpkin-rib);
+  --mf-pumpkin-face: var(--d-pumpkin-face);
+  --mf-pumpkin-stem: var(--d-pumpkin-stem);
+  --mf-pumpkin-lit: var(--d-pumpkin-lit);
   /* Day colours (--d-*) and night colours (--n-*). --mf-* below are what the scene paints with. */
   --d-far: #8fc3a0; --n-far: #0e1d2c;
   --d-far-hi: #b7dfbd; --n-far-hi: #1b3a49;
@@ -1150,6 +1161,40 @@ body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: 
 body.season-christmas .meadow-credit { color: #0f3b2a; text-shadow: 0 1px 0 rgba(255,255,255,.65); }
 body.season-christmas .meadow::after { display: none; }
 
+/* October: an autumn field; its existing day/night and sunset mixes still run. */
+html.season-halloween .footer.meadow {
+  --d-far: #a6a47d; --n-far: #231e30; --d-far-hi: #c6bd99; --n-far-hi: #372b42;
+  --d-far-tree: #8d775b; --n-far-tree: #241d2b;
+  --d-mid: #85734b; --n-mid: #29272b; --d-mid-hi: #b5a06a; --n-mid-hi: #41373b;
+  --d-near: #746744; --n-near: #282d25; --d-near-hi: #a58a56; --n-near-hi: #3b4030;
+  --d-fg: #514e35; --n-fg: #1e241f; --d-fg-hi: #85794e; --n-fg-hi: #323b29;
+  --d-blade: #bfa46b; --n-blade: #454535; --d-blade-fg: #9c8753; --n-blade-fg: #3e4030;
+  --d-leaf-1: #a86137; --n-leaf-1: #4c2d32; --d-leaf-2: #cd914c; --n-leaf-2: #704331;
+  --d-leaf-3: #e3b86d; --n-leaf-3: #8c5b3e; --d-bush: #8d7148; --n-bush: #39362c;
+  --d-roof: #634c62; --n-roof: #302536; --d-roof-2: #4c394e; --n-roof-2: #241c2b;
+}
+@supports (color: color-mix(in oklab, red 50%, blue)) {
+  .footer.meadow {
+    --mf-pumpkin: color-mix(in oklab, var(--d-pumpkin) var(--m-dp), var(--n-pumpkin));
+    --mf-pumpkin-rib: color-mix(in oklab, var(--d-pumpkin-rib) var(--m-dp), var(--n-pumpkin-rib));
+    --mf-pumpkin-face: color-mix(in oklab, var(--n-pumpkin-face) var(--m-lp), var(--d-pumpkin-face));
+    --mf-pumpkin-stem: color-mix(in oklab, var(--d-pumpkin-stem) var(--m-dp), var(--n-pumpkin-stem));
+    --mf-pumpkin-lit: color-mix(in oklab, var(--d-pumpkin-lit) var(--m-dp), var(--n-pumpkin-lit));
+  }
+}
+.mf-halloween { display: none; pointer-events: none; }
+html.season-halloween .mf-halloween { display: block; }
+.mf-hw-pumpkin { fill: var(--mf-pumpkin); }
+.mf-hw-rib { fill: none; stroke: var(--mf-pumpkin-rib); stroke-width: 1.3; }
+.mf-hw-stem { fill: var(--mf-pumpkin-stem); }
+.mf-hw-face { fill: var(--mf-pumpkin-face); }
+.mf-hw-lit { fill: var(--mf-pumpkin-lit); opacity: var(--m-lit); }
+.mf-hw-light { stop-color: var(--mf-pumpkin-lit); }
+.mf-hw-pool { fill: url(#mf-hw-pool); opacity: var(--m-lit); }
+.mf-hw-halo { fill: url(#mf-hw-halo); opacity: var(--m-lit); }
+html.season-halloween .mf-flowers, html.season-halloween .mf-blossom { display: none; }
+html.season-halloween .meadow-credit { color: #fff1d9; }
+
 /* ============ SEASONAL EFFECTS ============ */
 /* These rules intentionally sit AFTER the base palette block so the
    Christmas repaint (higher specificity) always wins while the season is live. */
@@ -1250,6 +1295,77 @@ body.season-christmas .info-pill--steam-game {
 body.season-christmas .discord-card .presence-status,
 body.season-christmas .discord-card .idle-banner,
 body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
+
+/* ---- Halloween: cosy pumpkin/plum glass, with quiet illustrated scenery ---- */
+/* The root class is set before first paint, and only when Christmas is not
+   owning the palette. All artwork is static: no timers, rAF, or mobile costs. */
+html.season-halloween body {
+  --page-bg:
+    radial-gradient(780px 580px at 78% 8%, rgba(225,151,85,calc(.13 * var(--bg-glow, 1))) 0%, transparent 65%),
+    radial-gradient(900px 640px at 6% 84%, rgba(139,87,157,calc(.11 * var(--bg-glow, 1))) 0%, transparent 65%),
+    linear-gradient(170deg, hsl(var(--bg-h) calc(var(--bg-s) * 1%) calc((var(--bg-l) + 5 * var(--bg-glow)) * 1%)) 0%, hsl(var(--bg-h) calc(var(--bg-s) * 1%) calc(var(--bg-l) * 1%)) 48%, hsl(calc(var(--bg-h) + 5) calc(var(--bg-s) * 1%) calc((var(--bg-l) + 2 * var(--bg-glow)) * 1%)) 100%);
+  --ink: #fff2de; --ink-soft: #dfc6b9; --ink-faint: #c1aebf; --accent: #ffc078;
+  --card-bg: rgba(61,40,66,.86);
+  --card-bd: 1px solid rgba(223,159,103,.4);
+  --card-shadow: 0 14px 34px rgba(24,12,28,.32);
+  --hw-pumpkin: #dc8948; --hw-rib: #b76b39; --hw-face: #ffe2a0; --hw-stem: #82916b;
+  --hw-bat: #332333;
+}
+html.season-halloween body:not(.season-birthday) .title {
+  background: linear-gradient(105deg, #fff0d9 12%, #ffd09a 70%, #e2b6b3);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+html.season-halloween .pfp-ring { box-shadow: 0 0 0 3px rgba(244,168,98,.5), 0 0 34px rgba(226,140,65,.22); }
+html.season-halloween .card:not(.stat-card--bday) {
+  background: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), var(--card-bg);
+  box-shadow: var(--card-shadow), var(--glint);
+}
+/* The existing stories have inline brand fills; only this seasonal repaint
+   needs priority over those fills. Their layout/refraction is unchanged. */
+html.season-halloween .story-card {
+  background: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), var(--card-bg) !important;
+  box-shadow: var(--card-shadow), var(--glint) !important;
+}
+html.season-halloween body:not(.season-birthday) .stat-card--bday {
+  background: linear-gradient(145deg, #ad6038, #63384e); border-color: rgba(255,194,121,.45);
+  box-shadow: 0 16px 34px rgba(62,26,32,.35);
+}
+html.season-halloween .card-head-title,
+html.season-halloween .story-title,
+html.season-halloween .stat-label,
+html.season-halloween .lb-label,
+html.season-halloween .music-track-num,
+html.season-halloween .music-kicker,
+html.season-halloween .card .info-pill-label { color: var(--accent) !important; }
+html.season-halloween .card .pill-link { color: var(--accent) !important; }
+html.season-halloween .story-cta { color: #382137 !important; background: #ffd09a; }
+html.season-halloween .card .pill-link { background: rgba(255,192,120,.12) !important; }
+html.season-halloween .card .idle-banner,
+html.season-halloween .card .loading-row { color: var(--ink-soft); }
+html.season-halloween .copy-btn,
+html.season-halloween .retry-btn,
+html.season-halloween .dev-reset,
+html.season-halloween .dev-seg,
+html.season-halloween .dev-panel-close { border-color: rgba(223,159,103,.4); background: rgba(194,127,91,.12); }
+html.season-halloween .dev-seg button.is-active { background: var(--accent); color: #382137; }
+html.season-halloween .modal-panel { border-color: rgba(223,159,103,.4); }
+html.season-halloween a:focus-visible,
+html.season-halloween button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+html.season-halloween .cscroll-thumb { background: linear-gradient(180deg, #ffe5ba, #dfa87d); }
+html.season-halloween .music-viz span { background: linear-gradient(180deg, #ffe0a6, #d48760); }
+html.season-halloween .music-card.scroll-reveal.is-visible:hover { box-shadow: 0 22px 46px rgba(149,84,51,.3), var(--glint); }
+.halloween-decor { position: absolute; display: none; pointer-events: none; }
+html.season-halloween .halloween-decor { display: block; }
+.halloween-bats { width: min(560px, 100%); height: auto; top: 26px; left: 50%; transform: translateX(-50%); fill: var(--hw-bat); }
+.halloween-pumpkins { width: 94px; height: auto; bottom: -12px; right: -35px; z-index: 3; filter: drop-shadow(0 4px 7px rgba(26,13,28,.3)); }
+.hw-pumpkin { fill: var(--hw-pumpkin); }
+.hw-rib { fill: none; stroke: var(--hw-rib); stroke-width: 1.3; }
+.hw-face { fill: var(--hw-face); }
+.hw-stem { fill: var(--hw-stem); }
+@media (max-width: 480px) {
+  .halloween-bats { width: 340px; top: 34px; }
+  .halloween-pumpkins { width: 76px; right: -22px; bottom: -10px; }
+}
 
 /* ---- Christmas tree: background, desktop/tablet only (>=769px) ---- */
 .xmas-scene { position: fixed; left: 0; bottom: 0; z-index: 0; pointer-events: none; display: none; }

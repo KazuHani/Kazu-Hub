@@ -25,8 +25,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 `sw.js` offline shell), a single time-of-day-reactive palette (a soft
 slate blue that lightens towards midday and dims towards sunset/night,
 driven by `KazuLib.skyTint` on the UK clock — there is no theme toggle),
-seasonal themes (birthday,
-Christmas, pride), a weather-reactive cherry-blossom atmosphere (petals
+seasonal themes (birthday, Christmas, pride, and an October Halloween theme),
+a weather-reactive cherry-blossom atmosphere (petals
 detach from the branches and drift down-wind; the layer is anchored to the
 top of the page, so it scrolls away with the hero), a "moonlit sakura"
 scenery layer (SVG branches from the page edges plus a sun-by-day /
@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` (~850 lines) — the whole page. Loads `style.css?v=60`,
-  `lib.js?v=35`, `script.js?v=68` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=63`,
+  `lib.js?v=36`, `script.js?v=70` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -102,7 +102,7 @@ python -m http.server 8000
 
 Preview/dev affordances built into the page:
 
-- `?season=birthday|christmas|pride|sakura|all` (comma-combinable) forces
+- `?season=birthday|christmas|pride|sakura|halloween|all` (comma-combinable) forces
   seasonal themes on any date. The `?season=` param wins over the dev panel.
   `sakura` (the blossom branches + petals) is only ever forced ON: a param
   that doesn't name it leaves the blossoms on the calendar.
@@ -120,7 +120,7 @@ Preview/dev affordances built into the page:
   a phone or a window under 769px shows nothing. Widen the window and it
   starts without a reload.
 - Typing `kazudev` anywhere on the page opens a dev settings panel with
-  per-season Auto/On/Off overrides (Birthday, Christmas, Pride, Sakura)
+  per-season Auto/On/Off overrides (Birthday, Christmas, Pride, Sakura, Halloween)
   persisted to localStorage. Typing it again or Esc closes it.
 
 ## Testing
@@ -140,6 +140,23 @@ and `tests.html`.
 
 There is no test framework — assertions are hand-rolled `ok`/`eq` helpers.
 Follow that pattern.
+
+## Halloween (October)
+
+Halloween follows the Europe/London date from 1 October through 31 October,
+including a page left open across UK midnight. `?season=halloween` previews it
+on any date; the dev panel has a Halloween Auto/On/Off row stored under the
+existing `kazu-dev-seasons` key. URL previews win over saved settings, and
+Christmas takes palette priority when both are forced on.
+
+The plum sky uses `skyTint(minutes, dayOfYear, 'halloween')`: hue and saturation
+change, while daylight, lightness, sunset and weather timing stay the same.
+The inline boot script resolves the same date and overrides before first paint.
+`html.season-halloween` represents the effective palette; `body.season-halloween`
+records the requested season. Static SVG bats and profile pumpkins show with
+the effective palette, and the meadow becomes an autumn field with three
+jack-o'-lanterns. Their faces, halos and pools use the cottage's existing
+`--m-lit` switch. All artwork remains static on phones and low-power devices.
 
 ## Conventions and gotchas
 

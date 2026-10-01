@@ -41,7 +41,7 @@
   };
 
   // ---------- Seasons ----------
-  // Preview any season on any date: ?season=birthday|christmas|pride|sakura|all (comma-combinable, e.g. ?season=birthday,christmas)
+  // Preview any season on any date: ?season=birthday|christmas|pride|sakura|halloween|all (comma-combinable)
   // `sakura` (the cherry-blossom branches + petals) is only ever forced ON here;
   // a param that doesn't name it leaves the blossoms following the calendar.
   const SEASON_OVERRIDE = (() => {
@@ -49,12 +49,13 @@
       const p = new URLSearchParams(location.search).get('season');
       if (!p) return null;
       const v = p.toLowerCase();
-      if (v === 'all') return { birthday: true, christmas: true, pride: true, sakura: true };
+      if (v === 'all') return { birthday: true, christmas: true, pride: true, sakura: true, halloween: true };
       const set = v.split(',').map((s) => s.trim());
       const o = {
         birthday: set.includes('birthday') || set.includes('bday'),
         christmas: set.includes('christmas') || set.includes('xmas'),
         pride: set.includes('pride'),
+        halloween: set.includes('halloween'),
       };
       if (set.includes('sakura') || set.includes('blossom')) o.sakura = true;
       return o;
@@ -90,21 +91,31 @@
   };
   const seasonDevApply = (KazuLib && KazuLib.seasonDevApply) || function (state, overrides) {
     const s = state || {};
-    const out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride, sakura: !!s.sakura };
+    const out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride, sakura: !!s.sakura, halloween: !!s.halloween };
     overrides = overrides || {};
-    ['birthday', 'christmas', 'pride', 'sakura'].forEach((k) => {
+    ['birthday', 'christmas', 'pride', 'sakura', 'halloween'].forEach((k) => {
       if (overrides[k] === 'on') out[k] = true;
       else if (overrides[k] === 'off') out[k] = false;
     });
     return out;
   };
-  const seasonDevParse = (KazuLib && KazuLib.seasonDevParse) || function () { return null; };
+  const seasonDevParse = (KazuLib && KazuLib.seasonDevParse) || function (raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    let p;
+    try { p = JSON.parse(raw); } catch (e) { return null; }
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+    const out = {};
+    ['birthday', 'christmas', 'pride', 'sakura', 'halloween'].forEach((k) => {
+      if (p[k] === 'on' || p[k] === 'off') out[k] = p[k];
+    });
+    return out;
+  };
   const devModeParse = (KazuLib && KazuLib.devModeParse) || function (raw) {
     return raw === 'on' || raw === 'off' || raw === 'auto' ? raw : 'auto';
   };
 
   const DEV_KEY = 'kazu-dev-seasons';
-  let devSeasons = {}; // { birthday|christmas|pride: 'on'|'off' } — 'auto' is the absence of a key
+  let devSeasons = {}; // season: 'on'|'off' — 'auto' is the absence of a key
   try { devSeasons = seasonDevParse(localStorage.getItem(DEV_KEY)) || {}; } catch (e) {}
   const DEV_CURVE_KEY = 'kazu-dev-curve';
   let devCurveMode = 'auto';
@@ -131,15 +142,25 @@
     return key >= 220 && key <= 410;
   };
 
+  // One cached UK formatter also covers a missing lib.js: October must never
+  // start/end on the visitor's local date. Shared by the season key and sky.
+  const fmtSeasonUK = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TIMEZONE, year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', hour12: false,
+  });
+  function seasonUKParts(now) {
+    if (KazuLib && KazuLib.ukWallParts) return KazuLib.ukWallParts(now);
+    const o = {};
+    fmtSeasonUK.formatToParts(now).forEach((p) => { o[p.type] = +p.value; });
+    return { year: o.year, month: o.month - 1, day: o.day, hours: o.hour % 24, minutes: o.minute };
+  }
+
   function seasonState(now) {
     const m = now.getMonth(), d = now.getDate(); // visitor-local: Christmas & pride are ambient
     // The birthday and blossom seasons follow the UK wall clock (the birthday
     // is Kazu's day, in the UK; the blossom window matches the boot script).
-    let bM = m, bD = d;
-    if (KazuLib && KazuLib.ukWallParts) {
-      const w = KazuLib.ukWallParts(now);
-      bM = w.month; bD = w.day;
-    }
+    const w = seasonUKParts(now);
+    const bM = w.month, bD = w.day;
     // An explicit ?atmosphere=blossom preview brings the branches with it, so
     // the preview looks like the real in-season page.
     const sakura = sakuraInBloom(bM, bD) || ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy';
@@ -150,6 +171,7 @@
       christmas: (m === 11 && d === 25),                  // Dec 25
       pride: (m === 5),                                   // all of June
       sakura,                                             // 20 Mar - 10 May, UK date
+      halloween: (bM === 9),                              // all of October, UK date
     }, devSeasons);
   }
 
@@ -891,7 +913,7 @@
 
   // Same clock-driven palette as KazuLib.skyTint / KazuLib.hslToHex; these
   // local copies keep the background breathing if lib.js fails to load.
-  const skyTint = (KazuLib && KazuLib.skyTint) || function (ukMinutes, dayOfYear) {
+  const skyTint = (KazuLib && KazuLib.skyTint) || function (ukMinutes, dayOfYear, season) {
     let t = +ukMinutes;
     if (isNaN(t)) return null;
     t = ((t % 1440) + 1440) % 1440;
@@ -915,8 +937,8 @@
     else sunP = t < 720 ? 0.5 * (t - rise) / (720 - rise)
                         : 0.5 + 0.5 * (t - 720) / (set - 720);
     return {
-      h: +(215 + 22 * dusk).toFixed(2),
-      s: +(33 + 9 * dusk).toFixed(2),
+      h: +(season === 'halloween' ? 275 + 8 * dusk : 215 + 22 * dusk).toFixed(2),
+      s: +(season === 'halloween' ? 28 + 6 * dusk : 33 + 9 * dusk).toFixed(2),
       l: +(36 * day).toFixed(2), // 0% AMOLED black night -> 36% gentle daylight
       daylight: +day.toFixed(4),
       dusk: +dusk.toFixed(4),
@@ -956,7 +978,7 @@
   let skyTintSnapped = false;
   let skyTintHex = '#000000'; // AMOLED deep-night default, matches the inline first paint
   function applySkyTint(mins, doy) {
-    const tint = skyTint(mins, doy);
+    const tint = skyTint(mins, doy, document.documentElement.classList.contains('season-halloween') ? 'halloween' : null);
     if (!tint) return null;
     const root = document.documentElement.style;
     root.setProperty('--bg-h', tint.h);
@@ -1015,21 +1037,18 @@
   // tint, sunset gradient — to that time; the on-page clock stays real. Ignored
   // if lib.js failed to load. The inline boot script in index.html reads the
   // same param so the first paint already matches.
-  const SKY_TIME_OVERRIDE = (KazuLib && KazuLib.timeOverrideParse) ? KazuLib.timeOverrideParse(location.search) : null;
+  const SKY_TIME_OVERRIDE = (KazuLib && KazuLib.timeOverrideParse) ? KazuLib.timeOverrideParse(location.search) : (() => {
+    const m = /[?&]time=(\d{1,2}):(\d{2})(?:[&#]|$)/.exec(location.search);
+    return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
+  })();
   function updateSkyBody() {
     if (!skyBodyEl) return;
-    // UK wall frame via lib.js; visitor-local is an acceptable fallback for
-    // an ambient feature (same call the seasonal themes make).
+    // The sky and the October boundary share a UK wall frame, even without lib.js.
     const now = new Date();
     let mins, doy;
-    if (KazuLib && KazuLib.ukWallParts) {
-      const w = KazuLib.ukWallParts(now);
-      mins = w.hours * 60 + w.minutes;
-      doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
-    } else {
-      mins = now.getHours() * 60 + now.getMinutes();
-      doy = Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(now.getFullYear(), 0, 1)) / 86400000) + 1;
-    }
+    const w = seasonUKParts(now);
+    mins = w.hours * 60 + w.minutes;
+    doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
     if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;
     const st = skyBodyState(mins, doy, skyArcPeakY());
     if (!st) return;
@@ -2425,7 +2444,7 @@
 
   // ---------- Seasonal effects ----------
   // Seasons only depend on the calendar date (visitor-local for Christmas and
-  // pride, UK wall clock for the birthday) plus the dev-panel overrides, so the
+  // pride, UK wall clock for birthday, sakura and Halloween) plus overrides, so the
   // per-second tick skips all re-evaluation until one of those flips — midnight
   // crossover is still caught within a second, and dev-panel clicks apply
   // instantly (they mutate devSeasons, which changes the key).
@@ -2433,10 +2452,8 @@
   function applySeasons() {
     const now = new Date();
     let key = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate() + '|' + JSON.stringify(devSeasons);
-    if (KazuLib && KazuLib.ukWallParts) {
-      const w = KazuLib.ukWallParts(now);
-      key = w.year + '-' + w.month + '-' + w.day + '|' + key;
-    }
+    const w = seasonUKParts(now);
+    key = w.year + '-' + w.month + '-' + w.day + '|' + key;
     if (key === lastSeasonKey) return;
     lastSeasonKey = key;
     const s = seasonState(now);
@@ -2444,6 +2461,16 @@
     body.classList.toggle('season-birthday', s.birthday);
     body.classList.toggle('season-christmas', s.christmas);
     body.classList.toggle('season-pride', s.pride);
+    body.classList.toggle('season-halloween', s.halloween);
+    // The root class is the effective Halloween palette: boot can set it
+    // before body exists, and Christmas takes precedence in combined previews.
+    const root = document.documentElement;
+    const halloween = !!s.halloween && !s.christmas;
+    const paletteChanged = root.classList.contains('season-halloween') !== halloween;
+    root.classList.toggle('season-halloween', halloween);
+    if (paletteChanged) body.removeAttribute('data-bg-live'); // snap seasonal hue changes
+    updateSkyBody(); // dev clicks and midnight refresh tint immediately
+    if (paletteChanged) requestAnimationFrame(() => { body.dataset.bgLive = '1'; });
     // Blossom season: outside it the branches are not drawn (html.no-sakura; the
     // inline #boot-tint script set the same class before first paint, this keeps
     // it honest for dev overrides and a page left open across 20 Mar / 10 May)
@@ -2762,6 +2789,7 @@
     ['christmas', '🎄 Christmas'],
     ['pride', '🏳️‍🌈 Pride'],
     ['sakura', '🌸 Sakura'],
+    ['halloween', '🎃 Halloween'],
   ];
   const devRecent = [];
   let devPanel = null;

@@ -518,14 +518,14 @@ ok('devCodeMatch non-string key → false', !L.devCodeMatch(['k', 'a', 'z', 'u',
 eq('devCodeMatch null → false', L.devCodeMatch(null), false);
 
 // ---- seasonDevApply (dev panel season-trigger overrides) ----
-const clockState = { birthday: false, christmas: false, pride: true, sakura: false };
+const clockState = { birthday: false, christmas: false, pride: true, sakura: false, halloween: false };
 eq('auto passes the clock state through untouched', L.seasonDevApply(clockState, {}), clockState);
 eq('on forces a season live', L.seasonDevApply(clockState, { christmas: 'on' }).christmas, true);
 eq('off forces a live season dark', L.seasonDevApply(clockState, { pride: 'off' }).pride, false);
-eq('mixed overrides compose', L.seasonDevApply({ birthday: true, christmas: false, pride: false }, { birthday: 'off', christmas: 'on' }), { birthday: false, christmas: true, pride: false, sakura: false });
+eq('mixed overrides compose', L.seasonDevApply({ birthday: true, christmas: false, pride: false }, { birthday: 'off', christmas: 'on' }), { birthday: false, christmas: true, pride: false, sakura: false, halloween: false });
 eq('junk values + unknown keys are ignored', L.seasonDevApply(clockState, { birthday: 'yes', wat: 'on' }), clockState);
 eq('null overrides → passthrough', L.seasonDevApply(clockState, null), clockState);
-eq('null state → all seasons false', L.seasonDevApply(null, null), { birthday: false, christmas: false, pride: false, sakura: false });
+eq('null state → all seasons false', L.seasonDevApply(null, null), { birthday: false, christmas: false, pride: false, sakura: false, halloween: false });
 eq('sakura: on forces the blossoms in out of season', L.seasonDevApply({ sakura: false }, { sakura: 'on' }).sakura, true);
 eq('sakura: off forces the blossoms away in season', L.seasonDevApply({ sakura: true }, { sakura: 'off' }).sakura, false);
 eq('sakura: auto follows the clock state', [L.seasonDevApply({ sakura: true }, {}).sakura, L.seasonDevApply({ sakura: false }, {}).sakura], [true, false]);
@@ -1221,8 +1221,8 @@ ok('canvas colour painted inline before the stylesheet', htmlSrc.includes('<styl
 const bootMatch = /<script id="boot-tint">([\s\S]*?)<\/script>/.exec(htmlSrc);
 ok('boot-tint script present in index.html', !!bootMatch);
 const bootSrc = bootMatch ? bootMatch[1] : '';
-const bootFn = new Function('document', 'Date', 'Intl', 'setTimeout', 'location', bootSrc);
-function runBoot(instantMs, IntlImpl, search) {
+const bootFn = new Function('document', 'Date', 'Intl', 'setTimeout', 'location', 'localStorage', bootSrc);
+function runBoot(instantMs, IntlImpl, search, storage) {
   const vars = {}, timers = [], classes = {};
   const meta = { content: '#000000', setAttribute: function (k, v) { if (k === 'content') this.content = v; } };
   const canvas = { textContent: 'html{background:#000;color-scheme:dark}' };
@@ -1237,13 +1237,13 @@ function runBoot(instantMs, IntlImpl, search) {
   const FakeDate = function () { return arguments.length ? new (Function.prototype.bind.apply(Date, [null].concat([].slice.call(arguments))))() : new Date(instantMs); };
   FakeDate.UTC = Date.UTC;
   let threw = null;
-  try { bootFn(doc, FakeDate, IntlImpl || Intl, function (fn, ms) { timers.push({ fn: fn, ms: ms }); }, { search: search || '' }); } catch (e) { threw = e; }
+  try { bootFn(doc, FakeDate, IntlImpl || Intl, function (fn, ms) { timers.push({ fn: fn, ms: ms }); }, { search: search || '' }, storage || { getItem: function () { return null; } }); } catch (e) { threw = e; }
   return { vars: vars, meta: meta, canvas: canvas, classes: classes, timers: timers, threw: threw };
 }
 function expectedBoot(instantMs) {
   const w = L.ukWallParts(new Date(instantMs));
   const doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
-  const tint = L.skyTint(w.hours * 60 + w.minutes, doy);
+  const tint = L.skyTint(w.hours * 60 + w.minutes, doy, w.month === 9 ? 'halloween' : null);
   return { tint: tint, hex: L.hslToHex(tint.h, tint.s, tint.l), sunset: L.sunsetGlow(w.hours * 60 + w.minutes, doy) };
 }
 // Daytime is the case that used to flash: UK noon on 29 Sep 2026 (BST = 11:00 UTC).
@@ -1298,6 +1298,144 @@ eq('boot: 10 May 22:30 UTC is still 10 May in the UK (23:30 BST), so in season',
 eq('boot: 19 Mar 23:59 UTC is still out (GMT)', !!runBoot(Date.UTC(2027, 2, 19, 23, 59)).classes['no-sakura'], true);
 eq('boot: 20 Mar 00:00 UTC is the first day (GMT)', !!runBoot(Date.UTC(2027, 2, 20, 0, 0)).classes['no-sakura'], false);
 eq('boot: today-style midsummer date is out of season', !!runBoot(Date.UTC(2026, 8, 29, 11, 9)).classes['no-sakura'], true);
+// ---- Halloween: actual seasonal runtime, boot precedence and palette parity ----
+(function () {
+  function seasonHarness(raw, search, withLib) {
+    var stored = raw;
+    var storage = {
+      getItem: function (key) { if (raw === 'blocked') throw new Error('blocked storage'); return key === 'kazu-dev-seasons' ? stored : null; },
+      setItem: function (key, value) { if (key === 'kazu-dev-seasons') stored = value; },
+      removeItem: function (key) { if (key === 'kazu-dev-seasons') stored = null; }
+    };
+    var source = scriptSrc.slice(scriptSrc.indexOf('  // ---------- Seasons ----------'), scriptSrc.indexOf('  let bdayCelebrated'));
+    var make = new Function('KazuLib', 'TIMEZONE', 'BIRTH_MONTH', 'BIRTH_DAY', 'location', 'localStorage', source +
+      '\nreturn { state: seasonState, parts: seasonUKParts, parse: seasonDevParse, apply: seasonDevApply, set: function (mode) { if (mode === "auto") delete devSeasons.halloween; else devSeasons.halloween = mode; saveDevSeasons(); }, reset: function () { devSeasons = {}; saveDevSeasons(); } };');
+    return { api: make(withLib ? L : null, 'Europe/London', 10, 9, { search: search || '' }, storage), storage: storage };
+  }
+  var edges = [
+    [Date.UTC(2026, 8, 30, 22, 59, 59), false], [Date.UTC(2026, 8, 30, 23), true],
+    [Date.UTC(2026, 9, 25, 0, 59), true], [Date.UTC(2026, 9, 25, 1), true],
+    [Date.UTC(2026, 9, 31, 23, 59, 59), true], [Date.UTC(2026, 10, 1), false]
+  ];
+  [true, false].forEach(function (withLib) {
+    var h = seasonHarness(null, '', withLib);
+    eq('Halloween UK boundaries and DST' + (withLib ? '' : ' without lib.js'), edges.map(function (e) { return h.api.state(new Date(e[0])).halloween; }), edges.map(function (e) { return e[1]; }));
+    var count = 0, wrong = false;
+    [2027, 2028].forEach(function (year) {
+      for (var m = 0; m < 12; m++) for (var day = 1; day <= new Date(Date.UTC(year, m + 1, 0)).getUTCDate(); day++) {
+        var live = h.api.state(new Date(Date.UTC(year, m, day, 12))).halloween;
+        if (live) count++;
+        if (live !== (m === 9)) wrong = true;
+      }
+    });
+    ok('Halloween is exactly the 31 UK October dates, normal/leap years' + (withLib ? '' : ' without lib.js'), !wrong && count === 62);
+    var dev = seasonHarness(null, '', withLib), outside = new Date(Date.UTC(2026, 6, 10, 12));
+    dev.api.set('on');
+    ok('Halloween On persists and previews outside October' + (withLib ? '' : ' without lib.js'), dev.api.state(outside).halloween && JSON.parse(dev.storage.getItem('kazu-dev-seasons')).halloween === 'on');
+    dev.api.set('off');
+    eq('Halloween Off suppresses October' + (withLib ? '' : ' without lib.js'), dev.api.state(new Date(edges[1][0])).halloween, false);
+    dev.api.set('auto');
+    ok('Halloween Auto removes the override and follows October' + (withLib ? '' : ' without lib.js'), dev.storage.getItem('kazu-dev-seasons') === null && !dev.api.state(outside).halloween && dev.api.state(new Date(edges[1][0])).halloween);
+    dev.api.set('on'); dev.api.reset();
+    ok('Halloween reset restores the calendar and clears storage' + (withLib ? '' : ' without lib.js'), dev.storage.getItem('kazu-dev-seasons') === null && !dev.api.state(outside).halloween);
+    eq('Halloween parser sanitizes saved settings' + (withLib ? '' : ' without lib.js'), dev.api.parse('{"halloween":"off","sakura":"on","wat":"on"}'), { sakura: 'on', halloween: 'off' });
+    eq('Halloween parser ignores malformed values' + (withLib ? '' : ' without lib.js'), dev.api.parse('{"halloween":"auto"}'), {});
+  });
+  var cases = [
+    [edges[0][0], '', null], [edges[1][0], '', null], [edges[5][0], '', null],
+    [edges[1][0], '', '{"halloween":"off"}'], [edges[0][0], '', '{"halloween":"on"}'],
+    [edges[1][0], '', 'blocked'], [edges[1][0], '', '{bad'], [edges[1][0], '', '[]'],
+    [edges[1][0], '', '{"halloween":"yes"}'], [edges[1][0], '', '{"christmas":"on"}'],
+    [edges[0][0], '?season=halloween', '{"halloween":"off"}'],
+    [edges[1][0], '?season=none', '{"halloween":"on"}'],
+    [edges[0][0], '?season=birthday,pride,halloween', null], [edges[0][0], '?season=all', null],
+    [edges[0][0], '?season=halloween,xmas', null], [edges[0][0], '?season=HALLOWEEN', null],
+    [edges[0][0], '?season=halloween&time=18:20', null], [edges[0][0], '?season=halloween&time=00:00', null],
+    [edges[0][0], '?season=', '{"halloween":"on"}']
+  ];
+  var timeSource = scriptSrc.slice(scriptSrc.indexOf('  const SKY_TIME_OVERRIDE ='), scriptSrc.indexOf('  function updateSkyBody()'));
+  function fallbackTime(search) { return new Function('KazuLib', 'location', timeSource + '\nreturn SKY_TIME_OVERRIDE;')(null, { search: search }); }
+  eq('sky time previews work without lib.js, including malformed input', ['?time=18:20', '?time=00:00', '?time=24:00', '?time=12:5', '?x=1&time=6:05'].map(fallbackTime), [1100, 0, null, null, 365]);
+  var bad = null;
+  cases.forEach(function (c) {
+    [true, false].forEach(function (withLib) {
+      var h = seasonHarness(c[2], c[1], withLib), s = h.api.state(new Date(c[0]));
+      var boot = runBoot(c[0], undefined, c[1], h.storage), w = L.ukWallParts(new Date(c[0]));
+      var doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
+      var previewTime = withLib ? L.timeOverrideParse(c[1]) : fallbackTime(c[1]), mins = previewTime === null ? w.hours * 60 + w.minutes : previewTime;
+      var active = s.halloween && !s.christmas, tint = L.skyTint(mins, doy, active ? 'halloween' : null);
+      var hex = L.hslToHex(tint.h, tint.s, tint.l);
+      if (boot.threw || !!boot.classes['season-halloween'] !== active || boot.vars['--bg-h'] !== tint.h || boot.vars['--bg-s'] !== tint.s || boot.vars['--bg-l'] !== tint.l || boot.meta.content !== (s.christmas ? '#071f16' : hex) || boot.canvas.textContent !== 'html{background:' + hex + ';color-scheme:dark}') bad = JSON.stringify(c) + ' lib=' + withLib;
+    });
+  });
+  ok('Halloween first paint matches runtime: URL priority, stored overrides, blocked storage, Christmas priority and time previews', !bad, bad);
+  var tintSource = scriptSrc.slice(scriptSrc.indexOf('  const skyTint ='), scriptSrc.indexOf('  const hslToHex ='));
+  var fallbackTint = new Function('KazuLib', tintSource + '\nreturn skyTint;')(null);
+  var paletteBad = null;
+  [1, 172, 274, 298, 305, 366].forEach(function (day) {
+    for (var mins = 0; mins < 1440; mins += 10) {
+      var base = L.skyTint(mins, day), hw = L.skyTint(mins, day, 'halloween');
+      if (JSON.stringify(hw) !== JSON.stringify(fallbackTint(mins, day, 'halloween')) || hw.l !== base.l || hw.glow !== base.glow || hw.daylight !== base.daylight || hw.dusk !== base.dusk || hw.glowX !== base.glowX || hw.h < 275 || hw.h > 283 || hw.s < 28 || hw.s > 34) paletteBad = day + ':' + mins;
+    }
+  });
+  ok('Halloween tint changes only hue/saturation and its inline fallback stays identical all day', !paletteBad, paletteBad);
+  eq('unrecognized palette keeps the normal sky', L.skyTint(720, 274, 'unknown'), L.skyTint(720, 274));
+  eq('Halloween tint rejects invalid time like the base tint', L.skyTint('nope', 274, 'halloween'), null);
+  // Exercise the actual per-second season cache through both UK midnights.
+  var at = edges[0][0], updates = 0;
+  function classes() { var map = {}; return { contains: function (k) { return !!map[k]; }, toggle: function (k, value) { map[k] = !!value; } }; }
+  var rootClasses = classes(), bodyClasses = classes();
+  var doc = { documentElement: { classList: rootClasses }, body: { classList: bodyClasses, dataset: {}, removeAttribute: function () {} } };
+  var h = seasonHarness(null, '', false);
+  var applySource = scriptSrc.slice(scriptSrc.indexOf('  let lastSeasonKey ='), scriptSrc.indexOf('  function fireConfetti()'));
+  var FakeDate = function () { return new Date(at); };
+  var apply = new Function('Date', 'seasonUKParts', 'seasonState', 'document', 'updateSkyBody', 'requestAnimationFrame',
+    'var devSeasons = {}, sakuraLive = false, atmosphereWanted = null, skyTintHex = "#000000", bdayCelebrated = false; function setAtmosphere() {} function setThemeColor() {} function fireConfetti() {} function syncDevPanel() {} function setBalloons() {}\n' + applySource + '\nreturn applySeasons;')(
+    FakeDate, h.api.parts, h.api.state, doc, function () { updates++; }, function (fn) { fn(); });
+  apply(); apply();
+  ok('season cache skips unchanged seconds before October', updates === 1 && !rootClasses.contains('season-halloween'));
+  at = edges[1][0]; apply();
+  ok('an open page enters Halloween at UK midnight and refreshes its tint immediately', updates === 2 && rootClasses.contains('season-halloween') && bodyClasses.contains('season-halloween'));
+  at = edges[5][0]; apply();
+  ok('an open page leaves Halloween at UK midnight on 1 November', updates === 3 && !rootClasses.contains('season-halloween') && !bodyClasses.contains('season-halloween'));
+  ok('Halloween dev row follows Sakura', /\['sakura', '🌸 Sakura'\],\s*\['halloween', '🎃 Halloween'\]/.test(scriptSrc));
+  ok('Halloween art is hidden by default, static and cannot intercept controls', cssFlat.indexOf('.halloween-decor { position: absolute; display: none; pointer-events: none; }') !== -1 && cssFlat.indexOf('.mf-halloween { display: none; pointer-events: none; }') !== -1 && !/\.(halloween-|hw-)[^{]*\{[^}]*animation/.test(cssFlat));
+  ok('Halloween hero artwork is decorative SVG', (htmlSrc.match(/<svg class="halloween-decor [^"]*"[^>]*aria-hidden="true"[^>]*focusable="false"/g) || []).length === 2);
+  ok('Halloween footer has three lanterns and their pools follow the existing light switch', (htmlSrc.match(/class="mf-hw-pumpkin"/g) || []).length === 3 && cssFlat.indexOf('.mf-hw-pool { fill: url(#mf-hw-pool); opacity: var(--m-lit); }') !== -1 && cssFlat.indexOf('.mf-hw-lit { fill: var(--mf-pumpkin-lit); opacity: var(--m-lit); }') !== -1);
+})();
+
+// Exercise the real worker with in-memory responses/caches: no network needed.
+async function serviceWorkerCacheChecks(source) {
+  var listeners = {}, writes = [], requested = [], response = null, waits = [];
+  var reply = { ok: true, copy: true, clone: function () { return this; } };
+  var cachesMock = {
+    open: function () { return Promise.resolve({ put: function (key) { writes.push(key); return Promise.resolve(); } }); },
+    match: function () { return Promise.resolve(null); }
+  };
+  new Function('self', 'caches', 'fetch', 'URL', 'location', source)(
+    { addEventListener: function (name, fn) { listeners[name] = fn; } }, cachesMock,
+    function (req) { requested.push(req.url); return Promise.resolve(reply); }, URL, { origin: 'https://kazu.test' });
+  async function request(path, mode, cache) {
+    response = null; waits = []; writes = []; requested = [];
+    listeners.fetch({ request: { method: 'GET', url: 'https://kazu.test/Kazu-Hub/' + path, mode: mode || 'navigate', cache: cache || 'default' },
+      preloadResponse: Promise.resolve(reply), respondWith: function (p) { response = p; }, waitUntil: function (p) { waits.push(p); } });
+    if (response) await response;
+    await Promise.all(waits);
+  }
+  await request('');
+  eq('worker: a home navigation updates the offline shell', writes, ['./index.html']);
+  await request('index.html');
+  eq('worker: direct index navigation updates the offline shell', writes, ['./index.html']);
+  await request('tests.html');
+  eq('worker: opening browser tests cannot replace the offline home page', writes, []);
+  await request('404.html');
+  eq('worker: another document cannot replace the offline home page', writes, []);
+  await request('index.html', 'cors', 'no-store');
+  ok('worker: explicit fresh-source fetches bypass all caching', response === null && writes.length === 0 && requested.length === 0);
+  await request('style.css?v=63', 'cors');
+  ok('worker: versioned assets still use the normal asset strategy', requested.length === 1 && writes.length === 1 && writes[0].url.indexOf('style.css?v=63') !== -1);
+}
+
 // ---- Sunset sky (orange evening gradient: KazuLib.sunsetGlow + the boot copy) ----
 // Eases in 110 min before the day's sunset, full from sunset for 12 min, gone 85
 // min later; only the evening (no sunrise version). late = golden -> rose palette.
@@ -1373,8 +1511,8 @@ ok('script.js lifts sky-pending only after the first snap is in place', scriptSr
 ok('branches are hidden out of season, the sun/moon layer is not', cssFlat.includes('html.no-sakura .sakura-branch { display: none; }') && !/html\.no-sakura \.sakura-scene/.test(cssFlat));
 ok('static fallback petals stay hidden out of season until script.js builds its own', cssFlat.includes('html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }') && scriptSrc.includes("atmosphereEl.dataset.built = '1';"));
 ok('script.js keeps html.no-sakura in sync with the season state', scriptSrc.includes("document.documentElement.classList.toggle('no-sakura', !s.sakura);"));
-ok('seasonState carries sakura (clock rule on the UK date, dev-overridable)', scriptSrc.includes('const sakura = sakuraInBloom(bM, bD)') && scriptSrc.includes('sakura,                                             // 20 Mar - 10 May, UK date') && scriptSrc.includes("['birthday', 'christmas', 'pride', 'sakura'].forEach"));
-ok('?season=sakura only forces the blossoms on; other params leave them on the clock', scriptSrc.includes("if (set.includes('sakura') || set.includes('blossom')) o.sakura = true;") && scriptSrc.includes("return { birthday: true, christmas: true, pride: true, sakura: true };") && scriptSrc.includes('Object.assign({ sakura }, SEASON_OVERRIDE)'));
+ok('seasonState carries sakura (clock rule on the UK date, dev-overridable)', scriptSrc.includes('const sakura = sakuraInBloom(bM, bD)') && scriptSrc.includes('sakura,                                             // 20 Mar - 10 May, UK date') && scriptSrc.includes("['birthday', 'christmas', 'pride', 'sakura', 'halloween'].forEach"));
+ok('?season=sakura only forces the blossoms on; other params leave them on the clock', scriptSrc.includes("if (set.includes('sakura') || set.includes('blossom')) o.sakura = true;") && scriptSrc.includes("return { birthday: true, christmas: true, pride: true, sakura: true, halloween: true };") && scriptSrc.includes('Object.assign({ sakura }, SEASON_OVERRIDE)'));
 ok('an explicit ?atmosphere=blossom preview brings the branches with it', scriptSrc.includes("ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy'"));
 ok('petal modes are gated by the season; rain, aurora and explicit previews are not', scriptSrc.includes("if (!sakuraLive && !ATMOSPHERE_OVERRIDE && (mode === 'blossom' || mode === 'blossom-heavy')) mode = 'none';"));
 ok('the gate re-runs with the weather\'s request when the season flips', scriptSrc.includes('atmosphereWanted = mode;') && scriptSrc.includes('if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);'));
@@ -1490,7 +1628,7 @@ ok('meadow: the window lights switch on when it is dark enough, in every season 
     return contrast(credit, dfg) >= 4.5 && contrast(credit, nfg) >= 4.5 && contrast(xcredit, xfg) >= 4.5;
   })());
   ok('meadow: static paint only (no animation, one transition: the fade-in)', !/animation\s*:|animation-name|@keyframes/.test(css) && count(css, 'transition:') === 1 && css.indexOf('.footer.meadow.scroll-reveal, .footer.meadow.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }') !== -1);
-  ok('meadow: it is never hidden on phones or low-power devices (only the blossom, flowers and shade are ever display:none)', count(css, 'display: none') === 3 && css.indexOf('@media (pointer') === -1 && !/low-power[^{]*(meadow|footer)/.test(cssFlat) && !/@media[^{]*\{[^}]*\.(meadow|footer)[^{]*\{[^}]*display: none/.test(css));
+  ok('meadow: it is never hidden on phones or low-power devices (only seasonal decorations, flowers and shade are ever display:none)', count(css, 'display: none') === 5 && css.indexOf('@media (pointer') === -1 && !/low-power[^{]*(meadow|footer)/.test(cssFlat) && !/@media[^{]*\{[^}]*\.(meadow|footer)[^{]*\{[^}]*display: none/.test(css));
   ok('meadow: it sits behind .container (z-index 0 vs 1), so the fixed back-to-top button stays on top of it', css.indexOf('position: relative; z-index: 0; margin-top: -34px; overflow: hidden; text-align: center;') !== -1 && cssFlat.indexOf('position: relative; z-index: 1; max-width: 1120px;') !== -1);
   ok('meadow: scales with the page between 860px and 1800px wide, centred, and phones see the middle of it', css.indexOf('width: clamp(860px, 100%, 1800px); height: auto; aspect-ratio: 1440 / 340; overflow: visible;') !== -1 && css.indexOf('display: block; position: relative; left: 50%; translate: -50% 0;') !== -1 && css.indexOf('@media (max-width: 600px) { .meadow-art { translate: calc(-50% - 44px) 0; } }') !== -1);
   ok('meadow: the old footer rules (fixed 80px content-visibility placeholder, plain text style) are gone', cssFlat.indexOf('contain-intrinsic-size: auto 80px') === -1 && cssFlat.indexOf('.footer { text-align: center; margin-top: 54px') === -1);
@@ -1547,7 +1685,13 @@ ok('liquid glass uses convex heightfield profile', scriptSrc.includes('1.0 - (ed
 ok('liquid glass gates low-end hardware and reduced transparency', scriptSrc.includes('KazuLib.isLowEndDevice') && scriptSrc.includes('prefers-reduced-transparency'));
 ok('liquid glass decimates large cards for 75% fill-rate reduction', scriptSrc.includes('decimate = (w > 220 || h > 220)') && scriptSrc.includes('0xFF808080'));
 
-console.log('---');
-console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
-  (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));
-process.exit(fail ? 1 : 0);
+function reportResults() {
+  console.log('---');
+  console.log('TZ=' + (process.env.TZ || '(system default)') + ': ' +
+    (fail === 0 ? ('ALL ' + pass + ' PASSED') : (pass + ' passed, ' + fail + ' FAILED')));
+  process.exit(fail ? 1 : 0);
+}
+serviceWorkerCacheChecks(swSrc).then(reportResults).catch(function (e) {
+  ok("worker cache checks completed", false, String(e));
+  reportResults();
+});

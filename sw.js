@@ -13,13 +13,13 @@
    ========================================================================== */
 'use strict';
 
-const CACHE = 'kazu-shell-v68';
+const CACHE = 'kazu-shell-v71';
 const PRECACHE = [
   './',
   './index.html',
-  './style.css?v=61',
-  './script.js?v=68',
-  './lib.js?v=35',
+  './style.css?v=63',
+  './script.js?v=70',
+  './lib.js?v=36',
   './assets/favicon.png',
   './assets/profile.webp',
   './assets/Sisu.jpg',
@@ -51,6 +51,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return; // APIs, CDNs, fonts: always live
+  if (req.cache === 'no-store') return; // source checks explicitly request fresh bytes
 
   if (req.mode === 'navigate') {
     event.respondWith(
@@ -59,7 +60,9 @@ self.addEventListener('fetch', (event) => {
       Promise.resolve(event.preloadResponse)
         .then((preloaded) => preloaded || fetch(req))
         .then((res) => {
-          if (res.ok) {
+          // Other documents (especially tests.html) must never replace the
+          // offline home page. Navigations still remain network-first.
+          if (res.ok && (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html'))) {
             const copy = res.clone();
             event.waitUntil(caches.open(CACHE).then((c) => c.put('./index.html', copy)));
           }
