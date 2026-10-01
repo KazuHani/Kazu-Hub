@@ -263,7 +263,7 @@ eq('malListRow coerces bad watched/img', (function () {
 
 // ---- discordCacheParse (localStorage fallback when Lanyard is down) ----
 const discordCached = {
-  discord_user: { id: '346360416827473921', username: 'kazu_hani', global_name: 'Kazu | ハニ 🍜', avatar: 'd102a6d0085aa76bbdc7969b4235943d' },
+  discord_user: { id: '346360416827473921', username: 'kazu_hani', global_name: 'Kazu | ハニ ', avatar: 'd102a6d0085aa76bbdc7969b4235943d' },
   discord_status: 'offline',
   activities: []
 };
@@ -994,6 +994,7 @@ const cssFlat = cssSrc.replace(/\r/g, '');
 const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8').replace(/\r\n/g, '\n');
 const fxSrc = fs.readFileSync(__dirname + '/weather-fx.js', 'utf8').replace(/\r\n/g, '\n');
 require('./evals/new-year-fireworks.js').run(L, scriptSrc, cssSrc, ok, eq);
+require('./evals/emoji-free.js').run(L, scriptSrc, [{ name: 'index.html', text: htmlSrc }, { name: 'style.css', text: cssSrc }], ok, eq);
 ['rgba(40,40,110,.32), var(--glint)',   // discord
  'rgba(20,40,70,.32), var(--glint)',    // steam
  'rgba(20,40,100,.32), var(--glint)',   // myanimelist
@@ -1401,7 +1402,7 @@ eq('boot: today-style midsummer date is out of season', !!runBoot(Date.UTC(2026,
   ok('an open page enters Halloween at UK midnight and refreshes its tint immediately', updates === 2 && rootClasses.contains('season-halloween') && bodyClasses.contains('season-halloween'));
   at = edges[5][0]; apply();
   ok('an open page leaves Halloween at UK midnight on 1 November', updates === 3 && !rootClasses.contains('season-halloween') && !bodyClasses.contains('season-halloween'));
-  ok('Halloween dev row follows Sakura', /\['sakura', '🌸 Sakura'\],\s*\['halloween', '🎃 Halloween'\]/.test(scriptSrc));
+  ok('Halloween dev row follows Sakura', /\['sakura', 'Sakura'\],\s*\['halloween', 'Halloween'\]/.test(scriptSrc));
   ok('Halloween art is hidden by default, static and cannot intercept controls', cssFlat.indexOf('.halloween-decor { position: absolute; display: none; pointer-events: none; }') !== -1 && cssFlat.indexOf('.mf-halloween { display: none; pointer-events: none; }') !== -1 && !/\.(halloween-|hw-)[^{]*\{[^}]*animation/.test(cssFlat));
   ok('Halloween hero artwork is decorative SVG', (htmlSrc.match(/<svg class="halloween-decor [^"]*"[^>]*aria-hidden="true"[^>]*focusable="false"/g) || []).length === 2);
   ok('Halloween footer has three lanterns and their pools follow the existing light switch', (htmlSrc.match(/class="mf-hw-pumpkin"/g) || []).length === 3 && cssFlat.indexOf('.mf-hw-pool { fill: url(#mf-hw-pool); opacity: var(--m-lit); }') !== -1 && cssFlat.indexOf('.mf-hw-lit { fill: var(--mf-pumpkin-lit); opacity: var(--m-lit); }') !== -1);
@@ -1519,7 +1520,7 @@ ok('?season=sakura only forces the blossoms on; other params leave them on the c
 ok('an explicit ?atmosphere=blossom preview brings the branches with it', scriptSrc.includes("ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy'"));
 ok('petal modes are gated by the season; rain, aurora and explicit previews are not', scriptSrc.includes("if (!sakuraLive && !ATMOSPHERE_OVERRIDE && (mode === 'blossom' || mode === 'blossom-heavy')) mode = 'none';"));
 ok('the gate re-runs with the weather\'s request when the season flips', scriptSrc.includes('atmosphereWanted = mode;') && scriptSrc.includes('if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);'));
-ok('dev panel has a Sakura Auto/On/Off row', scriptSrc.includes("['sakura', '🌸 Sakura'],"));
+ok('dev panel has a Sakura Auto/On/Off row', scriptSrc.includes("['sakura', 'Sakura'],"));
 ok('sky body sits outside the branch gate (still rendered out of season)', htmlSrc.includes('<div class="sky-body sky-body--moon"></div>') && !cssFlat.includes('html.no-sakura .sky-body'));
 // ---- Live weather layers: wiring (mobile gating, lazy load, hand-off, CSS guard) ----
 ok('weather-fx.js is never a static script tag (mobile never requests it)', htmlSrc.indexOf('weather-fx.js') === -1);

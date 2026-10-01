@@ -12,6 +12,38 @@
   const DISCORD_ID = '346360416827473921';
   const STEAM_VANITY = 'Kazu-Hani';
 
+  // Keep live API names, titles and statuses emoji-free as cards populate.
+  // Watching only changed text/labels avoids re-scanning the page each tick;
+  // scripts, styles, URLs and the illustrated SVG scenery are left alone.
+  const stripEmoji = (KazuLib && KazuLib.stripEmoji) || function (s) {
+    return String(s == null ? '' : s).replace(/[#*0-9]\uFE0F?\u20E3|\p{Regional_Indicator}{1,2}|\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?)*[\u{E0020}-\u{E007F}]*|\p{Emoji_Modifier}|[\uFE0E\uFE0F]/gu, '');
+  };
+  function cleanEmojiText(node) {
+    if (node.nodeType === 3) {
+      if (node.parentElement && node.parentElement.closest('script, style')) return;
+      const clean = stripEmoji(node.nodeValue);
+      if (clean !== node.nodeValue) node.nodeValue = clean;
+      return;
+    }
+    if (node.nodeType !== 1) return;
+    ['alt', 'title', 'aria-label'].forEach((name) => {
+      const value = node.getAttribute(name);
+      if (value !== null) {
+        const clean = stripEmoji(value);
+        if (clean !== value) node.setAttribute(name, clean);
+      }
+    });
+    Array.from(node.childNodes).forEach(cleanEmojiText);
+  }
+  cleanEmojiText(document.body);
+  new MutationObserver((records) => {
+    records.forEach((record) => {
+      if (record.type === 'childList') record.addedNodes.forEach(cleanEmojiText);
+      else cleanEmojiText(record.target);
+    });
+  }).observe(document.body, { childList: true, subtree: true, characterData: true,
+    attributes: true, attributeFilter: ['alt', 'title', 'aria-label'] });
+
   // Owned by lib.js; local copy so the page still escapes safely if lib.js fails to load.
   const escapeHtml = (KazuLib && KazuLib.escapeHtml) || function (s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -195,7 +227,7 @@
       const p = KazuLib.birthdayCountdownParts(now);
       ageStr = String(p.ageNow);
       if (p.isToday) {
-        bdayText = '🎉 Today!';
+        bdayText = 'Today!';
         bdaySub = 'Happy birthday — turning ' + p.ageNow;
       } else {
         bdayText = p.calDays + (p.calDays === 1 ? ' day' : ' days');
@@ -216,7 +248,7 @@
 
       ageStr = String(age);
       if (isToday) {
-        bdayText = '🎉 Today!';
+        bdayText = 'Today!';
         bdaySub = 'Happy birthday — turning ' + age;
       } else {
         bdayText = days + (days === 1 ? ' day' : ' days');
@@ -283,18 +315,18 @@
 
   // ---------- Weather ----------
   function weatherInfo(code, isDay) {
-    if (code === 0) return { e: isDay ? '☀️' : '🌙', d: 'Clear sky' };
-    if (code === 1) return { e: isDay ? '🌤️' : '🌙', d: 'Mainly clear' };
-    if (code === 2) return { e: '⛅', d: 'Partly cloudy' };
-    if (code === 3) return { e: '☁️', d: 'Overcast' };
-    if (code === 45 || code === 48) return { e: '🌫️', d: 'Foggy' };
-    if (code >= 51 && code <= 57) return { e: '🌦️', d: 'Drizzle' };
-    if (code >= 61 && code <= 67) return { e: '🌧️', d: 'Rain' };
-    if (code >= 71 && code <= 77) return { e: '❄️', d: 'Snow' };
-    if (code >= 80 && code <= 82) return { e: '🌧️', d: 'Rain showers' };
-    if (code >= 85 && code <= 86) return { e: '🌨️', d: 'Snow showers' };
-    if (code >= 95) return { e: '⛈️', d: 'Thunderstorm' };
-    return { e: '🌡️', d: 'Cloudy' };
+    if (code === 0) return { d: 'Clear sky' };
+    if (code === 1) return { d: 'Mainly clear' };
+    if (code === 2) return { d: 'Partly cloudy' };
+    if (code === 3) return { d: 'Overcast' };
+    if (code === 45 || code === 48) return { d: 'Foggy' };
+    if (code >= 51 && code <= 57) return { d: 'Drizzle' };
+    if (code >= 61 && code <= 67) return { d: 'Rain' };
+    if (code >= 71 && code <= 77) return { d: 'Snow' };
+    if (code >= 80 && code <= 82) return { d: 'Rain showers' };
+    if (code >= 85 && code <= 86) return { d: 'Snow showers' };
+    if (code >= 95) return { d: 'Thunderstorm' };
+    return { d: 'Cloudy' };
   }
 
   let weatherDaily = null;   // Open-Meteo `daily` block for the modal forecast strip
@@ -361,7 +393,7 @@
   let sakuraLive = seasonState(new Date()).sakura;
   let atmosphereHeight = window.innerHeight;
   let atmosphereBoundsFrame = 0;
-  const BLOSSOM_GLYPHS = ['🌸'];
+
   const SNOW_COLORS = ['#bfe3ff', '#a9d6ff', '#cde8ff', '#b9deff']; // Konami dragon burst only
   const randRange = (min, max) => min + Math.random() * (max - min);
 
@@ -660,7 +692,7 @@
     for (let i = 0; i < count; i++) {
       const s = document.createElement('span');
       s.className = 'petal';
-      s.textContent = BLOSSOM_GLYPHS[(Math.random() * BLOSSOM_GLYPHS.length) | 0];
+
       const depth = Math.random();
       let spawnY;
       if (spawns) {
@@ -1194,7 +1226,7 @@
     discord_user: {
       id: DISCORD_ID,
       username: 'kazu_hani',
-      global_name: 'Kazu | ハニ 🍜',
+      global_name: 'Kazu | ハニ',
       avatar: null,
     },
     discord_status: 'offline',
@@ -1355,19 +1387,13 @@
       else { platEl.innerHTML = ''; platEl.classList.add('hidden'); }
     }
 
-    // Custom status (activity type 4) — emoji can be unicode or a custom server emoji
+    // Custom status (activity type 4): text only, without server emoji images.
     const custom = (dc.activities || []).find((a) => a.type === 4);
-    const hasCustom = !!(custom && (custom.state || (custom.emoji && (custom.emoji.id || custom.emoji.name))));
+    const hasCustom = !!(custom && stripEmoji(custom.state).trim());
     const customEl = $('discordCustom');
     if (customEl) {
       if (hasCustom) {
-        const emojiEl = $('discordCustomEmoji');
-        if (custom.emoji && custom.emoji.id) {
-          emojiEl.innerHTML = '<img class="discord-custom-emoji-img" src="https://cdn.discordapp.com/emojis/' + custom.emoji.id + (custom.emoji.animated ? '.gif' : '.png') + '?size=32" alt="">';
-        } else {
-          emojiEl.textContent = (custom.emoji && custom.emoji.name) ? custom.emoji.name : '💬';
-        }
-        $('discordCustomText').textContent = custom.state || '';
+        $('discordCustomText').textContent = stripEmoji(custom.state);
         customEl.classList.remove('hidden');
       } else {
         customEl.classList.add('hidden');
@@ -1423,7 +1449,7 @@
     const idle = !game && !isSpotify && !hasCustom;
     if (idle) {
       $('discordIdle').textContent = dc.discord_status === 'offline'
-        ? 'Currently offline — catch me later ❄️'
+        ? 'Currently offline'
         : 'Online, not in a game right now';
       $('discordIdle').classList.remove('hidden');
     } else {
@@ -1684,7 +1710,7 @@
     const idle = $('malIdle');
     if (!idle) return;
     const empty = malAnimeRows.length === 0 && malMangaRows.length === 0;
-    if (empty) idle.textContent = 'Not watching or reading anything right now ❄️';
+    if (empty) idle.textContent = 'Not watching or reading anything right now ';
     idle.classList.toggle('hidden', !empty);
   }
 
@@ -1873,7 +1899,7 @@
           '<a class="lb-entry" href="' + escapeHtml(entry.link) + '" target="_blank" rel="noopener">' +
             (entry.poster
               ? '<img class="lb-poster" src="' + escapeHtml(entry.poster) + '" alt="" loading="lazy" decoding="async">'
-              : '<div class="lb-poster lb-poster--empty">🎬</div>') +
+              : '<div class="lb-poster lb-poster--empty"></div>') +
             '<div class="lb-info">' +
               '<div class="lb-label">Latest watch' + (entry.rewatch ? ' · rewatch' : '') + '</div>' +
               '<div class="lb-title">' + escapeHtml(entry.title) + (entry.year ? ' <span class="lb-year">' + entry.year + '</span>' : '') + '</div>' +
@@ -1936,7 +1962,7 @@
         lastMusicSig = sig;
         list.innerHTML = rows.map((t, i) => {
           const inner =
-            '<div class="music-track-num">' + (t.playingNow ? '▶' : String(i + 1)) + '</div>' +
+            '<div class="music-track-num">' + (t.playingNow ? '' : String(i + 1)) + '</div>' +
             '<div class="music-track-text">' +
               '<div class="music-track-name">' + escapeHtml(t.name) + '</div>' +
               '<div class="music-track-artist">' + escapeHtml(t.artist) + '</div>' +
@@ -2144,25 +2170,25 @@
     const diff = localOffset - ukOffset;
     const absDiff = Math.abs(diff);
     const diffText = absDiff < 0.001
-      ? 'None — same as the UK 🇬🇧'
+      ? 'None — same as the UK '
       : absDiff + (absDiff === 1 ? ' hour ' : ' hours ') + (diff > 0 ? 'ahead of the UK' : 'behind the UK');
 
     const dst = KazuLib.nextUkDstTransition(now);
     const dstDate = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(dst.date);
     const daysToDst = Math.ceil((dst.date - now) / 86400000);
     const dirText = dst.direction === 'forward'
-      ? 'clocks go <strong>forward</strong> 1 hour — lose an hour, BST begins ☀️'
-      : 'clocks go <strong>back</strong> 1 hour — gain an hour, GMT returns 🌙';
+      ? 'clocks go <strong>forward</strong> 1 hour — lose an hour, BST begins '
+      : 'clocks go <strong>back</strong> 1 hour — gain an hour, GMT returns ';
     const stateText = KazuLib.isUkBST(now)
       ? 'Right now: <strong>British Summer Time</strong> (BST, UTC+1)'
       : 'Right now: <strong>Greenwich Mean Time</strong> (GMT, UTC+0)';
 
     return ''
       + '<div class="tz-grid">'
-      +   '<div class="tz-cell"><div class="tz-label">🇬🇧 UK time</div>'
+      +   '<div class="tz-cell"><div class="tz-label">UK time</div>'
       +     '<div class="tz-time" id="mUkTime">' + fmtTimeUK.format(now) + '</div>'
       +     '<div class="tz-meta">' + fmtDayUK.format(now) + ' · Europe/London</div></div>'
-      +   '<div class="tz-cell"><div class="tz-label">📍 Your time</div>'
+      +   '<div class="tz-cell"><div class="tz-label">Your time</div>'
       +     '<div class="tz-time" id="mLocalTime">' + fmtTime.format(now) + '</div>'
       +     '<div class="tz-meta">' + localZone + '</div></div>'
       + '</div>'
@@ -2188,8 +2214,8 @@
       + '<div class="globe-frame" id="globeFrame"></div>'
       + '<div class="forecast-strip" id="forecastStrip"></div>'
       + '<div class="modal-actions">'
-      +   '<a class="modal-btn" id="globeOpen" target="_blank" rel="noopener">Open full UK wind map ↗</a>'
-      +   '<button type="button" class="modal-btn modal-btn--ghost" id="skyCompare">📍 Compare with your sky</button>'
+      +   '<a class="modal-btn" id="globeOpen" target="_blank" rel="noopener">Open full UK wind map </a>'
+      +   '<button type="button" class="modal-btn modal-btn--ghost" id="skyCompare"> Compare with your sky</button>'
       + '</div>'
       + '<div class="sky-compare hidden" id="skyCompareOut"></div>';
   }
@@ -2219,10 +2245,10 @@
           tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
         });
       } catch (e) {
-        out.innerHTML = '<div class="forecast-empty">Couldn’t read your sky ☁️</div>';
+        out.innerHTML = '<div class="forecast-empty">Couldn’t read your sky </div>';
       }
     }, () => {
-      out.innerHTML = '<div class="forecast-empty">Location off — your sky stays a mystery ❄️</div>';
+      out.innerHTML = '<div class="forecast-empty">Location off — your sky stays a mystery </div>';
     }, { timeout: 10000, maximumAge: 300000 });
   }
 
@@ -2238,11 +2264,11 @@
     const delta = dt === 0 ? 'Same temperature as you'
       : Math.abs(dt) + '°C ' + (dt > 0 ? 'warmer where you are' : 'colder where you are');
     out.innerHTML = '<div class="tz-grid">'
-      + '<div class="tz-cell"><div class="tz-label">🐉 Aberystwyth</div>'
-      +   '<div class="tz-time">' + mineInfo.e + ' ' + Math.round(mine.tempC) + '°C</div>'
+      + '<div class="tz-cell"><div class="tz-label">Aberystwyth</div>'
+      +   '<div class="tz-time">' + Math.round(mine.tempC) + '°C</div>'
       +   '<div class="tz-meta">' + mineInfo.d + ' · wind ' + Math.round(mine.windKmh * 0.621371) + ' mph</div></div>'
-      + '<div class="tz-cell"><div class="tz-label">📍 Your sky</div>'
-      +   '<div class="tz-time">' + yourInfo.e + ' ' + Math.round(yours.tempC) + '°C</div>'
+      + '<div class="tz-cell"><div class="tz-label">Your sky</div>'
+      +   '<div class="tz-time">' + Math.round(yours.tempC) + '°C</div>'
       +   '<div class="tz-meta">' + yourInfo.d + ' · wind ' + Math.round(yours.windKmh * 0.621371) + ' mph</div></div>'
       + '</div>'
       + '<div class="modal-note"><div class="modal-row"><span>Difference</span><strong>' + delta + '</strong></div></div>';
@@ -2262,15 +2288,15 @@
       return;
     }
     strip.innerHTML = rows.map(function (r) {
-      const info = (typeof r.code === 'number') ? weatherInfo(r.code, true) : { e: '🌡️', d: 'Forecast' };
+      const info = (typeof r.code === 'number') ? weatherInfo(r.code, true) : { d: 'Forecast' };
       return '<div class="forecast-day">'
         + '<div class="forecast-label">' + escapeHtml(r.label) + '</div>'
-        + '<div class="forecast-emoji" title="' + escapeHtml(info.d) + '">' + info.e + '</div>'
+        + '<div class="forecast-condition">' + escapeHtml(info.d) + '</div>'
         + '<div class="forecast-temps">'
         +   (r.maxC === null ? '–' : r.maxC + '°')
         +   ' <span class="forecast-min">' + (r.minC === null ? '–' : r.minC + '°') + '</span>'
         + '</div>'
-        + (r.precipPct === null ? '' : '<div class="forecast-precip">💧 ' + r.precipPct + '%</div>')
+        + (r.precipPct === null ? '' : '<div class="forecast-precip"> ' + r.precipPct + '%</div>')
         + '</div>';
     }).join('');
   }
@@ -2296,8 +2322,8 @@
   function statTile(num, label) {
     return '<div class="stat-tile"><div class="stat-tile-num">' + num + '</div><div class="stat-tile-label">' + label + '</div></div>';
   }
-  function funCell(emoji, num, label) {
-    return '<div class="fun-cell"><span class="fun-emoji">' + emoji + '</span><div>'
+  function funCell(num, label) {
+    return '<div class="fun-cell"><div>'
       + '<div class="fun-num">' + num + '</div><div class="fun-label">' + label + '</div></div></div>';
   }
   function ageModalHTML() {
@@ -2316,15 +2342,15 @@
       +   '<div class="modal-row"><span>Next milestone</span><strong>' + nf(a.nextMilestoneDays) + ' days</strong></div>'
       +   '<div class="modal-row modal-row-sub"><span>reached on</span><span>' + milestoneOn + ' · ' + nf(a.nextMilestoneDays - a.totalDays) + ' to go</span></div>'
       + '</div>'
-      + '<div class="sign-row"><div class="sign-glyph">' + f.starGlyph + '</div><div>'
+      + '<div class="sign-row"><div>'
       +   '<div class="tz-label">Star sign</div><div class="sign-name">' + f.starSign + '</div>'
       +   '<div class="tz-meta">Born ' + f.dateLabel + ' — a ' + f.weekday + '</div></div></div>'
       + '<div class="fun-wrap"><div class="fun-title">Life in fun units</div>'
       +   '<div class="fun-grid">'
-      +     funCell('🌕', nf(a.fullMoons), 'full moons seen')
-      +     funCell('🌍', a.orbits.toFixed(1), 'laps of the Sun')
-      +     funCell('😴', '~' + a.asleepYears.toFixed(1), 'years asleep')
-      +     funCell('💨', nf(a.breaths), 'breaths taken')
+      +     funCell(nf(a.fullMoons), 'full moons seen')
+      +     funCell(a.orbits.toFixed(1), 'laps of the Sun')
+      +     funCell('~' + a.asleepYears.toFixed(1), 'years asleep')
+      +     funCell(nf(a.breaths), 'breaths taken')
       +   '</div>'
       + '</div>';
   }
@@ -2339,7 +2365,7 @@
     // in every timezone.
     const dateLabel = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(p.targetDate);
     const head = p.isToday
-      ? '🎉 It’s today — happy birthday! Turning <strong>' + p.ageNow + '</strong>'
+      ? 'It’s today — happy birthday! Turning <strong>' + p.ageNow + '</strong>'
       : 'Turning <strong>' + p.turning + '</strong> on ' + dateLabel;
     return ''
       + '<div class="modal-note modal-note--center">' + head + '</div>'
@@ -2350,16 +2376,16 @@
       +   cdCell('cdSecs', pad2(p.seconds), 'secs')
       + '</div>'
       + '<div class="modal-actions modal-actions--center">'
-      +   '<a class="modal-btn" id="bdayGoogle" target="_blank" rel="noopener">📅 Add to Google Calendar</a>'
-      +   '<button type="button" class="modal-btn modal-btn--ghost" id="bdayIcs">⬇️ Download .ics file</button>'
+      +   '<a class="modal-btn" id="bdayGoogle" target="_blank" rel="noopener"> Add to Google Calendar</a>'
+      +   '<button type="button" class="modal-btn modal-btn--ghost" id="bdayIcs"> Download .ics file</button>'
       + '</div>'
       + '<p class="modal-credit modal-credit--center">Adds a yearly all-day event with a reminder the day before.</p>';
   }
   function bdayModalAfter() {
     const p = KazuLib.birthdayCountdownParts(new Date());
-    const summary = 'Kazu’s Birthday 🎂';
+    const summary = 'Kazu’s Birthday ';
     const g = $('bdayGoogle');
-    if (g) g.href = KazuLib.googleCalendarUrl({ summary: summary, date: p.targetDate, details: 'Kazu turns ' + (p.isToday ? p.ageNow : p.turning) + '! 🎉' });
+    if (g) g.href = KazuLib.googleCalendarUrl({ summary: summary, date: p.targetDate, details: 'Kazu turns ' + (p.isToday ? p.ageNow : p.turning) + '! ' });
     const ics = $('bdayIcs');
     if (ics) ics.addEventListener('click', () => downloadBirthdayICS(summary));
   }
@@ -2375,14 +2401,14 @@
     a.href = url; a.download = 'kazu-birthday.ics';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast('Saved kazu-birthday.ics 🎂');
+    showToast('Saved kazu-birthday.ics ');
   }
 
   const MODALS = {
-    time: { title: '🕒 Time & timezones', render: timeModalHTML, live: timeModalLive },
-    weather: { title: '🌬️ UK wind globe', wide: true, render: weatherModalHTML, afterRender: weatherModalAfter },
-    age: { title: '🎂 Age & life stats', render: ageModalHTML },
-    bday: { title: '🎉 Next birthday', render: bdayModalHTML, afterRender: bdayModalAfter, live: bdayModalLive },
+    time: { title: 'Time & timezones', render: timeModalHTML, live: timeModalLive },
+    weather: { title: 'UK wind globe', wide: true, render: weatherModalHTML, afterRender: weatherModalAfter },
+    age: { title: 'Age & life stats', render: ageModalHTML },
+    bday: { title: 'Next birthday', render: bdayModalHTML, afterRender: bdayModalAfter, live: bdayModalLive },
   };
 
   function openModal(key, trigger) {
@@ -2884,14 +2910,14 @@
     if (konamiBusy) return;
     konamiBusy = true;
     if (LOW_POWER) {
-      showToast('You found the dragon! 🐉');
+      showToast('You found the dragon! ');
       konamiBusy = false;
       return;
     }
-    showToast('🐉 Konami! The dragon takes flight…');
+    showToast('Konami! The dragon takes flight…');
     const d = document.createElement('div');
     d.className = 'konami-dragon';
-    d.textContent = '🐉';
+    d.innerHTML = '<img src="assets/profile.webp" width="64" height="64" alt="">';
     d.setAttribute('aria-hidden', 'true');
     document.body.appendChild(d);
     d.addEventListener('animationend', () => { d.remove(); konamiBusy = false; });
@@ -2899,7 +2925,7 @@
       const f = document.createElement('span');
       f.className = 'konami-flake';
       f.setAttribute('aria-hidden', 'true');
-      f.textContent = Math.random() < 0.5 ? '❄' : '❅';
+      f.textContent = '';
       f.style.left = (Math.random() * 100) + 'vw';
       f.style.fontSize = (10 + Math.random() * 16) + 'px';
       f.style.color = SNOW_COLORS[(Math.random() * SNOW_COLORS.length) | 0];
@@ -2930,11 +2956,11 @@
   // and checking the responsive sky curve guide. Built once on first use; styles
   // live in style.css ("DEV SETTINGS PANEL").
   const DEV_SEASON_ROWS = [
-    ['birthday', '🎂 Birthday'],
-    ['christmas', '🎄 Christmas'],
-    ['pride', '🏳️‍🌈 Pride'],
-    ['sakura', '🌸 Sakura'],
-    ['halloween', '🎃 Halloween'],
+    ['birthday', 'Birthday'],
+    ['christmas', 'Christmas'],
+    ['pride', 'Pride'],
+    ['sakura', 'Sakura'],
+    ['halloween', 'Halloween'],
   ];
   const devRecent = [];
   let devPanel = null;
@@ -2947,7 +2973,7 @@
     el.setAttribute('aria-label', 'Developer settings');
     el.hidden = true;
     let html = '<div class="dev-panel-head">' +
-        '<span class="dev-panel-title">🛠 Dev settings</span>' +
+        '<span class="dev-panel-title">Dev settings</span>' +
         '<button type="button" class="dev-panel-close" aria-label="Close developer settings">✕</button>' +
       '</div>' +
       '<div class="dev-panel-sub">Season triggers + responsive scenery preview:</div>';
@@ -3038,7 +3064,7 @@
     if (!devPanel.hidden) { closeDevPanel(); return; } // re-typing the code closes it
     devPanel.hidden = false;
     syncDevPanel(seasonState(new Date()));
-    showToast('🛠 Dev settings unlocked');
+    showToast(' Dev settings unlocked');
   }
 
   function closeDevPanel() {

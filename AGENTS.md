@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=67`,
-  `lib.js?v=37`, `script.js?v=72` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=68`,
+  `lib.js?v=38`, `script.js?v=73` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -380,3 +380,12 @@ bind agent work here:
 Push to `Main` → GitHub Pages serves the repo root as-is. There is no build,
 no bundler, no environment variables, no server-side component. Cache-busting
 bumps (above) are the entire "release process" for CSS/JS changes.
+
+## Emoji-free content
+
+User-facing text and metadata contain no emojis. `KazuLib.stripEmoji` removes
+emoji sequences from live text and labels via the targeted DOM observer in
+`script.js`, with a matching inline fallback. Discord custom emoji images are
+not rendered. Blossom particles use CSS petal shapes, forecasts use condition
+text, and the Konami dragon uses the existing profile image. Keep both test
+lanes and `node evals/emoji-free.js` passing when adding new UI copy.

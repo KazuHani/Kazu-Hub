@@ -76,6 +76,7 @@ body {
    from the branches. --spawn-y lets the transform end at the document's
    bottom regardless of its starting branch; --exit-pad carries the full
    glyph beyond the footer before overflow clips it. */
+.petal::before { content: ''; display: block; width: .65em; height: .9em; background: var(--sakura-petal, #f5b9d2); border-radius: 70% 20% 65% 30%; }
 .petal {
   position: absolute; filter: blur(2px);
   animation-name: fallY, petalSway, petalRock;
@@ -411,6 +412,7 @@ body.season-christmas .sakura-scene { display: none; }
 .info-pill--game { background: linear-gradient(135deg,rgba(124,92,255,.12),rgba(14,165,233,.12)); border: 1px solid rgba(124,92,255,.25); }
 .info-pill--spotify { margin-top: 12px; background: rgba(30,215,96,.1); border: 1px solid rgba(30,215,96,.28); }
 .info-pill--steam-game { background: rgba(102,192,244,.1); border: 1px solid rgba(102,192,244,.28); margin-bottom: 14px; gap: 12px; padding: 12px 14px; }
+.info-pill-emoji:empty { display: none; }
 .info-pill-emoji { font-size: 26px; flex: none; }
 .info-pill-icon { width: 30px; height: 30px; border-radius: 8px; flex: none; object-fit: cover; }
 .info-pill--steam-game .info-pill-emoji { font-size: 24px; }
@@ -681,7 +683,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   background: linear-gradient(150deg,#ff1a1a,#7c1d2b);
   box-shadow: 0 10px 24px rgba(255,0,0,.22);
 }
-.music-cover-wrap::after { content: "🎵"; position: absolute; font-size: 46px; opacity: .92; }
 .music-cover { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block; }
 .music-body { min-width: 0; }
 .music-playlist-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ff4d4d; }
@@ -1827,6 +1828,7 @@ body.modal-open { overflow: hidden; }
   text-align: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
 }
 .forecast-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.forecast-condition { font-size: 12px; line-height: 1.35; min-height: 2.7em; margin: 8px 0; }
 .forecast-emoji { font-size: 24px; line-height: 1.2; margin-top: 5px; }
 .forecast-temps { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
 .forecast-min { color: var(--ink-soft); font-weight: 500; }
@@ -1887,7 +1889,7 @@ body.modal-open { overflow: hidden; }
 
 /* ---- Konami dragon easter egg ----
    Fixed-position, pointer-events none, created on the fly by script.js.
-   The 🐉 glyph faces left, so every keyframe keeps scaleX(-1) to fly right. */
+   The  glyph faces left, so every keyframe keeps scaleX(-1) to fly right. */
 .konami-dragon {
   position: fixed; top: 18%; left: 0; z-index: 200; font-size: 64px; line-height: 1;
   pointer-events: none; user-select: none;
@@ -1901,6 +1903,7 @@ body.modal-open { overflow: hidden; }
   75%  { transform: translate(81vw, -6vh) scaleX(-1) rotate(4deg); }
   100% { transform: translate(116vw, 0)   scaleX(-1) rotate(0deg); }
 }
+.konami-flake { width: 8px; height: 8px; border-radius: 50%; background: #d9ebff; }
 .konami-flake {
   position: fixed; top: -5%; z-index: 199; pointer-events: none; user-select: none;
   animation: konamiFlakeFall linear forwards;

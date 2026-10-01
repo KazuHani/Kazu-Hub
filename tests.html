@@ -21,9 +21,10 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=37"></script>
+  <script src="lib.js?v=38"></script>
   <script src="weather-fx.js?v=3"></script>
   <script src="evals/new-year-fireworks.js?v=2"></script>
+  <script src="evals/emoji-free.js?v=1"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -282,7 +283,7 @@
 
       // ---- discordCacheParse (localStorage fallback when Lanyard is down) ----
       var discordCached = {
-        discord_user: { id: '346360416827473921', username: 'kazu_hani', global_name: 'Kazu | ハニ 🍜', avatar: 'd102a6d0085aa76bbdc7969b4235943d' },
+        discord_user: { id: '346360416827473921', username: 'kazu_hani', global_name: 'Kazu | ハニ ', avatar: 'd102a6d0085aa76bbdc7969b4235943d' },
         discord_status: 'offline',
         activities: []
       };
@@ -996,7 +997,7 @@
       eq('isLowEndDevice: capable desktop is eligible', L.isLowEndDevice({}), false);
 
       var s = document.getElementById('summary');
-      s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
+      s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ') : (pass + ' passed, ' + fail + ' FAILED ');
       s.className = fail === 0 ? 'pass' : 'fail';
       console.log('[lib.js tests]', pass, 'passed,', fail, 'failed');
 
@@ -1145,14 +1146,15 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=67', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=72', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=68', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=73', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         // CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
         var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2].replace(/\r\n/g, '\n'), swSrc = src[3], fxSrc = src[4].replace(/\r\n/g, '\n');
         KazuNewYearChecks.run(L, scriptSrc, cssSrc, ok, eq);
+        KazuEmojiChecks.run(L, scriptSrc, [{ name: 'index.html', text: htmlSrc }, { name: 'style.css', text: cssSrc }], ok, eq);
         ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
         ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
@@ -1393,7 +1395,7 @@
           ok('an open page enters Halloween at UK midnight and refreshes its tint immediately', updates === 2 && rootClasses.contains('season-halloween') && bodyClasses.contains('season-halloween'));
           at = edges[5][0]; apply();
           ok('an open page leaves Halloween at UK midnight on 1 November', updates === 3 && !rootClasses.contains('season-halloween') && !bodyClasses.contains('season-halloween'));
-          ok('Halloween dev row follows Sakura', /\['sakura', '🌸 Sakura'\],\s*\['halloween', '🎃 Halloween'\]/.test(scriptSrc));
+          ok('Halloween dev row follows Sakura', /\['sakura', 'Sakura'\],\s*\['halloween', 'Halloween'\]/.test(scriptSrc));
           ok('Halloween art is hidden by default, static and cannot intercept controls', cssFlat.indexOf('.halloween-decor { position: absolute; display: none; pointer-events: none; }') !== -1 && cssFlat.indexOf('.mf-halloween { display: none; pointer-events: none; }') !== -1 && !/\.(halloween-|hw-)[^{]*\{[^}]*animation/.test(cssFlat));
           ok('Halloween hero artwork is decorative SVG', (htmlSrc.match(/<svg class="halloween-decor [^"]*"[^>]*aria-hidden="true"[^>]*focusable="false"/g) || []).length === 2);
           ok('Halloween footer has three lanterns and their pools follow the existing light switch', (htmlSrc.match(/class="mf-hw-pumpkin"/g) || []).length === 3 && cssFlat.indexOf('.mf-hw-pool { fill: url(#mf-hw-pool); opacity: var(--m-lit); }') !== -1 && cssFlat.indexOf('.mf-hw-lit { fill: var(--mf-pumpkin-lit); opacity: var(--m-lit); }') !== -1);
@@ -1511,7 +1513,7 @@
         ok('an explicit ?atmosphere=blossom preview brings the branches with it', scriptSrc.indexOf("ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy'") !== -1);
         ok('petal modes are gated by the season; rain, aurora and explicit previews are not', scriptSrc.indexOf("if (!sakuraLive && !ATMOSPHERE_OVERRIDE && (mode === 'blossom' || mode === 'blossom-heavy')) mode = 'none';") !== -1);
         ok('the gate re-runs with the weather\'s request when the season flips', scriptSrc.indexOf('atmosphereWanted = mode;') !== -1 && scriptSrc.indexOf('if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);') !== -1);
-        ok('dev panel has a Sakura Auto/On/Off row', scriptSrc.indexOf("['sakura', '🌸 Sakura'],") !== -1);
+        ok('dev panel has a Sakura Auto/On/Off row', scriptSrc.indexOf("['sakura', 'Sakura'],") !== -1);
         ok('sky body sits outside the branch gate (still rendered out of season)', htmlSrc.indexOf('<div class="sky-body sky-body--moon"></div>') !== -1 && cssFlat.indexOf('html.no-sakura .sky-body') === -1);
         // ---- Single time-of-day palette (light theme + toggle fully removed) ----
         ok('no light theme selectors or bootstrap left', cssFlat.indexOf('data-theme="light"') === -1 && htmlSrc.indexOf('data-theme="light"') === -1 && scriptSrc.indexOf('data-theme') === -1);
@@ -1785,12 +1787,12 @@
         ok('liquid glass gates low-end hardware and reduced transparency', scriptSrc.indexOf('KazuLib.isLowEndDevice') !== -1 && scriptSrc.indexOf('prefers-reduced-transparency') !== -1);
         ok('liquid glass decimates large cards for 75% fill-rate reduction', scriptSrc.indexOf('decimate = (w > 220 || h > 220)') !== -1 && scriptSrc.indexOf('0xFF808080') !== -1);
         return serviceWorkerCacheChecks(swSrc).then(function () {
-          s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
+          s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ') : (pass + ' passed, ' + fail + ' FAILED ');
           s.className = fail === 0 ? 'pass' : 'fail';
         });
       }).then(function () {
         return liveMeadowChecks().then(function () {
-          s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ✅') : (pass + ' passed, ' + fail + ' FAILED ❌');
+          s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ') : (pass + ' passed, ' + fail + ' FAILED ');
           s.className = fail === 0 ? 'pass' : 'fail';
         });
       }).catch(function (e) {
@@ -1800,7 +1802,7 @@
         d.textContent = (skip ? 'SKIP source checks: serve over HTTP. ' : 'FAIL source checks: ') + String(e && e.message || e);
         d.classList.add(skip ? 'pass' : 'fail');
         out.appendChild(d);
-        if (!skip) { fail++; s.textContent = pass + ' passed, ' + fail + ' FAILED ❌'; s.className = 'fail'; }
+        if (!skip) { fail++; s.textContent = pass + ' passed, ' + fail + ' FAILED '; s.className = 'fail'; }
       });
     })();
   </script>

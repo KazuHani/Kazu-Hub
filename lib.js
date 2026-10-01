@@ -55,6 +55,12 @@
     return Date.UTC(w.year, w.month, w.day, w.hours, w.minutes, w.seconds);
   }
 
+  // Remove emoji sequences from displayed text, including joined characters,
+  // skin tones, flags and keycaps, while preserving ordinary numbers/symbols.
+  function stripEmoji(s) {
+    return String(s == null ? '' : s).replace(/[#*0-9]\uFE0F?\u20E3|\p{Regional_Indicator}{1,2}|\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?)*[\u{E0020}-\u{E007F}]*|\p{Emoji_Modifier}|[\uFE0E\uFE0F]/gu, '');
+  }
+
   // ---- New Year celebration -----------------------------------------------
   // The first UK minute of 1 January catches both a live midnight tick and a
   // tab opened/resumed just after it. A year latch prevents repeat shows;
@@ -182,9 +188,8 @@
     var m = monthIndex + 1; // 1-based
     var cutoffs = [20, 19, 20, 20, 21, 21, 22, 23, 23, 23, 22, 22]; // last day of the "earlier" sign per month
     var names = ['Capricorn', 'Aquarius', 'Pisces', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn'];
-    var glyphs = ['♑', '♒', '♓', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑'];
     var idx = (day <= cutoffs[m - 1]) ? (m - 1) : m;
-    return { name: names[idx], glyph: glyphs[idx] };
+    return { name: names[idx], glyph: '' };
   }
 
   function birthFacts() {
@@ -1312,6 +1317,7 @@
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
     escapeHtml: escapeHtml,
+    stripEmoji: stripEmoji,
     ukWallParts: ukWallParts,
     newYearCelebrationYear: newYearCelebrationYear,
     fireworkSparkState: fireworkSparkState,

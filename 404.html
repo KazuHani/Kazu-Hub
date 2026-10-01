@@ -30,6 +30,7 @@
     filter: blur(2px);
     animation: fall linear infinite;
   }
+  .petal::before { content: ''; display: block; width: .65em; height: .9em; background: #f5b9d2; border-radius: 70% 20% 65% 30%; }
   @keyframes fall {
     0%   { transform: translateY(0)     translateX(0)    rotate(0deg); }
     50%  { transform: translateY(55vh)  translateX(3vw)  rotate(180deg); }
@@ -65,20 +66,20 @@
 </style>
 </head>
 <body>
-  <span class="petal" aria-hidden="true" style="left:8%;font-size:18px;opacity:.7;animation-duration:13s;">🌸</span>
-  <span class="petal" aria-hidden="true" style="left:22%;font-size:13px;opacity:.55;animation-duration:19s;animation-delay:2s;">🌸</span>
-  <span class="petal" aria-hidden="true" style="left:37%;font-size:22px;opacity:.6;animation-duration:16s;animation-delay:1s;">🌸</span>
-  <span class="petal" aria-hidden="true" style="left:52%;font-size:14px;opacity:.65;animation-duration:21s;animation-delay:3.5s;">🌸</span>
-  <span class="petal" aria-hidden="true" style="left:66%;font-size:17px;opacity:.55;animation-duration:17s;animation-delay:5s;">🌸</span>
-  <span class="petal" aria-hidden="true" style="left:80%;font-size:15px;opacity:.6;animation-duration:20s;animation-delay:2.6s;">🌸</span>
-  <span class="petal" aria-hidden="true" style="left:91%;font-size:19px;opacity:.5;animation-duration:15s;animation-delay:.8s;">🌸</span>
+  <span class="petal" aria-hidden="true" style="left:8%;font-size:18px;opacity:.7;animation-duration:13s;"></span>
+  <span class="petal" aria-hidden="true" style="left:22%;font-size:13px;opacity:.55;animation-duration:19s;animation-delay:2s;"></span>
+  <span class="petal" aria-hidden="true" style="left:37%;font-size:22px;opacity:.6;animation-duration:16s;animation-delay:1s;"></span>
+  <span class="petal" aria-hidden="true" style="left:52%;font-size:14px;opacity:.65;animation-duration:21s;animation-delay:3.5s;"></span>
+  <span class="petal" aria-hidden="true" style="left:66%;font-size:17px;opacity:.55;animation-duration:17s;animation-delay:5s;"></span>
+  <span class="petal" aria-hidden="true" style="left:80%;font-size:15px;opacity:.6;animation-duration:20s;animation-delay:2.6s;"></span>
+  <span class="petal" aria-hidden="true" style="left:91%;font-size:19px;opacity:.5;animation-duration:15s;animation-delay:.8s;"></span>
 
   <main class="card">
     <img class="avatar" src="/Kazu-Hub/assets/icon-192.png" alt="Kazu Hani, a blue dragon">
     <div class="code">404</div>
-    <h1>Lost in the petals 🌸</h1>
+    <h1>Lost in the petals </h1>
     <p>This page drifted off the trail. The den — socials, live status, weather, and stories — is back this way.</p>
-    <a class="home" href="/Kazu-Hub/">🐉 Back to the den</a>
+    <a class="home" href="/Kazu-Hub/"> Back to the den</a>
   </main>
 </body>
 </html>
