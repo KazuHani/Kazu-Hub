@@ -1086,13 +1086,15 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=60', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=61', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=68', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         // CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
         var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2].replace(/\r\n/g, '\n'), swSrc = src[3], fxSrc = src[4].replace(/\r\n/g, '\n');
+        ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
+        ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
         ok('hover effect gated to desktop (hover + fine pointer)', cssSrc.indexOf('@media (hover: hover) and (pointer: fine)') !== -1 && cssSrc.indexOf('.music-card:hover .music-viz') !== -1);
         ok('bars paused until hover, run on hover', cssSrc.indexOf('animation-play-state: paused') !== -1 && cssSrc.indexOf('.music-card:hover .music-viz span { animation-play-state: running; }') !== -1);

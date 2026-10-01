@@ -351,11 +351,11 @@ body.season-christmas .sakura-scene { display: none; }
 }
 
 /* ---- Stat strip ---- */
-/* Content centred and sized up so the text fills the tile: the card is a
-   vertical flex box pinning everything to the middle, and the value runs as
-   large as the narrowest tile allows (tabular-nums keeps the clock steady). */
+/* Align text stacks at the top so the extra weather row cannot shift its
+   label and value above the other cards. Values fill the narrowest tile,
+   with tabular-nums keeping the clock steady. */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 16px; margin-top: 34px; }
-.stat-card { border-radius: 22px; padding: 18px 14px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.stat-card { border-radius: 22px; padding: 18px 14px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
 .stat-label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
 .stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(30px, 8vw, 42px); line-height: 1.05; margin-top: 6px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stat-sub { font-size: 14px; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
@@ -363,7 +363,7 @@ body.season-christmas .sakura-scene { display: none; }
 .stat-loading-text { font-size: 15px; font-weight: 700; color: var(--ink-faint); }
 .stat-card--bday {
   background: linear-gradient(150deg,#0ea5e9,#7c5cff); border-radius: 22px; padding: 18px 14px;
-  box-shadow: 0 16px 34px rgba(80,110,230,.3); color: #fff; backdrop-filter: none; border: none;
+  box-shadow: 0 16px 34px rgba(80,110,230,.3); color: #fff; backdrop-filter: none; border: 1px solid transparent;
 }
 .stat-label--onbrand { color: rgba(255,255,255,.85); }
 .stat-sub--onbrand { color: rgba(255,255,255,.92); }
