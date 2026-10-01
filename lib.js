@@ -55,6 +55,27 @@
     return Date.UTC(w.year, w.month, w.day, w.hours, w.minutes, w.seconds);
   }
 
+  // ---- New Year celebration -----------------------------------------------
+  // The first UK minute of 1 January catches both a live midnight tick and a
+  // tab opened/resumed just after it. A year latch prevents repeat shows;
+  // neither visitor-local midnight nor a sky-time preview can trigger it.
+  function newYearCelebrationYear(w, celebratedYear) {
+    if (!w || !isFinite(w.year) || w.year < 1 || w.year % 1) return null;
+    return w.month === 0 && w.day === 1 && w.hours === 0 && w.minutes === 0 &&
+      w.year > (celebratedYear || 0) ? w.year : null;
+  }
+
+  // Analytic spark motion: radial velocity eases under drag, gravity curves
+  // the trails downward, and each spark fades smoothly to zero. Seconds and
+  // CSS pixels, independent of frame rate (also mirrored in script.js).
+  function fireworkSparkState(age, angle, speed, life) {
+    if (!isFinite(age) || !isFinite(angle) || !isFinite(speed) || !isFinite(life) || life <= 0) return { x: 0, y: 0, alpha: 0 };
+    var t = Math.max(0, Math.min(age, life));
+    var travel = speed * (1 - Math.exp(-1.25 * t)) / 1.25;
+    var fade = Math.max(0, 1 - t / life);
+    return { x: Math.cos(angle) * travel, y: Math.sin(angle) * travel + 22 * t * t, alpha: age < 0 ? 0 : fade * fade };
+  }
+
   var BIRTH_WALL_MS = Date.UTC(BIRTH.year, BIRTH.month, BIRTH.day, 0, 0, 0);
 
   // ---- UK daylight saving (BST/GMT) -------------------------------------
@@ -1292,6 +1313,8 @@
     TIMEZONE: TIMEZONE,
     escapeHtml: escapeHtml,
     ukWallParts: ukWallParts,
+    newYearCelebrationYear: newYearCelebrationYear,
+    fireworkSparkState: fireworkSparkState,
     lastSundayOfMonth: lastSundayOfMonth,
     ukTransitionInstant: ukTransitionInstant,
     isUkBST: isUkBST,

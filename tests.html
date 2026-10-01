@@ -21,8 +21,9 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=36"></script>
+  <script src="lib.js?v=37"></script>
   <script src="weather-fx.js?v=3"></script>
+  <script src="evals/new-year-fireworks.js?v=1"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1144,13 +1145,14 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=65', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=70', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=66', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=71', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         // CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
         var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2].replace(/\r\n/g, '\n'), swSrc = src[3], fxSrc = src[4].replace(/\r\n/g, '\n');
+        KazuNewYearChecks.run(L, scriptSrc, cssSrc, ok, eq);
         ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
         ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);

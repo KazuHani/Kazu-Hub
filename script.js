@@ -236,6 +236,7 @@
     set('liveBdaySub', c.bdaySub);
     updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
     applySeasons(); // re-evaluate every second so a page left open crosses midnight correctly
+    checkNewYear(); // uses the real UK clock, independently of seasonal/sky previews
   }
 
   // ---------- Fetch timeout wrapper ----------
@@ -2523,6 +2524,166 @@
       if (e < DURATION) requestAnimationFrame(frame); else canvas.remove();
     }
     requestAnimationFrame(frame);
+  }
+
+  // ---------- New Year fireworks ----------
+  // One finite, silent show at UK midnight, using the existing visible-tab
+  // clock tick. The first minute is a grace window for late loads/resumes;
+  // sessionStorage keeps reloads from repeating it in this tab. Preview with
+  // ?fireworks=1 on any date (no clock spoofing or saved latch changes).
+  const NEW_YEAR_DURATION = 20000;
+  const NEW_YEAR_KEY = 'kazu-new-year-celebrated';
+  const FIREWORKS_PREVIEW = (() => {
+    try { return new URLSearchParams(location.search).get('fireworks') === '1'; }
+    catch (e) { return false; }
+  })();
+  let newYearCelebrated = 0, newYearPreviewPlayed = false;
+  try {
+    const saved = sessionStorage.getItem(NEW_YEAR_KEY);
+    if (/^\d{4}$/.test(saved || '')) newYearCelebrated = +saved;
+  } catch (e) {} // private browsing / blocked storage: the in-memory latch still works
+  const newYearCelebrationYear = (KazuLib && KazuLib.newYearCelebrationYear) || function (w, celebratedYear) {
+    if (!w || !isFinite(w.year) || w.year < 1 || w.year % 1) return null;
+    return w.month === 0 && w.day === 1 && w.hours === 0 && w.minutes === 0 &&
+      w.year > (celebratedYear || 0) ? w.year : null;
+  };
+  const fireworkSparkState = (KazuLib && KazuLib.fireworkSparkState) || function (age, angle, speed, life) {
+    if (!isFinite(age) || !isFinite(angle) || !isFinite(speed) || !isFinite(life) || life <= 0) return { x: 0, y: 0, alpha: 0 };
+    const t = Math.max(0, Math.min(age, life));
+    const travel = speed * (1 - Math.exp(-1.25 * t)) / 1.25;
+    const fade = Math.max(0, 1 - t / life);
+    return { x: Math.cos(angle) * travel, y: Math.sin(angle) * travel + 22 * t * t, alpha: age < 0 ? 0 : fade * fade };
+  };
+
+  function checkNewYear() {
+    if (document.hidden) return;
+    const w = seasonUKParts(new Date());
+    let year;
+    if (FIREWORKS_PREVIEW) {
+      if (newYearPreviewPlayed) return;
+      newYearPreviewPlayed = true;
+      year = w.year;
+    } else {
+      year = newYearCelebrationYear(w, newYearCelebrated);
+      if (year === null) return;
+      newYearCelebrated = year;
+      try { sessionStorage.setItem(NEW_YEAR_KEY, String(year)); } catch (e) {}
+    }
+    celebrateNewYear(year);
+  }
+
+  function celebrateNewYear(year) {
+    if (document.hidden || $('new-year-greeting')) return;
+    const greeting = document.createElement('div');
+    greeting.id = 'new-year-greeting';
+    greeting.setAttribute('role', 'status');
+    greeting.setAttribute('aria-atomic', 'true');
+    const title = document.createElement('strong');
+    title.textContent = 'Happy New Year!';
+    const subtitle = document.createElement('span');
+    subtitle.textContent = 'Welcome to ' + year + ' ✨';
+    greeting.append(title, subtitle);
+    document.body.appendChild(greeting);
+
+    // The greeting also works without canvas or motion. All temporary DOM,
+    // listeners and the single rAF loop are removed when the show ends, the
+    // tab hides or the page leaves (including the back/forward cache).
+    const motion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+    let canvas = null, frameId = 0, w = 0, h = 0;
+    function stopAnimation() {
+      cancelAnimationFrame(frameId);
+      frameId = 0;
+      if (canvas) { canvas.remove(); canvas = null; }
+      window.removeEventListener('resize', size);
+      if (motion && motion.removeEventListener) motion.removeEventListener('change', stopAnimation);
+    }
+    function finish() {
+      clearTimeout(endTimer);
+      stopAnimation();
+      greeting.remove();
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', finish);
+    }
+    function onVisibility() { if (document.hidden) finish(); }
+    const endTimer = setTimeout(finish, NEW_YEAR_DURATION);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', finish);
+    if (LOW_POWER || (motion && motion.matches)) return;
+
+    canvas = document.createElement('canvas');
+    canvas.id = 'fireworks-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { canvas = null; return; }
+    document.body.appendChild(canvas);
+    // Half CSS resolution, capped at 30 fps. No dark overlay, full-screen
+    // flashes, audio or expensive per-particle shadows; the page stays usable.
+    function size() {
+      w = window.innerWidth; h = window.innerHeight;
+      canvas.width = Math.round(w * 0.5); canvas.height = Math.round(h * 0.5);
+      ctx.setTransform(0.5, 0, 0, 0.5, 0, 0);
+      ctx.lineCap = 'round';
+      ctx.globalCompositeOperation = 'lighter';
+    }
+    size();
+    window.addEventListener('resize', size, { passive: true });
+    if (motion && motion.addEventListener) motion.addEventListener('change', stopAnimation);
+    const colors = ['#ffd99a', '#bca7ff', '#91d9ff', '#ffaccf', '#a7f0d5'];
+    const shells = [];
+    const count = lightDevice ? 28 : 48;
+    for (let i = 0; i < 22; i++) {
+      const sparks = [];
+      for (let j = 0; j < count; j++) sparks.push({
+        angle: j / count * Math.PI * 2 + (Math.random() - 0.5) * 0.12,
+        speed: 0.16 + Math.random() * 0.18, life: 1.8 + Math.random(),
+      });
+      shells.push({
+        at: i < 18 ? 0.25 + i * 0.72 : 15 + (i - 18) * 0.26,
+        x: 0.14 + Math.random() * 0.72, y: 0.14 + Math.random() * 0.30,
+        lean: (Math.random() - 0.5) * 0.12, color: colors[i % colors.length], sparks,
+      });
+    }
+    const start = performance.now();
+    let lastFrame = -Infinity;
+    function frame(t) {
+      if (!canvas) return;
+      if (document.hidden || t - start >= NEW_YEAR_DURATION) { finish(); return; }
+      frameId = requestAnimationFrame(frame);
+      if (t - lastFrame < 1000 / 30) return;
+      lastFrame = t;
+      ctx.clearRect(0, 0, w, h);
+      const elapsed = (t - start) / 1000;
+      const scale = Math.min(w, h);
+      for (const shell of shells) {
+        const age = elapsed - shell.at - 0.9;
+        if (age < -0.9 || age >= 2.8) continue;
+        const x = shell.x * w, y = shell.y * h;
+        ctx.strokeStyle = shell.color;
+        if (age < 0) {
+          const progress = 1 + age / 0.9;
+          const tail = Math.max(0, progress - 0.07);
+          ctx.globalAlpha = Math.min(0.8, progress * 3);
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x + shell.lean * w * (1 - tail), h * 1.04 + (y - h * 1.04) * (1 - (1 - tail) ** 2));
+          ctx.lineTo(x + shell.lean * w * (1 - progress), h * 1.04 + (y - h * 1.04) * (1 - (1 - progress) ** 2));
+          ctx.stroke();
+          continue;
+        }
+        ctx.lineWidth = lightDevice ? 1.8 : 2.2;
+        for (const spark of shell.sparks) {
+          const p = fireworkSparkState(age, spark.angle, spark.speed * scale, spark.life);
+          if (p.alpha <= 0) continue;
+          const tail = fireworkSparkState(Math.max(0, age - 0.045), spark.angle, spark.speed * scale, spark.life);
+          ctx.globalAlpha = p.alpha;
+          ctx.beginPath();
+          ctx.moveTo(x + tail.x, y + tail.y);
+          ctx.lineTo(x + p.x, y + p.y);
+          ctx.stroke();
+        }
+      }
+    }
+    frameId = requestAnimationFrame(frame);
   }
 
   // ---------- Birthday balloons (canvas physics) ----------

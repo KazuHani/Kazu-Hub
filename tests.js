@@ -993,6 +993,7 @@ ok('custom scrollbar hidden on compact screens', cssSrc.includes('@media (max-wi
 const cssFlat = cssSrc.replace(/\r/g, '');
 const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8').replace(/\r\n/g, '\n');
 const fxSrc = fs.readFileSync(__dirname + '/weather-fx.js', 'utf8').replace(/\r\n/g, '\n');
+require('./evals/new-year-fireworks.js').run(L, scriptSrc, cssSrc, ok, eq);
 ['rgba(40,40,110,.32), var(--glint)',   // discord
  'rgba(20,40,70,.32), var(--glint)',    // steam
  'rgba(20,40,100,.32), var(--glint)',   // myanimelist

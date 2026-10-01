@@ -1235,6 +1235,21 @@ body.season-birthday .stat-card--bday {
 /* ---- Birthday: confetti canvas (created/removed by JS) ---- */
 #confetti-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 70; }
 
+/* ---- UK New Year: finite fireworks + a motion-free greeting ---- */
+#fireworks-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; }
+#new-year-greeting {
+  position: fixed; top: max(24px, env(safe-area-inset-top, 0px)); left: 50%;
+  transform: translateX(-50%); z-index: 71; pointer-events: none;
+  width: max-content; max-width: calc(100vw - 32px); padding: 14px 24px;
+  border: 1px solid rgba(255,217,154,.45); border-radius: 20px;
+  background: rgba(22,29,52,.94); color: #fff4dd; text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+#new-year-greeting strong { display: block; font-size: clamp(20px, 4vw, 28px); line-height: 1.3; }
+#new-year-greeting span { display: block; margin-top: 4px; color: #d6dcf2; font-size: 14px; }
+body.low-power #fireworks-canvas { display: none; }
+@media (prefers-reduced-motion: reduce) { #fireworks-canvas { display: none; } }
+
 /* ---- Pride (June): aro-ace halo around the profile picture ---- */
 @keyframes prideSpin { to { transform: rotate(360deg); } }
 .pfp-ring::before {
