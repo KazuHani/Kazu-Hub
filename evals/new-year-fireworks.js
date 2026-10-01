@@ -129,9 +129,9 @@
     var h = harness(); h.tick();
     eq('New Year: no DOM or animation before midnight', h.stats().elements, 0);
     h.tick(midnight); h.tick(midnight + 1000);
-    eq('New Year: live midnight triggers once and persists the year', [h.stats().elements, h.stats().writes, h.stats().stored], [2, 1, '2027']);
-    eq('New Year: greeting announces the incoming year', h.find('new-year-greeting').children.map(function (el) { return el.textContent; }), ['Happy New Year!', 'Welcome to 2027 ✨']);
-    ok('New Year: greeting is an accessible status, canvas is decorative', h.find('new-year-greeting').attrs.role === 'status' && h.find('fireworks-canvas').attrs['aria-hidden'] === 'true');
+    eq('New Year: live midnight triggers once and persists the year', [h.stats().elements, h.stats().writes, h.stats().stored], [1, 1, '2027']);
+    ok('New Year: fireworks have no greeting box', !h.find('new-year-greeting') && source.indexOf('new-year-greeting') === -1 && css.indexOf('#new-year-greeting') === -1);
+    ok('New Year: canvas is decorative', h.find('fireworks-canvas').attrs['aria-hidden'] === 'true');
     var paintedFrames = 0;
     for (var t = 0; t < 20000; t += 1000 / 144) h.step(t);
     paintedFrames = h.stats().paints;
@@ -148,18 +148,18 @@
 
     ['2027', 'bad', null].forEach(function (saved) {
       var reload = harness({ stored: saved, now: midnight }); reload.tick();
-      eq('New Year: reload/storage value ' + saved, reload.stats().elements, saved === '2027' ? 0 : 2);
+      eq('New Year: reload/storage value ' + saved, reload.stats().elements, saved === '2027' ? 0 : 1);
       reload.win.emit('pagehide');
     });
     var blocked = harness({ blockedStorage: true, now: midnight }); blocked.tick(); blocked.tick();
-    eq('New Year: blocked storage still uses the in-memory latch', blocked.stats().elements, 2);
+    eq('New Year: blocked storage still uses the in-memory latch', blocked.stats().elements, 1);
     blocked.win.emit('pagehide'); blocked.tick();
     eq('New Year: blocked storage never replays in an open page', blocked.stats().elements, 0);
 
     var hidden = harness({ hidden: true, now: midnight }); hidden.tick();
     eq('New Year: hidden tabs do not consume the celebration', hidden.stats().writes, 0);
     hidden.doc.hidden = false; hidden.tick(midnight + 10000);
-    eq('New Year: resuming within the first minute celebrates', hidden.stats().elements, 2);
+    eq('New Year: resuming within the first minute celebrates', hidden.stats().elements, 1);
     hidden.doc.hidden = true; hidden.doc.emit('visibilitychange');
     eq('New Year: hiding mid-show cancels all work', [hidden.stats().elements, hidden.stats().rafs, hidden.stats().timers, hidden.stats().listeners], [0, 0, 0, 0]);
     var late = harness({ now: midnight + 60000 }); late.tick();
@@ -168,14 +168,11 @@
     [{ lowPower: true }, { reducedMotion: true }, { noCanvas: true }].forEach(function (flags) {
       flags.now = midnight;
       var still = harness(flags); still.tick();
-      ok('New Year: static greeting for ' + Object.keys(flags)[0], !!still.find('new-year-greeting') && !still.find('fireworks-canvas') && still.stats().rafs === 0);
-      still.step(20000);
-      eq('New Year: static greeting also cleans up', [still.stats().elements, still.stats().timers, still.stats().listeners], [0, 0, 0]);
+      eq('New Year: effect is skipped for ' + Object.keys(flags)[0], [still.stats().elements, still.stats().rafs, still.stats().timers, still.stats().listeners], [0, 0, 0, 0]);
     });
     var change = harness({ now: midnight }); change.tick();
     change.motion.matches = true; change.motion.emit('change');
-    ok('New Year: enabling reduced motion stops the show and retains the greeting', !change.find('fireworks-canvas') && !!change.find('new-year-greeting') && change.stats().rafs === 0);
-    change.step(20000);
+    eq('New Year: enabling reduced motion removes the show immediately', [change.stats().elements, change.stats().rafs, change.stats().timers], [0, 0, 0]);
     eq('New Year: changed-motion cleanup leaves no listeners', change.stats().listeners, 0);
     var resized = harness({ now: midnight, lightDevice: true }); resized.tick();
     resized.win.innerWidth = 390; resized.win.innerHeight = 844; resized.win.emit('resize');
@@ -202,7 +199,7 @@
       function () { return {}; }, function () { return null; }, function () {}, function () {}, function () { checks++; });
     tick(); tick();
     eq('New Year: existing per-second clock checks even when seasons stay cached', checks, 2);
-    ok('New Year: canvas and greeting cannot intercept page controls', /#fireworks-canvas\s*\{[^}]*pointer-events: none/.test(css) && /#new-year-greeting\s*\{[^}]*pointer-events: none/.test(css));
+    ok('New Year: canvas cannot intercept page controls', /#fireworks-canvas\s*\{[^}]*pointer-events: none/.test(css));
   }
 
   global.KazuNewYearChecks = { run: run };

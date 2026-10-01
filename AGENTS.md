@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=66`,
-  `lib.js?v=37`, `script.js?v=71` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=67`,
+  `lib.js?v=37`, `script.js?v=72` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -119,7 +119,7 @@ Preview/dev affordances built into the page:
   layers on any real weather; `none` forces a clear sky. Still desktop-only:
   a phone or a window under 769px shows nothing. Widen the window and it
   starts without a reload.
-- `?fireworks=1` previews the 20-second New Year fireworks and greeting on
+- `?fireworks=1` previews the 20-second New Year fireworks on
   any date, once per page load. It doesn't change the real celebration latch.
 - Typing `kazudev` anywhere on the page opens a dev settings panel with
   per-season Auto/On/Off overrides (Birthday, Christmas, Pride, Sakura, Halloween)
@@ -147,14 +147,14 @@ Follow that pattern.
 
 The existing visible-tab clock tick checks `newYearCelebrationYear` using
 the real Europe/London date. At 12:00 AM on 1 January it starts a finite,
-silent 20-second fireworks show and a "Happy New Year" greeting. The first
+silent 20-second fireworks show. The first
 minute allows a page opened/resumed just after midnight to join in; later
 visits don't trigger a delayed celebration. The `kazu-new-year-celebrated`
 **sessionStorage** key prevents repeats on reload within a tab, with an
 in-memory fallback when storage is blocked. Sky-time/season previews never
 trigger it; `?fireworks=1` is a separate preview.
 
-Reduced-motion and low-power devices get the static greeting only. The
+Reduced-motion and low-power devices skip the show. The
 canvas uses half CSS resolution and at most 30 fps; spark motion is analytic
 in `KazuLib.fireworkSparkState`, mirrored in `script.js`. Completion,
 visibility loss and pagehide remove temporary DOM, rAF, timers and listeners.

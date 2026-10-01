@@ -23,7 +23,7 @@
 
   <script src="lib.js?v=37"></script>
   <script src="weather-fx.js?v=3"></script>
-  <script src="evals/new-year-fireworks.js?v=1"></script>
+  <script src="evals/new-year-fireworks.js?v=2"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1145,8 +1145,8 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=66', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=71', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=67', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=72', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {

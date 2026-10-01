@@ -2562,45 +2562,37 @@
     if (FIREWORKS_PREVIEW) {
       if (newYearPreviewPlayed) return;
       newYearPreviewPlayed = true;
-      year = w.year;
     } else {
       year = newYearCelebrationYear(w, newYearCelebrated);
       if (year === null) return;
       newYearCelebrated = year;
       try { sessionStorage.setItem(NEW_YEAR_KEY, String(year)); } catch (e) {}
     }
-    celebrateNewYear(year);
+    celebrateNewYear();
   }
 
-  function celebrateNewYear(year) {
-    if (document.hidden || $('new-year-greeting')) return;
-    const greeting = document.createElement('div');
-    greeting.id = 'new-year-greeting';
-    greeting.setAttribute('role', 'status');
-    greeting.setAttribute('aria-atomic', 'true');
-    const title = document.createElement('strong');
-    title.textContent = 'Happy New Year!';
-    const subtitle = document.createElement('span');
-    subtitle.textContent = 'Welcome to ' + year + ' ✨';
-    greeting.append(title, subtitle);
-    document.body.appendChild(greeting);
-
-    // The greeting also works without canvas or motion. All temporary DOM,
-    // listeners and the single rAF loop are removed when the show ends, the
-    // tab hides or the page leaves (including the back/forward cache).
+  function celebrateNewYear() {
+    if (document.hidden || $('fireworks-canvas')) return;
     const motion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
-    let canvas = null, frameId = 0, w = 0, h = 0;
-    function stopAnimation() {
+    if (LOW_POWER || (motion && motion.matches)) return;
+    let canvas = document.createElement('canvas');
+    canvas.id = 'fireworks-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    document.body.appendChild(canvas);
+
+    // All temporary DOM, listeners and the single rAF loop are removed when
+    // the show ends, motion is reduced, the tab hides or the page leaves
+    // (including the back/forward cache).
+    let frameId = 0, w = 0, h = 0;
+    function finish() {
+      clearTimeout(endTimer);
       cancelAnimationFrame(frameId);
       frameId = 0;
       if (canvas) { canvas.remove(); canvas = null; }
       window.removeEventListener('resize', size);
-      if (motion && motion.removeEventListener) motion.removeEventListener('change', stopAnimation);
-    }
-    function finish() {
-      clearTimeout(endTimer);
-      stopAnimation();
-      greeting.remove();
+      if (motion && motion.removeEventListener) motion.removeEventListener('change', finish);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('pagehide', finish);
     }
@@ -2608,14 +2600,6 @@
     const endTimer = setTimeout(finish, NEW_YEAR_DURATION);
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', finish);
-    if (LOW_POWER || (motion && motion.matches)) return;
-
-    canvas = document.createElement('canvas');
-    canvas.id = 'fireworks-canvas';
-    canvas.setAttribute('aria-hidden', 'true');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) { canvas = null; return; }
-    document.body.appendChild(canvas);
     // Half CSS resolution, capped at 30 fps. No dark overlay, full-screen
     // flashes, audio or expensive per-particle shadows; the page stays usable.
     function size() {
@@ -2627,7 +2611,7 @@
     }
     size();
     window.addEventListener('resize', size, { passive: true });
-    if (motion && motion.addEventListener) motion.addEventListener('change', stopAnimation);
+    if (motion && motion.addEventListener) motion.addEventListener('change', finish);
     const colors = ['#ffd99a', '#bca7ff', '#91d9ff', '#ffaccf', '#a7f0d5'];
     const shells = [];
     const count = lightDevice ? 28 : 48;
