@@ -1303,7 +1303,6 @@ body.season-christmas .title {
   background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-body.season-christmas .pfp-ring { box-shadow: 0 0 34px rgba(255,190,80,.35); }
 body.season-christmas .stat-card--bday {
   background: linear-gradient(150deg, #a4133c, #6d0f28);
   border: 1px solid rgba(255,209,102,.5);
@@ -1360,7 +1359,6 @@ html.season-halloween body:not(.season-birthday) .title {
   background: linear-gradient(105deg, #fff0d9 12%, #ffd09a 70%, #e2b6b3);
   -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
 }
-html.season-halloween .pfp-ring { box-shadow: 0 0 34px rgba(226,140,65,.22); }
 html.season-halloween .card:not(.stat-card--bday) {
   background: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), var(--card-bg);
   box-shadow: var(--card-shadow), var(--glint);

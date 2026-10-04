@@ -1147,7 +1147,7 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=77', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=78', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=82', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
@@ -1832,7 +1832,7 @@
         ok('hero title repainted for christmas', cssFlat.indexOf('body.season-christmas .title {') !== -1);
         ok('bday card repainted cranberry for christmas', cssFlat.indexOf('body.season-christmas .stat-card--bday {') !== -1);
         ok('presence cards repainted pine for christmas', cssFlat.indexOf('body.season-christmas .discord-card,') !== -1 && cssFlat.indexOf('body.season-christmas .steam-card,') !== -1 && cssFlat.indexOf('body.season-christmas .mal-card {') !== -1);
-        ok('profile ring glows gold for christmas', cssFlat.indexOf('body.season-christmas .pfp-ring {') !== -1);
+        ok('profile picture has no ring or glow in any season (only the pride halo)', !/(christmas|halloween) .pfp-ring {/.test(cssFlat));
         ok('no floaty bob on the profile picture', cssFlat.indexOf('floaty') === -1);
         ok('no idle sway on the sakura branches', cssFlat.indexOf('sakuraSway') === -1);
         ok('sakura scenery layer sits still without ambient fade', cssFlat.indexOf('.sakura-scene { animation:') === -1 && cssFlat.indexOf('.atmosphere { animation: ambientFade') === -1);
