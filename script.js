@@ -2575,9 +2575,18 @@
     const halloween = !!s.halloween && !s.christmas;
     const paletteChanged = root.classList.contains('season-halloween') !== halloween;
     root.classList.toggle('season-halloween', halloween);
-    if (paletteChanged) body.removeAttribute('data-bg-live'); // snap seasonal hue changes
+    if (paletteChanged) {
+      // Snap seasonal hue changes: drop the 90s glide AND flush styles so the
+      // running transition is cancelled before the new hue lands. Without the
+      // flush the old hue kept gliding (turning Halloween off left the sky purple).
+      body.removeAttribute('data-bg-live');
+      void body.offsetWidth;
+    }
     updateSkyBody(); // dev clicks and midnight refresh tint immediately
-    if (paletteChanged) requestAnimationFrame(() => { body.dataset.bgLive = '1'; });
+    if (paletteChanged) {
+      void body.offsetWidth; // commit the new hue with no transition in force
+      requestAnimationFrame(() => { body.dataset.bgLive = '1'; });
+    }
     // Blossom season: outside it the branches are not drawn (html.no-sakura; the
     // inline #boot-tint script set the same class before first paint, this keeps
     // it honest for dev overrides and a page left open across 20 Mar / 10 May)
