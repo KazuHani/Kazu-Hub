@@ -1183,6 +1183,7 @@ ok('hero title repainted for christmas', cssFlat.includes('body.season-christmas
 ok('bday card repainted cranberry for christmas', cssFlat.includes('body.season-christmas .stat-card--bday {'));
 ok('presence cards repainted pine for christmas', cssFlat.includes('body.season-christmas .discord-card,') && cssFlat.includes('body.season-christmas .steam-card,') && cssFlat.includes('body.season-christmas .mal-card {'));
 ok('profile ring glows gold for christmas', cssFlat.includes('body.season-christmas .pfp-ring {'));
+ok('profile picture has no hard ring in any season (soft glow only)', !/.pfp-ring { box-shadow: 0 0 0 /.test(cssFlat));
 ok('no floaty bob on the profile picture', !cssFlat.includes('floaty'));
 ok('no idle sway on the sakura branches', !cssFlat.includes('sakuraSway'));
 ok('sakura scenery layer sits still without ambient fade', !cssFlat.includes('.sakura-scene { animation:') && !cssFlat.includes('.atmosphere { animation: ambientFade'));
