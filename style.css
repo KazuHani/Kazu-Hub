@@ -262,8 +262,9 @@ body.low-power .weather-fx { display: none !important; }
 html.no-sakura .sakura-branch { display: none; }
 html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }
 /* Christmas owns a pine/cranberry/gold palette + its own tree scene; the
-   pink branches would clash, so they sit the season out. */
-body.season-christmas .sakura-scene { display: none; }
+   pink branches would clash, so they sit the season out. The scene itself stays:
+   the sun and moon live in it and must still cross the Christmas sky. */
+body.season-christmas .sakura-branch { display: none; }
 /* Phones: no left branch (no horizontal room), smaller corner branch, and no
    sky body — it just reads as a smudge behind the hero avatar. Custom scrollbar
    is hidden on touch / compact screens so native inertial scrolling prevails. */
