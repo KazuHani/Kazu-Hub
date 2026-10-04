@@ -1233,6 +1233,7 @@ body.season-birthday .stat-card--bday {
    flyModal: the tile grows into the panel, so the two must match). */
 body.season-birthday .modal-panel--bday {
   background: linear-gradient(150deg, #ff5ea8 0%, #a05cff 100%);
+  box-shadow: 0 16px 34px rgba(160,92,255,.35);
 }
 
 /* ---- Birthday: balloon canvas (physics in lib.js, rendering in script.js) ---- */
@@ -1290,6 +1291,7 @@ body.season-christmas .stat-card--bday {
 body.season-christmas .modal-panel--bday {
   background: linear-gradient(150deg, #a4133c, #6d0f28);
   border: 1px solid rgba(255,209,102,.5);
+  box-shadow: 0 16px 34px rgba(80,8,26,.5);
 }
 body.season-christmas .discord-card,
 body.season-christmas .steam-card,
@@ -1359,6 +1361,7 @@ html.season-halloween .modal-panel {
 }
 html.season-halloween body:not(.season-birthday) .modal-panel--bday {
   background: linear-gradient(145deg, #ad6038, #63384e); border-color: rgba(255,194,121,.45);
+  box-shadow: 0 16px 34px rgba(62,26,32,.35);
 }
 html.season-halloween .card-head-title,
 html.season-halloween .story-title,
@@ -1775,11 +1778,13 @@ body.modal-open { overflow: hidden; }
     linear-gradient(150deg, rgba(14,165,233,.18), rgba(124,92,255,.18)),
     var(--card-bg);
   -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
-  box-shadow:
-    0 30px 80px rgba(3,10,24,.55),
-    inset 0 1.5px .5px rgba(255,255,255,.5),
-    inset 2px 3px 4px rgba(255,255,255,.16),
-    inset -2px -3px 10px rgba(0,0,0,.26);
+  /* identical edge light + drop shadow to the stat tiles, so the tile and the
+     panel it grows into look like one object at both sizes */
+  --glint:
+    inset 0 1.5px 0.5px rgba(255, 255, 255, .55),
+    inset 2px 3px 4px rgba(255, 255, 255, .18),
+    inset -2px -3px 8px rgba(0, 0, 0, .24);
+  box-shadow: var(--card-shadow), var(--glint);
   transform-origin: 0 0; will-change: transform;
 }
 .modal-panel--wide { max-width: 760px; }
