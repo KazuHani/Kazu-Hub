@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=79`,
+- `index.html` — the whole page. Loads `style.css?v=80`,
   `lib.js?v=38`, `script.js?v=82` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
@@ -178,14 +178,11 @@ the pre-optimisation code, which is the point).
   transition, even compositor-only, even a 5px progress bar, makes the
   compositor and GPU process produce a frame on every vsync (144 a second on a
   fast display): about 0.19 CPU cores each, measured on a bare test page. The
-  seasonal loops (petals, rain drops, aurora, Christmas lights, the Pride halo)
+  seasonal loops (petals, rain drops, aurora, Christmas lights)
   are allowed because they ARE the feature and run only in season; the
   allow-list is pinned in `perf-guards.js`, so a new infinite loop must be
-  added there on purpose. The Pride halo's spin used to sit on the base rule and
-  ran all year at opacity 0 (~0.3 cores). Where a loop can afford a lower frame
-  rate it is limited: the halo is a uniform rotation on `steps(420)` (30 steps a
-  second, under a degree each: identical to the eye, ~35-57% less GPU work, because
-  the compositor skips drawing frames where nothing changed), and the birthday
+  added there on purpose. Where a loop can afford a lower frame
+  rate it is limited: the birthday
   balloons skip draws inside a ~100 fps ceiling (`BALLOON_MIN_FRAME_MS`). `steps()`
   is only valid on a LINEAR animation; on an eased one (the aurora ribbons, the
   petals' sway) it would flatten the easing, so those stay smooth. For a small,
