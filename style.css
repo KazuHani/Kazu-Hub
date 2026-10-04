@@ -1761,6 +1761,11 @@ body.modal-open { overflow: hidden; }
   opacity: 0; transition: opacity .34s ease;
 }
 .modal-overlay.is-open::before { opacity: 1; }
+.modal-panel.is-flying { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Phones: a plain dim instead of a live blur behind the moving panel */
+@media (pointer: coarse), (max-width: 768px) {
+  .modal-overlay::before { background: rgba(4,10,22,.68); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
 .modal-overlay[hidden] { display: none; }
 
 .modal-panel {

@@ -2425,6 +2425,7 @@
     modalTitleEl.innerHTML = def.title;
     modalBodyEl.innerHTML = def.render();
     clearTimeout(modalRevealTimer);
+    modalPanel.classList.remove('is-flying');
     modalPanel.getAnimations().forEach((x) => x.cancel());
     modalAnim = null;
     Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((x) => x.cancel()));
@@ -2463,13 +2464,19 @@
     // keep the corners looking like the card's while the panel is scaled down
     const cardR = fly ? parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0 : 0;
     const panelR = parseFloat(getComputedStyle(modalPanel).borderTopLeftRadius) || 0;
+    // Phones: transform-only keyframes stay on the compositor; animating the corner
+    // radius repaints every frame and was a big part of the mobile lag.
+    const lite = !!(window.matchMedia && window.matchMedia('(pointer: coarse), (max-width: 768px)').matches);
     const frames = fly
-      ? [{ transform: away, borderRadius: (cardR / sx) + 'px / ' + (cardR / sy) + 'px' }, { transform: 'none', borderRadius: panelR + 'px' }]
+      ? [lite ? { transform: away } : { transform: away, borderRadius: (cardR / sx) + 'px / ' + (cardR / sy) + 'px' },
+         lite ? { transform: 'none' } : { transform: 'none', borderRadius: panelR + 'px' }]
       : [{ transform: away, opacity: 0 }, { transform: 'none', opacity: 1 }];
     if (!opening) frames.reverse();
     const ms = REDUCED_MOTION ? 180 : (opening ? MODAL_OPEN_MS : MODAL_CLOSE_MS);
     const anim = modalPanel.animate(frames, { duration: ms, easing: MODAL_EASE, fill: 'both' });
     modalAnim = anim;
+    // blurring a moving, scaling panel is what janks; it is off while flying
+    if (fly) modalPanel.classList.add('is-flying');
     if (fly) {
       // content fades in once the panel has mostly grown, and out right away on close
       const keys = opening
@@ -2482,12 +2489,13 @@
     if (fly && !opening) {
       // land on the card, then melt away: the card's text is already there underneath
       modalPanel.animate(
-        [{ opacity: 1, offset: 0 }, { opacity: 1, offset: .6 }, { opacity: 0, offset: 1 }],
+        [{ opacity: 1, offset: 0 }, { opacity: 1, offset: .86 }, { opacity: 0, offset: 1 }],
         { duration: ms, easing: 'linear', fill: 'both' }
       );
     }
     anim.onfinish = () => {
       if (modalAnim !== anim) return;
+      modalPanel.classList.remove('is-flying');
       // leave the panel in its settled state, then drop the fill so layout is normal
       if (opening) { anim.cancel(); modalAnim = null; Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((a) => a.cancel())); }
       done();
@@ -2519,7 +2527,7 @@
     if (flew) {
       modalRevealTimer = setTimeout(() => {
         if (modalHiddenCard === card && !modalEl.classList.contains('is-open')) { card.style.visibility = ''; modalHiddenCard = null; }
-      }, MODAL_CLOSE_MS * .55);
+      }, MODAL_CLOSE_MS * .86);
     }
     if (!flew && modalHiddenCard) { modalHiddenCard.style.visibility = ''; modalHiddenCard = null; }
   }
