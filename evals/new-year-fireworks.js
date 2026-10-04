@@ -195,8 +195,8 @@
     eq('New Year: sky/season previews cannot spoof midnight', skyPreview.stats().elements, 0);
     var tickSource = source.slice(source.indexOf('  function tick()'), source.indexOf('  // ---------- Fetch timeout wrapper ----------'));
     var checks = 0;
-    var tick = new Function('computeClock', '$', 'updatePresenceProgress', 'applySeasons', 'checkNewYear', tickSource + '\nreturn tick;')(
-      function () { return {}; }, function () { return null; }, function () {}, function () {}, function () { checks++; });
+    var tick = new Function('computeClock', '$', 'updatePresenceProgress', 'applySeasons', 'checkNewYear', 'stepSky', tickSource + '\nreturn tick;')(
+      function () { return {}; }, function () { return null; }, function () {}, function () {}, function () { checks++; }, function () {});
     tick(); tick();
     eq('New Year: existing per-second clock checks even when seasons stay cached', checks, 2);
     ok('New Year: canvas cannot intercept page controls', /#fireworks-canvas\s*\{[^}]*pointer-events: none/.test(css));

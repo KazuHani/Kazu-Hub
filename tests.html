@@ -23,8 +23,9 @@
 
   <script src="lib.js?v=38"></script>
   <script src="weather-fx.js?v=3"></script>
-  <script src="evals/new-year-fireworks.js?v=2"></script>
+  <script src="evals/new-year-fireworks.js?v=3"></script>
   <script src="evals/emoji-free.js?v=1"></script>
+  <script src="evals/perf-guards.js?v=1"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1146,8 +1147,8 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=68', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=73', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=74', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=80', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
@@ -1155,6 +1156,7 @@
         var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2].replace(/\r\n/g, '\n'), swSrc = src[3], fxSrc = src[4].replace(/\r\n/g, '\n');
         KazuNewYearChecks.run(L, scriptSrc, cssSrc, ok, eq);
         KazuEmojiChecks.run(L, scriptSrc, [{ name: 'index.html', text: htmlSrc }, { name: 'style.css', text: cssSrc }], ok, eq);
+        KazuPerfGuards.run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
         ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
         ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
@@ -1497,8 +1499,8 @@
         ok('sunset CSS: golden palette holds orange + a wide horizon glow, rose palette holds magenta/violet', cssFlat.indexOf('rgba(255,150,45,') !== -1 && cssFlat.indexOf('rgba(255,152,60,') !== -1 && cssFlat.indexOf('rgba(238,92,124,') !== -1 && cssFlat.indexOf('rgba(112,62,152,') !== -1);
         ok('sunset CSS: static (no transition or animation) and click-through', !/\.sunset-sky[^{]*\{[^}]*(transition|animation)/.test(cssFlat) && /\.sunset-sky \{\n  position: absolute; top: 0; left: 0; right: 0; height: 100vh;\n  z-index: 0; pointer-events: none;/.test(cssFlat));
         ok('sunset CSS: only Christmas hides it (phones and low-power keep the static gradient)', cssFlat.indexOf('body.season-christmas .sunset-sky { display: none; }') !== -1 && (cssFlat.match(/\.sunset-sky[^{]*\{[^}]*display/g) || []).length === 1 && !/body\.low-power[^{]*\.sunset-sky/.test(cssFlat));
-        ok('script.js writes --sunset / --sunset-late from KazuLib.sunsetGlow every minute', scriptSrc.indexOf('KazuLib.sunsetGlow(mins, doy)') !== -1 && scriptSrc.indexOf("root.setProperty('--sunset', sunset.glow);") !== -1 && scriptSrc.indexOf("root.setProperty('--sunset-late', sunset.late);") !== -1);
-        ok('script.js applies the ?time= preview before the sun/moon and tint are computed', scriptSrc.indexOf('KazuLib.timeOverrideParse(location.search)') !== -1 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') !== -1 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') < scriptSrc.indexOf('const st = skyBodyState(mins, doy, skyArcPeakY());'));
+        ok('script.js writes --sunset / --sunset-late from KazuLib.sunsetGlow on every tint step', scriptSrc.indexOf('KazuLib.sunsetGlow(mins, doy)') !== -1 && scriptSrc.indexOf("root.setProperty('--sunset', sunset.glow);") !== -1 && scriptSrc.indexOf("root.setProperty('--sunset-late', sunset.late);") !== -1);
+        ok('script.js applies the ?time= preview in one place (skyClock) that every sky writer shares', scriptSrc.indexOf('KazuLib.timeOverrideParse(location.search)') !== -1 && scriptSrc.indexOf('SKY_TIME_OVERRIDE !== null ? SKY_TIME_OVERRIDE :') !== -1 && (scriptSrc.match(/skyClock\(new Date\(\)\)/g) || []).length === 2 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') === -1);
         var bootAt = htmlSrc.indexOf('<script id="boot-tint">');
         ok('boot script runs in the head before the stylesheet, after the canvas style + theme-color meta', bootAt > htmlSrc.indexOf('<style id="boot-canvas">') && bootAt > htmlSrc.indexOf('<meta name="theme-color"') && bootAt < htmlSrc.indexOf('<link rel="stylesheet" href="style.css') && bootAt < htmlSrc.indexOf('</head>'));
         ok('boot script is synchronous (no async/defer/module)', bootAt !== -1 && !/<script[^>]*id="boot-tint"[^>]*(async|defer|type=)/.test(htmlSrc));
@@ -1518,8 +1520,8 @@
         // ---- Single time-of-day palette (light theme + toggle fully removed) ----
         ok('no light theme selectors or bootstrap left', cssFlat.indexOf('data-theme="light"') === -1 && htmlSrc.indexOf('data-theme="light"') === -1 && scriptSrc.indexOf('data-theme') === -1);
         ok('theme toggle orb fully removed', htmlSrc.indexOf('theme-orb') === -1 && scriptSrc.indexOf('theme-orb') === -1 && cssFlat.indexOf('theme-orb') === -1 && htmlSrc.indexOf('kazu-dark') === -1 && scriptSrc.indexOf('kazu-dark') === -1);
-        ok('registered tint properties glide the background', cssFlat.indexOf("@property --bg-h { syntax: '<number>';") !== -1 && cssFlat.indexOf('body[data-bg-live] {') !== -1);
-        ok('sky tint written from the UK clock once a minute', scriptSrc.indexOf('applySkyTint(mins, doy)') !== -1 && scriptSrc.indexOf("document.body.dataset.bgLive = '1'") !== -1);
+        ok('registered tint properties keep their typed defaults (and are never transitioned: see perf guards)', cssFlat.indexOf("@property --bg-h { syntax: '<number>';") !== -1 && cssFlat.indexOf('body[data-bg-live] {') === -1);
+        ok('sky tint written from the UK clock in 10s steps, sun/moon every minute', scriptSrc.indexOf('applySkyTint(mins, doy)') !== -1 && scriptSrc.indexOf('const TINT_STEP_MS = 10000;') !== -1 && scriptSrc.indexOf('const BODY_STEP_MS = 60000;') !== -1);
         ok('page gradient built from the live tint', cssFlat.indexOf('calc(var(--bg-l, 9) * 1%)') !== -1);
         ok('gradient layers scale with the glow factor so night reaches black', cssFlat.indexOf('16 * var(--bg-glow, 1)') !== -1 && cssFlat.indexOf('@property --bg-glow') !== -1);
         ok('dusk glow element + driver wired', htmlSrc.indexOf('class="sky-glow"') !== -1 && scriptSrc.indexOf('skyGlowEl.style.opacity') !== -1 && scriptSrc.indexOf('tint.glowX') !== -1);

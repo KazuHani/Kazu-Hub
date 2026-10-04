@@ -995,6 +995,39 @@ const scriptSrc = fs.readFileSync(__dirname + '/script.js', 'utf8').replace(/\r\
 const fxSrc = fs.readFileSync(__dirname + '/weather-fx.js', 'utf8').replace(/\r\n/g, '\n');
 require('./evals/new-year-fireworks.js').run(L, scriptSrc, cssSrc, ok, eq);
 require('./evals/emoji-free.js').run(L, scriptSrc, [{ name: 'index.html', text: htmlSrc }, { name: 'style.css', text: cssSrc }], ok, eq);
+require('./evals/perf-guards.js').run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
+
+// ---- evals/perf.js statistics helpers (Node only: the harness itself needs Chrome) ----
+// The browser eval reports through these, so a wrong percentile or a summed-instead-
+// of-maxed renderer CPU would quietly mislead every perf decision made from it.
+(function () {
+  const P = require('./evals/perf.js');
+  eq('perf stats: percentile of nothing is 0', P.percentile([], 50), 0);
+  eq('perf stats: percentile of one value is that value', P.percentile([7], 99), 7);
+  eq('perf stats: percentile interpolates between ranks', [P.percentile([1, 2, 3, 4], 50), P.percentile([10, 20], 25)], [2.5, 12.5]);
+  eq('perf stats: percentile 0 and 100 are the extremes', [P.percentile([3, 9, 27], 0), P.percentile([3, 9, 27], 100)], [3, 27]);
+  eq('perf stats: median ignores input order and averages the middle pair', [P.median([3, 1, 2]), P.median([4, 1, 3, 2])], [2, 2.5]);
+  const steady = []; for (let i = 0; i < 600; i++) steady.push(1000 / 60);
+  const smooth = P.frameStats(steady);
+  eq('perf stats: a steady 60 Hz run misses nothing', [smooth.frames, smooth.p50, smooth.missed, smooth.dropped, smooth.fps], [600, 16.67, 0, 0, 60]);
+  const hitch = P.frameStats(steady.concat([50, 18]));
+  eq('perf stats: a 50 ms frame misses once and drops two vsyncs; an 18 ms one is not a miss', [hitch.missed, hitch.dropped, hitch.max], [1, 2, 50]);
+  eq('perf stats: no frames is all zeros, not NaN', P.frameStats([]), { frames: 0, p50: 0, p95: 0, p99: 0, max: 0, missed: 0, dropped: 0, fps: 0 });
+  eq('perf stats: junk deltas (zero, negative, NaN) are ignored', P.frameStats([0, -4, NaN, 16.67, 16.67]).frames, 2);
+  const cpu = P.cpuDelta(
+    [{ type: 'renderer', id: 1, cpuTime: 1 }, { type: 'renderer', id: 2, cpuTime: 5 }, { type: 'GPU', id: 3, cpuTime: 2 }, { type: 'browser', id: 4, cpuTime: 3 }],
+    [{ type: 'renderer', id: 1, cpuTime: 2 }, { type: 'renderer', id: 2, cpuTime: 5 }, { type: 'GPU', id: 3, cpuTime: 3.5 }, { type: 'browser', id: 4, cpuTime: 3.2 }, { type: 'network.mojom.NetworkService', id: 5, cpuTime: 0.1 }], 10);
+  eq('perf stats: renderer is the busiest renderer (idle tabs add nothing), the rest are summed, all per second', cpu, { renderer: 0.1, gpu: 0.15, browser: 0.02, network: 0.01, total: 0.28 });
+  eq('perf stats: a counter that went backwards (a restarted process) is not negative CPU', P.cpuDelta([{ type: 'GPU', id: 1, cpuTime: 9 }], [{ type: 'GPU', id: 1, cpuTime: 1 }], 5).gpu, 0);
+  const md = P.metricsDelta(
+    [{ name: 'RecalcStyleCount', value: 100 }, { name: 'TaskDuration', value: 1 }, { name: 'Nodes', value: 800 }],
+    [{ name: 'RecalcStyleCount', value: 160 }, { name: 'TaskDuration', value: 1.5 }, { name: 'Nodes', value: 950 }, { name: 'LayoutCount', value: 12 }], 10);
+  eq('perf stats: counters and durations are per second, sizes stay absolute', md, { TaskDuration: 0.05, LayoutCount: 1.2, RecalcStyleCount: 6, Nodes: 950 });
+  eq('perf stats: an idle result inside every budget passes', P.checkBudget('desktop', 'idle', { transitionsRunning: 0, RecalcStyleCount: 1, LayoutCount: 1, longTasksPerMin: 0, cpu: { total: 0.02 } }), []);
+  eq('perf stats: each blown idle budget is named, including nested ones', P.checkBudget('phone', 'idle', { transitionsRunning: 2, RecalcStyleCount: 130, LayoutCount: 1, longTasksPerMin: 9, cpu: { total: 1.4 } }).map((f) => f.split(': ')[1].split(' ')[0]), ['transitionsRunning', 'RecalcStyleCount', 'longTasksPerMin', 'cpu.total']);
+  eq('perf stats: scenarios without a budget never fail', P.checkBudget('desktop', 'scroll', { frames: { p99: 9999 } }), []);
+  eq('perf stats: the idle budget forbids any running transition and caps recalcs per second', [P.BUDGETS.idle.transitionsRunning, P.BUDGETS.idle.RecalcStyleCount <= 6], [0, true]);
+})();
 ['rgba(40,40,110,.32), var(--glint)',   // discord
  'rgba(20,40,70,.32), var(--glint)',    // steam
  'rgba(20,40,100,.32), var(--glint)',   // myanimelist
@@ -1503,8 +1536,8 @@ ok('sunset CSS: layer strength is --sunset, two palettes crossfade on --sunset-l
 ok('sunset CSS: golden palette holds orange + a wide horizon glow, rose palette holds magenta/violet', cssFlat.indexOf('rgba(255,150,45,') !== -1 && cssFlat.indexOf('rgba(255,152,60,') !== -1 && cssFlat.indexOf('rgba(238,92,124,') !== -1 && cssFlat.indexOf('rgba(112,62,152,') !== -1);
 ok('sunset CSS: static (no transition or animation) and click-through', !/\.sunset-sky[^{]*\{[^}]*(transition|animation)/.test(cssFlat) && /\.sunset-sky \{\n  position: absolute; top: 0; left: 0; right: 0; height: 100vh;\n  z-index: 0; pointer-events: none;/.test(cssFlat));
 ok('sunset CSS: only Christmas hides it (phones and low-power keep the static gradient)', cssFlat.indexOf('body.season-christmas .sunset-sky { display: none; }') !== -1 && (cssFlat.match(/\.sunset-sky[^{]*\{[^}]*display/g) || []).length === 1 && !/body\.low-power[^{]*\.sunset-sky/.test(cssFlat));
-ok('script.js writes --sunset / --sunset-late from KazuLib.sunsetGlow every minute', scriptSrc.indexOf('KazuLib.sunsetGlow(mins, doy)') !== -1 && scriptSrc.indexOf("root.setProperty('--sunset', sunset.glow);") !== -1 && scriptSrc.indexOf("root.setProperty('--sunset-late', sunset.late);") !== -1);
-ok('script.js applies the ?time= preview before the sun/moon and tint are computed', scriptSrc.indexOf('KazuLib.timeOverrideParse(location.search)') !== -1 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') !== -1 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') < scriptSrc.indexOf('const st = skyBodyState(mins, doy, skyArcPeakY());'));
+ok('script.js writes --sunset / --sunset-late from KazuLib.sunsetGlow on every tint step', scriptSrc.indexOf('KazuLib.sunsetGlow(mins, doy)') !== -1 && scriptSrc.indexOf("root.setProperty('--sunset', sunset.glow);") !== -1 && scriptSrc.indexOf("root.setProperty('--sunset-late', sunset.late);") !== -1);
+ok('script.js applies the ?time= preview in one place (skyClock) that every sky writer shares', scriptSrc.indexOf('KazuLib.timeOverrideParse(location.search)') !== -1 && scriptSrc.indexOf('SKY_TIME_OVERRIDE !== null ? SKY_TIME_OVERRIDE :') !== -1 && (scriptSrc.match(/skyClock\(new Date\(\)\)/g) || []).length === 2 && scriptSrc.indexOf('if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;') === -1);
 // Placement + hand-off wiring.
 const bootAt = htmlSrc.indexOf('<script id="boot-tint">');
 ok('boot script runs in the head before the stylesheet, after the canvas style + theme-color meta', bootAt > htmlSrc.indexOf('<style id="boot-canvas">') && bootAt > htmlSrc.indexOf('<meta name="theme-color"') && bootAt < htmlSrc.indexOf('<link rel="stylesheet" href="style.css') && bootAt < htmlSrc.indexOf('</head>'));
@@ -1642,8 +1675,8 @@ ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="
 // ---- Single time-of-day palette (light theme + toggle fully removed) ----
 ok('no light theme selectors or bootstrap left', !cssFlat.includes('data-theme="light"') && !htmlSrc.includes('data-theme="light"') && !scriptSrc.includes('data-theme'));
 ok('theme toggle orb fully removed', !htmlSrc.includes('theme-orb') && !scriptSrc.includes('theme-orb') && !cssFlat.includes('theme-orb') && !htmlSrc.includes('kazu-dark') && !scriptSrc.includes('kazu-dark'));
-ok('registered tint properties glide the background', cssFlat.includes("@property --bg-h { syntax: '<number>';") && cssFlat.includes('body[data-bg-live] {'));
-ok('sky tint written from the UK clock once a minute', scriptSrc.includes('applySkyTint(mins, doy)') && scriptSrc.includes("document.body.dataset.bgLive = '1'"));
+ok('registered tint properties keep their typed defaults (and are never transitioned: see perf guards)', cssFlat.includes("@property --bg-h { syntax: '<number>';") && !cssFlat.includes('body[data-bg-live] {'));
+ok('sky tint written from the UK clock in 10s steps, sun/moon every minute', scriptSrc.includes('applySkyTint(mins, doy)') && scriptSrc.includes('const TINT_STEP_MS = 10000;') && scriptSrc.includes('const BODY_STEP_MS = 60000;'));
 ok('page gradient built from the live tint', cssFlat.includes('calc(var(--bg-l, 9) * 1%)'));
 ok('gradient layers scale with the glow factor so night reaches black', cssFlat.includes('16 * var(--bg-glow, 1)') && cssFlat.includes('@property --bg-glow'));
 ok('dusk glow element + driver wired', htmlSrc.includes('class="sky-glow"') && scriptSrc.includes('skyGlowEl.style.opacity') && scriptSrc.includes('tint.glowX'));

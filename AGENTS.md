@@ -42,11 +42,11 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=68`,
-  `lib.js?v=38`, `script.js?v=73` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=74`,
+  `lib.js?v=38`, `script.js?v=80` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
-- `lib.js` (~930 lines) — **pure, DOM-free helpers**, exposed as the global
+- `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
   Europe/London wall-clock frame, UK DST maths, age/birthday calculations
@@ -59,7 +59,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   so the body slides in and out through the page edges and the sun<->moon
   hand-overs happen off-screen. `script.js` keeps an inline fallback copy of
   `skyArcPoint`; the gate tests run it against `lib.js` so they cannot drift.
-- `script.js` (~2400 lines) — all DOM behaviour: stat cards and modals,
+- `script.js` (~4100 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,
   ZenQuotes), custom scrollbars,
@@ -74,7 +74,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   Pure, DOM-free core (weather -> layers, quality governor, seeded particle
   physics, colours) exposed as `KazuWeatherFx`, plus a thin DOM shell at the
   bottom. Versioned by the `WEATHER_FX_SRC` constant in `script.js`.
-- `style.css` (~1440 lines) — all styling, including seasonal and
+- `style.css` (~2500 lines) — all styling, including seasonal and
   weather-atmosphere variants and the sakura scenery layer.
 - `sw.js` — service worker. Network-first for navigations, cache-first for
   same-origin versioned assets, cross-origin requests (live APIs, fonts)
@@ -86,6 +86,16 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   dependencies): downloads the public ad-block cosmetic lists and fails if any
   of their generic hide rules would hide a class or id the page uses (see
   "Ad-block safe class names" below). Its pure parser is also exercised by
+  `tests.js`.
+- `evals/perf-guards.js` — gate assertions (deterministic, no browser) for
+  the rules in "Performance rules" below: source pins plus the real code
+  sliced out of `script.js` and run against fakes. Shared by `tests.js` and
+  `tests.html`; also runs alone (`node evals/perf-guards.js`).
+- `evals/perf.js` — periodic eval (real Chrome over the DevTools protocol,
+  plain Node >= 22, no dependencies, no network): idle CPU per process, style
+  recalcs and layouts per second, scroll and pop-up frame pacing and load, on
+  desktop / tablet / phone profiles with every API mocked. See "Performance
+  rules". Usage is in its header; its pure statistics helpers are exercised by
   `tests.js`.
 - `404.html`, `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
   plumbing. `assets/` holds images/icons.
@@ -142,6 +152,72 @@ and `tests.html`.
 
 There is no test framework — assertions are hand-rolled `ok`/`eq` helpers.
 Follow that pattern.
+
+## Performance rules (load-bearing)
+
+`node evals/perf.js` measures what the page costs in a real browser (Chrome
+over the DevTools protocol; usage is in the file header). Its first run found
+the page burning a full CPU core at rest and missing every scroll frame on a
+throttled phone; idle now sits around 0.01 cores. These rules keep it there,
+and `evals/perf-guards.js` pins every one in the gate lane (the guards fail on
+the pre-optimisation code, which is the point).
+
+- **Idle must be idle.** At rest the page does one style recalc and one layout
+  a second (the clock). `perf.js --budget` fails on any running transition,
+  more than 6 recalcs or layouts a second, or more than 4 long tasks a minute.
+  Idle runs are unthrottled on purpose: the DevTools CPU throttle itself burns
+  renderer CPU, which would drown the number idle exists to measure. Use
+  `--quick` to iterate (a fake UK clock rolls a minute 2 s after load) and
+  `--css` / `--js` / `--pre` to try a fix in the page before writing it.
+- **No invisible or always-on animation.** Any running CSS animation or
+  transition, even compositor-only, even a 5px progress bar, makes the
+  compositor and GPU process produce a frame on every vsync (144 a second on a
+  fast display): about 0.19 CPU cores each, measured on a bare test page. The
+  seasonal loops (petals, rain drops, aurora, Christmas lights, the Pride halo)
+  are allowed because they ARE the feature and run only in season; the
+  allow-list is pinned in `perf-guards.js`, so a new infinite loop must be
+  added there on purpose. The Pride halo's spin used to sit on the base rule and
+  ran all year at opacity 0 (~0.3 cores). For a small, long-lived indicator
+  prefer discrete steps: the Spotify bar steps four times a second off a timer
+  that exists only while a song plays and the tab is visible, and
+  `.spotify-bar-fill` is a `transform`, never a width.
+- **Never transition an inherited custom property** (or anything else that
+  restyles the whole document per frame). The sky tint was a 90 s transition on
+  `--bg-h/s/l/glow`, retargeted every minute, so one was always running: every
+  frame restyled ~1,000 nodes (the meadow's ~35 `color-mix()` tokens and ~500
+  SVG nodes included) and repainted the gradient behind every frosted card. A
+  throttled phone missed 200 of 201 scroll frames; now 1 of 1,171.
+- **Sky tint cadence.** `stepSky` (called from the 1 Hz `tick`, so it pauses
+  with a hidden tab and owns no timer) writes the tint every `TINT_STEP_MS`
+  (10 s) and moves the sun/moon every `BODY_STEP_MS` (60 s). It waits for the
+  page to be at rest (`SKY_QUIET_MS` after the last scroll, no pop-up flight, no
+  card height glide), writes nothing when the tint is unchanged (deep night),
+  and feeds fractional UK minutes (`skyClock`) so each step lands on the exact
+  point of the day's curve. One step moves the canvas colour by under a quarter
+  of one 8-bit level at the fastest hour of the year (`perf-guards.js` sweeps
+  both palettes across the year), which is why it reads as the old glide.
+- **No page-wide DOM sweeps from observers.** A `MutationObserver` callback
+  receives records: queue only what they name. The custom-scrollbar host scan
+  used to visit every element after every mutation, and the clock's text swap
+  is a mutation (~9 ms of main thread every second, a dropped frame a second
+  at 144 Hz). Text swaps now queue nothing; load and resize run one debounced
+  full sweep.
+- **No CSS animation on off-screen `content-visibility: auto` content.** The
+  below-fold cards are skipped until they near the viewport, and an animation
+  started inside a skipped subtree never completes: Blink requests a frame on
+  every vsync for as long as the page is open (measured +0.07 cores for five
+  playlist rows). `popRefresh` / `popReveal` animate only what `inViewport`
+  says is on screen and take the class off after the run.
+- **Phones are low-power by construction.** `lowPowerMode` counts a coarse
+  pointer and a small screen as two weak signals, and every phone has both, so
+  every phone runs in low-power mode: no particles, no backdrop blur, no glass
+  refraction, no entrance or scroll-reveal motion, no wheel-lerp. What phones
+  keep: the sky tint and sunset, the meadow, the pop-up card fly-out, hover and
+  press feedback. Tablets and narrow desktop windows get the full effects with
+  the mobile layout. (`particleCount`'s phone density tier is therefore dead
+  code.) Changing that is a product decision, not an optimisation. (The
+  comment on `lowPowerMode` in `lib.js` says a weak phone needs three signals,
+  but the code trips on two.)
 
 ## New Year (UK midnight)
 
@@ -233,11 +309,12 @@ These are load-bearing; read before editing.
   minutes before the day's sunset, is full from sunset for 12 minutes, and is
   gone 85 minutes later; the palette crossfades from golden orange to
   rose/violet from 10 minutes before to 40 after. `script.js` writes the two
-  variables each minute (in `applySkyTint`), and the inline `#boot-tint`
+  variables on every 10-second tint step (in `applySkyTint`, see "Sky tint
+  cadence" below), and the inline `#boot-tint`
   script carries a compact copy so a page opened at dusk starts with the
   sunset in place; the year-wide sweep in `tests.js` pins the two. It is
-  static CSS (no transition, no animation; the value steps ~1% a minute), so
-  it shows on phones and in low-power mode too; only Christmas hides it.
+  static CSS (no transition, no animation; the value steps under 0.5% per
+  step), so it shows on phones and in low-power mode too; only Christmas hides it.
   Changing the timing means editing `sunsetGlow` AND the matching numbers in
   the boot script. The gradient stops live in `style.css` (`.sunset-sky`).
 - **Meadow footer (a grassy field with a house).** The last thing on the

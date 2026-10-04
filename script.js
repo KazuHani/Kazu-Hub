@@ -178,13 +178,13 @@
   // start/end on the visitor's local date. Shared by the season key and sky.
   const fmtSeasonUK = new Intl.DateTimeFormat('en-GB', {
     timeZone: TIMEZONE, year: 'numeric', month: 'numeric', day: 'numeric',
-    hour: 'numeric', minute: 'numeric', hour12: false,
+    hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false,
   });
   function seasonUKParts(now) {
     if (KazuLib && KazuLib.ukWallParts) return KazuLib.ukWallParts(now);
     const o = {};
     fmtSeasonUK.formatToParts(now).forEach((p) => { o[p.type] = +p.value; });
-    return { year: o.year, month: o.month - 1, day: o.day, hours: o.hour % 24, minutes: o.minute };
+    return { year: o.year, month: o.month - 1, day: o.day, hours: o.hour % 24, minutes: o.minute, seconds: o.second || 0 };
   }
 
   function seasonState(now) {
@@ -269,6 +269,7 @@
     updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
     applySeasons(); // re-evaluate every second so a page left open crosses midnight correctly
     checkNewYear(); // uses the real UK clock, independently of seasonal/sky previews
+    stepSky(); // sky tint every 10s, sun/moon every minute, never mid-scroll
   }
 
   // ---------- Fetch timeout wrapper ----------
@@ -470,14 +471,35 @@
   const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const POP_EASE = 'cubic-bezier(.22,.9,.3,1)';
 
+  // Is any part of `el` inside the viewport right now? Populate motion is only
+  // worth running for something the reader can see, and for the below-fold
+  // cards it is actively harmful: style.css gives them content-visibility:
+  // auto, which skips their subtree until they near the viewport, and a CSS
+  // animation started INSIDE a skipped subtree never completes, so Blink asks
+  // for a fresh frame on every vsync for as long as the page is open (measured
+  // ~0.07 CPU cores at idle on a 144 Hz display for five playlist rows alone).
+  // Off-screen content just swaps in; it is already in place when scrolled to.
+  function inViewport(el) {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight;
+  }
+
   // Content-only pop (no height glide): for live swaps that rewrite an
   // already-visible block, like the playlist rows replacing the static
-  // snapshot. Restarts the keyframes even if the class lingered.
+  // snapshot. Restarts the keyframes if a run is still in flight, and takes
+  // the class off again once the content has landed (the end keyframe is the
+  // element's natural style, so nothing visibly changes): a finished animation
+  // must not be left attached to the element.
+  const popTimers = new WeakMap();
   function popRefresh(el) {
-    if (!el || LOW_POWER || REDUCED_MOTION) return;
-    el.classList.remove('populated-in');
-    void el.offsetWidth;
+    if (!el || LOW_POWER || REDUCED_MOTION || !inViewport(el)) return;
+    if (el.classList.contains('populated-in')) {
+      el.classList.remove('populated-in');
+      void el.offsetWidth;
+    }
     el.classList.add('populated-in');
+    clearTimeout(popTimers.get(el));
+    popTimers.set(el, setTimeout(() => el.classList.remove('populated-in'), 600));
   }
 
   function popReveal(loadedEl, loadingEl) {
@@ -489,12 +511,15 @@
     }
     const card = loadedEl.closest ? loadedEl.closest('.card') : null;
     const still = LOW_POWER || REDUCED_MOTION || !loadedEl.animate;
-    const h0 = (!still && card) ? card.getBoundingClientRect().height : 0;
+    // Only a card the reader can see gets the height glide (and so a per-frame
+    // layout): one below the fold simply takes its final height.
+    const glide = !still && !!card && inViewport(card);
+    const h0 = glide ? card.getBoundingClientRect().height : 0;
     loadedEl.classList.remove('hidden');
     if (loadingEl) loadingEl.classList.add('hidden');
     if (still) return;
     popRefresh(loadedEl);
-    if (!card) return;
+    if (!glide) return;
     const h1 = card.getBoundingClientRect().height;
     if (Math.abs(h1 - h0) < 2) return;
     window.__kazuPopAnim = (window.__kazuPopAnim || 0) + 1;
@@ -1004,36 +1029,46 @@
   // documentElement so both <html> (overscroll canvas) and <body> (the
   // gradient stack) track it. --bg-glow (max of the daylight and dusk bells)
   // scales the decorative gradient layers so deep night reaches true AMOLED
-  // black. First write snaps; afterwards body carries data-bg-live and the
-  // registered @property transitions glide each per-minute step. Cheap by
-  // construction: four property writes a minute. Returns the tint so the
-  // sky-body pass can reuse it for the dusk glow.
-  let skyTintSnapped = false;
+  // black.
+  //
+  // Stepped, never transitioned. These four were once registered @property
+  // values gliding over a 90s CSS transition, but every new minute retargeted
+  // the glide before the last one had finished, so from the first minute of
+  // daylight a transition was ALWAYS running. Custom properties inherit, so
+  // every frame restyled the whole document (the meadow's ~35 colour-mix
+  // tokens and ~500 SVG nodes included) and repainted the gradient behind each
+  // frosted card. Measured: a full CPU core at idle, a main thread ~98% busy,
+  // and on a throttled phone every scroll frame missed. The tint moves under a
+  // fifth of one 8-bit colour level per TINT_STEP_MS even at the fastest hour
+  // of the year (tests.js pins that over every day), so a fine step looks
+  // exactly like the glide at ~1/600th of the work: one restyle per step, none
+  // while the tint is not moving (deep night), none mid-scroll or mid-flight
+  // (see stepSkyTint). Returns the tint so the sky-body pass can reuse it for
+  // the dusk glow.
   let skyTintHex = '#000000'; // AMOLED deep-night default, matches the inline first paint
+  let skyTintKey = '';        // last written values: an unchanged tint writes nothing
   function applySkyTint(mins, doy) {
     const tint = skyTint(mins, doy, document.documentElement.classList.contains('season-halloween') ? 'halloween' : null);
     if (!tint) return null;
-    const root = document.documentElement.style;
-    root.setProperty('--bg-h', tint.h);
-    root.setProperty('--bg-s', tint.s);
-    root.setProperty('--bg-l', tint.l);
-    root.setProperty('--bg-glow', tint.glow);
     // Sunset gradient (style.css .sunset-sky): strength + golden->rose palette
     // mix. Without lib.js it simply keeps the value the boot script set.
     const sunset = KazuLib && KazuLib.sunsetGlow ? KazuLib.sunsetGlow(mins, doy) : null;
-    if (sunset) {
-      root.setProperty('--sunset', sunset.glow);
-      root.setProperty('--sunset-late', sunset.late);
-    }
-    skyTintHex = hslToHex(tint.h, tint.s, tint.l);
-    skyFxLight = { daylight: tint.daylight, dusk: tint.dusk }; // cloud colours follow the time of day
-    if (window.KazuWeatherFx) window.KazuWeatherFx.setSky(skyFxLight);
-    if (!document.body.classList.contains('season-christmas')) setThemeColor(skyTintHex);
-    if (!skyTintSnapped) {
-      skyTintSnapped = true;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        document.body.dataset.bgLive = '1';
-      }));
+    const key = tint.h + '|' + tint.s + '|' + tint.l + '|' + tint.glow + '|' + (sunset ? sunset.glow + '|' + sunset.late : '');
+    if (key !== skyTintKey) {
+      skyTintKey = key;
+      const root = document.documentElement.style;
+      root.setProperty('--bg-h', tint.h);
+      root.setProperty('--bg-s', tint.s);
+      root.setProperty('--bg-l', tint.l);
+      root.setProperty('--bg-glow', tint.glow);
+      if (sunset) {
+        root.setProperty('--sunset', sunset.glow);
+        root.setProperty('--sunset-late', sunset.late);
+      }
+      skyTintHex = hslToHex(tint.h, tint.s, tint.l);
+      skyFxLight = { daylight: tint.daylight, dusk: tint.dusk }; // cloud colours follow the time of day
+      if (window.KazuWeatherFx) window.KazuWeatherFx.setSky(skyFxLight);
+      if (!document.body.classList.contains('season-christmas')) setThemeColor(skyTintHex);
     }
     return tint;
   }
@@ -1077,12 +1112,8 @@
   function updateSkyBody() {
     if (!skyBodyEl) return;
     // The sky and the October boundary share a UK wall frame, even without lib.js.
-    const now = new Date();
-    let mins, doy;
-    const w = seasonUKParts(now);
-    mins = w.hours * 60 + w.minutes;
-    doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
-    if (SKY_TIME_OVERRIDE !== null) mins = SKY_TIME_OVERRIDE;
+    const { mins, doy } = skyClock(new Date());
+    skyBodyAt = skyTintAt = performance.now(); // the cadence below restarts from this write
     const st = skyBodyState(mins, doy, skyArcPeakY());
     if (!st) return;
     // Sun -> moon (sunset) and moon -> sun (sunrise) swap while the body is off
@@ -1149,7 +1180,38 @@
     applySkyCurveMode(devCurveMode);
     updateSkyBody();
   });
-  setInterval(updateSkyBody, 60000);
+
+  // The UK clock the sky runs on: FRACTIONAL minutes (seconds included), so
+  // each step lands on the exact point of the day's curve, plus the day of
+  // year. A ?time= preview pins the minutes (and so the whole sky) in place.
+  function skyClock(now) {
+    const w = seasonUKParts(now);
+    const doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
+    const mins = SKY_TIME_OVERRIDE !== null ? SKY_TIME_OVERRIDE : w.hours * 60 + w.minutes + (w.seconds || 0) / 60;
+    return { mins, doy };
+  }
+
+  // Sky cadence. Both sky writers ride the page's existing 1 Hz tick instead
+  // of owning timers, so they pause with a hidden tab (no wake-ups at all) and
+  // catch up on the first tick after it returns. The tint steps every 10s (see
+  // applySkyTint for why that reads as a glide), the sun/moon and horizon
+  // glow every minute (their CSS glides do the rest). A step that falls
+  // mid-scroll or mid-pop-up is simply retried on the next tick: a restyle
+  // never lands in the middle of a gesture.
+  const TINT_STEP_MS = 10000;
+  const BODY_STEP_MS = 60000;
+  const SKY_QUIET_MS = 350; // how long after the last scroll event the page counts as at rest
+  let skyTintAt = 0, skyBodyAt = 0, lastScrollAt = 0;
+  function stepSky() {
+    const now = performance.now();
+    const bodyDue = now - skyBodyAt >= BODY_STEP_MS;
+    if (!bodyDue && now - skyTintAt < TINT_STEP_MS) return;
+    if (now - lastScrollAt < SKY_QUIET_MS || modalAnim || window.__kazuPopAnim) return;
+    if (bodyDue) { updateSkyBody(); return; } // moves the body and refreshes the tint too
+    skyTintAt = now;
+    const c = skyClock(new Date());
+    applySkyTint(c.mins, c.doy);
+  }
   let skyLayoutFrame = 0;
   function scheduleSkyLayout() {
     if (skyLayoutFrame) return;
@@ -1259,14 +1321,39 @@
     return 'for ' + s + 's';
   }
 
-  // Advance the Spotify bar + game timer smoothly between Lanyard polls (called each second by tick)
+  // The Spotify bar advances in small DISCRETE steps, not a CSS glide. Any
+  // running animation or transition makes the compositor and the GPU process
+  // produce a frame on every vsync (144 a second on a fast display) for as long
+  // as it runs, and a song playing is "as long as the page is open": measured
+  // ~0.2 CPU cores for a 5px bar, against ~0.01 for stepping it. A quarter
+  // second is ~0.3px on the card's bar (a 3-minute song), which the eye reads
+  // as smooth; phones and low-power devices step once a second off the clock
+  // tick with no extra timer at all. The timer only exists while a song is
+  // playing and the tab is visible (syncSpotifyBar).
+  const SPOTIFY_BAR_MS = LOW_POWER ? 1000 : 250;
+  let spotifyBarTimer = 0;
+  function paintSpotifyBar(now) {
+    if (!spotifyTimes) return;
+    const fill = $('spotifyBarFill');
+    if (!fill) return;
+    const dur = spotifyTimes.end - spotifyTimes.start;
+    const pos = Math.min(Math.max((now == null ? Date.now() : now) - spotifyTimes.start, 0), Math.max(dur, 0));
+    // transform, not width: see .spotify-bar-fill (no layout)
+    fill.style.transform = 'translateX(' + ((dur > 0 ? (pos / dur) * 100 : 0) - 100).toFixed(2) + '%)';
+  }
+  function syncSpotifyBar() {
+    const want = !!spotifyTimes && !document.hidden && SPOTIFY_BAR_MS < 1000;
+    if (want && !spotifyBarTimer) spotifyBarTimer = setInterval(paintSpotifyBar, SPOTIFY_BAR_MS);
+    else if (!want && spotifyBarTimer) { clearInterval(spotifyBarTimer); spotifyBarTimer = 0; }
+  }
+
+  // Advance the Spotify bar + game timer between Lanyard polls (called each second by tick)
   function updatePresenceProgress() {
     const now = Date.now();
     if (spotifyTimes) {
       const dur = spotifyTimes.end - spotifyTimes.start;
       const pos = Math.min(Math.max(now - spotifyTimes.start, 0), Math.max(dur, 0));
-      const fill = $('spotifyBarFill');
-      if (fill) fill.style.width = (dur > 0 ? (pos / dur) * 100 : 0).toFixed(1) + '%';
+      paintSpotifyBar(now);
       const el = $('spotifyElapsed'); if (el) el.textContent = fmtClock(pos);
       const du = $('spotifyDuration'); if (du) du.textContent = fmtClock(dur);
     }
@@ -1457,6 +1544,7 @@
     }
 
     updatePresenceProgress();
+    syncSpotifyBar(); // the 4 Hz bar timer exists only while a song is playing
     discordHasData = true;
     popReveal($('discordLoaded'), $('discordLoading'));
     $('discordError').classList.add('hidden');
@@ -2130,6 +2218,7 @@
   // ---------- Back to top ----------
   const toTopBtn = $('toTopBtn');
   window.addEventListener('scroll', () => {
+    lastScrollAt = performance.now(); // the sky cadence waits for the page to be at rest (stepSky)
     toTopBtn.classList.toggle('hidden', window.scrollY <= 420);
   }, { passive: true });
   // Ride the heavy-scroll loop when it's active — its per-frame instant
@@ -2581,20 +2670,10 @@
     // before body exists, and Christmas takes precedence in combined previews.
     const root = document.documentElement;
     const halloween = !!s.halloween && !s.christmas;
-    const paletteChanged = root.classList.contains('season-halloween') !== halloween;
     root.classList.toggle('season-halloween', halloween);
-    if (paletteChanged) {
-      // Snap seasonal hue changes: drop the 90s glide AND flush styles so the
-      // running transition is cancelled before the new hue lands. Without the
-      // flush the old hue kept gliding (turning Halloween off left the sky purple).
-      body.removeAttribute('data-bg-live');
-      void body.offsetWidth;
-    }
+    // The tint is never transitioned (see applySkyTint), so a palette change
+    // simply lands: the new hue is written and painted in the same pass.
     updateSkyBody(); // dev clicks and midnight refresh tint immediately
-    if (paletteChanged) {
-      void body.offsetWidth; // commit the new hue with no transition in force
-      requestAnimationFrame(() => { body.dataset.bgLive = '1'; });
-    }
     // Blossom season: outside it the branches are not drawn (html.no-sakura; the
     // inline #boot-tint script set the same class before first paint, this keeps
     // it honest for dev overrides and a page left open across 20 Mar / 10 May)
@@ -3277,6 +3356,7 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) { stopPolling(); stopLanyard(); }
     else { startPolling(); startLanyard(); }
+    syncSpotifyBar(); // no bar timer while hidden; catches up on the first visible tick
   });
 
   if (!document.hidden) {
@@ -3806,46 +3886,92 @@
   // ---- Inner scrollers: auto-discovered, now and as the DOM changes ----
   // Any element styled overflow-y: auto/scroll gets a bar — the card detail
   // modal today, anything future automatically. Bars inside bars are skipped.
+  //
+  // Incremental, because the sweep used to be the heaviest thing the page did
+  // at rest: it visited EVERY element (~1,000: an ancestor walk and two layout
+  // reads each) after ANY DOM mutation, and the once-a-second clock text swap
+  // is a mutation. Measured ~9 ms of main thread, every second, for as long as
+  // the page was open: a dropped frame a second on a 144 Hz display. Now a
+  // mutation only queues what it could have changed: the elements it ADDED
+  // (with their subtrees) and the changed element's own ancestors (a modal
+  // body is injected INTO an already-present, fixed-height panel). A pure text
+  // swap queues nothing. load and resize still run one full sweep, debounced.
   const attached = new WeakSet();
-  let scanRaf = 0;
-  function scan() {
-    scanRaf = 0;
-    document.querySelectorAll('*').forEach((el) => {
-      if (attached.has(el) || el.closest('.cscroll')) return;
-      // Cheap reject first: only an overflowing element can need a bar. The
-      // scrollHeight/clientHeight reads batch into a single layout pass (no
-      // writes between them), while getComputedStyle forces a style recalc
-      // PER ELEMENT — so the expensive check now runs on a handful of
-      // candidates instead of the whole DOM. Elements that only start
-      // overflowing later are caught by the next mutation/load/resize scan;
-      // until then they'd have shown a self-hidden bar anyway, so nothing
-      // visible changes.
-      if (el.scrollHeight <= el.clientHeight + 1) return;
-      const oy = getComputedStyle(el).overflowY;
-      if (oy !== 'auto' && oy !== 'scroll') return;
-      attached.add(el);
-      createScroller({
-        host: el,
-        viewportH: () => el.clientHeight,
-        contentH: () => el.scrollHeight,
-        scroll: () => el.scrollTop,
-        // Inline style beats any stylesheet scroll-behavior for the duration
-        // of the write, so drags and steppers stay 1:1 on smooth-styled hosts.
-        scrollTo: (y) => {
-          el.style.scrollBehavior = 'auto';
-          el.scrollTop = y;
-          el.style.scrollBehavior = '';
-        },
-      });
+  let scanRaf = 0, scanFull = false, scanResizeTimer = 0;
+  const scanSelf = new Set();   // check just these elements
+  const scanDeep = new Set();   // check these elements and everything inside them
+  function considerScroller(el) {
+    if (attached.has(el) || el.closest('.cscroll')) return;
+    // Cheap reject first: only an overflowing element can need a bar. The
+    // scrollHeight/clientHeight reads batch into a single layout pass (no
+    // writes between them), while getComputedStyle forces a style recalc
+    // PER ELEMENT — so the expensive check only runs on a handful of
+    // candidates. Elements that only start overflowing later are caught by the
+    // next structural mutation / load / resize scan; until then they'd have
+    // shown a self-hidden bar anyway, so nothing visible changes.
+    if (el.scrollHeight <= el.clientHeight + 1) return;
+    const oy = getComputedStyle(el).overflowY;
+    if (oy !== 'auto' && oy !== 'scroll') return;
+    attached.add(el);
+    createScroller({
+      host: el,
+      viewportH: () => el.clientHeight,
+      contentH: () => el.scrollHeight,
+      scroll: () => el.scrollTop,
+      // Inline style beats any stylesheet scroll-behavior for the duration
+      // of the write, so drags and steppers stay 1:1 on smooth-styled hosts.
+      scrollTo: (y) => {
+        el.style.scrollBehavior = 'auto';
+        el.scrollTop = y;
+        el.style.scrollBehavior = '';
+      },
     });
   }
-  const scheduleScan = () => { if (!scanRaf) scanRaf = requestAnimationFrame(scan); };
-  if ('MutationObserver' in window) {
-    new MutationObserver(scheduleScan).observe(document.body, { childList: true, subtree: true });
+  function scan() {
+    scanRaf = 0;
+    if (scanFull) {
+      scanFull = false;
+      scanSelf.clear(); scanDeep.clear();
+      document.querySelectorAll('*').forEach(considerScroller);
+      return;
+    }
+    scanSelf.forEach((el) => { if (el.isConnected) considerScroller(el); });
+    scanDeep.forEach((el) => {
+      if (!el.isConnected) return;
+      considerScroller(el);
+      el.querySelectorAll('*').forEach(considerScroller);
+    });
+    scanSelf.clear(); scanDeep.clear();
   }
-  scan();
-  window.addEventListener('load', scheduleScan);
-  window.addEventListener('resize', scheduleScan, { passive: true });
+  const scheduleScan = (full) => {
+    if (full === true) scanFull = true;
+    if (!scanRaf) scanRaf = requestAnimationFrame(scan);
+  };
+  function onScanMutations(records) {
+    let queued = false;
+    for (const r of records) {
+      let structural = false;
+      r.addedNodes.forEach((n) => { if (n.nodeType === 1) { scanDeep.add(n); structural = true; } });
+      if (!structural) r.removedNodes.forEach((n) => { if (n.nodeType === 1) structural = true; });
+      if (!structural) continue; // a text swap (the clock) cannot create or move a scroller
+      for (let el = r.target; el && el.nodeType === 1; el = el.parentElement) scanSelf.add(el);
+      queued = true;
+    }
+    if (queued) scheduleScan();
+  }
+  if ('MutationObserver' in window) {
+    new MutationObserver(onScanMutations).observe(document.body, { childList: true, subtree: true });
+  }
+  // First sweep once the page is idle: nothing overflows at load (the pop-up is
+  // hidden) and the window bar above is already built, so it need not hold up
+  // the first frames.
+  if (window.requestIdleCallback) requestIdleCallback(() => scheduleScan(true), { timeout: 2000 });
+  else setTimeout(() => scheduleScan(true), 300);
+  window.addEventListener('load', () => scheduleScan(true));
+  window.addEventListener('resize', () => {
+    clearTimeout(scanResizeTimer);
+    scanResizeTimer = setTimeout(() => scheduleScan(true), 150); // not once per frame of a window drag
+  }, { passive: true });
 })();
 
 /* ============================================================================

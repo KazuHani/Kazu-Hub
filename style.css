@@ -2,11 +2,14 @@
 html { scroll-behavior: smooth; }
 /* Time-of-day palette. There is only ONE theme now — a soft slate blue that
    breathes with the UK day: script.js rewrites --bg-h/--bg-s/--bg-l/--bg-glow
-   from KazuLib.skyTint once a minute (lighter towards midday, a faint orange
-   horizon glow around sunrise/sunset, true AMOLED black in deep night). They
-   are registered <number> properties so the per-minute step TRANSITIONS glide
-   inside the gradients below instead of jumping; browsers without @property
-   just step once a minute. --bg-glow (the larger of the daylight and dusk
+   from KazuLib.skyTint every 10 seconds (lighter towards midday, a faint
+   orange horizon glow around sunrise/sunset, true AMOLED black in deep
+   night). They are registered <number> properties so they carry typed
+   initial values, but they are deliberately NEVER transitioned: each step is
+   under a fifth of one 8-bit colour level, so it already reads as a glide,
+   whereas a CSS transition on an inherited custom property restyles the whole
+   document every frame (it used to cost a full CPU core at idle; see
+   applySkyTint in script.js). --bg-glow (the larger of the daylight and dusk
    factors) scales the decorative gradient layers, so the night sky can reach
    #000 while day and golden hour keep their depth. The fallbacks in each
    var() are the pre-registration night values; the critical inline first
@@ -29,13 +32,6 @@ body {
   color: var(--ink);
   background: var(--page-bg);
 }
-/* Added by script.js AFTER the first tint write has snapped into place, so
-   the once-a-minute updates glide (registered properties above) but the
-   initial set is instant rather than a 90-second fade from night. */
-body[data-bg-live] {
-  transition: --bg-h 90s linear, --bg-s 90s linear, --bg-l 90s linear, --bg-glow 90s linear;
-}
-
 /* ---- Theme variables ---- */
 body {
   color-scheme: dark;
@@ -473,7 +469,13 @@ body.season-christmas .sakura-scene { display: none; }
 .spotify-art { width: 46px; height: 46px; }
 .spotify-progress { margin-top: 9px; }
 .spotify-bar { height: 5px; border-radius: 999px; background: rgba(255,255,255,.2); overflow: hidden; }
-.spotify-bar-fill { display: block; height: 100%; width: 0%; border-radius: 999px; background: #1db954; transition: width .9s linear; }
+/* The fill is always full width and slides in from the left (translateX -100% =
+   empty, 0 = full) inside the clipped track. script.js moves it in small
+   discrete steps (paintSpotifyBar) and it is deliberately NOT transitioned:
+   the old `transition: width` re-laid-out the whole card on every frame, and
+   even a compositor-only transform transition keeps the GPU producing a frame
+   per vsync for as long as a song plays (see SPOTIFY_BAR_MS). */
+.spotify-bar-fill { display: block; height: 100%; width: 100%; border-radius: 999px; background: #1db954; transform: translateX(-100%); }
 .spotify-times { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; font-weight: 700; color: #b9c0f7; font-variant-numeric: tabular-nums; }
 
 /* ---- Toast (copy-to-clipboard confirmation) ---- */
@@ -1248,6 +1250,11 @@ body.low-power #fireworks-canvas { display: none; }
 @media (prefers-reduced-motion: reduce) { #fireworks-canvas { display: none; } }
 
 /* ---- Pride (June): aro-ace halo around the profile picture ---- */
+/* The spin lives on the season rule, not the base: with `animation` on the
+   base it ran all year at opacity 0, and an infinite animation keeps the
+   compositor producing a frame on every vsync (144 a second on a fast
+   display) even though nothing is visible. Measured: ~0.3 CPU cores at idle
+   for an invisible halo. Out of season the halo has no animation at all. */
 @keyframes prideSpin { to { transform: rotate(360deg); } }
 .pfp-ring::before {
   content: ""; position: absolute; inset: -18px; border-radius: 50%;
@@ -1257,9 +1264,9 @@ body.low-power #fireworks-canvas { display: none; }
   filter: blur(10px);
   -webkit-mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
           mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
-  animation: prideSpin 14s linear infinite; pointer-events: none;
+  pointer-events: none;
 }
-body.season-pride .pfp-ring::before { opacity: 1; }
+body.season-pride .pfp-ring::before { opacity: 1; animation: prideSpin 14s linear infinite; }
 
 /* ---- Christmas (Dec 25): dark festive palette override ---- */
 body.season-christmas {
@@ -1411,7 +1418,7 @@ html.season-halloween .halloween-decor { display: block; }
 @media (prefers-reduced-motion: reduce) { .xmas-lights circle { animation: none; } }
 
 /* ---- Respect reduced motion: keep the halo, stop the spin (confetti is skipped in JS) ---- */
-@media (prefers-reduced-motion: reduce) { .pfp-ring::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { body.season-pride .pfp-ring::before { animation: none; } }
 
 /* ============ DEV SETTINGS PANEL (secret code: kazudev) ============ */
 /* Floating season-trigger overrides; the element is built and owned by
