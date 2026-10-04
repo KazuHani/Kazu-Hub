@@ -2423,28 +2423,76 @@
     modalPanel.classList.toggle('modal-panel--age', key === 'age');
     modalTitleEl.innerHTML = def.title;
     modalBodyEl.innerHTML = def.render();
+    if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
+    Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((x) => x.cancel()));
     modalEl.hidden = false;                 // unhide first so afterRender() has real layout
     document.body.classList.add('modal-open');
     if (def.afterRender) def.afterRender();
-    void modalEl.offsetWidth;               // reflow so the open transition runs
+    void modalEl.offsetWidth;               // reflow so the backdrop transition runs
     modalEl.classList.add('is-open');
-    modalPanel.focus();
+    flyModal(modalTrigger, true);
+    modalPanel.focus({ preventScroll: true });
     if (def.live) { def.live(); modalUpdater = setInterval(def.live, 1000); }
   }
 
+  // Pop-up motion (FLIP): the panel starts as the clicked card (same position and
+  // size), grows into its resting place, and on close shrinks back onto the card.
+  // The panel's own content cross-fades so it never shows squashed text. Falls
+  // back to a plain fade with no trigger, a hidden card, reduced motion, or no
+  // Web Animations support.
+  const MODAL_OPEN_MS = 440, MODAL_CLOSE_MS = 340;
+  let modalAnim = null;
+  function flyModal(card, opening, onDone) {
+    const done = () => { if (onDone) onDone(); };
+    if (!modalPanel.animate) { done(); return; }
+    const to = modalPanel.getBoundingClientRect();
+    const from = card && card.isConnected ? card.getBoundingClientRect() : null;
+    const fly = !REDUCED_MOTION && from && from.width > 0 && from.height > 0 && to.width > 0 && to.height > 0;
+    const away = fly
+      ? 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px) scale(' + (from.width / to.width) + ',' + (from.height / to.height) + ')'
+      : 'translateY(10px) scale(.97)';
+    const frames = fly
+      ? [{ transform: away }, { transform: 'none' }]
+      : [{ transform: away, opacity: 0 }, { transform: 'none', opacity: 1 }];
+    if (!opening) frames.reverse();
+    const ms = REDUCED_MOTION ? 180 : (opening ? MODAL_OPEN_MS : MODAL_CLOSE_MS);
+    const ease = opening ? 'cubic-bezier(.2,.85,.25,1)' : 'cubic-bezier(.5,0,.75,.3)';
+    const anim = modalPanel.animate(frames, { duration: ms, easing: ease, fill: 'both' });
+    modalAnim = anim;
+    if (fly) {
+      // content fades in once the panel has mostly grown, and out right away on close
+      const keys = opening
+        ? [{ opacity: 0, offset: 0 }, { opacity: 0, offset: .4 }, { opacity: 1, offset: 1 }]
+        : [{ opacity: 1, offset: 0 }, { opacity: 0, offset: .45 }, { opacity: 0, offset: 1 }];
+      Array.from(modalPanel.children).forEach((el) => {
+        el.animate(keys, { duration: ms, easing: 'linear', fill: 'both' });
+      });
+    }
+    anim.onfinish = () => {
+      if (modalAnim !== anim) return;
+      // leave the panel in its settled state, then drop the fill so layout is normal
+      if (opening) { anim.cancel(); modalAnim = null; Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((a) => a.cancel())); }
+      done();
+    };
+  }
+
   function closeModal() {
-    if (!modalEl || modalEl.hidden) return;
+    if (!modalEl || modalEl.hidden || !modalEl.classList.contains('is-open')) return;
     modalEl.classList.remove('is-open');
     document.body.classList.remove('modal-open');
     if (modalUpdater) { clearInterval(modalUpdater); modalUpdater = null; }
-    if (modalTrigger && modalTrigger.focus) modalTrigger.focus();
+    const card = modalTrigger;
+    if (card && card.focus) card.focus({ preventScroll: true });
     modalTrigger = null; modalKey = null;
-    setTimeout(() => {                       // hide + unmount after the fade-out
+    if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
+    flyModal(card, false, () => {            // hide + unmount once it has landed back
       if (!modalEl.classList.contains('is-open')) {
         modalEl.hidden = true;
         modalBodyEl.innerHTML = '';          // stops the globe iframe + frees the canvas
+        if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
+        Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
       }
-    }, 340);
+    });
   }
 
   function trapFocus(e) {

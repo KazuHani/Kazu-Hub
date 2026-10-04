@@ -1730,14 +1730,20 @@ body.low-power .populated-in { animation: none; }
 
 body.modal-open { overflow: hidden; }
 
+/* The dim + blur backdrop lives on ::before so only IT fades; the panel itself
+   is moved by script.js (openModal/closeModal), which flies it from the card
+   that was clicked to its resting place and back again (FLIP, Web Animations). */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 100;
   display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
   background: rgba(4,10,22,.55);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  opacity: 0; transition: opacity .28s ease;
+  opacity: 0; transition: opacity .34s ease;
 }
-.modal-overlay.is-open { opacity: 1; }
+.modal-overlay.is-open::before { opacity: 1; }
 .modal-overlay[hidden] { display: none; }
 
 .modal-panel {
@@ -1752,10 +1758,8 @@ body.modal-open { overflow: hidden; }
     inset 0 1.5px .5px rgba(255,255,255,.5),
     inset 2px 3px 4px rgba(255,255,255,.16),
     inset -2px -3px 10px rgba(0,0,0,.26);
-  transform: translateY(14px) scale(.96); opacity: 0;
-  transition: transform .32s cubic-bezier(.21,.7,.3,1.05), opacity .28s ease;
+  transform-origin: 0 0; will-change: transform;
 }
-.modal-overlay.is-open .modal-panel { transform: translateY(0) scale(1); opacity: 1; }
 .modal-panel--wide { max-width: 760px; }
 /* focused only to anchor the focus-trap — no visible ring on the container itself */
 .modal-panel:focus { outline: none; }
@@ -1909,9 +1913,7 @@ body.modal-open { overflow: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .modal-overlay { transition: opacity .2s ease; }
-  .modal-panel { transition: opacity .2s ease; transform: none; }
-  .modal-overlay.is-open .modal-panel { transform: none; }
+  .modal-overlay::before { transition: opacity .2s ease; }
   .modal-close:hover { transform: none; }
   .stat-card[data-modal] { transition: none; }
   .stat-card[data-modal]:hover { transform: none; }
@@ -2213,7 +2215,7 @@ body.low-power .lb-card,
 body.low-power .story-card,
 body.low-power .toast,
 body.low-power .dev-panel,
-body.low-power .modal-overlay,
+body.low-power .modal-overlay::before,
 body.low-power .modal-panel {
   -webkit-backdrop-filter: none !important;
           backdrop-filter: none !important;
