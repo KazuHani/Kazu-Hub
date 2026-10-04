@@ -2421,6 +2421,7 @@
     modalTrigger = trigger || null;
     modalPanel.classList.toggle('modal-panel--wide', !!def.wide);
     modalPanel.classList.toggle('modal-panel--age', key === 'age');
+    modalPanel.classList.toggle('modal-panel--bday', key === 'bday');   // takes the birthday tile's seasonal colours
     modalTitleEl.innerHTML = def.title;
     modalBodyEl.innerHTML = def.render();
     if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
@@ -2430,7 +2431,9 @@
     if (def.afterRender) def.afterRender();
     void modalEl.offsetWidth;               // reflow so the backdrop transition runs
     modalEl.classList.add('is-open');
-    flyModal(modalTrigger, true);
+    if (modalHiddenCard) { modalHiddenCard.style.visibility = ''; modalHiddenCard = null; }
+    // the panel is the card while it's out: hide the card so there's no double image
+    if (flyModal(modalTrigger, true)) { modalHiddenCard = modalTrigger; modalTrigger.style.visibility = 'hidden'; }
     modalPanel.focus({ preventScroll: true });
     if (def.live) { def.live(); modalUpdater = setInterval(def.live, 1000); }
   }
@@ -2440,30 +2443,35 @@
   // The panel's own content cross-fades so it never shows squashed text. Falls
   // back to a plain fade with no trigger, a hidden card, reduced motion, or no
   // Web Animations support.
-  const MODAL_OPEN_MS = 440, MODAL_CLOSE_MS = 340;
+  const MODAL_OPEN_MS = 520, MODAL_CLOSE_MS = 440;
+  const MODAL_EASE = 'cubic-bezier(.32,.72,0,1)';   // same smooth settle both ways (no snap at either end)
   let modalAnim = null;
+  let modalHiddenCard = null;   // the card hidden while its panel is out
   function flyModal(card, opening, onDone) {
     const done = () => { if (onDone) onDone(); };
-    if (!modalPanel.animate) { done(); return; }
+    if (!modalPanel.animate) { done(); return false; }
     const to = modalPanel.getBoundingClientRect();
     const from = card && card.isConnected ? card.getBoundingClientRect() : null;
     const fly = !REDUCED_MOTION && from && from.width > 0 && from.height > 0 && to.width > 0 && to.height > 0;
+    const sx = fly ? from.width / to.width : 1, sy = fly ? from.height / to.height : 1;
     const away = fly
-      ? 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px) scale(' + (from.width / to.width) + ',' + (from.height / to.height) + ')'
+      ? 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px) scale(' + sx + ',' + sy + ')'
       : 'translateY(10px) scale(.97)';
+    // keep the corners looking like the card's while the panel is scaled down
+    const cardR = fly ? parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0 : 0;
+    const panelR = parseFloat(getComputedStyle(modalPanel).borderTopLeftRadius) || 0;
     const frames = fly
-      ? [{ transform: away }, { transform: 'none' }]
+      ? [{ transform: away, borderRadius: (cardR / sx) + 'px / ' + (cardR / sy) + 'px' }, { transform: 'none', borderRadius: panelR + 'px' }]
       : [{ transform: away, opacity: 0 }, { transform: 'none', opacity: 1 }];
     if (!opening) frames.reverse();
     const ms = REDUCED_MOTION ? 180 : (opening ? MODAL_OPEN_MS : MODAL_CLOSE_MS);
-    const ease = opening ? 'cubic-bezier(.2,.85,.25,1)' : 'cubic-bezier(.5,0,.75,.3)';
-    const anim = modalPanel.animate(frames, { duration: ms, easing: ease, fill: 'both' });
+    const anim = modalPanel.animate(frames, { duration: ms, easing: MODAL_EASE, fill: 'both' });
     modalAnim = anim;
     if (fly) {
       // content fades in once the panel has mostly grown, and out right away on close
       const keys = opening
         ? [{ opacity: 0, offset: 0 }, { opacity: 0, offset: .4 }, { opacity: 1, offset: 1 }]
-        : [{ opacity: 1, offset: 0 }, { opacity: 0, offset: .45 }, { opacity: 0, offset: 1 }];
+        : [{ opacity: 1, offset: 0 }, { opacity: 0, offset: .3 }, { opacity: 0, offset: 1 }];
       Array.from(modalPanel.children).forEach((el) => {
         el.animate(keys, { duration: ms, easing: 'linear', fill: 'both' });
       });
@@ -2474,6 +2482,7 @@
       if (opening) { anim.cancel(); modalAnim = null; Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((a) => a.cancel())); }
       done();
     };
+    return !!fly;
   }
 
   function closeModal() {
@@ -2482,17 +2491,19 @@
     document.body.classList.remove('modal-open');
     if (modalUpdater) { clearInterval(modalUpdater); modalUpdater = null; }
     const card = modalTrigger;
-    if (card && card.focus) card.focus({ preventScroll: true });
     modalTrigger = null; modalKey = null;
     if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
-    flyModal(card, false, () => {            // hide + unmount once it has landed back
+    const flew = flyModal(card, false, () => {            // hide + unmount once it has landed back
       if (!modalEl.classList.contains('is-open')) {
+        if (modalHiddenCard) { modalHiddenCard.style.visibility = ''; modalHiddenCard = null; }
+        if (card && card.focus) card.focus({ preventScroll: true });
         modalEl.hidden = true;
         modalBodyEl.innerHTML = '';          // stops the globe iframe + frees the canvas
         if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
         Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
       }
     });
+    if (!flew && modalHiddenCard) { modalHiddenCard.style.visibility = ''; modalHiddenCard = null; }
   }
 
   function trapFocus(e) {

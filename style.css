@@ -1229,6 +1229,11 @@ body.season-birthday .stat-card--bday {
   background: linear-gradient(150deg, #ff5ea8 0%, #a05cff 100%);
   box-shadow: 0 16px 34px rgba(160,92,255,.35);
 }
+/* The birthday pop-up wears its tile's seasonal colours too (see script.js
+   flyModal: the tile grows into the panel, so the two must match). */
+body.season-birthday .modal-panel--bday {
+  background: linear-gradient(150deg, #ff5ea8 0%, #a05cff 100%);
+}
 
 /* ---- Birthday: balloon canvas (physics in lib.js, rendering in script.js) ---- */
 #balloon-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
@@ -1281,6 +1286,10 @@ body.season-christmas .stat-card--bday {
   background: linear-gradient(150deg, #a4133c, #6d0f28);
   border: 1px solid rgba(255,209,102,.5);
   box-shadow: 0 16px 34px rgba(80,8,26,.5);
+}
+body.season-christmas .modal-panel--bday {
+  background: linear-gradient(150deg, #a4133c, #6d0f28);
+  border: 1px solid rgba(255,209,102,.5);
 }
 body.season-christmas .discord-card,
 body.season-christmas .steam-card,
@@ -1342,6 +1351,14 @@ html.season-halloween .story-card {
 html.season-halloween body:not(.season-birthday) .stat-card--bday {
   background: linear-gradient(145deg, #ad6038, #63384e); border-color: rgba(255,194,121,.45);
   box-shadow: 0 16px 34px rgba(62,26,32,.35);
+}
+/* Pop-ups match the tile they grew out of: the plum glass of the other stat
+   tiles, and the pumpkin gradient for the birthday one. */
+html.season-halloween .modal-panel {
+  background: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), var(--card-bg);
+}
+html.season-halloween body:not(.season-birthday) .modal-panel--bday {
+  background: linear-gradient(145deg, #ad6038, #63384e); border-color: rgba(255,194,121,.45);
 }
 html.season-halloween .card-head-title,
 html.season-halloween .story-title,
