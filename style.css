@@ -291,7 +291,7 @@ body.season-christmas .sakura-branch { display: none; }
 /* ---- Hero ---- */
 .hero { position: relative; text-align: center; padding: 8px 0; display: flex; flex-direction: column; align-items: center; }
 .pfp-ring {
-  position: relative;            /* anchors .party-hat */
+  position: relative;            /* anchors .party-hat and the pride ::before halo */
   margin-bottom: 8px; padding: 5px; border-radius: 50%;
   /* No idle bob: the profile picture sits still (vetoed by the owner). */
 }
@@ -1259,6 +1259,30 @@ body.season-birthday .modal-panel--bday {
 body.low-power #fireworks-canvas { display: none; }
 @media (prefers-reduced-motion: reduce) { #fireworks-canvas { display: none; } }
 
+/* ---- Pride (June): aro-ace halo around the profile picture ---- */
+/* The spin lives on the season rule, not the base: with `animation` on the
+   base it ran all year at opacity 0, and an infinite animation keeps the
+   compositor producing a frame on every vsync (144 a second on a fast
+   display) even though nothing is visible. Measured: ~0.3 CPU cores at idle
+   for an invisible halo. Out of season the halo has no animation at all. */
+@keyframes prideSpin { to { transform: rotate(360deg); } }
+.pfp-ring::before {
+  content: ""; position: absolute; inset: -18px; border-radius: 50%;
+  z-index: -1; opacity: 0;
+  background: conic-gradient(from 0deg,
+    #E28C00 0deg, #ECCD00 72deg, #FFFFFF 144deg, #62AEDC 216deg, #203856 288deg, #E28C00 360deg);
+  filter: blur(10px);
+  -webkit-mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
+          mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
+  pointer-events: none;
+}
+/* steps(420) is the same uniform spin at 30 steps a second (0.86 degrees each,
+   under the blur radius: indistinguishable), and it is a frame-rate limiter:
+   the compositor skips drawing the frames where nothing changed, ~58% less GPU
+   work than a smooth 144 Hz spin (measured on a bare page). Only valid
+   because the rotation is linear: steps() would flatten an eased one. */
+body.season-pride .pfp-ring::before { opacity: 1; animation: prideSpin 14s steps(420) infinite; }
+
 /* ---- Christmas (Dec 25): dark festive palette override ---- */
 body.season-christmas {
   --page-bg:
@@ -1406,6 +1430,8 @@ html.season-halloween .halloween-decor { display: block; }
 @media (min-width: 769px) { body.season-christmas .xmas-scene { display: block; } }
 @media (prefers-reduced-motion: reduce) { .xmas-lights circle { animation: none; } }
 
+/* ---- Respect reduced motion: keep the halo, stop the spin (confetti is skipped in JS) ---- */
+@media (prefers-reduced-motion: reduce) { body.season-pride .pfp-ring::before { animation: none; } }
 
 /* ============ DEV SETTINGS PANEL (secret code: kazudev) ============ */
 /* Floating season-trigger overrides; the element is built and owned by
@@ -2221,7 +2247,7 @@ html.glass-scrolling .toast {
      - the liquid-glass SVG refraction, particle layers, canvas bursts and the
        wheel-lerp smooth scroll are skipped in script.js (nothing to override
        here — they never get built);
-     - the remaining ambient loops (branch sway, twinkle,
+     - the remaining ambient loops (branch sway, halo spin, twinkle,
        aurora drift, equalizer, pulse dots) and all entrance motion stop. */
 body.low-power { --card-blur: none; }
 body.low-power { --card-bg: rgba(40,63,98,.95); }
@@ -2250,6 +2276,7 @@ body.low-power .sakura-branch--b,
 body.low-power .aurora-ribbon,
 body.low-power .xmas-lights circle,
 body.low-power .pfp-ring,
+body.low-power .pfp-ring::before,
 body.low-power .title,
 body.low-power .pulse-dot,
 body.low-power .music-viz span,

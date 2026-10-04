@@ -9,6 +9,7 @@
      - a 90s CSS transition on four INHERITED custom properties (the sky tint),
        retargeted every minute so one was always running: whole-document
        restyle every frame;
+     - an infinite spin on an invisible halo (Pride month's, all year);
      - a width transition on a 5px progress bar, and any other running
        animation: each one makes the compositor + GPU produce a frame on every
        vsync (144 a second) for as long as it lives;
@@ -59,7 +60,7 @@
     // An invisible infinite animation is not free: it keeps frames flowing.
     // Every infinite loop in the stylesheet must be one of these, each of which
     // is only ever on screen (or only ever running) when it is the feature.
-    var allowed = ['.petal', '.drop', '.pulse-dot', '.music-viz span',
+    var allowed = ['.petal', '.drop', '.pulse-dot', '.music-viz span', 'body.season-pride .pfp-ring::before',
       '.xmas-lights circle', '.aurora-ribbon--a', '.aurora-ribbon--b'];
     var found = [], re = /([^{}]+)\{([^{}]*)\}/g, m;
     while ((m = re.exec(flat))) {
@@ -68,11 +69,19 @@
     var rogue = found.filter(function (sel) { return allowed.indexOf(sel) === -1; });
     ok('perf: every infinite CSS animation is a gated feature (a new always-on loop must be added to this list on purpose)', !rogue.length,
       'unlisted infinite animation(s): ' + JSON.stringify(rogue) + ' (found ' + JSON.stringify(found) + ')');
-    ok('perf: the profile picture has no halo, ring or spin in any season (pfp-ring is layout only)',
-      !/pfp-ring::before/.test(flat) && flat.indexOf('prideSpin') === -1);
+    ok('perf: the Pride halo only spins during Pride month, and reduced motion still wins',
+      /(^|\n)\.pfp-ring::before \{[^}]*\}/.test(flat) && !/(^|\n)\.pfp-ring::before \{[^}]*animation/.test(flat) &&
+      flat.indexOf('body.season-pride .pfp-ring::before { opacity: 1; animation: prideSpin 14s steps(420) infinite; }') !== -1 &&
+      flat.indexOf('@media (prefers-reduced-motion: reduce) { body.season-pride .pfp-ring::before { animation: none; } }') !== -1 &&
+      flat.indexOf('body.low-power .pfp-ring::before,') !== -1);
 
-    // Frame-rate limit for ambient loops that can afford it. The balloons are dt-scaled physics,
-    // so a ceiling can't change where they are, only how often they are drawn.
+    // Frame-rate limits for ambient loops that can afford them. The halo is a UNIFORM rotation
+    // (steps() on an eased one would flatten it), 30 steps a second at 0.86 degrees each; the
+    // balloons are dt-scaled physics, so a ceiling can't change where they are, only how often
+    // they are drawn.
+    var prideSteps = /prideSpin (\d+)s steps\((\d+)\) infinite/.exec(flat);
+    ok('perf: the Pride halo spin is a 30-steps-a-second frame limiter on a linear rotation (under 1 degree a step)',
+      !!prideSteps && prideSteps[2] / prideSteps[1] === 30 && 360 / prideSteps[2] < 1 && /@keyframes prideSpin \{ to \{ transform: rotate\(360deg\); \} \}/.test(flat));
     var balloonCeil = +(/const BALLOON_MIN_FRAME_MS = (\d+);/.exec(source) || [0, 0])[1];
     var drawn = function (hz) { var step = 1000 / hz, last = 0, n = 0; for (var t = step; t < 10000; t += step) if (t - last >= balloonCeil) { last = t; n++; } return Math.round(n / 10); };
     eq('perf: the balloon frame ceiling leaves 60 and 90 Hz displays untouched and thins 120/144 Hz to 60/72',

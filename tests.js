@@ -1182,7 +1182,7 @@ ok('christmas accent is warm gold', cssFlat.includes('--accent: #ffd166;'));
 ok('hero title repainted for christmas', cssFlat.includes('body.season-christmas .title {'));
 ok('bday card repainted cranberry for christmas', cssFlat.includes('body.season-christmas .stat-card--bday {'));
 ok('presence cards repainted pine for christmas', cssFlat.includes('body.season-christmas .discord-card,') && cssFlat.includes('body.season-christmas .steam-card,') && cssFlat.includes('body.season-christmas .mal-card {'));
-ok('profile picture has no ring, halo or glow in any season', !/(christmas|halloween) .pfp-ring {/.test(cssFlat) && !/pfp-ring::before/.test(cssFlat));
+ok('profile picture has no ring or glow in any season (only the pride halo)', !/(christmas|halloween) .pfp-ring {/.test(cssFlat));
 ok('christmas hides the sakura branches but keeps the scene (sun and moon still show)', cssFlat.includes('body.season-christmas .sakura-branch { display: none; }') && !cssFlat.includes('body.season-christmas .sakura-scene { display: none; }'));
 ok('no floaty bob on the profile picture', !cssFlat.includes('floaty'));
 ok('no idle sway on the sakura branches', !cssFlat.includes('sakuraSway'));
