@@ -147,26 +147,35 @@ function medianResult(runs) {
 
 /* ------------------------------------------------------------------ budgets */
 
-// Machine-independent ceilings an idle page must stay under. Counters per
-// second, not milliseconds: they hold on a fast desktop and a slow CI box.
+// Ceilings an idle page must stay under. The counters are machine-independent
+// (they hold on a fast desktop and a slow CI box alike) and apply everywhere. CPU
+// and long-task ceilings depend on how pixels are made: with a real GPU the
+// renderer and GPU process do almost nothing at rest, but with software
+// rendering (--gpu soft, i.e. a CI runner with no GPU) the same frames are drawn
+// by the CPU, so that mode gets a roomier, still-tight-against-the-old-1.4-cores
+// ceiling. `longTasksPerMin` and `cpu.total` are the only mode-specific ones.
 var BUDGETS = {
   idle: {
     transitionsRunning: 0,          // no always-on CSS transition / animation churn at rest
-    RecalcStyleCount: 6,            // style recalcs per second (the 1 Hz clock is the floor)
+    RecalcStyleCount: 6,            // style recalcs per second (the 1 Hz clock + a 4 Hz song bar is the floor)
     LayoutCount: 6,
-    longTasksPerMin: 4,
-    'cpu.total': 0.12               // generous ceiling: 12% of one core, software GPU included
+    hard: { longTasksPerMin: 4, 'cpu.total': 0.12 },
+    soft: { longTasksPerMin: 20, 'cpu.total': 0.35 }
   }
 };
 
-function checkBudget(device, scenario, result) {
+function checkBudget(device, scenario, result, gpu) {
   var b = BUDGETS[scenario];
   if (!b || !result) return [];
+  var limits = {};
+  Object.keys(b).forEach(function (k) { if (k !== 'hard' && k !== 'soft') limits[k] = b[k]; });
+  var mode = b[gpu === 'soft' ? 'soft' : 'hard'] || {};
+  Object.keys(mode).forEach(function (k) { limits[k] = mode[k]; });
   var fails = [];
-  Object.keys(b).forEach(function (k) {
+  Object.keys(limits).forEach(function (k) {
     var v = k.split('.').reduce(function (o, part) { return o == null ? o : o[part]; }, result);
     if (v == null) return;
-    if (v > b[k]) fails.push(device + ' ' + scenario + ': ' + k + ' = ' + v + ' > budget ' + b[k]);
+    if (v > limits[k]) fails.push(device + ' ' + scenario + ': ' + k + ' = ' + v + ' > budget ' + limits[k] + (gpu === 'soft' ? ' (software GPU)' : ''));
   });
   return fails;
 }
@@ -203,7 +212,8 @@ var OPT = {
   // writing it into the source. --css 'body{transition:none!important}'
   css: arg('css', ''),
   js: arg('js', ''),
-  evalExpr: arg('eval', ''),      // print this page expression's value after the load scenario
+  evalExpr: arg('eval', ''),
+  evalAfterScroll: arg('eval-after-scroll', ''),   // run this expression after scrolling the load scenario's page to the bottom      // print this page expression's value after the load scenario
   pre: arg('pre', ''),            // JS run before any page script (to stub APIs)
   fonts: arg('fonts', 'stub'),    // stub (default: system fonts, deterministic) | real (let Google Fonts through)
   cpu: +arg('cpu', 0),           // override the device's CPU throttle (1 = none)
@@ -390,6 +400,8 @@ async function launchChrome() {
     '--disable-backgrounding-occluded-windows', '--disable-features=CalculateNativeWinOcclusion,Translate',
     '--metrics-recording-only', '--force-color-profile=srgb', 'about:blank'];
   if (OPT.gpu === 'soft') flags.splice(1, 0, '--disable-gpu');
+  // Hosted CI runners restrict the user namespaces Chrome's sandbox needs and have a tiny /dev/shm.
+  if (process.env.CI) flags.splice(1, 0, '--no-sandbox', '--disable-dev-shm-usage');
   var child = childProcess.spawn(findChrome(), flags, { stdio: 'ignore' });
   var portFile = path.join(dir, 'DevToolsActivePort');
   for (var i = 0; i < 200 && !fs.existsSync(portFile); i++) await sleep(100);
@@ -716,6 +728,11 @@ async function runLoad(chrome, page, base, device) {
     ' transfer: performance.getEntriesByType("resource").reduce(function (a, e) { return a + (e.transferSize || 0); }, 0),' +
     ' requests: performance.getEntriesByType("resource").length };})()');
   if (OPT.evalExpr && OPT.evalExpr !== true) console.log('  eval => ' + JSON.stringify(await page.eval(OPT.evalExpr)));
+  if (OPT.evalAfterScroll && OPT.evalAfterScroll !== true) {
+    await page.eval('window.scrollTo(0, document.documentElement.scrollHeight)');
+    await sleep(1500);
+    console.log('  eval after scrolling to the bottom => ' + JSON.stringify(await page.eval(OPT.evalAfterScroll)));
+  }
   var m = await page.call('Performance.getMetrics');
   var by = {}; m.metrics.forEach(function (x) { by[x.name] = x.value; });
   r.scriptMs = Math.round(by.ScriptDuration * 1000); r.layoutMs = Math.round(by.LayoutDuration * 1000);
@@ -979,7 +996,7 @@ function printCompare(base, cur) {
         var pick = medianResult(runs);
         results[device][scn] = pick;
         printResult(device, scn, pick);
-        failures = failures.concat(checkBudget(device, scn, pick));
+        failures = failures.concat(checkBudget(device, scn, pick, OPT.gpu));
       }
     }
   } finally { srv.server.close(); }

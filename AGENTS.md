@@ -93,13 +93,18 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   `tests.html`; also runs alone (`node evals/perf-guards.js`).
 - `evals/perf.js` — periodic eval (real Chrome over the DevTools protocol,
   plain Node >= 22, no dependencies, no network): idle CPU per process, style
-  recalcs and layouts per second, scroll and pop-up frame pacing and load, on
-  desktop / tablet / phone profiles with every API mocked. See "Performance
+  recalcs and layouts per second, scroll, hover and pop-up frame pacing and
+  load (FCP / LCP / TBT / bytes), on desktop / tablet / phone profiles with every
+  API mocked. See "Performance
   rules". Usage is in its header; its pure statistics helpers are exercised by
   `tests.js`.
 - `404.html`, `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
   plumbing. `assets/` holds images/icons.
-- `.github/workflows/test.yml` — the only CI (see Testing).
+- `.github/workflows/test.yml` — the gate CI (see Testing).
+- `.github/workflows/perf.yml` — the weekly / manual perf eval (idle budgets
+  on desktop, tablet and phone, software GPU). Never runs on push or PR, so it
+  cannot block a deploy; a failure means something started costing real CPU at
+  rest (see "Performance rules").
 
 ## Run locally
 

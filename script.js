@@ -1043,7 +1043,7 @@
   // of the year (tests.js pins that over every day), so a fine step looks
   // exactly like the glide at ~1/600th of the work: one restyle per step, none
   // while the tint is not moving (deep night), none mid-scroll or mid-flight
-  // (see stepSkyTint). Returns the tint so the sky-body pass can reuse it for
+  // (see stepSky). Returns the tint so the sky-body pass can reuse it for
   // the dusk glow.
   let skyTintHex = '#000000'; // AMOLED deep-night default, matches the inline first paint
   let skyTintKey = '';        // last written values: an unchanged tint writes nothing

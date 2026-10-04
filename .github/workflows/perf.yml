@@ -1,0 +1,32 @@
+name: perf eval
+
+# Periodic, not a gate: it drives real headless Chrome against the page with every
+# API mocked and fails if an idle page starts costing real CPU again (running
+# transitions, per-frame style recalcs, long tasks). Software GPU, quick windows.
+# It never runs on push or pull_request, so it cannot block a deploy; run it by
+# hand from the Actions tab (workflow_dispatch) or wait for the weekly schedule.
+on:
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+jobs:
+  idle-budget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: idle budgets on desktop, tablet and phone (software GPU)
+        run: node evals/perf.js --devices desktop,tablet,phone --scenarios idle --quick --presence active --gpu soft --budget --out perf-idle.json
+
+      - name: keep the raw numbers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-idle
+          path: perf-idle.json
+          if-no-files-found: ignore
