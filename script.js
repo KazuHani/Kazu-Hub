@@ -2338,13 +2338,15 @@
       +   statTile(nf(a.totalHours), 'hours lived')
       +   statTile('~' + nf(a.heartbeats), 'heartbeats')
       + '</div>'
-      + '<div class="modal-note">'
-      +   '<div class="modal-row"><span>Next milestone</span><strong>' + nf(a.nextMilestoneDays) + ' days</strong></div>'
-      +   '<div class="modal-row modal-row-sub"><span>reached on</span><span>' + milestoneOn + ' · ' + nf(a.nextMilestoneDays - a.totalDays) + ' to go</span></div>'
+      + '<div class="age-meta">'
+      +   '<div class="modal-note">'
+      +     '<div class="modal-row"><span>Next milestone</span><strong>' + nf(a.nextMilestoneDays) + ' days</strong></div>'
+      +     '<div class="modal-row modal-row-sub"><span>reached on</span><span>' + milestoneOn + ' · ' + nf(a.nextMilestoneDays - a.totalDays) + ' to go</span></div>'
+      +   '</div>'
+      +   '<div class="sign-row"><div>'
+      +     '<div class="tz-label">Star sign</div><div class="sign-name">' + f.starSign + '</div>'
+      +     '<div class="tz-meta">Born ' + f.dateLabel + ' — a ' + f.weekday + '</div></div></div>'
       + '</div>'
-      + '<div class="sign-row"><div>'
-      +   '<div class="tz-label">Star sign</div><div class="sign-name">' + f.starSign + '</div>'
-      +   '<div class="tz-meta">Born ' + f.dateLabel + ' — a ' + f.weekday + '</div></div></div>'
       + '<div class="fun-wrap"><div class="fun-title">Life in fun units</div>'
       +   '<div class="fun-grid">'
       +     funCell(nf(a.fullMoons), 'full moons seen')
@@ -2418,6 +2420,7 @@
     modalKey = key;
     modalTrigger = trigger || null;
     modalPanel.classList.toggle('modal-panel--wide', !!def.wide);
+    modalPanel.classList.toggle('modal-panel--age', key === 'age');
     modalTitleEl.innerHTML = def.title;
     modalBodyEl.innerHTML = def.render();
     modalEl.hidden = false;                 // unhide first so afterRender() has real layout
