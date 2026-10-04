@@ -28,17 +28,22 @@
 <link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Warm up DNS+TLS for the APIs fetched on load (CORS-mode ⇒ crossorigin) -->
+<!-- Warm up DNS+TLS for the hosts the staged boot reaches in its first seconds
+     (CORS-mode ⇒ crossorigin). A preconnected socket that sits unused for ~10s
+     is dropped, so only hosts used inside that window get one; hosts reached
+     later get a DNS-only hint below. proxy.cors.sh is the shared CORS proxy
+     (Steam at +2s, then Letterboxd, the playlist feed and the MAL fallback);
+     corsproxy.io and api.listenbrainz.org used to be here but are never
+     fetched any more. -->
 <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
 <link rel="preconnect" href="https://api.lanyard.rest" crossorigin>
+<link rel="preconnect" href="https://proxy.cors.sh" crossorigin>
 <link rel="preconnect" href="https://api.jikan.moe" crossorigin>
-<link rel="preconnect" href="https://corsproxy.io" crossorigin>
-<link rel="preconnect" href="https://zenquotes.io" crossorigin>
-<link rel="preconnect" href="https://api.listenbrainz.org" crossorigin>
 <!-- The Discord avatar is one of the first images painted: full handshake
      (no crossorigin — plain <img> loads aren't CORS-mode). -->
 <link rel="preconnect" href="https://cdn.discordapp.com">
-<!-- Cheaper DNS-only hints for the other image CDNs -->
+<!-- Cheaper DNS-only hints for the other image CDNs and the late quote API -->
+<link rel="dns-prefetch" href="//zenquotes.io">
 <link rel="dns-prefetch" href="//cdn.myanimelist.net">
 <link rel="dns-prefetch" href="//media.discordapp.net">
 <link rel="dns-prefetch" href="//i.scdn.co">
@@ -48,8 +53,7 @@
      cold cache the page used to sit WHITE until style.css arrived. This tag
      paints the canvas inline; #boot-tint below overwrites its colour with the
      live time-of-day tint. #000 (AMOLED deep night, matching the --bg-*
-     initial values at the top of style.css) is only the no-JS / Intl-less
-     fallback. -->
+     initial values at the top of style.css) is only the no-JS fallback. -->
 <style id="boot-canvas">html{background:#000;color-scheme:dark}</style>
 <!-- Boot tint: script.js sits at the end of <body>, so before this existed the
      first paint ALWAYS used the night defaults (black canvas, black gradient,
@@ -68,19 +72,28 @@
      layout and lives in script.js) stays hidden until script.js has placed it
      and lifts the class itself; the timeout is only a failsafe for a
      script.js that never arrives. Wrapped in try/catch: any failure leaves
-     the plain night defaults, exactly the old behaviour. -->
+     the plain night defaults, exactly the old behaviour.
+     The UK wall clock is worked out by ARITHMETIC (BST runs from 01:00 UTC on
+     the last Sunday of March to 01:00 UTC on the last Sunday of October: the
+     rule in KazuLib.isUkBST), deliberately not with Intl. The first Intl
+     object in a page pays ICU's one-off start-up (~25 ms on a fast phone, ~100
+     ms on a mid one), and this script blocks first paint; lib.js pays it
+     after the first paint instead. tests.js sweeps this against
+     KazuLib.ukWallParts, including both clock-change days. -->
 <script id="boot-tint">
 // Resolve Halloween before either asset arrives: UK October, saved dev
 // settings, then URL preview. Blocked storage cannot prevent the tint loading.
 (function () {
   try {
     var de = document.documentElement;
-    var parts = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Europe/London', year: 'numeric', month: 'numeric', day: 'numeric',
-      hour: 'numeric', minute: 'numeric', hour12: false
-    }).formatToParts(new Date());
-    var o = {};
-    for (var i = 0; i < parts.length; i++) o[parts[i].type] = +parts[i].value;
+    var nowD = new Date(), yr = nowD.getUTCFullYear(), nowMs = nowD.getTime();
+    var lastSun = function (m) { // 01:00 UTC on the last Sunday of month m (0-indexed)
+      var d = new Date(Date.UTC(yr, m + 1, 0));
+      d.setUTCDate(d.getUTCDate() - d.getUTCDay());
+      return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 1);
+    };
+    var wall = new Date(nowMs + (nowMs >= lastSun(2) && nowMs < lastSun(9) ? 3600000 : 0));
+    var o = { year: wall.getUTCFullYear(), month: wall.getUTCMonth() + 1, day: wall.getUTCDate(), hour: wall.getUTCHours(), minute: wall.getUTCMinutes() };
     var halloween = o.month === 10;
     var local = new Date();
     var christmas = local.getMonth() === 11 && local.getDate() === 25;
@@ -159,7 +172,7 @@
      text swap). noscript keeps the plain render-blocking link for no-JS. -->
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=74">
+<link rel="stylesheet" href="style.css?v=75">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -184,6 +197,29 @@
 </script>
 </head>
 <body>
+<!-- Low-power verdict, settled before anything is painted. script.js reaches the
+     same verdict (KazuLib.lowPowerMode over the same six flags) and re-applies
+     the class, but it runs at the END of <body>, and until it did every phone
+     started the entrance animations and frosted glass it was about to cancel:
+     the profile picture, title and stat cards sat at opacity 0 behind those
+     animations, so the first CONTENTFUL paint (and the LCP) waited for
+     script.js to download and run. Now they are on screen at first paint.
+     tests.js sweeps all 64 flag combinations of this copy against lowPowerMode. -->
+<script id="boot-power">
+(function () {
+  try {
+    var mm = function (q) { return !!(window.matchMedia && window.matchMedia(q).matches); };
+    var weak = 0;
+    if (navigator.deviceMemory && navigator.deviceMemory <= 4) weak++;
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) weak++;
+    if (mm('(pointer: coarse)')) weak++;
+    if (Math.min(window.innerWidth, window.innerHeight) < 500) weak++;
+    if ((navigator.connection && navigator.connection.saveData) || mm('(prefers-reduced-motion: reduce)') || weak >= 2) {
+      document.body.classList.add('low-power');
+    }
+  } catch (e) {}
+})();
+</script>
 
   <!-- sunset sky: the orange evening gradient. First in the body so the sun,
        moon and branches paint in front of it. Its strength and palette come
@@ -925,7 +961,7 @@
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
 <script src="lib.js?v=38"></script>
-<script src="script.js?v=80"></script>
+<script src="script.js?v=81"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

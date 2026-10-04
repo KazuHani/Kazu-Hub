@@ -93,6 +93,47 @@
       source.indexOf('function inViewport(el) {') !== -1 && source.indexOf("setTimeout(() => el.classList.remove('populated-in'), 600)") !== -1 &&
       source.indexOf('if (!el || LOW_POWER || REDUCED_MOTION || !inViewport(el)) return;') !== -1);
 
+    /* ----------------------------------- the footer costs nothing until needed */
+
+    // The meadow is ~535 SVG nodes at the end of a long page. Skipped until the
+    // reader nears it, it takes ~28% off a throttled phone's first contentful
+    // paint; the placeholder must be the art's REAL height or the page jumps when
+    // it renders, so it is derived from the same numbers as .meadow-art itself.
+    var art = /\.meadow-art \{[^}]*width: clamp\((\d+)px, 100%, (\d+)px\);[^}]*aspect-ratio: (\d+) \/ (\d+);[^}]*\}/.exec(flat);
+    ok('perf: the meadow footer is content-visibility: auto, with a placeholder height computed from the art\'s own width clamp and aspect ratio',
+      !!art && /\.footer\.meadow \{[^}]*content-visibility: auto;/.test(flat) &&
+      flat.indexOf('contain-intrinsic-block-size: auto calc(clamp(' + art[1] + 'px, 100vw, ' + art[2] + 'px) * ' + art[4] + ' / ' + art[3] + ');') !== -1 &&
+      html.indexOf('viewBox="0 0 ' + (art ? art[3] + ' ' + art[4] : '?') + '"') !== -1);
+    ok('perf: nothing keeps the skipped footer awake (no scripted measuring of it, no animation inside it)',
+      !/\.footer\.meadow[^{]*\{[^}]*animation/.test(flat) && !/\.mf-[a-z-]+[^{]*\{[^}]*animation/.test(flat) && source.indexOf("querySelector('.footer.meadow')") === -1);
+
+    /* ----------------------------------------- no traffic nobody can see */
+
+    // A poller whose answer has nowhere to go is pure cost: a request (and on a
+    // phone a radio wake-up) every interval, forever. ListenBrainz's strip has
+    // no markup at the moment; the loader must look for it BEFORE fetching.
+    var lbSlice = between(source, '  async function loadMusicRecent() {', '  // ---------- YouTube Music playlist');
+    ok('perf: ListenBrainz loader source is where the guards expect it', !!lbSlice);
+    if (lbSlice) {
+      var lbRun = function (present) {
+        var fetched = [];
+        var api = new Function('LISTENBRAINZ_USER', 'KazuLib', '$', 'fetchT', 'lastMusicSig', 'escapeHtml', 'popReveal',
+          lbSlice + '\nreturn loadMusicRecent;')(
+          'someone', { listenbrainzRow: function (x) { return x; } },
+          function () { return present ? { classList: { add: function () {} }, innerHTML: '' } : null; },
+          function (url) { fetched.push(url); return new Promise(function () {}); }, '', function (x) { return x; }, function () {});
+        api();
+        return fetched;
+      };
+      eq('perf: no ListenBrainz request while its strip has no markup', lbRun(false), []);
+      eq('perf: ...and it fetches again the moment the markup exists', lbRun(true).length, 1);
+    }
+    var hints = (html.match(/<link rel="(?:preconnect|dns-prefetch)" href="[^"]+"/g) || []).join('\n');
+    ok('perf: no preconnect to hosts the page never fetches (corsproxy.io, api.listenbrainz.org); the shared CORS proxy is warmed instead',
+      hints.indexOf('corsproxy.io') === -1 && hints.indexOf('listenbrainz') === -1 && hints.indexOf('preconnect" href="https://proxy.cors.sh"') !== -1);
+    ok('perf: only hosts used within the first seconds get a full preconnect (an idle socket is dropped after ~10s); late ones get DNS only',
+      (hints.match(/rel="preconnect"/g) || []).length <= 7 && hints.indexOf('dns-prefetch" href="//zenquotes.io"') !== -1 && hints.indexOf('preconnect" href="https://zenquotes.io"') === -1);
+
     /* ------------------------------------- the tint step is below perception */
 
     var stepMs = +(/const TINT_STEP_MS = (\d+);/.exec(source) || [0, 0])[1];

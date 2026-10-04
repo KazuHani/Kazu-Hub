@@ -17,10 +17,10 @@ The page shows: live stat cards (UK time, Aberystwyth weather, age, birthday
 countdown) with detail pop-ups; a "right now" section with live Discord
 presence (Lanyard, WebSocket + REST fallback), Steam status, MyAnimeList
 watching/reading (Jikan, falling back to MAL list endpoints through
-`corsproxy.io`), and the latest Letterboxd diary entry (RSS via the same
+the shared CORS proxy, `proxy.cors.sh`), and the latest Letterboxd diary entry (RSS via the same
 proxy); a YouTube Music playlist card whose "From the playlist" rows update
 themselves from the playlist's Atom feed (`feeds/videos.xml`, via the same
-proxy, newest additions first), plus a ListenBrainz "recently played" strip;
+proxy, newest additions first), plus an optional ListenBrainz "recently played" strip (its markup is currently absent, and the page does not even fetch while it is);
 socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 `sw.js` offline shell), a single time-of-day-reactive palette (a soft
 slate blue that lightens towards midday and dims towards sunset/night,
@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=74`,
-  `lib.js?v=38`, `script.js?v=80` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=75`,
+  `lib.js?v=38`, `script.js?v=81` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -208,6 +208,19 @@ the pre-optimisation code, which is the point).
   every vsync for as long as the page is open (measured +0.07 cores for five
   playlist rows). `popRefresh` / `popReveal` animate only what `inViewport`
   says is on screen and take the class off after the run.
+- **The boot path stays short.** The render-blocking `<head>` script computes
+  the UK clock by arithmetic (no `Intl`), and `#boot-power` (first thing in
+  `<body>`, a copy of `KazuLib.lowPowerMode` over the same six flags, swept over
+  all 64 combinations by `tests.js`) settles `body.low-power` before anything
+  paints. Before it existed, every phone started the entrance animations and
+  frosted glass it was about to cancel: the profile picture, title and stat
+  cards sat at opacity 0 behind those animations, so first contentful paint
+  waited for `script.js`. Phone FCP is ~26% earlier (4x-throttled profile,
+  median of 11) and main-thread task time at load halved. Resource hints follow
+  the boot ladder: full `preconnect` only for hosts used in the first seconds
+  (an idle preconnected socket is dropped after ~10 s), `dns-prefetch` for the
+  rest, none for hosts the page never fetches (`corsproxy.io` and ListenBrainz
+  were there long after the code stopped using them).
 - **Phones are low-power by construction.** `lowPowerMode` counts a coarse
   pointer and a small screen as two weak signals, and every phone has both, so
   every phone runs in low-power mode: no particles, no backdrop blur, no glass
@@ -278,7 +291,11 @@ These are load-bearing; read before editing.
   inline `<script id="boot-tint">` in `<head>` therefore writes the
   time-of-day palette itself before the first paint: `--bg-h/s/l/glow` on
   `<html>`, the `#boot-canvas` `<style>` colour, and the `theme-color` meta.
-  It is a compact copy of `KazuLib.skyTint` + `hslToHex` + the UK-clock read;
+  It is a compact copy of `KazuLib.skyTint` + `hslToHex` + the UK-clock read
+  (done by BST arithmetic, not `Intl`: the first `Intl` object in a page pays
+  ICU's one-off start-up, ~25 ms on a fast phone and ~100 ms on a mid one, and
+  this script blocks first paint; a sweep pins it to `KazuLib.ukWallParts`
+  across every clock-change minute of 2024-2032);
   `tests.js`/`tests.html` run the real script against stubs and compare it to
   `lib.js` across a year-wide sweep, so if you change the tint maths in
   `lib.js` you MUST change the boot script to match (the sweep fails
@@ -335,7 +352,11 @@ These are load-bearing; read before editing.
   every season, and without `color-mix()` the panes and pools still light up), `--m-warm` folds the sunset
   orange in, the pink blossom on the big tree only shows in blossom season
   (`html:not(.no-sakura)`), and Christmas repaints it as a snowy field. Static
-  paint (no animation), shown on every device. It is `z-index: 0` so the fixed
+  paint (no animation), shown on every device. It is `content-visibility: auto`
+  so it costs nothing at load (~535 SVG nodes at the end of a long page; phone
+  first contentful paint is ~28% earlier with it skipped), with a placeholder
+  height computed from the art's own width clamp and aspect ratio so it never
+  shifts when it renders (`perf-guards.js` ties the two together). It is `z-index: 0` so the fixed
   back-to-top button (inside `.container`, z-index 1) stays on top. To change
   the art, edit the SVG in `index.html`; every class it uses must be styled and
   no fill may be hard-coded except the flowers (tests enforce both). `tests.html`

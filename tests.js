@@ -1308,9 +1308,81 @@ sweepDays.forEach(function (d) {
   }
 });
 ok('boot script matches KazuLib.skyTint + hslToHex across the year (' + sweepRuns + ' instants)', !sweepBad && sweepRuns === sweepDays.length * 144, JSON.stringify(sweepBad));
-// Failure path: no Intl / a throwing Intl leaves the plain night defaults untouched.
+// The boot script no longer touches Intl: the first Intl object in a page pays ICU's
+// one-off start-up (~25 ms on a fast phone, ~100 ms on a mid one) and this script
+// blocks first paint. A throwing Intl must therefore change nothing, and the UK wall
+// clock it uses (BST arithmetic) must agree with the Intl-based KazuLib.ukWallParts.
 const noIntl = runBoot(Date.UTC(2026, 8, 29, 11, 9), { DateTimeFormat: function () { throw new Error('no Intl'); } });
-ok('boot failure never throws and leaves the night defaults alone', !noIntl.threw && Object.keys(noIntl.vars).length === 0 && noIntl.meta.content === '#000000' && noIntl.canvas.textContent === 'html{background:#000;color-scheme:dark}' && !noIntl.classes['sky-pending'] && noIntl.timers.length === 0);
+ok('boot never touches Intl (its cold start-up blocked first paint): a throwing Intl changes nothing', !noIntl.threw && noIntl.vars['--bg-l'] === noon.vars['--bg-l'] && noIntl.meta.content === noon.meta.content);
+ok('boot script source has no Intl', bootSrc.indexOf('Intl') === -1);
+// Failure path: if the clock itself fails (before anything is written) the page keeps the plain night defaults.
+(function () {
+  const vars = {}, classes = {}, timers = [];
+  const doc = { documentElement: { style: { setProperty: function (k, v) { vars[k] = v; } }, classList: { add: function (c) { classes[c] = true; }, remove: function () {} } },
+    getElementById: function () { return { textContent: '' }; }, querySelector: function () { return { setAttribute: function () {} }; } };
+  const BadDate = function () { throw new Error('no clock'); };
+  BadDate.UTC = Date.UTC;
+  let threw = null;
+  try { bootFn(doc, BadDate, Intl, function (fn, ms) { timers.push(ms); }, { search: '' }, { getItem: function () { return null; } }); } catch (e) { threw = e; }
+  ok('boot failure never throws and leaves the night defaults alone', !threw && Object.keys(vars).length === 0 && Object.keys(classes).length === 0 && timers.length === 0);
+})();
+(function () {
+  // The arithmetic UK clock vs Intl: every clock-change minute of 2024-2032, plus plus a dense
+  // sample of everything else (every 181 minutes: prime, so it walks every minute-of-day
+  // and every weekday). The two copies of the BST rule can never drift apart.
+  const wallSrc = bootSrc.slice(bootSrc.indexOf('var nowD = new Date()'), bootSrc.indexOf('var halloween'));
+  let cursor = 0;   // compiled once, run per instant: the sweep is 130k calls
+  const Fake = function () { return arguments.length ? new (Function.prototype.bind.apply(Date, [null].concat([].slice.call(arguments))))() : new Date(cursor); };
+  Fake.UTC = Date.UTC;
+  const wallFn = new Function('Date', wallSrc + '\nreturn o;');
+  const wallAt = function (ms) { cursor = ms; return wallFn(Fake); };
+  let checked = 0, bad = null;
+  const same = function (ms) {
+    const o = wallAt(ms), w = L.ukWallParts(new Date(ms));
+    checked++;
+    if (o.year !== w.year || o.month !== w.month + 1 || o.day !== w.day || o.hour !== w.hours || o.minute !== w.minutes) bad = bad || { at: new Date(ms).toISOString(), boot: o, intl: [w.year, w.month + 1, w.day, w.hours, w.minutes] };
+  };
+  for (let y = 2024; y <= 2032 && !bad; y++) {
+    [2, 9].forEach(function (m) {
+      const last = new Date(Date.UTC(y, m + 1, 0)); last.setUTCDate(last.getUTCDate() - last.getUTCDay());
+      const edge = Date.UTC(last.getUTCFullYear(), last.getUTCMonth(), last.getUTCDate(), 1);
+      for (let d = -125; d <= 125; d++) same(edge + d * 60000);
+    });
+  }
+  for (let ms = Date.UTC(2024, 0, 1); ms < Date.UTC(2033, 0, 1) && !bad; ms += 181 * 60000) same(ms);
+  ok('boot UK clock (BST arithmetic) equals KazuLib.ukWallParts at every clock-change minute of 2024-2032 and ' + checked + ' instants in all', !bad && checked > 25000, JSON.stringify(bad));
+})();
+(function () {
+  // The low-power verdict is settled before first paint by the inline #boot-power script,
+  // and must equal KazuLib.lowPowerMode for every combination of its six flags.
+  const m = /<script id="boot-power">([\s\S]*?)<\/script>/.exec(htmlSrc);
+  ok('boot-power script present, first thing in <body>, and synchronous', !!m && htmlSrc.indexOf('<script id="boot-power">') > htmlSrc.indexOf('<body>') && htmlSrc.indexOf('<script id="boot-power">') < htmlSrc.indexOf('class="sunset-sky"') && !/<script[^>]*id="boot-power"[^>]*(async|defer|type=)/.test(htmlSrc));
+  if (!m) return;
+  const run = function (f, extra) {
+    extra = extra || {};
+    const classes = {};
+    const win = {
+      innerWidth: f.smallScreen ? 390 : 1280, innerHeight: f.smallScreen ? 844 : 800,
+      matchMedia: extra.noMatchMedia ? undefined : function (q) { return { matches: q === '(pointer: coarse)' ? f.coarsePointer : q === '(prefers-reduced-motion: reduce)' ? f.reducedMotion : false }; },
+    };
+    const nav = { deviceMemory: f.lowMemory ? 4 : 8, hardwareConcurrency: f.lowConcurrency ? 4 : 8, connection: f.saveData ? { saveData: true } : { saveData: false } };
+    const doc = { body: { classList: { add: function (c) { classes[c] = true; } } } };
+    let threw = null;
+    try { new Function('window', 'navigator', 'document', m[1])(win, nav, doc); } catch (e) { threw = e; }
+    return { low: !!classes['low-power'], threw: threw };
+  };
+  const keys = ['coarsePointer', 'smallScreen', 'lowConcurrency', 'lowMemory', 'saveData', 'reducedMotion'];
+  let mismatch = null;
+  for (let bits = 0; bits < 64 && !mismatch; bits++) {
+    const f = {}; keys.forEach(function (k, i) { f[k] = !!(bits & (1 << i)); });
+    const got = run(f);
+    if (got.threw || got.low !== L.lowPowerMode(f)) mismatch = JSON.stringify({ flags: f, got: got.low, want: L.lowPowerMode(f) });
+  }
+  ok('boot-power equals KazuLib.lowPowerMode for all 64 combinations of its six flags', !mismatch, mismatch);
+  eq('boot-power: every phone (coarse pointer + small screen) is low-power, as script.js has always decided', run({ coarsePointer: true, smallScreen: true }).low, true);
+  eq('boot-power: a desktop browser is not', run({}).low, false);
+  eq('boot-power: missing matchMedia / navigator fields never throw and add nothing', [run({}, { noMatchMedia: true }).threw, run({}, { noMatchMedia: true }).low], [null, false]);
+})();
 // Cherry-blossom season on first paint: html.no-sakura must be present exactly
 // on the days lib.js says are out of season, for EVERY day of a normal year and
 // a leap year (so the two copies of the 20 Mar - 10 May window cannot drift).

@@ -120,6 +120,31 @@ function metricsDelta(before, after, seconds) {
   return out;
 }
 
+// Several runs of one scenario reduced to one result: every numeric field becomes
+// its median across the runs (recursively); anything else is taken from the first
+// run. "Pick the middle run by one headline number" ties and misleads, a per-metric
+// median does not.
+function medianResult(runs) {
+  if (runs.length === 1) return runs[0];
+  function merge(items) {
+    var first = items[0];
+    if (typeof first === 'number') {
+      var nums = items.filter(function (x) { return typeof x === 'number'; });
+      return round(median(nums), 4);
+    }
+    if (first && typeof first === 'object' && !Array.isArray(first)) {
+      var out = {};
+      Object.keys(first).forEach(function (k) {
+        var vals = items.map(function (x) { return x == null ? undefined : x[k]; }).filter(function (x) { return x !== undefined; });
+        out[k] = merge(vals);
+      });
+      return out;
+    }
+    return first;
+  }
+  return merge(runs);
+}
+
 /* ------------------------------------------------------------------ budgets */
 
 // Machine-independent ceilings an idle page must stay under. Counters per
@@ -148,7 +173,7 @@ function checkBudget(device, scenario, result) {
 
 module.exports = {
   percentile: percentile, median: median, frameStats: frameStats, cpuDelta: cpuDelta,
-  metricsDelta: metricsDelta, checkBudget: checkBudget, BUDGETS: BUDGETS, round: round
+  metricsDelta: metricsDelta, checkBudget: checkBudget, medianResult: medianResult, BUDGETS: BUDGETS, round: round
 };
 if (require.main !== module) return;
 
@@ -178,6 +203,7 @@ var OPT = {
   // writing it into the source. --css 'body{transition:none!important}'
   css: arg('css', ''),
   js: arg('js', ''),
+  evalExpr: arg('eval', ''),      // print this page expression's value after the load scenario
   pre: arg('pre', ''),            // JS run before any page script (to stub APIs)
   cpu: +arg('cpu', 0),           // override the device's CPU throttle (1 = none)
   shot: arg('shot', ''),          // after the idle warm-up, save a PNG of the viewport here (visual checks)
@@ -273,8 +299,11 @@ function fixtures(o) {
   var day = function (n) { return new Date(now + n * 86400000).toISOString().slice(0, 10); };
   var codes = { clear: 1, rain: 63, snow: 73, cloudy: 3 };
   var code = codes[o.weather] != null ? codes[o.weather] : 1;
+  // Open-Meteo's is_day follows the UK hour of the pinned clock (06:00-20:59 = day), so a night
+  // date exercises the clear-night aurora.
+  var ukHour = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: 'numeric', hour12: false }).format(new Date(now)) % 24;
   var weather = {
-    current: { temperature_2m: 15.4, weather_code: code, wind_speed_10m: o.weather === 'rain' ? 38 : 14, is_day: 1,
+    current: { temperature_2m: 15.4, weather_code: code, wind_speed_10m: o.weather === 'rain' ? 38 : 14, is_day: ukHour >= 6 && ukHour < 21 ? 1 : 0,
       cloud_cover: o.weather === 'cloudy' || o.weather === 'rain' ? 85 : 20, wind_direction_10m: 250 },
     daily: {
       time: [0, 1, 2, 3, 4].map(day), weather_code: [code, 2, 3, 61, 1],
@@ -435,7 +464,10 @@ function initScript(o, fx) {
     function obs(type, cb) { try { new PerformanceObserver(function (l) { l.getEntries().forEach(cb); }).observe({ type: type, buffered: true }); } catch (e) {} }
     obs('longtask', function (e) { P.longtasks.push([Math.round(e.startTime), Math.round(e.duration)]); });
     obs('long-animation-frame', function (e) { P.loaf.push([Math.round(e.startTime), Math.round(e.duration), Math.round(e.blockingDuration || 0)]); });
-    obs('largest-contentful-paint', function (e) { P.lcp = { t: Math.round(e.startTime), size: e.size, tag: e.element ? e.element.tagName + '.' + String(e.element.className).slice(0, 24) : '' }; });
+    P.lcpAll = [];
+    obs('largest-contentful-paint', function (e) { P.lcp = { t: Math.round(e.startTime), size: e.size, tag: e.element ? e.element.tagName + '.' + String(e.element.className).slice(0, 24) : '' }; P.lcpAll.push([Math.round(e.startTime), e.size, P.lcp.tag]); });
+    P.shifts = [];
+    obs('layout-shift', function (e) { if (!e.hadRecentInput) P.shifts.push([Math.round(e.startTime), +e.value.toFixed(4), (e.sources || []).map(function (x) { return x.node ? (x.node.tagName + '.' + String(x.node.className || '').slice(0, 20)) : '?'; }).join('+')]); });
     obs('layout-shift', function (e) { if (!e.hadRecentInput) P.cls += e.value; });
 
     if (cfg.pre) { try { (0, eval)(cfg.pre); } catch (e) { console.error('--pre failed', e); } }
@@ -536,8 +568,11 @@ async function traceStart(chrome) {
 async function traceStop(chrome, trace) {
   await chrome.send('Tracing.end');
   for (var i = 0; i < 300 && !trace.done; i++) await sleep(100);
+  if (arg('trace-dump', false) && arg('trace-dump', false) !== true) fs.writeFileSync(arg('trace-dump'), JSON.stringify(trace.events));
   var summary = summarizeTrace(trace.events);
   summarizeTrace.slow = slowFrames(trace.events, 12);
+  trace.events.t0 = trace.events.reduce(function (m, e) { return e.ts && e.ts < m ? e.ts : m; }, Infinity);
+  summarizeTrace.tasks = slowTasks(trace.events, 25);
   return summary;
 }
 
@@ -599,6 +634,33 @@ function slowFrames(events, minMs) {
   return out;
 }
 
+// The longest main-thread TASKS (a task is one scheduler RunTask) and their biggest
+// contents: what a long task at load is actually doing.
+function slowTasks(events, minMs) {
+  var names = {};
+  events.forEach(function (e) { if (e.ph === 'M' && e.name === 'thread_name') names[e.pid + ':' + e.tid] = e.args.name; });
+  var main = events.filter(function (e) { return e.ph === 'X' && e.dur && names[e.pid + ':' + e.tid] === 'CrRendererMain'; })
+    .sort(function (a, b) { return a.ts - b.ts || b.dur - a.dur; });
+  var TASK = /^(ThreadControllerImpl::RunTask|RunTask)$/;
+  var SKIP = /^(ThreadControllerImpl::RunTask|RunTask|ProxyMain::BeginMainFrame|WebFrameWidgetImpl::BeginMainFrame|WebFrameWidgetImpl::UpdateLifecycle|LocalFrameView::RunStyleAndLayoutLifecyclePhases|LocalFrameView::RunPaintLifecyclePhase|LocalFrameView::RunPrePaintLifecyclePhase|LocalFrameView::UpdateStyleAndLayout|Blink\.[A-Za-z.]+|LatencyInfo\.Flow|EventDispatch|Document::UpdateStyleAndLayout)$/;
+  var out = [];
+  main.filter(function (e) { return TASK.test(e.name) && e.dur / 1000 >= minMs; })
+    .sort(function (a, b) { return b.dur - a.dur; }).slice(0, 8).forEach(function (t) {
+      var parts = {};
+      main.forEach(function (e) {
+        if (e === t || e.ts < t.ts || e.ts + e.dur > t.ts + t.dur || SKIP.test(e.name)) return;
+        var label = e.name;
+        if (e.name === 'FunctionCall' && e.args && e.args.data) label = 'FunctionCall ' + (e.args.data.functionName || '(anon)') + ' @ ' + String(e.args.data.url || '').split('/').pop().split('?')[0] + ':' + e.args.data.lineNumber;
+        if (e.name === 'EvaluateScript' && e.args && e.args.data) label = 'EvaluateScript ' + String(e.args.data.url || '').split('/').pop().split('?')[0];
+        parts[label] = Math.max(parts[label] || 0, e.dur);
+      });
+      var top = Object.keys(parts).sort(function (a, b) { return parts[b] - parts[a]; }).slice(0, 6)
+        .map(function (n) { return n + ' ' + round(parts[n] / 1000, 1) + 'ms'; });
+      out.push({ ms: round(t.dur / 1000, 1), at: round((t.ts - (events.t0 || 0)) / 1000, 0), top: top });
+    });
+  return out;
+}
+
 function printTrace(summary, seconds) {
   console.log('  trace over ' + seconds + ' s (busy ms per thread):');
   summary.forEach(function (t) {
@@ -608,6 +670,10 @@ function printTrace(summary, seconds) {
   if (summarizeTrace.slow && summarizeTrace.slow.length) {
     console.log('  slowest frames (main thread):');
     summarizeTrace.slow.forEach(function (f) { console.log('    ' + f.ms + ' ms at t=' + f.at + 's: ' + f.top.join(', ')); });
+  }
+  if (summarizeTrace.tasks && summarizeTrace.tasks.length) {
+    console.log('  longest main-thread tasks (t = ms into the trace):');
+    summarizeTrace.tasks.forEach(function (f) { console.log('    ' + f.ms + ' ms at t=' + f.at + ': ' + f.top.join(', ')); });
   }
   if (summarizeTrace.calls && summarizeTrace.calls.length) {
     console.log('  script time by call site:');
@@ -631,8 +697,10 @@ async function settle(page, device, secs) {
 
 async function runLoad(chrome, page, base, device) {
   await page.throttle(true);
+  var tr = OPT.trace ? await traceStart(chrome) : null;
   await page.goto(base + '/' + PAGE);
   await sleep(4500);
+  if (tr) printTrace(await traceStop(chrome, tr), 4.5);
   var r = await page.eval('(function () {' +
     'var nav = performance.getEntriesByType("navigation")[0] || {};' +
     'var fcp = (performance.getEntriesByName("first-contentful-paint")[0] || {}).startTime;' +
@@ -642,6 +710,7 @@ async function runLoad(chrome, page, base, device) {
     ' tbt: Math.round(tbt), longtasks: P.longtasks.length, cls: +P.cls.toFixed(4), nodes: document.getElementsByTagName("*").length,' +
     ' transfer: performance.getEntriesByType("resource").reduce(function (a, e) { return a + (e.transferSize || 0); }, 0),' +
     ' requests: performance.getEntriesByType("resource").length };})()');
+  if (OPT.evalExpr && OPT.evalExpr !== true) console.log('  eval => ' + JSON.stringify(await page.eval(OPT.evalExpr)));
   var m = await page.call('Performance.getMetrics');
   var by = {}; m.metrics.forEach(function (x) { by[x.name] = x.value; });
   r.scriptMs = Math.round(by.ScriptDuration * 1000); r.layoutMs = Math.round(by.LayoutDuration * 1000);
@@ -749,6 +818,8 @@ async function runModal(chrome, page, base, device) {
   var d = DEVICES[device];
   var results = [];
   var cards = ['time', 'age', 'bday'];
+  var tr = OPT.trace ? await traceStart(chrome) : null;
+  var t0 = Date.now();
   for (var i = 0; i < cards.length; i++) {
     var rect = await page.eval('(function () { var r = document.querySelector(\'.stat-card[data-modal="' + cards[i] + '"]\').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()');
     await page.eval('window.__fps.start()');
@@ -766,6 +837,7 @@ async function runModal(chrome, page, base, device) {
     results.push(frameStats(await page.eval('window.__fps.stop()')));
     await sleep(300);
   }
+  if (tr) printTrace(await traceStop(chrome, tr), round((Date.now() - t0) / 1000, 1));
   var agg = { frames: 0, missed: 0, dropped: 0, p95: 0, p99: 0, max: 0 };
   results.forEach(function (r) {
     agg.frames += r.frames; agg.missed += r.missed; agg.dropped += r.dropped;
@@ -859,11 +931,7 @@ function printCompare(base, cur) {
             runs.push(await RUNNERS[scn](chrome, page, base, device));
           } finally { await chrome.close(); }
         }
-        // With several runs keep the median run by its headline number.
-        var pick = runs.length === 1 ? runs[0] : runs.slice().sort(function (a, b) {
-          var ka = a.cpu ? a.cpu.total : (a.frames ? a.frames.p95 : a.tbt || 0), kb = b.cpu ? b.cpu.total : (b.frames ? b.frames.p95 : b.tbt || 0);
-          return ka - kb;
-        })[Math.floor(runs.length / 2)];
+        var pick = medianResult(runs);
         results[device][scn] = pick;
         printResult(device, scn, pick);
         failures = failures.concat(checkBudget(device, scn, pick));

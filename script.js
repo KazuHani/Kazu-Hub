@@ -2033,6 +2033,14 @@
 
   async function loadMusicRecent() {
     if (!LISTENBRAINZ_USER || !KazuLib || !KazuLib.listenbrainzRow) return;
+    // The strip's markup (#musicRecent / #musicTrackList) is optional, and it
+    // is not in index.html at the moment: with nowhere to render, the fetch was
+    // pure waste (a request every 2 minutes, forever, whose answer was thrown
+    // away, and a radio wake-up on a phone each time). Look BEFORE fetching;
+    // the strip switches itself back on the moment its markup returns.
+    const wrap = $('musicRecent');
+    const list = $('musicTrackList');
+    if (!wrap || !list) return;
     try {
       const r = await fetchT('https://api.listenbrainz.org/1/user/' + encodeURIComponent(LISTENBRAINZ_USER) + '/listens?count=3');
       if (!r.ok) throw new Error('status ' + r.status);
@@ -2041,9 +2049,6 @@
         .map(KazuLib.listenbrainzRow)
         .filter(Boolean)
         .slice(0, 3);
-      const wrap = $('musicRecent');
-      const list = $('musicTrackList');
-      if (!wrap || !list) return;
       if (!rows.length) { wrap.classList.add('hidden'); return; }
       const sig = JSON.stringify(rows);
       if (sig !== lastMusicSig) {
