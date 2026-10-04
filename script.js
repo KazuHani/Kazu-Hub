@@ -2424,7 +2424,9 @@
     modalPanel.classList.toggle('modal-panel--bday', key === 'bday');   // takes the birthday tile's seasonal colours
     modalTitleEl.innerHTML = def.title;
     modalBodyEl.innerHTML = def.render();
-    if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
+    clearTimeout(modalRevealTimer);
+    modalPanel.getAnimations().forEach((x) => x.cancel());
+    modalAnim = null;
     Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((x) => x.cancel()));
     modalEl.hidden = false;                 // unhide first so afterRender() has real layout
     document.body.classList.add('modal-open');
@@ -2447,6 +2449,7 @@
   const MODAL_EASE = 'cubic-bezier(.32,.72,0,1)';   // same smooth settle both ways (no snap at either end)
   let modalAnim = null;
   let modalHiddenCard = null;   // the card hidden while its panel is out
+  let modalRevealTimer = 0;     // brings the card back under the panel as it lands
   function flyModal(card, opening, onDone) {
     const done = () => { if (onDone) onDone(); };
     if (!modalPanel.animate) { done(); return false; }
@@ -2476,6 +2479,13 @@
         el.animate(keys, { duration: ms, easing: 'linear', fill: 'both' });
       });
     }
+    if (fly && !opening) {
+      // land on the card, then melt away: the card's text is already there underneath
+      modalPanel.animate(
+        [{ opacity: 1, offset: 0 }, { opacity: 1, offset: .6 }, { opacity: 0, offset: 1 }],
+        { duration: ms, easing: 'linear', fill: 'both' }
+      );
+    }
     anim.onfinish = () => {
       if (modalAnim !== anim) return;
       // leave the panel in its settled state, then drop the fill so layout is normal
@@ -2493,16 +2503,24 @@
     const card = modalTrigger;
     modalTrigger = null; modalKey = null;
     if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
+    clearTimeout(modalRevealTimer);
     const flew = flyModal(card, false, () => {            // hide + unmount once it has landed back
       if (!modalEl.classList.contains('is-open')) {
+        clearTimeout(modalRevealTimer);
         if (modalHiddenCard) { modalHiddenCard.style.visibility = ''; modalHiddenCard = null; }
         if (card && card.focus) card.focus({ preventScroll: true });
         modalEl.hidden = true;
         modalBodyEl.innerHTML = '';          // stops the globe iframe + frees the canvas
-        if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
+        modalPanel.getAnimations().forEach((a) => a.cancel());
+        modalAnim = null;
         Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
       }
     });
+    if (flew) {
+      modalRevealTimer = setTimeout(() => {
+        if (modalHiddenCard === card && !modalEl.classList.contains('is-open')) { card.style.visibility = ''; modalHiddenCard = null; }
+      }, MODAL_CLOSE_MS * .55);
+    }
     if (!flew && modalHiddenCard) { modalHiddenCard.style.visibility = ''; modalHiddenCard = null; }
   }
 
