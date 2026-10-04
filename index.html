@@ -170,9 +170,17 @@
 <!-- Fonts no longer block the first paint: the stylesheet loads off the
      critical path and applies once it lands (display=swap already covers the
      text swap). noscript keeps the plain render-blocking link for no-JS. -->
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,560;1,9..144,560&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=75">
+<!-- Two requests, because `text=` subsets a whole request. The heading's face
+     (Fraunces italic, used ONLY by the h1 "Kazu Hani") is cut down to the
+     characters of that heading: the same glyphs and optical-size axis, 6.7 KB
+     instead of 81.5 KB (measured identical to three decimals at 42/54/80px;
+     it was ~half of all font bytes on a cold load). If the h1's text ever
+     changes, change the text= value too: a test compares them. Anything
+     outside the subset falls through to Fredoka. -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,560&text=Kazu%20Hani%C2%A0&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,560&text=Kazu%20Hani%C2%A0&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="style.css?v=76">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -961,7 +969,7 @@
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
 <script src="lib.js?v=38"></script>
-<script src="script.js?v=81"></script>
+<script src="script.js?v=82"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

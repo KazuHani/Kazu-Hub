@@ -205,6 +205,7 @@ var OPT = {
   js: arg('js', ''),
   evalExpr: arg('eval', ''),      // print this page expression's value after the load scenario
   pre: arg('pre', ''),            // JS run before any page script (to stub APIs)
+  fonts: arg('fonts', 'stub'),    // stub (default: system fonts, deterministic) | real (let Google Fonts through)
   cpu: +arg('cpu', 0),           // override the device's CPU throttle (1 = none)
   shot: arg('shot', ''),          // after the idle warm-up, save a PNG of the viewport here (visual checks)
   shotTo: arg('shot-to', ''),     // ...scrolled so this selector is centred first
@@ -501,6 +502,10 @@ async function openPage(chrome, device, fx, srv) {
     if (msg.method === 'Fetch.requestPaused') {
       var r = msg.params, url = r.request.url;
       if (url.indexOf('http://127.0.0.1:' + srv.port) === 0 || url.indexOf('data:') === 0) {
+        call('Fetch.continueRequest', { requestId: r.requestId }).catch(function () {});
+        return;
+      }
+      if (OPT.fonts === 'real' && /^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url)) {
         call('Fetch.continueRequest', { requestId: r.requestId }).catch(function () {});
         return;
       }
@@ -846,7 +851,43 @@ async function runModal(chrome, page, base, device) {
   return { perCard: results, frames: agg };
 }
 
-var RUNNERS = { load: runLoad, idle: runIdle, scroll: runScroll, modal: runModal };
+// Hover: the mouse sweeps across the stat cards, then the social tiles, the way a
+// reader's does. Lift + shadow transitions on frosted-glass cards are paint work, so
+// this is where a "free" hover effect shows its real cost. Desktop (fine pointer) only.
+async function runHover(chrome, page, base, device) {
+  await page.throttle(true);
+  await page.goto(base + '/' + PAGE);
+  await settle(page, device, OPT.quick ? 14 : 16);
+  var d = DEVICES[device];
+  if (d.touch) return { skipped: 'touch device' };
+  var passes = [
+    { sel: '.stat-card', y: null }, { sel: '.discord-card, .steam-card, .mal-card', y: null }
+  ];
+  var results = [];
+  for (var pi = 0; pi < passes.length; pi++) {
+    var rect = await page.eval('(function () { var els = [].slice.call(document.querySelectorAll(' + JSON.stringify(passes[pi].sel) + ')); if (!els.length) return null; els[0].scrollIntoView({ block: "center" }); var r = els.map(function (e) { var b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; }); return r; })()');
+    await sleep(500);
+    rect = await page.eval('(function () { return [].slice.call(document.querySelectorAll(' + JSON.stringify(passes[pi].sel) + ')).map(function (e) { var b = e.getBoundingClientRect(); return [b.left, b.top, b.width, b.height]; }); })()');
+    if (!rect || !rect.length) continue;
+    await page.eval('window.__fps.start()');
+    for (var lap = 0; lap < 3; lap++) {
+      for (var i = 0; i < rect.length; i++) {
+        var r = rect[i], y = r[1] + r[3] / 2;
+        for (var k = 0; k <= 12; k++) {
+          await page.call('Input.dispatchMouseEvent', { type: 'mouseMoved', x: Math.round(r[0] + 8 + (r[2] - 16) * k / 12), y: Math.round(y) });
+          await sleep(16);
+        }
+      }
+    }
+    await sleep(400);
+    results.push(frameStats(await page.eval('window.__fps.stop()')));
+  }
+  var agg = { frames: 0, missed: 0, dropped: 0, p95: 0, p99: 0, max: 0 };
+  results.forEach(function (r) { agg.frames += r.frames; agg.missed += r.missed; agg.dropped += r.dropped; agg.p95 = Math.max(agg.p95, r.p95); agg.p99 = Math.max(agg.p99, r.p99); agg.max = Math.max(agg.max, r.max); });
+  return { perPass: results, frames: agg };
+}
+
+var RUNNERS = { load: runLoad, idle: runIdle, scroll: runScroll, modal: runModal, hover: runHover };
 
 /* ------------------------------------------------------------------- report */
 
@@ -870,6 +911,10 @@ function printResult(device, scenario, r) {
     if (r.slowFrames && r.slowFrames.length && OPT.verbose) console.log('  slow frames [t ms since start, frame ms, scrollY]: ' + r.slowFrames.map(function (x) { return '[' + x.join(',') + ']'; }).join(' '));
     console.log('  ' + f.frames + ' frames, ' + f.fps + ' fps | frame p50 ' + f.p50 + ' p95 ' + f.p95 + ' p99 ' + f.p99 + ' max ' + f.max + ' ms | missed ' + f.missed + ' (dropped vsyncs ' + f.dropped + ')');
     console.log('  CPU (cores) renderer ' + fmt(r.cpu.renderer) + ' | gpu ' + fmt(r.cpu.gpu) + ' | TOTAL ' + fmt(r.cpu.total) + ' | main thread task ' + fmt(r.main.TaskDuration) + '/s, style ' + fmt(r.main.RecalcStyleDuration) + '/s, layout ' + fmt(r.main.LayoutDuration) + '/s');
+  } else if (scenario === 'hover') {
+    if (r.skipped) { console.log('  skipped: ' + r.skipped); return; }
+    var h = r.frames;
+    console.log('  ' + h.frames + ' frames | worst p95 ' + h.p95 + ' p99 ' + h.p99 + ' max ' + h.max + ' ms | missed ' + h.missed + ' (dropped vsyncs ' + h.dropped + ')');
   } else if (scenario === 'modal') {
     var g = r.frames;
     console.log('  ' + g.frames + ' frames | worst p95 ' + g.p95 + ' p99 ' + g.p99 + ' max ' + g.max + ' ms | missed ' + g.missed + ' (dropped vsyncs ' + g.dropped + ')');

@@ -71,9 +71,23 @@
       'unlisted infinite animation(s): ' + JSON.stringify(rogue) + ' (found ' + JSON.stringify(found) + ')');
     ok('perf: the Pride halo only spins during Pride month, and reduced motion still wins',
       /(^|\n)\.pfp-ring::before \{[^}]*\}/.test(flat) && !/(^|\n)\.pfp-ring::before \{[^}]*animation/.test(flat) &&
-      flat.indexOf('body.season-pride .pfp-ring::before { opacity: 1; animation: prideSpin 14s linear infinite; }') !== -1 &&
+      flat.indexOf('body.season-pride .pfp-ring::before { opacity: 1; animation: prideSpin 14s steps(420) infinite; }') !== -1 &&
       flat.indexOf('@media (prefers-reduced-motion: reduce) { body.season-pride .pfp-ring::before { animation: none; } }') !== -1 &&
       flat.indexOf('body.low-power .pfp-ring::before,') !== -1);
+
+    // Frame-rate limits for ambient loops that can afford them. The halo is a UNIFORM rotation
+    // (steps() on an eased one would flatten it), 30 steps a second at 0.86 degrees each; the
+    // balloons are dt-scaled physics, so a ceiling can't change where they are, only how often
+    // they are drawn.
+    var prideSteps = /prideSpin (\d+)s steps\((\d+)\) infinite/.exec(flat);
+    ok('perf: the Pride halo spin is a 30-steps-a-second frame limiter on a linear rotation (under 1 degree a step)',
+      !!prideSteps && prideSteps[2] / prideSteps[1] === 30 && 360 / prideSteps[2] < 1 && /@keyframes prideSpin \{ to \{ transform: rotate\(360deg\); \} \}/.test(flat));
+    var balloonCeil = +(/const BALLOON_MIN_FRAME_MS = (\d+);/.exec(source) || [0, 0])[1];
+    var drawn = function (hz) { var step = 1000 / hz, last = 0, n = 0; for (var t = step; t < 10000; t += step) if (t - last >= balloonCeil) { last = t; n++; } return Math.round(n / 10); };
+    eq('perf: the balloon frame ceiling leaves 60 and 90 Hz displays untouched and thins 120/144 Hz to 60/72',
+      [drawn(60), drawn(90), drawn(120), drawn(144)], [60, 90, 60, 72]);
+    ok('perf: the balloon loop re-arms its frame first, then skips draws inside the ceiling without touching its clock',
+      /function balloonFrame\(now\) \{\n    balloonRaf = requestAnimationFrame\(balloonFrame\);\n    if \(now - balloonLast < BALLOON_MIN_FRAME_MS\) return;\n    const dt = /.test(source));
 
     // The Spotify bar moves by transform in discrete steps: no layout, no animation.
     ok('perf: the Spotify bar is a transform in discrete steps, never a transition (width OR transform)',
@@ -106,6 +120,23 @@
       html.indexOf('viewBox="0 0 ' + (art ? art[3] + ' ' + art[4] : '?') + '"') !== -1);
     ok('perf: nothing keeps the skipped footer awake (no scripted measuring of it, no animation inside it)',
       !/\.footer\.meadow[^{]*\{[^}]*animation/.test(flat) && !/\.mf-[a-z-]+[^{]*\{[^}]*animation/.test(flat) && source.indexOf("querySelector('.footer.meadow')") === -1);
+
+    /* ---------------------------------- the heading font is subset, safely */
+
+    // Fraunces italic is used by exactly one element (the h1) and was ~half of all
+    // font bytes on a cold load (81.5 KB). Google Fonts subsets a whole request by
+    // `text=`, so it rides its own request, cut to the heading's characters with the
+    // optical-size axis intact (measured identical at 42/54/80px). The characters
+    // must cover the heading, or the missing ones silently fall through to Fredoka.
+    var h1 = /<h1 class="title">([^<]*)<\/h1>/.exec(html);
+    var sub = /family=Fraunces:ital,opsz,wght@1,9\.\.144,560&text=([^&"]+)/.exec(html);
+    var have = sub ? decodeURIComponent(sub[1]) : '', want = h1 ? h1[1].replace(/&nbsp;/g, ' ') : null;
+    ok('perf: the heading font request is subset to cover every character of the h1 (and keeps the optical-size axis)',
+      !!sub && want !== null && want.split('').every(function (c) { return have.indexOf(c) !== -1; }), 'have ' + JSON.stringify(have) + ' want ' + JSON.stringify(want));
+    ok('perf: the full-weight font request no longer carries Fraunces, and the stylesheet uses it for the h1 only',
+      /<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Fredoka[^"]*" rel="stylesheet" media="print"/.test(html) &&
+      !/family=Fredoka[^"]*family=Fraunces/.test(html) && (flat.match(/font-family:[^;}]*Fraunces/g) || []).length === 1 &&
+      /\.title \{[^}]*font-family: 'Fraunces'/.test(flat) && /\.title \{[^}]*font-style: italic/.test(flat));
 
     /* ----------------------------------------- no traffic nobody can see */
 

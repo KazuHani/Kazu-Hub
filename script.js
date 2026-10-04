@@ -2928,8 +2928,15 @@
     balloonCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
 
+  // The balloons are physics-driven (dt-scaled), so they need no particular
+  // frame rate: a ~100 fps ceiling draws every other frame on a 144 Hz display
+  // (72 fps) and every other frame on 120 Hz (60 fps), halving the full-screen
+  // canvas + compositor work, while 60 and 90 Hz displays are untouched. At
+  // ~100 px/s of drift the difference is not visible.
+  const BALLOON_MIN_FRAME_MS = 10;
   function balloonFrame(now) {
     balloonRaf = requestAnimationFrame(balloonFrame);
+    if (now - balloonLast < BALLOON_MIN_FRAME_MS) return;
     const dt = Math.min((now - balloonLast) / 1000, 0.05); // tab-switch gaps can't teleport
     balloonLast = now;
     balloonT += dt;

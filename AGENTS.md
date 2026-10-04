@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=75`,
-  `lib.js?v=38`, `script.js?v=81` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=76`,
+  `lib.js?v=38`, `script.js?v=82` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -177,7 +177,14 @@ the pre-optimisation code, which is the point).
   are allowed because they ARE the feature and run only in season; the
   allow-list is pinned in `perf-guards.js`, so a new infinite loop must be
   added there on purpose. The Pride halo's spin used to sit on the base rule and
-  ran all year at opacity 0 (~0.3 cores). For a small, long-lived indicator
+  ran all year at opacity 0 (~0.3 cores). Where a loop can afford a lower frame
+  rate it is limited: the halo is a uniform rotation on `steps(420)` (30 steps a
+  second, under a degree each: identical to the eye, ~35-57% less GPU work, because
+  the compositor skips drawing frames where nothing changed), and the birthday
+  balloons skip draws inside a ~100 fps ceiling (`BALLOON_MIN_FRAME_MS`). `steps()`
+  is only valid on a LINEAR animation; on an eased one (the aurora ribbons, the
+  petals' sway) it would flatten the easing, so those stay smooth. For a small,
+  long-lived indicator
   prefer discrete steps: the Spotify bar steps four times a second off a timer
   that exists only while a song plays and the tab is visible, and
   `.spotify-bar-fill` is a `transform`, never a width.
@@ -221,6 +228,14 @@ the pre-optimisation code, which is the point).
   (an idle preconnected socket is dropped after ~10 s), `dns-prefetch` for the
   rest, none for hosts the page never fetches (`corsproxy.io` and ListenBrainz
   were there long after the code stopped using them).
+- **Fonts ride two requests so the heading's face can be subset.** Fraunces
+  italic is used by exactly one element, the h1 "Kazu Hani", and the full latin
+  file is 81.5 KB (about half of all font bytes on a cold load). Google Fonts
+  subsets a whole request by `text=`, so it has its own `<link>` cut to that
+  heading's nine characters (6.7 KB, same glyphs and optical-size axis, measured
+  identical to three decimals at 42/54/80px and in the live page). If the h1
+  text ever changes, change `text=` too: `perf-guards.js` compares them, and
+  any character outside the subset falls through to Fredoka.
 - **Phones are low-power by construction.** `lowPowerMode` counts a coarse
   pointer and a small screen as two weak signals, and every phone has both, so
   every phone runs in low-power mode: no particles, no backdrop blur, no glass
