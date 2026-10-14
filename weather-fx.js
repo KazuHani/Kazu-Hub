@@ -92,13 +92,19 @@
     return s > 0 ? -1 : 1;
   }
 
+  // Christmas Day's snowfall: a light fall whatever the sky is doing, unless it
+  // is really raining (rain and snow never share the canvas) or already
+  // snowing harder. It is decoration, not weather, so it brings no cloud.
+  var FESTIVE_SNOW = 0.32;
+
   // The whole rule set: what does this weather look like?
   //   w = { code, cloudCover (%, optional), windKmh, windDir (deg, optional) }
+  //   opts = { festive } (optional): true on Christmas Day, see FESTIVE_SNOW
   // Returns { rain, snow, clouds, wind, windSign, windKmh, active } with each
   // layer 0..1. Rain and snow come from one weather code, so they never
   // overlap; rain/snow imply cloud (the precipitation has to come from
   // somewhere) whatever cover the API reports; fog reads as full cover.
-  function layersFor(w) {
+  function layersFor(w, opts) {
     w = w || {};
     var code = +w.code;
     var rain = RAIN_BY_CODE[code] || 0;
@@ -117,6 +123,7 @@
       windSign: windSignFor(w.windDir),
       windKmh: kmh
     };
+    if (opts && opts.festive && !out.rain && out.snow < FESTIVE_SNOW) out.snow = FESTIVE_SNOW;
     out.active = out.rain > 0 || out.snow > 0 || out.clouds > 0 || out.wind > 0;
     return out;
   }
@@ -623,10 +630,11 @@
     if (!busy) unmount(); // weather cleared and faded out: nothing left to run
   }
 
-  // Public: feed the current weather. `forced` (from ?weather=) replaces it.
-  function update(weather, forced) {
+  // Public: feed the current weather. `forced` (from ?weather=) replaces it;
+  // `opts` goes to layersFor (Christmas Day's snowfall).
+  function update(weather, forced, opts) {
     if (disabled) return null;
-    var L = forced || layersFor(weather);
+    var L = forced || layersFor(weather, opts);
     lastLayers = L;
     if (!L.active) {
       if (S) S.target = L; // fade out, then frame() unmounts
@@ -684,6 +692,7 @@
     ensureSprites: ensureSprites,
     sceneFast: sceneFast,
     MAX: MAX,
+    FESTIVE_SNOW: FESTIVE_SNOW,
     FADE_PARTICLE: FADE_PARTICLE,
     FADE_CLOUD: FADE_CLOUD,
     WIND_EASE_KMH: WIND_EASE_KMH,

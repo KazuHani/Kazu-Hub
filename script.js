@@ -9,8 +9,60 @@
   const BIRTH_MONTH = _BIRTH.month; // 0-indexed: 10 = November
   const BIRTH_DAY = _BIRTH.day;
   const TIMEZONE = 'Europe/London';
-  const DISCORD_ID = '346360416827473921';
-  const STEAM_VANITY = 'Kazu-Hani';
+
+  // ---------- Site control: settings saved by the control panel ----------
+  // The panel keeps a small settings document in an online store. index.html names
+  // its address in <meta name="kazu-control"> and #boot-control starts the download
+  // before this file arrives. With no address, no network or bad data the page is
+  // exactly what index.html says. KazuSiteConfig (site-config.js) validates every
+  // value, and settings only reach the page through textContent, vetted attributes
+  // and classes, never innerHTML. The last good copy is cached in localStorage so a
+  // repeat visit applies it before anything paints. The applying half of this lives
+  // just above "Scroll reveal"; this half is here because the constants below use it.
+  const SiteConfig = window.KazuSiteConfig;
+  const SITE_CONFIG_KEY = 'kazu-site-config';
+  const NOTICE_KEY = 'kazu-notice-dismissed';
+  const CONTROL_URL = (() => {
+    const meta = document.querySelector('meta[name="kazu-control"]');
+    const url = meta ? meta.getAttribute('content') : '';
+    return SiteConfig && SiteConfig.controlUrlOk(url) ? url : '';
+  })();
+  let siteCfg = { schema: 1 };
+  let siteCfgText = '{"schema":1}';
+  try {
+    const cached = CONTROL_URL ? JSON.parse(localStorage.getItem(SITE_CONFIG_KEY)) : null;
+    if (cached && cached.u === CONTROL_URL && typeof cached.t === 'string') {
+      siteCfg = SiteConfig.normalize(JSON.parse(cached.t)).config;
+      siteCfgText = JSON.stringify(siteCfg);
+    }
+  } catch (e) {}
+  const siteDefaults = {};
+  const siteSection = (key) => (SiteConfig && SiteConfig.isManaged(siteCfg, key) ? siteCfg[key] : null);
+  const siteIntegration = (name) => { const i = siteSection('integrations'); return i && i[name] ? i[name] : null; };
+  const siteIntegrationOn = (name) => { const i = siteIntegration(name); return !i || i.enabled !== false; };
+  const siteEffectOff = (name) => { const e = siteSection('effects'); return !!e && e[name] === false; };
+  const siteSectionOff = (name) => { const s = siteSection('sections'); return !!s && s[name] === false; };
+  // The last quoted value on each declaration below is the page's own default.
+  function siteId(name, field, fallback) {
+    siteDefaults[name + '.' + field] = fallback;
+    const i = siteIntegration(name);
+    return (i && i[field]) || fallback;
+  }
+  function siteValue(section, field, fallback) {
+    siteDefaults[section + '.' + field] = fallback;
+    const s = siteSection(section);
+    return (s && s[field]) || fallback;
+  }
+  function siteSeasonOverrides() {
+    const s = siteSection('seasons');
+    const out = {};
+    if (s) Object.keys(s).forEach((k) => { if (s[k] === 'on' || s[k] === 'off') out[k] = s[k]; });
+    return out;
+  }
+  let siteSeasons = siteSeasonOverrides();
+
+  let DISCORD_ID = siteId('discord', 'userId', '346360416827473921');
+  let STEAM_VANITY = siteId('steam', 'vanity', 'Kazu-Hani');
 
   // Keep live API names, titles and statuses emoji-free as cards populate.
   // Watching only changed text/labels avoids re-scanning the page each tick;
@@ -204,7 +256,7 @@
       pride: (m === 5),                                   // all of June
       sakura,                                             // 20 Mar - 10 May, UK date
       halloween: (bM === 9),                              // all of October, UK date
-    }, devSeasons);
+    }, Object.assign({}, siteSeasons, devSeasons)); // control panel overrides, then this browser's dev panel on top
   }
 
   let bdayCelebrated = false; // latch so confetti fires once per OFF->ON birthday transition
@@ -794,6 +846,8 @@
     // "Weather FX" below), so the older DOM rain drops and snow-petal shower
     // stand down there; phones and low-power devices keep them untouched.
     if ((mode === 'rain' || mode === 'blossom-heavy') && weatherFxOwnsPrecip()) mode = 'none';
+    // The control panel can switch the particle sky off site-wide; a ?atmosphere= preview still wins.
+    if (siteEffectOff('particles') && !ATMOSPHERE_OVERRIDE) mode = 'none';
     if (mode === atmosphereCurrent) return;
     // Low-power devices get a still sky — an explicit ?atmosphere= preview
     // param still wins (it's a deliberate look, not the weather's idea).
@@ -838,7 +892,10 @@
   // atmosphere takes back over.
   // Preview: ?weather=rain,wind,clouds,snow,storm,all,none (each optionally
   // :0..1, e.g. rain:1) forces layers on any weather; still desktop-only.
-  const WEATHER_FX_SRC = 'weather-fx.js?v=3';
+  // Christmas Day adds a light snowfall to the layers (KazuWeatherFx FESTIVE_SNOW),
+  // unless it is really raining; applySeasons keeps this flag and re-syncs.
+  const WEATHER_FX_SRC = 'weather-fx.js?v=4';
+  let christmasLive = false;
   const WEATHER_FX_RAW = (() => {
     try { return new URLSearchParams(location.search).get('weather') || ''; } catch (e) { return ''; }
   })();
@@ -851,6 +908,7 @@
 
   function weatherFxAllowedNow() {
     if (!(KazuLib && KazuLib.weatherFxAllowed) || weatherFxMQ.length < 4) return false;
+    if (siteEffectOff('weather')) return false; // switched off from the control panel
     return KazuLib.weatherFxAllowed({
       coarsePointer: weatherFxMQ[0].matches,
       hoverNone: weatherFxMQ[1].matches,
@@ -876,7 +934,8 @@
       weatherCurrent
         ? { code: weatherCurrent.code, cloudCover: weatherCurrent.cloudCover, windKmh: weatherCurrent.windKmh, windDir: weatherCurrent.windDir }
         : null,
-      WEATHER_FX_RAW ? fx.forcedParse(WEATHER_FX_RAW) : null
+      WEATHER_FX_RAW ? fx.forcedParse(WEATHER_FX_RAW) : null,
+      { festive: christmasLive }
     );
   }
 
@@ -892,7 +951,7 @@
     }
     if (weatherFxState === 'failed') return;
     if (ATMOSPHERE_OVERRIDE && !WEATHER_FX_RAW) return; // previewing the older atmosphere
-    if (!weatherCurrent && !WEATHER_FX_RAW) return;     // nothing to draw until the weather is known
+    if (!weatherCurrent && !WEATHER_FX_RAW && !christmasLive) return; // nothing to draw until the weather is known (Christmas snows anyway)
     if (window.KazuWeatherFx) { weatherFxState = 'ready'; feedWeatherFx(); return; }
     if (weatherFxState === 'loading') return;           // feedWeatherFx runs from onload
     weatherFxState = 'loading';
@@ -1407,7 +1466,7 @@
   // WebSocket can't be proxied, so on a blocking network the 20s REST poll
   // is what keeps the card alive.
   async function loadDiscord() {
-    if (lanyardWsLive) return;
+    if (lanyardWsLive || !siteIntegrationOn('discord')) return;
     const url = 'https://api.lanyard.rest/v1/users/' + DISCORD_ID;
     try {
       let j;
@@ -1565,12 +1624,14 @@
   let lanyardBackoff = 1000;  // doubles on each failed attempt, capped at 30s
 
   function startLanyard() {
+    if (!siteIntegrationOn('discord')) return;
     if (lanyardWanted && (lanyardSocket || lanyardReconnect)) return;
     lanyardWanted = true;
     connectLanyard();
   }
 
   function restartLanyard() {
+    if (!siteIntegrationOn('discord')) { stopLanyard(); return; }
     lanyardWanted = true;
     lanyardBackoff = 1000;
     if (lanyardHeartbeat) { clearInterval(lanyardHeartbeat); lanyardHeartbeat = null; }
@@ -1652,6 +1713,7 @@
   }
 
   async function loadSteam() {
+    if (!siteIntegrationOn('steam')) return;
     const STEAM_URL = 'https://steamcommunity.com/id/' + STEAM_VANITY + '/?xml=1';
     try {
       let xmlText;
@@ -1752,7 +1814,7 @@
   }
 
   // ---------- MyAnimeList (Jikan) ----------
-  const MAL_USER = 'Kazu_Hani';
+  let MAL_USER = siteId('mal', 'user', 'Kazu_Hani');
   // Entry-to-row extraction lives in lib.js (gate-tested); local copy keeps
   // the card working if lib.js fails to load.
   const malRow = (KazuLib && KazuLib.malRow) || function (entry) {
@@ -1894,6 +1956,7 @@
   }
 
   async function loadMal() {
+    if (!siteIntegrationOn('mal')) return;
     try {
       const rows = await fetchMalRows();
 
@@ -1950,7 +2013,7 @@
   // Manga failures never flip the whole card to its error state: the anime
   // rows are the primary content, the reading section just hides.
   async function loadMalManga() {
-    if (!KazuLib || !KazuLib.malMangaRow) return;
+    if (!KazuLib || !KazuLib.malMangaRow || !siteIntegrationOn('mal')) return;
     try {
       const rows = await fetchMalMangaRows();
       renderMalMangaRows(rows);
@@ -1969,7 +2032,7 @@
   // CORS proxy the Steam and MAL fallbacks use. Parsing lives in lib.js
   // (regex-based, DOM-free, gate-tested); the last good entry is cached in
   // localStorage exactly like the MAL rows.
-  const LB_USER = 'KazuHani';
+  let LB_USER = siteId('letterboxd', 'user', 'KazuHani');
   const LB_CACHE_KEY = 'kazu-lb-cache';
 
   function renderLetterboxd(entry) {
@@ -2008,7 +2071,7 @@
   }
 
   async function loadLetterboxd() {
-    if (!KazuLib || !KazuLib.parseLetterboxdRss) return;
+    if (!KazuLib || !KazuLib.parseLetterboxdRss || !siteIntegrationOn('letterboxd')) return;
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
       const r = await proxyFetch(rss);
@@ -2079,7 +2142,7 @@
   // the same CORS proxy as Letterboxd; parsing lives in lib.js (regex,
   // DOM-free, gate-tested). Failure order: localStorage cache → the static
   // snapshot rows shipped in index.html.
-  const YTM_PLAYLIST_ID = 'PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m';
+  let YTM_PLAYLIST_ID = siteValue('playlist', 'playlistId', 'PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m');
   const YTM_CACHE_KEY = 'kazu-ytm-cache';
 
   function renderPlaylistTracks(rows) {
@@ -2185,6 +2248,7 @@
   }
 
   async function loadQuote() {
+    if (siteSectionOff('quote')) return;
     try {
       const r = await fetchT('https://zenquotes.io/api/random');
       const j = await r.json();
@@ -2651,6 +2715,87 @@
     });
   }
 
+  // ---------- Christmas frost (snow on the cards, frost in their corners) ----------
+  // KazuLib.frostCard draws each card's picture (seeded, so every card gets its
+  // own snow line and frost and a reload draws the same ones) and style.css
+  // shows it as a border-image only under body.season-christmas ("frozen
+  // cards"). This part only measures cards and hands the pictures over, and
+  // only while Christmas is live (applySeasons calls setFrost). A card's
+  // picture is made the first time it comes near the viewport (an
+  // IntersectionObserver, so a phone that never scrolls makes three or four,
+  // not twenty-two), then a ResizeObserver remakes it only when the card really
+  // changed: the 9-slice already absorbs height changes, so only a width change
+  // of more than 8%, or a card grown too short for its corners, draws again.
+  // Cards are drawn one per idle slice: each picture costs a style pass and an
+  // image decode on the next frame, and drawing the first screen's six at once
+  // was a ~160 ms task on a 4x-throttled phone (perf.js, Christmas Day load);
+  // one at a time each stays under the long-task line. Nothing runs at rest or
+  // outside the season; if lib.js is missing the season simply has no frost.
+  const FROST_SELECTOR = '.stat-card, .discord-card, .steam-card, .mal-card, .lb-card, .social-card, .pc-spec-card, .music-card, .story-card';
+  let frostOn = false;
+  let frostSeeds = new WeakMap(); // card -> seed (its place on the page)
+  const frostDrawn = new WeakMap(); // card -> { w, reach } it was drawn for
+  let frostIO = null, frostRO = null;
+  const frostQueue = [];
+  let frostPumping = false;
+  function frostQueueCard(el) {
+    if (frostQueue.indexOf(el) === -1) frostQueue.push(el);
+    if (!frostPumping) { frostPumping = true; scheduleIdle(frostPump, 1500); }
+  }
+  function frostPump() {
+    frostPumping = false;
+    const el = frostQueue.shift();
+    if (el && frostOn && frostStale(el)) frostDraw(el);
+    if (frostQueue.length) { frostPumping = true; scheduleIdle(frostPump, 1500); }
+  }
+  function frostDraw(el) {
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const f = KazuLib.frostCard({ w, h, r: parseFloat(getComputedStyle(el).borderTopLeftRadius), seed: frostSeeds.get(el) || 1 });
+    if (!f) return; // not laid out yet (hidden, or still 0 wide): the ResizeObserver tries again
+    el.style.setProperty('--xf', KazuLib.frostBorderImage(f));
+    el.classList.add('xmas-frost');
+    frostDrawn.set(el, { w, reach: f.reach });
+  }
+  function frostStale(el) {
+    const d = frostDrawn.get(el);
+    if (!d) return true;
+    return Math.abs(el.offsetWidth - d.w) > d.w * 0.08 || el.offsetHeight < 2 * d.reach + 2;
+  }
+  // Cards the control panel rebuilt (socials, stories) are new elements:
+  // applySiteConfig calls this so they freeze over too.
+  function frostRescan() {
+    if (!frostOn) return;
+    document.querySelectorAll(FROST_SELECTOR).forEach((el, i) => {
+      if (frostSeeds.has(el)) return;
+      frostSeeds.set(el, i + 1);
+      if (frostIO) frostIO.observe(el);
+      else frostQueueCard(el);
+    });
+  }
+  function setFrost(on) {
+    if (on === frostOn || !(KazuLib && KazuLib.frostCard && KazuLib.frostBorderImage)) return;
+    frostOn = on;
+    if (!on) { // style.css hides the pictures with the season; just stop watching
+      if (frostIO) frostIO.disconnect();
+      if (frostRO) frostRO.disconnect();
+      frostSeeds = new WeakMap();
+      frostQueue.length = 0;
+      return;
+    }
+    if (!frostIO && 'IntersectionObserver' in window) {
+      frostRO = 'ResizeObserver' in window
+        ? new ResizeObserver((entries) => entries.forEach((e) => { if (frostOn && frostStale(e.target)) frostQueueCard(e.target); }))
+        : null;
+      frostIO = new IntersectionObserver((entries) => entries.forEach((e) => {
+        if (!e.isIntersecting || !frostOn) return;
+        frostIO.unobserve(e.target);
+        if (frostStale(e.target)) frostQueueCard(e.target);
+        if (frostRO) frostRO.observe(e.target);
+      }), { rootMargin: '600px 0px' });
+    }
+    frostRescan();
+  }
+
   // ---------- Seasonal effects ----------
   // Seasons only depend on the calendar date (visitor-local for Christmas and
   // pride, UK wall clock for birthday, sakura and Halloween) plus overrides, so the
@@ -2691,6 +2836,10 @@
     // Christmas owns the palette, so it owns the browser-chrome colour too;
     // otherwise follow the current time-of-day tint.
     setThemeColor(s.christmas ? '#071f16' : skyTintHex);
+    // Christmas also freezes the cards over (see "Christmas frost" below) and,
+    // on desktop, snows lightly unless it is really raining.
+    setFrost(!!s.christmas);
+    if (christmasLive !== !!s.christmas) { christmasLive = !!s.christmas; syncWeatherFx(); }
     if (s.birthday && !bdayCelebrated) { bdayCelebrated = true; fireConfetti(); }
     if (!s.birthday) bdayCelebrated = false; // re-arm if it turns off (e.g. preview param removed)
     syncDevPanel(s); // keep the dev panel's live badges / pressed buttons current
@@ -3006,6 +3155,320 @@
   }
 
   function setBalloons(on) { if (on) startBalloons(); else stopBalloons(); }
+
+  // ---------- Site control: applying the settings ----------
+  // Each edit is recorded as it is made, so adopting a newer copy first puts the
+  // page back exactly as index.html wrote it and then applies the new settings;
+  // that is also how a section handed back to the HTML returns to its own content.
+  // Nodes made after the first pass get .is-visible at once: the reveal observer
+  // below only learns about the elements that exist when it starts.
+  const siteUndo = [];
+  let siteLate = false;
+
+  function ovText(el, text) {
+    if (!el) return;
+    const old = el.textContent;
+    siteUndo.push(() => { el.textContent = old; });
+    el.textContent = text;
+  }
+  function ovAttr(el, name, value) {
+    if (!el) return;
+    const old = el.getAttribute(name);
+    siteUndo.push(() => { if (old === null) el.removeAttribute(name); else el.setAttribute(name, old); });
+    el.setAttribute(name, value);
+  }
+  function ovClass(el, name, on) {
+    if (!el) return;
+    const had = el.classList.contains(name);
+    siteUndo.push(() => { el.classList.toggle(name, had); });
+    el.classList.toggle(name, on);
+  }
+  function ovStyle(el, prop, value) {
+    if (!el) return;
+    const old = el.style.getPropertyValue(prop);
+    siteUndo.push(() => { if (old) el.style.setProperty(prop, old); else el.style.removeProperty(prop); });
+    el.style.setProperty(prop, value);
+  }
+  function ovChildren(el, nodes) {
+    if (!el) return;
+    const old = Array.from(el.childNodes);
+    siteUndo.push(() => { el.textContent = ''; old.forEach((n) => el.appendChild(n)); });
+    el.textContent = '';
+    nodes.forEach((n) => el.appendChild(n));
+  }
+  function siteReset() { while (siteUndo.length) siteUndo.pop()(); }
+
+  const SITE_GRIDS = { rightNow: '.right-now-grid', socials: '.socials-grid', pc: '.pc-specs-grid', playlist: '.music-grid', stories: '.stories-grid' };
+  const siteGrid = (key) => document.querySelector(SITE_GRIDS[key]);
+  const siteHeading = (key) => { const g = siteGrid(key); const h = g && g.previousElementSibling; return h && h.tagName === 'H2' ? h : null; };
+  const siteEl = (tag, className, text) => {
+    const n = document.createElement(tag);
+    if (className) n.className = className;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  function applySiteSections() {
+    const sections = siteSection('sections');
+    const titles = siteSection('titles');
+    Object.keys(SITE_GRIDS).forEach((key) => {
+      const off = !!sections && sections[key] === false;
+      ovClass(siteGrid(key), 'hidden', off);
+      ovClass(siteHeading(key), 'hidden', off);
+      if (titles && titles[key]) ovText(siteHeading(key), titles[key]);
+    });
+    if (sections && sections.quote === false) ovClass($('quoteBox'), 'hidden', true);
+  }
+
+  function makeSocialTile(s) {
+    const a = siteEl('a', 'social-card social-card--custom scroll-reveal' + (siteLate ? ' is-visible' : ''));
+    a.setAttribute('href', s.url);
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener');
+    a.style.setProperty('--brand-a', s.colorA || '#7c5cff');
+    a.style.setProperty('--brand-b', s.colorB || '#4a34b8');
+    a.appendChild(siteEl('span', 'social-mark social-mark--text', s.mark || s.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase()));
+    a.appendChild(siteEl('span', 'social-name', s.name));
+    a.appendChild(siteEl('span', 'social-handle', s.handle));
+    return a;
+  }
+
+  function applySiteSocials() {
+    const list = siteSection('socials');
+    const grid = siteGrid('socials');
+    if (!list || !grid) return;
+    const existing = {};
+    Array.from(grid.querySelectorAll('.social-card')).forEach((a) => {
+      const m = /social-card--([a-z0-9-]+)/.exec(a.className);
+      if (m) existing[m[1]] = a;
+    });
+    const nodes = list.map((s) => {
+      const a = existing[s.id];
+      if (!a) return makeSocialTile(s);
+      ovAttr(a, 'href', s.url);
+      ovText(a.querySelector('.social-name'), s.name);
+      ovText(a.querySelector('.social-handle'), s.handle);
+      return a;
+    });
+    ovChildren(grid, nodes);
+  }
+
+  function makeStoryLink() {
+    const a = siteEl('a', 'story-link scroll-reveal' + (siteLate ? ' is-visible' : ''));
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener');
+    const card = siteEl('div', 'card story-card');
+    card.appendChild(siteEl('h3', 'story-title'));
+    card.appendChild(siteEl('p', 'story-desc'));
+    card.appendChild(siteEl('div', 'story-cta'));
+    a.appendChild(card);
+    return a;
+  }
+
+  function applySiteStories() {
+    const list = siteSection('stories');
+    const grid = siteGrid('stories');
+    if (!list || !grid) return;
+    const links = Array.from(grid.querySelectorAll('.story-link'));
+    const template = links[0] || null;
+    const nodes = list.map((s, i) => {
+      const reused = !!links[i];
+      const a = links[i] || (template ? template.cloneNode(true) : makeStoryLink());
+      if (!reused && template) a.classList.toggle('is-visible', siteLate || template.classList.contains('is-visible'));
+      const style = SiteConfig.storyStyle(s.colors);
+      const card = a.querySelector('.story-card');
+      const cta = a.querySelector('.story-cta');
+      const w = reused
+        ? { text: ovText, attr: ovAttr, style: ovStyle }
+        : { text: (n, v) => { if (n) n.textContent = v; }, attr: (n, k, v) => n.setAttribute(k, v), style: (n, k, v) => { if (n) n.style.setProperty(k, v); } };
+      w.attr(a, 'href', s.url);
+      w.text(a.querySelector('.story-title'), s.title);
+      w.text(a.querySelector('.story-desc'), s.desc);
+      w.text(cta, s.cta + ' →');
+      w.style(card, 'background', style.background);
+      w.style(card, 'box-shadow', style.boxShadow);
+      w.style(cta, 'color', style.ctaColor);
+      return a;
+    });
+    ovChildren(grid, nodes);
+  }
+
+  function applySitePc() {
+    const pc = siteSection('pc');
+    if (!pc) return;
+    const card = (name) => document.querySelector('.pc-spec-card--' + name);
+    const graphics = card('graphics');
+    if (pc.graphics && graphics) {
+      const g = pc.graphics;
+      ovText(graphics.querySelector('.pc-spec-maker'), g.maker);
+      const strong = siteEl('strong', '', g.model);
+      ovChildren(graphics.querySelector('.pc-spec-feature-name'), [document.createTextNode(g.brand ? g.brand + ' ' : ''), strong]);
+      const mark = graphics.querySelector('.pc-gpu-mark');
+      if (mark) {
+        ovText(mark.querySelector('span'), g.markTop);
+        ovText(mark.querySelector('strong'), g.markBottom);
+      }
+    }
+    [['platform', 'pc-spec-entry', 'label', 'value'], ['storage', 'pc-storage-entry', 'size', 'name'], ['build', 'pc-spec-entry', 'label', 'value']].forEach((spec) => {
+      const rows = pc[spec[0]];
+      const c = card(spec[0]);
+      const dl = c && c.querySelector('dl');
+      if (!rows || !dl) return;
+      ovChildren(dl, rows.map((r) => {
+        const row = siteEl('div', spec[1]);
+        row.appendChild(siteEl('dt', '', r[spec[2]]));
+        row.appendChild(siteEl('dd', '', r[spec[3]]));
+        return row;
+      }));
+    });
+  }
+
+  function applySitePlaylist() {
+    const p = siteSection('playlist');
+    const card = document.querySelector('.music-card');
+    if (!p || !card) return;
+    ovText(card.querySelector('.music-playlist-name'), p.name);
+    ovText(card.querySelector('.music-playlist-sub'), p.sub);
+    const url = SiteConfig.playlistUrl(p.playlistId);
+    card.querySelectorAll('a.pill-link, a.music-cover-wrap').forEach((a) => ovAttr(a, 'href', url));
+    if (p.cover) ovAttr(card.querySelector('.music-cover'), 'src', p.cover);
+    // The static rows belong to the page's own playlist; another playlist shows none until its feed arrives.
+    if (p.playlistId !== siteDefaults['playlist.playlistId']) {
+      const list = $('musicFeatured');
+      const label = list && list.querySelector('.music-recent-label');
+      if (label) ovChildren(list, [label.cloneNode(true)]);
+    }
+  }
+
+  function applySiteIntegrations() {
+    const i = siteSection('integrations');
+    if (!i) return;
+    const urls = SiteConfig.profileUrls(i);
+    [['discord', '.discord-card'], ['steam', '.steam-card'], ['mal', '.mal-card'], ['letterboxd', '.lb-card']].forEach((pair) => {
+      if (!i[pair[0]]) return;
+      const card = document.querySelector(pair[1]);
+      if (!card) return;
+      if (i[pair[0]].enabled === false) ovClass(card, 'hidden', true);
+      ovAttr(pair[0] === 'discord' ? $('discordAddMe') : card.querySelector('a.pill-link'), 'href', urls[pair[0]]);
+    });
+    if (i.steam && i.steam.displayName) {
+      ovText(document.querySelector('.steam-card .presence-name'), i.steam.displayName);
+      ovText(document.querySelector('.steam-card .steam-fallback-title'), i.steam.displayName);
+    }
+  }
+
+  function siteNoticeDismissed(n) {
+    try { return localStorage.getItem(NOTICE_KEY) === SiteConfig.noticeId(n); } catch (e) { return false; }
+  }
+
+  // Not undo-recorded: it is rewritten from scratch every time, because the
+  // start and end times mean it has to be re-checked as the clock moves.
+  function applySiteNotice() {
+    const box = $('hubBulletin');
+    if (!box || !SiteConfig) return;
+    const n = siteSection('notice');
+    if (!n || !SiteConfig.noticeActive(n, Date.now()) || (n.dismissible && siteNoticeDismissed(n))) { box.hidden = true; return; }
+    box.querySelector('.hub-bulletin-text').textContent = n.text;
+    const link = box.querySelector('.hub-bulletin-link');
+    const linked = !!n.linkUrl && SiteConfig.controlUrlOk(n.linkUrl) && n.linkUrl[0] !== '/';
+    link.hidden = !linked;
+    if (linked) { link.setAttribute('href', n.linkUrl); link.textContent = n.linkText; }
+    box.querySelector('.hub-bulletin-close').hidden = !n.dismissible;
+    box.className = 'hub-bulletin' + (n.tone === 'good' || n.tone === 'warn' ? ' hub-bulletin--' + n.tone : '');
+    box.hidden = false;
+  }
+  const bulletinClose = document.querySelector('.hub-bulletin-close');
+  if (bulletinClose) bulletinClose.addEventListener('click', () => {
+    const n = siteSection('notice');
+    if (n) { try { localStorage.setItem(NOTICE_KEY, SiteConfig.noticeId(n)); } catch (e) {} }
+    $('hubBulletin').hidden = true;
+  });
+
+  function applySiteConfig() {
+    if (!SiteConfig) return;
+    applySiteSections();
+    applySiteSocials();
+    applySiteStories();
+    applySitePc();
+    applySitePlaylist();
+    applySiteIntegrations();
+    const footer = siteSection('footer');
+    if (footer && footer.credit) ovText(document.querySelector('.meadow-credit'), footer.credit);
+    applySiteNotice();
+    frostRescan(); // rebuilt socials / stories freeze over too at Christmas
+  }
+
+  const siteIdList = () => ({ discord: DISCORD_ID, steam: STEAM_VANITY, mal: MAL_USER, lb: LB_USER, ytm: YTM_PLAYLIST_ID });
+  const SITE_INTEGRATION_FOR = { discord: 'discord', steam: 'steam', mal: 'mal', lb: 'letterboxd' };
+  const SITE_CACHES = { discord: ['kazu-discord-cache'], mal: ['kazu-mal-cache', 'kazu-mal-manga-cache'], lb: ['kazu-lb-cache'], ytm: ['kazu-ytm-cache'] };
+
+  // A new account id or a card switched on or off: drop that card's cached rows
+  // and fetch it again now instead of waiting for its next poll.
+  function siteChanged(beforeIds, beforeOn, hadPlaylist) {
+    const reload = { discord: () => { restartLanyard(); loadDiscord(); }, steam: loadSteam, mal: loadMalAll, lb: loadLetterboxd, ytm: loadPlaylistTracks };
+    const now = siteIdList();
+    Object.keys(reload).forEach((k) => {
+      const idChanged = beforeIds[k] !== now[k];
+      const toggled = !!SITE_INTEGRATION_FOR[k] && beforeOn[k] !== siteIntegrationOn(SITE_INTEGRATION_FOR[k]);
+      if (!idChanged && !toggled) return;
+      if (idChanged) (SITE_CACHES[k] || []).forEach((key) => { try { localStorage.removeItem(key); } catch (e) {} });
+      reload[k]();
+    });
+    if (hadPlaylist || siteSection('playlist')) { lastYtmSig = ''; loadPlaylistTracks(); }
+    applySeasons();
+    syncWeatherFx();
+    if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);
+  }
+
+  function adoptSiteConfig(next, text, persist) {
+    if (text === siteCfgText) { applySiteNotice(); return; }
+    const beforeIds = siteIdList();
+    const beforeOn = { discord: siteIntegrationOn('discord'), steam: siteIntegrationOn('steam'), mal: siteIntegrationOn('mal'), lb: siteIntegrationOn('letterboxd') };
+    const hadPlaylist = !!siteSection('playlist');
+    siteCfg = next;
+    siteCfgText = text;
+    siteReset();
+    DISCORD_ID = siteId('discord', 'userId', siteDefaults['discord.userId']);
+    STEAM_VANITY = siteId('steam', 'vanity', siteDefaults['steam.vanity']);
+    MAL_USER = siteId('mal', 'user', siteDefaults['mal.user']);
+    LB_USER = siteId('letterboxd', 'user', siteDefaults['letterboxd.user']);
+    YTM_PLAYLIST_ID = siteValue('playlist', 'playlistId', siteDefaults['playlist.playlistId']);
+    siteSeasons = siteSeasonOverrides();
+    lastSeasonKey = null;
+    applySiteConfig();
+    if (persist) { try { localStorage.setItem(SITE_CONFIG_KEY, JSON.stringify({ u: CONTROL_URL, t: text })); } catch (e) {} }
+    if (siteLate) siteChanged(beforeIds, beforeOn, hadPlaylist);
+  }
+
+  // Polled once a minute (the pollers pause in a hidden tab). Any failure keeps
+  // whatever is already applied: the page never depends on this succeeding.
+  async function loadSiteControl() {
+    if (!CONTROL_URL || !SiteConfig) return;
+    let body = null;
+    const early = window.__kazuControl;
+    window.__kazuControl = null;
+    try {
+      body = early ? await early : null;
+      if (body === null) {
+        const r = await fetchT(CONTROL_URL, { cache: 'no-store' });
+        body = r.ok ? await r.text() : null;
+      }
+    } catch (e) { body = null; }
+    const parsed = body === null ? null : SiteConfig.parseStored(body);
+    if (!parsed || !parsed.ok) { applySiteNotice(); return; }
+    const next = SiteConfig.normalize(parsed.value || { schema: 1 }).config;
+    adoptSiteConfig(next, JSON.stringify(next), true);
+  }
+
+  // The control panel's preview feeds draft settings in through here; it is never
+  // persisted, and the settings still go through the same validation.
+  window.KazuSiteControl = {
+    apply: (raw) => { if (!SiteConfig) return; const next = SiteConfig.normalize(raw).config; adoptSiteConfig(next, JSON.stringify(next), false); },
+    current: () => siteCfg
+  };
+
+  applySiteConfig();
+  siteLate = true;
 
   // ---------- Scroll reveal ----------
   // Every .scroll-reveal element starts hidden (.scroll-reveal in style.css)
@@ -3328,6 +3791,7 @@
   const POLLERS = [
     { fn: tick, ms: 1000, last: 0 },
     { fn: loadWeather, ms: 10 * 60 * 1000, last: 0 },
+    { fn: loadSiteControl, ms: 60 * 1000, last: 0 },
     { fn: loadDiscord, ms: 20 * 1000, last: 0, firstDelay: bootGap(700) },
     { fn: loadSteam, ms: 5 * 60 * 1000, last: 0, firstDelay: bootGap(2000) },
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0, firstDelay: bootGap(3300) },

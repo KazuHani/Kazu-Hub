@@ -342,6 +342,37 @@ body.season-christmas .sakura-branch { display: none; }
   text-transform: uppercase; color: var(--accent);
 }
 
+/* ---- Announcement (set from the control panel) ----
+   One quiet strip above the hero, shown only while the owner has it switched
+   on. Flat tinted fill, no blur and no animation, so it costs nothing at rest.
+   Tone changes the fill; the words carry the meaning. */
+.hub-bulletin {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 14px;
+  margin: 0 0 22px; padding: 12px 18px; border-radius: 18px;
+  background: rgba(46,70,108,.86); border: 1px solid rgba(92,150,220,.55);
+  color: var(--ink); text-align: center; font-weight: 700; font-size: 15px; line-height: 1.45;
+}
+.hub-bulletin[hidden] { display: none; }
+.hub-bulletin--good { background: rgba(20,86,64,.88); border-color: rgba(80,200,150,.6); }
+.hub-bulletin--warn { background: rgba(110,74,12,.9); border-color: rgba(240,180,80,.65); }
+.hub-bulletin-text { min-width: 0; overflow-wrap: anywhere; }
+.hub-bulletin-link {
+  font-size: 13px; font-weight: 800; text-decoration: none; color: #0b1a2b; background: var(--accent);
+  padding: 6px 14px; border-radius: 999px;
+}
+.hub-bulletin-link:hover { filter: brightness(1.1); }
+.hub-bulletin-close {
+  font: inherit; font-size: 13px; font-weight: 800; color: var(--ink); background: none;
+  border: 1px solid rgba(234,244,255,.55); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.hub-bulletin-close:hover { border-color: var(--ink); }
+.hub-bulletin-link[hidden], .hub-bulletin-close[hidden] { display: none; }
+.hub-bulletin-link:focus-visible, .hub-bulletin-close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (pointer: coarse) {
+  .hub-bulletin-link, .hub-bulletin-close { min-height: 44px; display: inline-flex; align-items: center; }
+  .hub-bulletin-link[hidden], .hub-bulletin-close[hidden] { display: none; }
+}
+
 /* ---- Cards ---- */
 .card {
   position: relative; background: var(--card-bg); backdrop-filter: var(--card-blur);
@@ -996,6 +1027,29 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   --mf-pumpkin-face: var(--d-pumpkin-face);
   --mf-pumpkin-stem: var(--d-pumpkin-stem);
   --mf-pumpkin-lit: var(--d-pumpkin-lit);
+  /* Christmas: the snowman by the cottage, the wreath on the door and the
+     lights along the eaves. The bulbs are the same by day and night (they are
+     lit); the rest dims with the field. */
+  --d-snowman: #fbfdff; --n-snowman: #a3b6cf;
+  --d-snowman-shade: #cbdbe8; --n-snowman-shade: #6c7f9b;
+  --d-coal: #1d232c; --n-coal: #0b0f15;
+  --d-carrot: #ec862c; --n-carrot: #7f4a24;
+  --d-scarf: #c8283f; --n-scarf: #6b2232;
+  --d-twig: #6d4a2c; --n-twig: #2a221c;
+  --d-wreath: #2c7a48; --n-wreath: #163a27;
+  --d-bulb-1: #ff5d6c; --n-bulb-1: #ff5d6c;
+  --d-bulb-2: #ffcf5c; --n-bulb-2: #ffcf5c;
+  --d-bulb-3: #fff3d1; --n-bulb-3: #fff3d1;
+  --mf-snowman: var(--d-snowman);
+  --mf-snowman-shade: var(--d-snowman-shade);
+  --mf-coal: var(--d-coal);
+  --mf-carrot: var(--d-carrot);
+  --mf-scarf: var(--d-scarf);
+  --mf-twig: var(--d-twig);
+  --mf-wreath: var(--d-wreath);
+  --mf-bulb-1: var(--d-bulb-1);
+  --mf-bulb-2: var(--d-bulb-2);
+  --mf-bulb-3: var(--d-bulb-3);
   /* Day colours (--d-*) and night colours (--n-*). --mf-* below are what the scene paints with. */
   --d-far: #8fc3a0; --n-far: #0e1d2c;
   --d-far-hi: #b7dfbd; --n-far-hi: #1b3a49;
@@ -1175,11 +1229,28 @@ body.season-christmas .footer.meadow {
   --d-path: #c9b58e; --d-stone: #efe4c6; --d-roof: #f3f8fb; --d-roof-2: #d6e5ef; --d-trim: #ffffff;
   --d-leaf-1: #1d6b46; --d-leaf-2: #24825a; --d-leaf-3: #e9f5f0; --d-bush: #2a7a55;
   --d-fence: #ffffff; --d-wall: #f6ead4;
+  /* ...and by night it stays snow, lit by the moon: blue-grey, not green grass */
+  --n-far: #1b2738; --n-far-hi: #2a3a50; --n-far-tree: #142030;
+  --n-mid: #2b3c53; --n-mid-hi: #3b5069; --n-near: #33475f; --n-near-hi: #46607c;
+  --n-fg: #2a3c52; --n-fg-hi: #3a5069; --n-blade: #50698a; --n-blade-fg: #405a78;
+  --n-roof: #4b5d78; --n-roof-2: #3d4d66; --n-leaf-3: #4a5f78;
   --m-lit: max(0.75, clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1)); /* cosy lights on all day */
+  /* The credit line's ink. On bright snow it is dark; once the field is darker
+     than 65% daylight dark ink would fail AA, so it turns light and the bottom
+     shade comes back under it (a near-step: the switch takes one tint step). */
+  --m-ink: clamp(0, calc((0.65 - var(--m-day)) * 100), 1);
 }
 body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }
 body.season-christmas .meadow-credit { color: #0f3b2a; text-shadow: 0 1px 0 rgba(255,255,255,.65); }
+/* Without colour-mix() the field keeps its day colours all day, so no shade and dark ink. */
 body.season-christmas .meadow::after { display: none; }
+@supports (color: color-mix(in oklab, red 50%, blue)) {
+  body.season-christmas .meadow::after { display: block; opacity: var(--m-ink); background: linear-gradient(to top, rgba(4,26,12,.8), rgba(4,26,12,0)); }
+  body.season-christmas .meadow-credit {
+    color: color-mix(in oklab, #f4f8e6 calc(var(--m-ink) * 100%), #0f3b2a);
+    text-shadow: 0 1px 3px rgba(4,24,12,calc(.75 * var(--m-ink))), 0 1px 0 rgba(255,255,255,calc(.65 - .65 * var(--m-ink)));
+  }
+}
 
 /* October: an autumn field; its existing day/night and sunset mixes still run. */
 html.season-halloween .footer.meadow {
@@ -1200,6 +1271,16 @@ html.season-halloween .footer.meadow {
     --mf-pumpkin-face: color-mix(in oklab, var(--n-pumpkin-face) var(--m-lp), var(--d-pumpkin-face));
     --mf-pumpkin-stem: color-mix(in oklab, var(--d-pumpkin-stem) var(--m-dp), var(--n-pumpkin-stem));
     --mf-pumpkin-lit: color-mix(in oklab, var(--d-pumpkin-lit) var(--m-dp), var(--n-pumpkin-lit));
+    --mf-snowman: color-mix(in oklab, color-mix(in oklab, var(--d-snowman) var(--m-dp), var(--n-snowman)), #ff9a4a var(--m-warm));
+    --mf-snowman-shade: color-mix(in oklab, color-mix(in oklab, var(--d-snowman-shade) var(--m-dp), var(--n-snowman-shade)), #ff9a4a var(--m-warm));
+    --mf-coal: color-mix(in oklab, var(--d-coal) var(--m-dp), var(--n-coal));
+    --mf-carrot: color-mix(in oklab, color-mix(in oklab, var(--d-carrot) var(--m-dp), var(--n-carrot)), #ff9a4a var(--m-warm));
+    --mf-scarf: color-mix(in oklab, color-mix(in oklab, var(--d-scarf) var(--m-dp), var(--n-scarf)), #ff9a4a var(--m-warm));
+    --mf-twig: color-mix(in oklab, var(--d-twig) var(--m-dp), var(--n-twig));
+    --mf-wreath: color-mix(in oklab, color-mix(in oklab, var(--d-wreath) var(--m-dp), var(--n-wreath)), #ff9a4a var(--m-warm));
+    --mf-bulb-1: color-mix(in oklab, var(--d-bulb-1) var(--m-dp), var(--n-bulb-1));
+    --mf-bulb-2: color-mix(in oklab, var(--d-bulb-2) var(--m-dp), var(--n-bulb-2));
+    --mf-bulb-3: color-mix(in oklab, var(--d-bulb-3) var(--m-dp), var(--n-bulb-3));
   }
 }
 .mf-halloween { display: none; pointer-events: none; }
@@ -1214,6 +1295,26 @@ html.season-halloween .mf-halloween { display: block; }
 .mf-hw-halo { fill: url(#mf-hw-halo); opacity: var(--m-lit); }
 html.season-halloween .mf-flowers, html.season-halloween .mf-blossom { display: none; }
 html.season-halloween .meadow-credit { color: #fff1d9; }
+
+/* Christmas: a snowman beside the cottage, a wreath on the door and a string of
+   lights under the eaves. Static like the rest of the field; the bulbs' halos
+   follow the cottage's own light switch (--m-lit, kept on all Christmas Day). */
+.mf-christmas { display: none; pointer-events: none; }
+body.season-christmas .mf-christmas { display: block; }
+.mf-x-snow { fill: var(--mf-snowman); }
+/* the shade doubles as a soft outline, so a white snowman still reads against
+   white snow and the white fence */
+.mf-x-shade { fill: var(--mf-snowman-shade); stroke: var(--mf-snowman-shade); stroke-width: 1.2; }
+.mf-x-coal { fill: var(--mf-coal); }
+.mf-x-carrot { fill: var(--mf-carrot); }
+.mf-x-scarf, .mf-x-berry { fill: var(--mf-scarf); }
+.mf-x-twig { fill: none; stroke: var(--mf-twig); stroke-width: 1.3; stroke-linecap: round; }
+.mf-x-wreath { fill: none; stroke: var(--mf-wreath); stroke-width: 3.4; }
+.mf-x-wire { fill: none; stroke: var(--mf-coal); stroke-width: .9; }
+.mf-x-halo { fill: url(#mf-x-halo); opacity: var(--m-lit); }
+.mf-x-bulb1 { fill: var(--mf-bulb-1); }
+.mf-x-bulb2 { fill: var(--mf-bulb-2); }
+.mf-x-bulb3 { fill: var(--mf-bulb-3); }
 
 /* ============ SEASONAL EFFECTS ============ */
 /* These rules intentionally sit AFTER the base palette block so the
@@ -1429,6 +1530,61 @@ html.season-halloween .halloween-decor { display: block; }
 @keyframes xmasTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 @media (min-width: 769px) { body.season-christmas .xmas-scene { display: block; } }
 @media (prefers-reduced-motion: reduce) { .xmas-lights circle { animation: none; } }
+
+/* ---- Christmas: frozen cards ----
+   Every card and social tile freezes over: snow lying along its top edge,
+   frost ferns growing in from the corners, a frosted haze and an icy rim at
+   the glass edge. All of it is ONE border-image per card, drawn by
+   KazuLib.frostCard (seeded per card, so no two match) and handed over as --xf
+   by script.js ("Christmas frost"). A border-image is the one paint CSS allows
+   outside a box that clips its own content (every card is overflow: hidden),
+   which is how the snow can sit ON the card and lift with it on hover; the
+   picture's middle is never drawn, so the frost stays at the edges and never
+   sits behind the middle of the text. Static paint: no animation, nothing at
+   rest, and it shows on every device, phones and low-power mode included.
+   border-width: 0 keeps every card's layout exactly as it was (the birthday
+   tile's 1px gold line gives way to the icy rim). The selector outranks the
+   cards' own `border: none` / birthday border, which would reset it. */
+html body.season-christmas .xmas-frost { border-style: solid; border-width: 0; border-image: var(--xf); }
+/* The snow stands 13px proud of each card, so rows and section titles move
+   apart a little to keep it off the cards above. */
+body.season-christmas .section-title { margin-bottom: 26px; }
+body.season-christmas .stat-grid,
+body.season-christmas .right-now-grid,
+body.season-christmas .socials-grid,
+body.season-christmas .pc-specs-grid,
+body.season-christmas .stories-grid { row-gap: 30px; }
+
+/* ---- Christmas: string lights along the top of the page ----
+   Static SVG in index.html: steady bulbs with a soft glow (real fairy lights
+   on a dark night), no twinkle loop, so it costs nothing at rest and shows on
+   every device. Hung from the top edge and anchored to the page like the sky
+   scenery, so it scrolls away with the hero. The view box is 1600 wide and
+   sliced around its centre: below 1600px the sides are cropped at full size
+   (phones see the two swags either side of the profile picture), above it the
+   height grows with the width so the swags are never cut off. */
+.xmas-garland {
+  position: absolute; top: 0; left: 0; width: 100%; height: clamp(64px, 4vw, 96px);
+  z-index: 0; pointer-events: none; display: none; overflow: hidden;
+  filter: drop-shadow(0 2px 2px rgba(2,14,8,.35));
+}
+.xmas-garland-wire { fill: none; stroke: #0e1f16; stroke-width: 1.5; }
+body.season-christmas .xmas-garland { display: block; }
+
+/* ---- Christmas: Santa hat on the profile picture ----
+   Same idea as the birthday party hat: static, revealed by the season, and the
+   party hat wins if both are previewed at once. Sized and placed in % of the
+   avatar ring, so it fits the smaller phone avatar without its own rules, and
+   it stands at most ~15% of the ring above it: the tightest layouts (phones
+   and small tablets) leave only ~16% of headroom before the top of the page. */
+.santa-hat {
+  position: absolute; display: none;
+  width: 60%; height: auto; top: -11%; left: 33%;
+  transform: rotate(14deg); transform-origin: 40% 80%;
+  z-index: 3; pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,.35));
+}
+body.season-christmas:not(.season-birthday) .santa-hat { display: block; }
 
 /* ---- Respect reduced motion: keep the halo, stop the spin (confetti is skipped in JS) ---- */
 @media (prefers-reduced-motion: reduce) { body.season-pride .pfp-ring::before { animation: none; } }
@@ -2251,6 +2407,10 @@ html.glass-scrolling .toast {
        aurora drift, equalizer, pulse dots) and all entrance motion stop. */
 body.low-power { --card-blur: none; }
 body.low-power { --card-bg: rgba(40,63,98,.95); }
+/* Christmas keeps its pine cards on phones: the near-solid low-power fill would
+   otherwise paint them slate blue on the green page (Halloween's root-scoped
+   fill already outranks this rule). */
+body.low-power.season-christmas { --card-bg: rgba(16,52,36,.95); }
 body.low-power .card:not(.stat-card--bday),
 body.low-power .stat-card:not(.stat-card--bday),
 body.low-power .social-card,

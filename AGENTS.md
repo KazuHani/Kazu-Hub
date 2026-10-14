@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=81`,
-  `lib.js?v=38`, `script.js?v=82` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=83`,
+  `lib.js?v=39`, `script.js?v=84` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -53,12 +53,20 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   (including the playful equivalents in `ageBreakdown`: full moons, Sun laps,
   years asleep, breaths), calendar export (`.ics`, Google Calendar URL), HTML
   escaping, Steam/MAL data shaping, dev-code matching, scrollbar thumb
-  geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
+  geometry, the Christmas frost pictures (`frostCard`, `frostBorderImage`; see
+  "Christmas" below), and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
   The arc (`skyArcPoint`) is one sine that runs on past the horizon points
   until both ends are off-screen (`SKY_ARC_OVERSHOOT`, x = -8.08% .. 108.08%),
   so the body slides in and out through the page edges and the sun<->moon
   hand-overs happen off-screen. `script.js` keeps an inline fallback copy of
   `skyArcPoint`; the gate tests run it against `lib.js` so they cannot drift.
+- `site-config.js` — the contract for the control panel's settings (`KazuSiteConfig`):
+  validates and normalises everything the page will accept from the online store
+  (links must be https, ids are pattern-checked, text is stripped of emoji and hidden
+  characters, unknown keys are dropped). Pure and DOM-free, loaded after `lib.js`,
+  versioned `?v=1`, precached. It is **byte-identical to `shared/site-config.js` in
+  the control panel project**: edit it there and copy it here, never the other way.
+  See "Control panel" below.
 - `script.js` (~4100 lines) — all DOM behaviour: stat cards and modals,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,
@@ -91,6 +99,12 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   the rules in "Performance rules" below: source pins plus the real code
   sliced out of `script.js` and run against fakes. Shared by `tests.js` and
   `tests.html`; also runs alone (`node evals/perf-guards.js`).
+- `evals/christmas.js` — gate assertions for the Christmas theme (see
+  "Christmas" below): `frostCard`'s geometry and determinism, the festive
+  snowfall rule, the frost wiring sliced out of `script.js` and run against fake
+  observers, the static decorations, and the footer credit's contrast at every
+  hour. Shared by `tests.js` and `tests.html` (which adds live frame checks);
+  also runs alone (`node evals/christmas.js`).
 - `evals/perf.js` — periodic eval (real Chrome over the DevTools protocol,
   plain Node >= 22, no dependencies, no network): idle CPU per process, style
   recalcs and layouts per second, scroll, hover and pop-up frame pacing and
@@ -287,13 +301,66 @@ the effective palette, and the meadow becomes an autumn field with three
 jack-o'-lanterns. Their faces, halos and pools use the cottage's existing
 `--m-lit` switch. All artwork remains static on phones and low-power devices.
 
+## Christmas (25 December)
+
+Christmas is the visitor-local 25 December (`seasonState`), previewed with
+`?season=christmas` or the dev panel. It owns the palette (pine, cranberry,
+gold; `body.season-christmas`) and on top of it the page freezes over:
+
+- **Frozen cards.** Every card and social tile gets snow lying along its top
+  edge, frost ferns growing in from its corners, a frosted haze and an icy rim.
+  It is one CSS border-image per card: `KazuLib.frostCard({ w, h, r, seed })`
+  draws the SVG and `frostBorderImage` turns it into the `--xf` value that
+  `html body.season-christmas .xmas-frost` uses. A border-image is the only paint
+  CSS allows outside a box that clips its own content (every card is
+  `overflow: hidden`, the below-fold ones `content-visibility: auto`), which is
+  how the snow sits ON the card (13px proud, `FROST_RISE`) and lifts with it on
+  hover. It is a 9-slice: corners keep their shape, straight edges stretch, the
+  middle is never drawn (frost stays at the edges, never behind the middle of
+  the text). Seeded by the card's place on the page, so no two cards match and a
+  reload draws the same frost. `script.js` ("Christmas frost") draws a card when
+  it nears the viewport (IntersectionObserver, 600px margin), one card per idle
+  slice (`scheduleIdle`), and redraws only on a real width change (over 8%) or
+  a card grown too short for its corners (ResizeObserver). Cards the control
+  panel rebuilds are picked up by `frostRescan` from `applySiteConfig`. Grid row
+  gaps and section-title margins open up while the season is live so the snow
+  never touches the card above. Static paint: shown on phones and in low-power
+  mode too. `border-width: 0` keeps every card's layout as it was.
+- **Snowfall (desktop only).** `KazuWeatherFx.layersFor(w, { festive: true })`
+  adds a light snow (`FESTIVE_SNOW`, 0.32) whatever the sky is doing, unless it
+  is really raining (rain and snow never share the canvas) or already snowing
+  harder; it invents no cloud. `applySeasons` flips `christmasLive` and re-syncs.
+  Same canvas, same guards and budget as real snow; phones get none.
+- **Decorations.** String lights along the top of the page (`.xmas-garland`,
+  static SVG, steady bulbs, no twinkle loop; the centre hook sits over the
+  profile picture), a Santa hat on the avatar (`.santa-hat`, sized in % of the
+  ring so it fits the phone avatar; the birthday party hat wins a shared
+  preview; it stands at most ~16% of the ring above it, because phones and
+  small tablets leave only that much headroom), and in the footer a snowman, a
+  wreath on the cottage door and lights under the eaves (`.mf-christmas`, its
+  colours are day/night `--mf-*` tokens like the rest of the field).
+- **The footer at night** stays snow (moonlit blue-grey `--n-*` overrides), and
+  the credit line switches ink at 65% daylight (`--m-ink`): dark on bright snow,
+  light over a deeper bottom shade once it is darker. The switch point is where
+  both pass WCAG AA; `evals/christmas.js` sweeps the whole day.
+- **Phones** keep the pine cards in low-power mode
+  (`body.low-power.season-christmas` outranks the slate low-power fill).
+- **Cost** (`node evals/perf.js --date 2026-12-25T12:00:00Z`): frost, lights,
+  hat and footer add nothing measurable at idle on desktop. Desktop idles like
+  any snowy or rainy day (~0.34 cores, the weather canvas; 60 recalcs a second
+  from the tree's twinkle being ticked with it, the same as a rainy Christmas
+  before this). Phone load on Christmas Day: TBT ~140 ms vs ~120 ms without the
+  frost (it was ~280 ms before the frost moved to idle slices).
+- **Known gap** (unchanged): the Christmas palette and decorations are applied
+  by `script.js`, so 25 December shows the blue tint for a moment first.
+
 ## Conventions and gotchas
 
 These are load-bearing; read before editing.
 
 - **Cache busting.** CSS/JS are versioned by query string. After editing
-  `style.css`, `script.js`, or `lib.js`: bump the `?v=` in `index.html` (and
-  in `tests.html` for `lib.js`), keep the matching entries in `sw.js`'s
+  `style.css`, `script.js`, `lib.js` or `site-config.js`: bump the `?v=` in `index.html` (and
+  in `tests.html` for `lib.js`, `site-config.js` and the fetched sources), keep the matching entries in `sw.js`'s
   `PRECACHE` list in sync, and bump `CACHE` in `sw.js` if `sw.js` itself
   changes.
 - **Staged boot & populate animation.** Startup work runs in priority order,
@@ -371,7 +438,8 @@ These are load-bearing; read before editing.
   `tests.js` reads the thresholds out of `style.css` and pins the timing for
   every season, and without `color-mix()` the panes and pools still light up), `--m-warm` folds the sunset
   orange in, the pink blossom on the big tree only shows in blossom season
-  (`html:not(.no-sakura)`), and Christmas repaints it as a snowy field. Static
+  (`html:not(.no-sakura)`), and Christmas repaints it as a snowy field (moonlit
+  snow by night, with a snowman, a door wreath and eave lights). Static
   paint (no animation), shown on every device. It is `content-visibility: auto`
   so it costs nothing at load (~535 SVG nodes at the end of a long page; phone
   first contentful paint is ~28% earlier with it skipped), with a placeholder
@@ -469,8 +537,8 @@ These are load-bearing; read before editing.
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
 - **localStorage keys in use:** `kazu-dev-seasons`, `kazu-discord-cache`,
-  `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`.
-  Don't collide.
+  `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
+  `kazu-site-config`, `kazu-notice-dismissed`. Don't collide.
 
 ## Working agreements (from CLAUDE.md)
 
@@ -498,6 +566,50 @@ bind agent work here:
 Push to `Main` → GitHub Pages serves the repo root as-is. There is no build,
 no bundler, no environment variables, no server-side component. Cache-busting
 bumps (above) are the entire "release process" for CSS/JS changes.
+
+## Control panel (settings changed without a deploy)
+
+The owner edits some content in a local control panel (a separate project, "Backend
+Of Kazu Hub") and it goes live in seconds, with no commit. The panel saves a small
+settings document to a Firebase Realtime Database; the page reads it on every load.
+
+- **The address** is `<meta name="kazu-control" content="...">` in `index.html`. The
+  panel writes it. Empty means the page is exactly what `index.html` says (no fetch,
+  no cache, nothing changes). `#boot-control` in `<head>` starts the download before
+  the stylesheet arrives; `loadSiteControl` in `script.js` takes the result over and
+  polls once a minute with the other pollers. Only `https://` addresses or a path on
+  this origin are ever fetched.
+- **Precedence: a managed section overrides the HTML.** A section the panel manages
+  is present in the settings (socials, stories, pc, playlist, integrations, titles,
+  sections, seasons, effects, footer, notice). For those, the live page shows the
+  settings and ignores what `index.html` says, **so editing the HTML for a managed
+  section will not change the live site.** Sections the panel does not manage are
+  untouched and `index.html` stays their source. Ask the owner before assuming the
+  HTML is what visitors see. The HTML is still the default and the no-JS fallback,
+  so keep it correct.
+- **Structure the hook depends on.** It finds things by these class names, so renaming
+  them silently turns that block of settings into a no-op: `.socials-grid` and
+  `.social-card--<id>` (+ `.social-name`, `.social-handle`), `.stories-grid` and
+  `.story-link` / `.story-card` / `.story-title` / `.story-desc` / `.story-cta`,
+  `.pc-spec-card--graphics|platform|storage|build`, `.music-card` and its
+  `.music-playlist-name|sub`, `.right-now-grid`, `.discord-card|steam-card|mal-card|lb-card`,
+  `.meadow-credit`, the `h2.section-title` just before each grid, and `#hubBulletin`.
+- **Declarations the panel's importer reads.** `DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`,
+  `LB_USER` and `YTM_PLAYLIST_ID` are `let`s set through `siteId(...)` / `siteValue(...)`.
+  The last quoted value on each line is the page's own default and the importer reads
+  it, so keep that shape (`evals/site-control.js` pins it).
+- **Safety rules.** Settings never reach `innerHTML`: text goes in through `textContent`,
+  links only after `KazuSiteConfig` has checked them, colors as validated hex. Any failure
+  (offline, bad data, newer schema, blocked storage) leaves the page as it is. The last
+  good copy is cached in `localStorage` (`kazu-site-config`) so a repeat visit applies it
+  before the first paint, and the inline `#boot-tint` script reads its season overrides
+  from the same cache.
+- **Undo.** Every edit the hook makes is recorded (`ovText`, `ovAttr`, `ovClass`,
+  `ovStyle`, `ovChildren`) and reverted before a newer copy is applied, so handing a
+  section back to the HTML restores it exactly.
+- **Tests.** `evals/site-control.js` (shared by `tests.js` and `tests.html`) runs the
+  contract, the source pins and the real cache and first-paint logic against fakes.
+- **Privacy.** Every visit makes one request to the Firebase host named in the meta tag.
 
 ## Emoji-free content
 

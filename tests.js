@@ -996,6 +996,8 @@ const fxSrc = fs.readFileSync(__dirname + '/weather-fx.js', 'utf8').replace(/\r\
 require('./evals/new-year-fireworks.js').run(L, scriptSrc, cssSrc, ok, eq);
 require('./evals/emoji-free.js').run(L, scriptSrc, [{ name: 'index.html', text: htmlSrc }, { name: 'style.css', text: cssSrc }], ok, eq);
 require('./evals/perf-guards.js').run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
+require('./evals/site-control.js').run(require('./site-config.js'), scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), fs.readFileSync(__dirname + '/sw.js', 'utf8').replace(/\r\n/g, '\n'), ok, eq);
+require('./evals/christmas.js').run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
 
 // ---- evals/perf.js statistics helpers (Node only: the harness itself needs Chrome) ----
 // The browser eval reports through these, so a wrong percentile or a summed-instead-
@@ -1422,9 +1424,9 @@ eq('boot: today-style midsummer date is out of season', !!runBoot(Date.UTC(2026,
       removeItem: function (key) { if (key === 'kazu-dev-seasons') stored = null; }
     };
     var source = scriptSrc.slice(scriptSrc.indexOf('  // ---------- Seasons ----------'), scriptSrc.indexOf('  let bdayCelebrated'));
-    var make = new Function('KazuLib', 'TIMEZONE', 'BIRTH_MONTH', 'BIRTH_DAY', 'location', 'localStorage', source +
+    var make = new Function('KazuLib', 'TIMEZONE', 'BIRTH_MONTH', 'BIRTH_DAY', 'location', 'localStorage', 'siteSeasons', source +
       '\nreturn { state: seasonState, parts: seasonUKParts, parse: seasonDevParse, apply: seasonDevApply, set: function (mode) { if (mode === "auto") delete devSeasons.halloween; else devSeasons.halloween = mode; saveDevSeasons(); }, reset: function () { devSeasons = {}; saveDevSeasons(); } };');
-    return { api: make(withLib ? L : null, 'Europe/London', 10, 9, { search: search || '' }, storage), storage: storage };
+    return { api: make(withLib ? L : null, 'Europe/London', 10, 9, { search: search || '' }, storage, {}), storage: storage };
   }
   var edges = [
     [Date.UTC(2026, 8, 30, 22, 59, 59), false], [Date.UTC(2026, 8, 30, 23), true],
@@ -1504,7 +1506,7 @@ eq('boot: today-style midsummer date is out of season', !!runBoot(Date.UTC(2026,
   var applySource = scriptSrc.slice(scriptSrc.indexOf('  let lastSeasonKey ='), scriptSrc.indexOf('  function fireConfetti()'));
   var FakeDate = function () { return new Date(at); };
   var apply = new Function('Date', 'seasonUKParts', 'seasonState', 'document', 'updateSkyBody', 'requestAnimationFrame',
-    'var devSeasons = {}, sakuraLive = false, atmosphereWanted = null, skyTintHex = "#000000", bdayCelebrated = false; function setAtmosphere() {} function setThemeColor() {} function fireConfetti() {} function syncDevPanel() {} function setBalloons() {}\n' + applySource + '\nreturn applySeasons;')(
+    'var devSeasons = {}, sakuraLive = false, atmosphereWanted = null, skyTintHex = "#000000", bdayCelebrated = false, christmasLive = false; function setAtmosphere() {} function setThemeColor() {} function fireConfetti() {} function syncDevPanel() {} function setBalloons() {} function setFrost() {} function syncWeatherFx() {}\n' + applySource + '\nreturn applySeasons;')(
     FakeDate, h.api.parts, h.api.state, doc, function () { updates++; }, function (fn) { fn(); });
   apply(); apply();
   ok('season cache skips unchanged seconds before October', updates === 1 && !rootClasses.contains('season-halloween'));
@@ -1635,7 +1637,7 @@ ok('sky body sits outside the branch gate (still rendered out of season)', htmlS
 // ---- Live weather layers: wiring (mobile gating, lazy load, hand-off, CSS guard) ----
 ok('weather-fx.js is never a static script tag (mobile never requests it)', htmlSrc.indexOf('weather-fx.js') === -1);
 ok('the service worker does not precache weather-fx.js (phones would download it on install)', swSrc.indexOf('weather-fx') === -1);
-ok('script.js injects weather-fx.js only after the eligibility check', scriptSrc.indexOf("const WEATHER_FX_SRC = 'weather-fx.js?v=3';") !== -1 && scriptSrc.indexOf("document.createElement('script')") !== -1 && scriptSrc.indexOf('KazuLib.weatherFxAllowed({') !== -1 && scriptSrc.indexOf('if (!weatherFxAllowedNow()) {') !== -1);
+ok('script.js injects weather-fx.js only after the eligibility check', scriptSrc.indexOf("const WEATHER_FX_SRC = 'weather-fx.js?v=4';") !== -1 && scriptSrc.indexOf("document.createElement('script')") !== -1 && scriptSrc.indexOf('KazuLib.weatherFxAllowed({') !== -1 && scriptSrc.indexOf('if (!weatherFxAllowedNow()) {') !== -1);
 ok('eligibility reads coarse pointer, no-hover, narrow width, reduced motion, mobile UA, save-data and low power', ['(pointer: coarse)', '(hover: none)', '(max-width: 768px)', '(prefers-reduced-motion: reduce)'].every(function (q) { return scriptSrc.indexOf("'" + q + "'") !== -1; }) && scriptSrc.indexOf('/Android|iPhone|iPad|iPod|Mobi/i') !== -1 && scriptSrc.indexOf('userAgentData.mobile') !== -1 && scriptSrc.indexOf('saveData: PARTICLE_FLAGS.saveData,') !== -1 && scriptSrc.indexOf('lowPower: LOW_POWER,') !== -1);
 ok('a missing lib.js means no weather layers (fails safe)', scriptSrc.indexOf('if (!(KazuLib && KazuLib.weatherFxAllowed) || weatherFxMQ.length < 4) return false;') !== -1);
 ok('the layers stop when a media query flips to mobile', scriptSrc.indexOf("mq.addEventListener('change', syncWeatherFx)") !== -1 && scriptSrc.indexOf('window.KazuWeatherFx.stop();') !== -1);
@@ -1742,7 +1744,7 @@ ok('meadow: the window lights switch on when it is dark enough, in every season 
     return contrast(credit, dfg) >= 4.5 && contrast(credit, nfg) >= 4.5 && contrast(xcredit, xfg) >= 4.5;
   })());
   ok('meadow: static paint only (no animation, one transition: the fade-in)', !/animation\s*:|animation-name|@keyframes/.test(css) && count(css, 'transition:') === 1 && css.indexOf('.footer.meadow.scroll-reveal, .footer.meadow.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }') !== -1);
-  ok('meadow: it is never hidden on phones or low-power devices (only seasonal decorations, flowers and shade are ever display:none)', count(css, 'display: none') === 5 && css.indexOf('@media (pointer') === -1 && !/low-power[^{]*(meadow|footer)/.test(cssFlat) && !/@media[^{]*\{[^}]*\.(meadow|footer)[^{]*\{[^}]*display: none/.test(css));
+  ok('meadow: it is never hidden on phones or low-power devices (only seasonal decorations, flowers and shade are ever display:none)', count(css, 'display: none') === 6 && css.indexOf('@media (pointer') === -1 && !/low-power[^{]*(meadow|footer)/.test(cssFlat) && !/@media[^{]*\{[^}]*\.(meadow|footer)[^{]*\{[^}]*display: none/.test(css));
   ok('meadow: it sits behind .container (z-index 0 vs 1), so the fixed back-to-top button stays on top of it', css.indexOf('position: relative; z-index: 0; margin-top: -34px; overflow: hidden; text-align: center;') !== -1 && cssFlat.indexOf('position: relative; z-index: 1; max-width: 1120px;') !== -1);
   ok('meadow: scales with the page between 860px and 1800px wide, centred, and phones see the middle of it', css.indexOf('width: clamp(860px, 100%, 1800px); height: auto; aspect-ratio: 1440 / 340; overflow: visible;') !== -1 && css.indexOf('display: block; position: relative; left: 50%; translate: -50% 0;') !== -1 && css.indexOf('@media (max-width: 600px) { .meadow-art { translate: calc(-50% - 44px) 0; } }') !== -1);
   ok('meadow: the old footer rules (fixed 80px content-visibility placeholder, plain text style) are gone', cssFlat.indexOf('contain-intrinsic-size: auto 80px') === -1 && cssFlat.indexOf('.footer { text-align: center; margin-top: 54px') === -1);

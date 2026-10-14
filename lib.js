@@ -1313,6 +1313,257 @@
     return c + diff * (1 - Math.pow(1 - e, dt / (1000 / 60)));
   }
 
+  // ---- Christmas frost: snow on each card's top edge, frost in its corners --
+  // One border-image per card (style.css: "Christmas: frozen cards"). Every
+  // card clips its own content (overflow: hidden; the below-fold ones also have
+  // content-visibility: auto), and a border-image is the one thing CSS paints
+  // outside such a box, so it is how the snow can sit ON the card and ride
+  // along with hover lifts and scroll reveals. It is a 9-slice: the corners
+  // (frost, the ends of the snow) keep their exact shape and the straight edges
+  // (the middle of the snow, the edge haze, the icy rim) stretch, so a card
+  // that changes height never distorts, and the page regenerates it when the
+  // width changes for real. The middle slice is never drawn: frost lives at
+  // the edges and corners only, so it never sits behind the middle of the text.
+  // Seeded: every card gets its own snow line and frost, and a reload draws the
+  // same picture. Pure and DOM-free, gate-tested in evals/christmas-frost.js.
+  var FROST_RISE = 13;   // px the snow stands above the card's top edge
+  var FROST_SIDE = 3;    // px the snow may overhang either side
+  function frostRng(seed) { // mulberry32: tiny, fast, good enough for scenery
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function frostNum(v) { return String(Math.round(v * 10) / 10); }
+
+  // How far the corner frost reaches into a w x h card (px). Both corners of a
+  // side must fit inside it, or the browser shrinks the whole border-image.
+  function frostReach(w, h) {
+    var r = Math.round(Math.min(w, h) * 0.4);
+    return r < 30 ? 30 : (r > 92 ? 92 : r);
+  }
+
+  // The surface of a rounded rect's top edge at image x (outer edge, y down).
+  function frostTopY(x, x0, x1, y0, r) {
+    var dx = 0;
+    if (x < x0 + r) dx = x0 + r - x;
+    else if (x > x1 - r) dx = x - (x1 - r);
+    else return y0;
+    if (dx >= r) return y0 + r;
+    return y0 + r - Math.sqrt(r * r - dx * dx);
+  }
+
+  // One frost fern, the way frost grows on a cold pane: a gently curving stem
+  // with fine barbs on both sides, close together and swept forward at about
+  // 60 degrees (ice is hexagonal), longest at the base and shrinking towards
+  // the tip; now and then a barb grows into a small fern of its own. Points go
+  // into lines[depth] as polylines, in the corner's own frame.
+  function frostGrow(rng, x, y, th, len, depth, lines) {
+    var n = Math.max(1, Math.round(len / 4)), seg = len / n;
+    var curl = (rng() - 0.5) * (depth === 0 ? 0.07 : 0.03);
+    var pts = [x, y], dirs = [], i;
+    for (i = 0; i < n; i++) {
+      th += curl + (rng() - 0.5) * (depth === 0 ? 0.14 : 0.06);
+      dirs.push(th);
+      x += Math.cos(th) * seg; y += Math.sin(th) * seg;
+      pts.push(x, y);
+    }
+    lines[depth].push(pts);
+    if (depth >= 2 || len < 5) return;
+    var gap = depth === 0 ? 2.7 : 2.3;
+    var sweep = 0.98 + rng() * 0.2;
+    var maxBarb = depth === 0 ? Math.min(13, len * 0.32) : Math.min(4.2, len * 0.38);
+    for (var t = gap * 1.6; t < len * 0.95; t += gap * (0.8 + rng() * 0.4)) {
+      var k = Math.min(n - 1, Math.floor(t / seg)), f = t / seg - k;
+      var px = pts[k * 2] + (pts[k * 2 + 2] - pts[k * 2]) * f;
+      var py = pts[k * 2 + 1] + (pts[k * 2 + 3] - pts[k * 2 + 1]) * f;
+      var base = maxBarb * (1 - 0.85 * t / len);
+      for (var side = -1; side <= 1; side += 2) {
+        if (rng() < 0.14) continue; // a missing barb here and there
+        var bl = base * (0.7 + rng() * 0.55), a = dirs[k] + side * (sweep + (rng() - 0.5) * 0.18);
+        if (bl < 1.1) continue;
+        if (depth === 0 && bl > 6 && rng() < 0.12) { frostGrow(rng, px, py, a, bl * 1.7, 1, lines); continue; }
+        lines[depth + 1].push([px, py, px + Math.cos(a) * bl, py + Math.sin(a) * bl]);
+      }
+    }
+  }
+
+  // All crystals for one corner, `amt` 0..1 (how frozen), in a frame where the
+  // corner is (0, 0) and the card lies towards +x, +y. Ferns start on the frame
+  // (both edges, and one from the corner itself) and grow inwards.
+  function frostCorner(rng, amt, reach, r, lines) {
+    var stems = Math.round(1 + amt * 6), i;
+    frostGrow(rng, r * 0.32, r * 0.32, Math.PI / 4 + (rng() - 0.5) * 0.5, reach * amt * (0.5 + rng() * 0.3), 0, lines);
+    for (i = 0; i < stems; i++) {
+      var d = r * 0.5 + Math.pow(rng(), 1.25) * Math.max(0, reach * 0.74 - r * 0.5);
+      var e = d < r ? r - Math.sqrt(r * r - (r - d) * (r - d)) : 0; // the inside of the rounded corner
+      var len = reach * amt * (0.32 + rng() * 0.45) * (1 - 0.5 * d / reach);
+      if (len < 5) continue;
+      if (rng() < 0.5) frostGrow(rng, d, e + 0.6, Math.PI / 2 - (rng() - 0.35) * 0.9, len, 0, lines); // from the top edge
+      else frostGrow(rng, e + 0.6, d, (rng() - 0.35) * 0.9, len, 0, lines);                              // from the side edge
+    }
+  }
+
+  // Polylines -> compact path data, mapped into the image by (ox, oy, sx, sy).
+  function frostPath(lines, ox, oy, sx, sy) {
+    var out = '', i, j, p;
+    for (i = 0; i < lines.length; i++) {
+      p = lines[i];
+      out += 'M' + frostNum(ox + sx * p[0]) + ' ' + frostNum(oy + sy * p[1]) + 'l';
+      for (j = 2; j < p.length; j += 2) {
+        out += (j > 2 ? ' ' : '') + frostNum(sx * (p[j] - p[j - 2])) + ' ' + frostNum(sy * (p[j + 1] - p[j - 1]));
+      }
+    }
+    return out;
+  }
+
+  // The snow along the top: a drift sitting on the edge, level-ish with a soft
+  // grain (long gentle swells plus small lumps), rounding off over the corners
+  // in chunky ends, plus the soft shadow it casts onto the card below it.
+  function frostSnow(rng, x0, x1, y0, r) {
+    var xs = x0 + r * (0.24 + rng() * 0.14), xe = x1 - r * (0.24 + rng() * 0.14);
+    var knots = [], x;
+    for (x = xs; ; x += 34 + rng() * 50) { knots.push([Math.min(x, xe), 6.2 + rng() * 5.8]); if (x >= xe) break; }
+    function swell(px) { // cosine-eased between the knots
+      for (var j = 1; j < knots.length; j++) {
+        if (px <= knots[j][0]) {
+          var a = knots[j - 1], b = knots[j], u = b[0] > a[0] ? (px - a[0]) / (b[0] - a[0]) : 0;
+          return a[1] + (b[1] - a[1]) * (1 - Math.cos(u * Math.PI)) / 2;
+        }
+      }
+      return knots[knots.length - 1][1];
+    }
+    var taper = r * 1.2 + 5, pts = [];
+    for (x = xs; x < xe - 4; x += 6 + rng() * 6) {
+      var dEnd = Math.min(x - xs, xe - x);
+      var s = dEnd >= taper ? 1 : 0.42 + 0.58 * Math.sin((dEnd / taper) * Math.PI / 2);
+      var t = (swell(x) + (rng() - 0.5) * 1.5) * s;
+      var top = frostTopY(x, x0, x1, y0, r);
+      if (top - t < 1) t = top - 1;
+      pts.push([x, top - t]);
+    }
+    var tEnd = frostTopY(xe, x0, x1, y0, r);
+    var endT = Math.min(swell(xe) * 0.42, tEnd - 1);
+    pts.push([xe, tEnd - endT]);
+    var b0 = frostTopY(xs, x0, x1, y0, r) + 0.7, b1 = tEnd + 0.7;
+    var c0 = Math.max(2.4, (b0 - pts[0][1]) * 0.62), c1 = Math.max(2.4, (b1 - pts[pts.length - 1][1]) * 0.62);
+    // top contour: Catmull-Rom through the points, as cubic Beziers, with a
+    // rounded cap at each end
+    var d = 'M' + frostNum(xs) + ' ' + frostNum(b0) + 'C' + frostNum(xs - c0) + ' ' + frostNum(b0 - 0.3) + ' ' + frostNum(xs - c0 * 0.8) + ' ' + frostNum(pts[0][1]) + ' ' + frostNum(pts[0][0]) + ' ' + frostNum(pts[0][1]);
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i ? i - 1 : 0], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      d += 'C' + frostNum(p1[0] + (p2[0] - p0[0]) / 6) + ' ' + frostNum(p1[1] + (p2[1] - p0[1]) / 6) + ' ' +
+        frostNum(p2[0] - (p3[0] - p1[0]) / 6) + ' ' + frostNum(p2[1] - (p3[1] - p1[1]) / 6) + ' ' +
+        frostNum(p2[0]) + ' ' + frostNum(p2[1]);
+    }
+    var last = pts[pts.length - 1];
+    d += 'C' + frostNum(xe + c1 * 0.8) + ' ' + frostNum(last[1]) + ' ' + frostNum(xe + c1) + ' ' + frostNum(b1 - 0.3) + ' ' + frostNum(xe) + ' ' + frostNum(b1);
+    // bottom contour: back along the card's own edge (arc, straight, arc)
+    var under = [], bx;
+    for (bx = xe; bx > Math.max(x1 - r, xs); bx -= 1.5) under.push([bx, frostTopY(bx, x0, x1, y0, r) + 0.7]);
+    if (x1 - r > x0 + r) { under.push([x1 - r, y0 + 0.7]); under.push([x0 + r, y0 + 0.7]); }
+    for (bx = Math.min(x0 + r, xe); bx > xs; bx -= 1.5) under.push([bx, frostTopY(bx, x0, x1, y0, r) + 0.7]);
+    for (i = 0; i < under.length; i++) d += 'L' + frostNum(under[i][0]) + ' ' + frostNum(under[i][1]);
+    d += 'Z';
+    // where the snow meets the card: the same edge, a little lower
+    var shade = '', first = true;
+    for (bx = xs + 1; bx <= xe - 1; bx += (bx < x0 + r || bx > x1 - r) ? 1.5 : Math.max(1.5, (x1 - r) - bx)) {
+      shade += (first ? 'M' : 'L') + frostNum(bx) + ' ' + frostNum(frostTopY(bx, x0, x1, y0, r) + 1.8);
+      first = false;
+    }
+    return { d: d, shade: shade };
+  }
+
+  // The whole picture for one card. o = { w, h, r, seed } (px, border box).
+  // Returns { svg, slice, width, outset, reach } or null for unusable input:
+  // slice / width / outset are the four-side border-image values (t r b l).
+  function frostCard(o) {
+    o = o || {};
+    var w = Math.round(+o.w), h = Math.round(+o.h), r = +o.r;
+    if (!(w >= 60 && w <= 4000 && h >= 60 && h <= 4000)) return null;
+    if (!(r >= 0)) r = 22;
+    r = Math.min(r, 40, w / 2, h / 2);
+    var seed = Math.floor(Math.abs(+o.seed || 0)) % 4294967296;
+    var rng = frostRng(seed * 2654435761 + 977);
+    var reach = frostReach(w, h);
+    var IW = w + 2 * FROST_SIDE, IH = h + FROST_RISE;
+    var x0 = FROST_SIDE, y0 = FROST_RISE, x1 = x0 + w, y1 = y0 + h;
+
+    // How frozen each corner is: the bottom ones most (the cold sinks), one
+    // of them most of all; the top ones lightly, under the snow.
+    var amt = { tl: 0.3 + rng() * 0.3, tr: 0.3 + rng() * 0.3, bl: 0.45 + rng() * 0.3, br: 0.45 + rng() * 0.3 };
+    amt[rng() < 0.5 ? 'bl' : 'br'] = 0.85 + rng() * 0.15;
+    var corners = [['tl', x0, y0, 1, 1], ['tr', x1, y0, -1, 1], ['br', x1, y1, -1, -1], ['bl', x0, y1, 1, -1]];
+    var crystal = ['', '', ''], defs = '', haze = '', fade = '', i;
+    var full = 'x="0" y="0" width="' + IW + '" height="' + IH + '"';
+    for (i = 0; i < corners.length; i++) {
+      var c = corners[i], lines = [[], [], []], at = 'gradientUnits="userSpaceOnUse" cx="' + c[1] + '" cy="' + c[2] + '"';
+      frostCorner(rng, amt[c[0]], reach, r, lines);
+      for (var k = 0; k < 3; k++) crystal[k] += frostPath(lines[k], c[1], c[2], c[3], c[4]);
+      defs += '<radialGradient id="h' + c[0] + '" ' + at + ' r="' + frostNum(reach * (0.55 + 0.4 * amt[c[0]])) + '">' +
+        '<stop offset="0" stop-color="#eef7ff" stop-opacity="' + frostNum(0.22 * amt[c[0]] + 0.04) + '"/><stop offset="1" stop-color="#eef7ff" stop-opacity="0"/></radialGradient>' +
+        // the crystals fade out before the edge of their corner square: past it
+        // is the undrawn middle, and a crystal must never stop at a hard line
+        '<radialGradient id="f' + c[0] + '" ' + at + ' r="' + reach + '">' +
+        '<stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>';
+      haze += '<rect ' + full + ' fill="url(#h' + c[0] + ')"/>';
+      fade += '<rect ' + full + ' fill="url(#f' + c[0] + ')"/>';
+    }
+    var snow = frostSnow(rng, x0, x1, y0, r);
+    var rect = 'x="' + x0 + '" y="' + y0 + '" width="' + w + '" height="' + h + '" rx="' + frostNum(r) + '"';
+    // frosted haze along every edge, thickest at the glass rim (one gradient
+    // per side, from the inside (clear) to the edge; uniform along the edge,
+    // so it stretches). The vector is x1 y1 x2 y2 in the band's own box.
+    var band = 11, edges = [
+      ['L', '1 0 0 0', x0, y0, band, h], ['R', '0 0 1 0', x1 - band, y0, band, h],
+      ['T', '0 1 0 0', x0, y0, w, band], ['B', '0 0 0 1', x0, y1 - band, w, band]
+    ];
+    edges.forEach(function (e) {
+      var v = e[1].split(' ');
+      defs += '<linearGradient id="e' + e[0] + '" x1="' + v[0] + '" y1="' + v[1] + '" x2="' + v[2] + '" y2="' + v[3] + '">' +
+        '<stop offset="0" stop-color="#e6f3ff" stop-opacity="0"/><stop offset="1" stop-color="#e6f3ff" stop-opacity=".15"/></linearGradient>';
+      haze += '<rect x="' + e[2] + '" y="' + e[3] + '" width="' + e[4] + '" height="' + e[5] + '" fill="url(#e' + e[0] + ')"/>';
+    });
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + IW + '" height="' + IH + '" viewBox="0 0 ' + IW + ' ' + IH + '">' +
+      '<defs>' +
+      '<clipPath id="c"><rect ' + rect + '/></clipPath>' +
+      '<mask id="m" maskUnits="userSpaceOnUse" ' + full + '>' + fade + '</mask>' +
+      '<linearGradient id="s" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="' + (y0 + 2) + '"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f5f9fc"/><stop offset=".86" stop-color="#dde9f3"/><stop offset="1" stop-color="#bdd0e1"/></linearGradient>' +
+      defs + '</defs>' +
+      '<g clip-path="url(#c)">' + haze +
+      '<g mask="url(#m)" fill="none" stroke="#f2f9ff" stroke-linecap="round">' +
+      '<path d="' + crystal[0] + '" stroke-width=".85" stroke-opacity=".6"/>' +
+      '<path d="' + crystal[1] + '" stroke-width=".55" stroke-opacity=".42"/>' +
+      '<path d="' + crystal[2] + '" stroke-width=".45" stroke-opacity=".32"/>' +
+      '</g>' +
+      '<path d="' + snow.shade + '" fill="none" stroke="#04140c" stroke-opacity=".1" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="' + snow.shade + '" fill="none" stroke="#04140c" stroke-opacity=".14" stroke-width="2.2" stroke-linecap="round"/>' +
+      '</g>' +
+      // the icy rim, just inside the glass edge
+      '<rect x="' + frostNum(x0 + 0.6) + '" y="' + frostNum(y0 + 0.6) + '" width="' + frostNum(w - 1.2) + '" height="' + frostNum(h - 1.2) + '" rx="' + frostNum(Math.max(0, r - 0.6)) + '" fill="none" stroke="#e4f3ff" stroke-opacity=".4" stroke-width="1.2"/>' +
+      '<path d="' + snow.d + '" fill="url(#s)" stroke="#5f86a6" stroke-opacity=".28" stroke-width=".7"/>' +
+      '</svg>';
+    return {
+      svg: svg,
+      reach: reach,
+      slice: [FROST_RISE + reach, FROST_SIDE + reach, reach, FROST_SIDE + reach],
+      width: [FROST_RISE + reach, FROST_SIDE + reach, reach, FROST_SIDE + reach],
+      outset: [FROST_RISE, FROST_SIDE, 0, FROST_SIDE]
+    };
+  }
+
+  // A frostCard result as one CSS border-image value (the image as a data URI
+  // with only the characters a url() needs escaped, so it stays small).
+  function frostBorderImage(f) {
+    if (!f || typeof f.svg !== 'string') return '';
+    var uri = 'data:image/svg+xml,' + f.svg.replace(/"/g, "'").replace(/%/g, '%25').replace(/#/g, '%23').replace(/</g, '%3C').replace(/>/g, '%3E');
+    return 'url("' + uri + '") ' + f.slice.join(' ') + ' / ' + f.width.join('px ') + 'px / ' + f.outset.join('px ') + 'px stretch';
+  }
+
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -1383,5 +1634,10 @@
     scrollThumbScrollY: scrollThumbScrollY,
     wheelDeltaPx: wheelDeltaPx,
     smoothScrollStep: smoothScrollStep,
+    FROST_RISE: FROST_RISE,
+    FROST_SIDE: FROST_SIDE,
+    frostReach: frostReach,
+    frostCard: frostCard,
+    frostBorderImage: frostBorderImage,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

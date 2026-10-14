@@ -21,11 +21,14 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=38"></script>
-  <script src="weather-fx.js?v=3"></script>
+  <script src="lib.js?v=39"></script>
+  <script src="site-config.js?v=1"></script>
+  <script src="weather-fx.js?v=4"></script>
   <script src="evals/new-year-fireworks.js?v=3"></script>
   <script src="evals/emoji-free.js?v=1"></script>
   <script src="evals/perf-guards.js?v=4"></script>
+  <script src="evals/site-control.js?v=1"></script>
+  <script src="evals/christmas.js?v=1"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1031,6 +1034,40 @@
             document.body.appendChild(f);
           });
         }
+        // Christmas fixture: the frost is drawn as cards near the viewport (an
+        // IntersectionObserver), so this frame is moved on screen (invisible, and
+        // never in the way of clicks) and every scroll reveal is settled first.
+        function christmasFrame(width) {
+          return frame('weather=none&time=12:00&season=christmas', width).then(function (f) {
+            f.style.cssText = 'position:fixed;left:0;top:0;height:640px;border:0;opacity:0;pointer-events:none;width:' + width + 'px';
+            Array.prototype.forEach.call(f.contentDocument.querySelectorAll('.scroll-reveal'), function (el) { el.style.transition = 'none'; el.classList.add('is-visible'); });
+            // observers report on the next rendered frame: wait for the first card's
+            // frost (a backgrounded tab renders no frames; front it, see README note)
+            return new Promise(function (resolve) {
+              var t0 = Date.now();
+              (function poll() {
+                if (f.contentDocument.querySelector('.stat-card.xmas-frost') || Date.now() - t0 > 6000) resolve(f);
+                else setTimeout(poll, 100);
+              })();
+            });
+          });
+        }
+        // '' when the snow on every card (13px tall) has at least 8px of air
+        // under whatever sits directly above it; otherwise the first offenders.
+        function snowClearance(d) {
+          var els = Array.prototype.slice.call(d.querySelectorAll('.stat-card, .discord-card, .steam-card, .mal-card, .lb-card, .social-card, .pc-spec-card, .music-card, .story-card, .section-title'));
+          var boxes = els.map(function (e) { return { e: e, r: e.getBoundingClientRect() }; }), bad = [];
+          function name(e) { return e.className.split(' ').filter(function (c) { return c !== 'card' && c !== 'scroll-reveal'; })[0]; }
+          boxes.forEach(function (a) {
+            if (a.e.classList.contains('section-title')) return;
+            boxes.forEach(function (b) {
+              if (a === b || b.r.bottom > a.r.top + 1 || Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left) <= 0) return;
+              var gap = a.r.top - b.r.bottom;
+              if (gap < 21 - 0.5 && bad.length < 3) bad.push(name(a.e) + ' under ' + name(b.e) + ': ' + gap.toFixed(1) + 'px');
+            });
+          });
+          return bad.join('; ');
+        }
         // Live layout eval: use the actual fonts and rendered boxes in each
         // desktop/phone seasonal fixture, including the cards below the fold.
         function pcLayoutCheck(f, width) {
@@ -1137,6 +1174,33 @@
           frames.push(f);
           var d = f.contentDocument, w = f.contentWindow;
           ok('Halloween live: Christmas takes precedence in combined previews', d.body.classList.contains('season-christmas') && d.body.classList.contains('season-halloween') && !d.documentElement.classList.contains('season-halloween') && w.getComputedStyle(d.querySelector('.mf-halloween')).display === 'none' && d.querySelector('meta[name="theme-color"]').content === '#071f16');
+          return christmasFrame(1200);
+        }).then(function (f) {
+          frames.push(f);
+          var d = f.contentDocument, w = f.contentWindow;
+          var g = d.querySelector('.xmas-garland'), gr = g.getBoundingClientRect();
+          ok('Christmas live: the string lights hang across the full width of the top of the page, out of the way of clicks', w.getComputedStyle(g).display === 'block' && Math.abs(gr.top) < 1 && Math.abs(gr.width - w.innerWidth) < 1 && gr.height >= 64 && w.getComputedStyle(g).pointerEvents === 'none');
+          var hat = d.querySelector('.santa-hat'), hr = hat.getBoundingClientRect(), tr = d.querySelector('.title').getBoundingClientRect();
+          ok('Christmas live: the Santa hat shows on the avatar, above the name, and never catches clicks', w.getComputedStyle(hat).display === 'block' && hr.bottom < tr.top && hr.top >= 0 && w.getComputedStyle(hat).pointerEvents === 'none');
+          var card = d.querySelector('.stat-card'), cs = w.getComputedStyle(card);
+          var out = cs.borderImageOutset.split(' '); // serialised shortest-form: '13px 3px 0px' when left = right
+          out = [out[0], out[1] || out[0], out[2] || out[0], out[3] || out[1] || out[0]].join(' ');
+          ok('Christmas live: an on-screen card is frozen over (its own border-image, snow standing 13px proud, layout untouched)', card.classList.contains('xmas-frost') && cs.borderImageSource.indexOf('url("data:image/svg+xml') === 0 && out === '13px 3px 0px 3px' && cs.borderTopWidth === '0px' && cs.borderLeftWidth === '0px', out + ' / ' + cs.borderTopWidth + ' / ' + card.className);
+          ok('Christmas live: neighbouring cards get different frost', w.getComputedStyle(d.querySelectorAll('.stat-card')[1]).borderImageSource !== cs.borderImageSource);
+          ok('Christmas live: the snow on every card clears whatever sits above it', snowClearance(d) === '', snowClearance(d));
+          ok('Christmas live: no sideways scroll on desktop', d.documentElement.scrollWidth <= d.documentElement.clientWidth);
+          ok('Christmas live: the cottage gets its snowman, wreath and eave lights', w.getComputedStyle(d.querySelector('.mf-christmas')).display === 'block');
+          return christmasFrame(390);
+        }).then(function (f) {
+          frames.push(f);
+          var d = f.contentDocument, w = f.contentWindow;
+          var hr = d.querySelector('.santa-hat').getBoundingClientRect();
+          ok('Christmas live (phone): the hat stays on screen and the lights still hang', hr.top >= 0 && hr.left >= 0 && hr.right <= w.innerWidth && w.getComputedStyle(d.querySelector('.xmas-garland')).display === 'block', hr.top + ' ' + hr.left + ' ' + hr.right);
+          ok('Christmas live (phone): the snow clears the row above and there is no sideways scroll', snowClearance(d) === '' && d.documentElement.scrollWidth <= d.documentElement.clientWidth, snowClearance(d));
+          var man = d.querySelector('.mf-christmas .mf-x-snow').getBoundingClientRect();
+          ok('Christmas live (phone): the snowman is inside the phone crop of the meadow', man.left >= 0 && man.right <= w.innerWidth, man.left + '..' + man.right);
+          d.body.classList.add('low-power');
+          ok('Christmas live (phone): low-power keeps the pine cards and the static frost', w.getComputedStyle(d.body).getPropertyValue('--card-bg').trim() === 'rgba(16,52,36,.95)' && w.getComputedStyle(d.querySelector('.stat-card')).borderImageSource.indexOf('url(') === 0);
           done();
         }).catch(function (e) {
           done();
@@ -1147,16 +1211,18 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=81', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=82', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=83', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=84', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('weather-fx.js?v=3', { cache: 'no-store' }).then(function (r) { return r.text(); })
+        fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         // CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
         var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2].replace(/\r\n/g, '\n'), swSrc = src[3], fxSrc = src[4].replace(/\r\n/g, '\n');
         KazuNewYearChecks.run(L, scriptSrc, cssSrc, ok, eq);
         KazuEmojiChecks.run(L, scriptSrc, [{ name: 'index.html', text: htmlSrc }, { name: 'style.css', text: cssSrc }], ok, eq);
         KazuPerfGuards.run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
+        KazuSiteControlChecks.run(KazuSiteConfig, scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), swSrc.replace(/\r\n/g, '\n'), ok, eq);
+        KazuChristmasChecks.run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
         ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
         ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
@@ -1376,9 +1442,9 @@
               removeItem: function (key) { if (key === 'kazu-dev-seasons') stored = null; }
             };
             var source = scriptSrc.slice(scriptSrc.indexOf('  // ---------- Seasons ----------'), scriptSrc.indexOf('  let bdayCelebrated'));
-            var make = new Function('KazuLib', 'TIMEZONE', 'BIRTH_MONTH', 'BIRTH_DAY', 'location', 'localStorage', source +
+            var make = new Function('KazuLib', 'TIMEZONE', 'BIRTH_MONTH', 'BIRTH_DAY', 'location', 'localStorage', 'siteSeasons', source +
               '\nreturn { state: seasonState, parts: seasonUKParts, parse: seasonDevParse, apply: seasonDevApply, set: function (mode) { if (mode === "auto") delete devSeasons.halloween; else devSeasons.halloween = mode; saveDevSeasons(); }, reset: function () { devSeasons = {}; saveDevSeasons(); } };');
-            return { api: make(withLib ? L : null, 'Europe/London', 10, 9, { search: search || '' }, storage), storage: storage };
+            return { api: make(withLib ? L : null, 'Europe/London', 10, 9, { search: search || '' }, storage, {}), storage: storage };
           }
           var edges = [
             [Date.UTC(2026, 8, 30, 22, 59, 59), false], [Date.UTC(2026, 8, 30, 23), true],
@@ -1458,7 +1524,7 @@
           var applySource = scriptSrc.slice(scriptSrc.indexOf('  let lastSeasonKey ='), scriptSrc.indexOf('  function fireConfetti()'));
           var FakeDate = function () { return new Date(at); };
           var apply = new Function('Date', 'seasonUKParts', 'seasonState', 'document', 'updateSkyBody', 'requestAnimationFrame',
-            'var devSeasons = {}, sakuraLive = false, atmosphereWanted = null, skyTintHex = "#000000", bdayCelebrated = false; function setAtmosphere() {} function setThemeColor() {} function fireConfetti() {} function syncDevPanel() {} function setBalloons() {}\n' + applySource + '\nreturn applySeasons;')(
+            'var devSeasons = {}, sakuraLive = false, atmosphereWanted = null, skyTintHex = "#000000", bdayCelebrated = false, christmasLive = false; function setAtmosphere() {} function setThemeColor() {} function fireConfetti() {} function syncDevPanel() {} function setBalloons() {} function setFrost() {} function syncWeatherFx() {}\n' + applySource + '\nreturn applySeasons;')(
             FakeDate, h.api.parts, h.api.state, doc, function () { updates++; }, function (fn) { fn(); });
           apply(); apply();
           ok('season cache skips unchanged seconds before October', updates === 1 && !rootClasses.contains('season-halloween'));
@@ -1597,7 +1663,7 @@
         // ---- Live weather layers: wiring (mobile gating, lazy load, hand-off, CSS guard) ----
         ok('weather-fx.js is never a static script tag (mobile never requests it)', htmlSrc.indexOf('weather-fx.js') === -1);
         ok('the service worker does not precache weather-fx.js (phones would download it on install)', swSrc.indexOf('weather-fx') === -1);
-        ok('script.js injects weather-fx.js only after the eligibility check', scriptSrc.indexOf("const WEATHER_FX_SRC = 'weather-fx.js?v=3';") !== -1 && scriptSrc.indexOf("document.createElement('script')") !== -1 && scriptSrc.indexOf('KazuLib.weatherFxAllowed({') !== -1 && scriptSrc.indexOf('if (!weatherFxAllowedNow()) {') !== -1);
+        ok('script.js injects weather-fx.js only after the eligibility check', scriptSrc.indexOf("const WEATHER_FX_SRC = 'weather-fx.js?v=4';") !== -1 && scriptSrc.indexOf("document.createElement('script')") !== -1 && scriptSrc.indexOf('KazuLib.weatherFxAllowed({') !== -1 && scriptSrc.indexOf('if (!weatherFxAllowedNow()) {') !== -1);
         ok('eligibility reads coarse pointer, no-hover, narrow width, reduced motion, mobile UA, save-data and low power', ['(pointer: coarse)', '(hover: none)', '(max-width: 768px)', '(prefers-reduced-motion: reduce)'].every(function (q) { return scriptSrc.indexOf("'" + q + "'") !== -1; }) && scriptSrc.indexOf('/Android|iPhone|iPad|iPod|Mobi/i') !== -1 && scriptSrc.indexOf('userAgentData.mobile') !== -1 && scriptSrc.indexOf('saveData: PARTICLE_FLAGS.saveData,') !== -1 && scriptSrc.indexOf('lowPower: LOW_POWER,') !== -1);
         ok('a missing lib.js means no weather layers (fails safe)', scriptSrc.indexOf('if (!(KazuLib && KazuLib.weatherFxAllowed) || weatherFxMQ.length < 4) return false;') !== -1);
         ok('the layers stop when a media query flips to mobile', scriptSrc.indexOf("mq.addEventListener('change', syncWeatherFx)") !== -1 && scriptSrc.indexOf('window.KazuWeatherFx.stop();') !== -1);
@@ -1704,7 +1770,7 @@
             return contrast(credit, dfg) >= 4.5 && contrast(credit, nfg) >= 4.5 && contrast(xcredit, xfg) >= 4.5;
           })());
           ok('meadow: static paint only (no animation, one transition: the fade-in)', !/animation\s*:|animation-name|@keyframes/.test(css) && count(css, 'transition:') === 1 && css.indexOf('.footer.meadow.scroll-reveal, .footer.meadow.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }') !== -1);
-          ok('meadow: it is never hidden on phones or low-power devices (only seasonal decorations, flowers and shade are ever display:none)', count(css, 'display: none') === 5 && css.indexOf('@media (pointer') === -1 && !/low-power[^{]*(meadow|footer)/.test(cssFlat) && !/@media[^{]*\{[^}]*\.(meadow|footer)[^{]*\{[^}]*display: none/.test(css));
+          ok('meadow: it is never hidden on phones or low-power devices (only seasonal decorations, flowers and shade are ever display:none)', count(css, 'display: none') === 6 && css.indexOf('@media (pointer') === -1 && !/low-power[^{]*(meadow|footer)/.test(cssFlat) && !/@media[^{]*\{[^}]*\.(meadow|footer)[^{]*\{[^}]*display: none/.test(css));
           ok('meadow: it sits behind .container (z-index 0 vs 1), so the fixed back-to-top button stays on top of it', css.indexOf('position: relative; z-index: 0; margin-top: -34px; overflow: hidden; text-align: center;') !== -1 && cssFlat.indexOf('position: relative; z-index: 1; max-width: 1120px;') !== -1);
           ok('meadow: scales with the page between 860px and 1800px wide, centred, and phones see the middle of it', css.indexOf('width: clamp(860px, 100%, 1800px); height: auto; aspect-ratio: 1440 / 340; overflow: visible;') !== -1 && css.indexOf('display: block; position: relative; left: 50%; translate: -50% 0;') !== -1 && css.indexOf('@media (max-width: 600px) { .meadow-art { translate: calc(-50% - 44px) 0; } }') !== -1);
           ok('meadow: the old footer rules (fixed 80px content-visibility placeholder, plain text style) are gone', cssFlat.indexOf('contain-intrinsic-size: auto 80px') === -1 && cssFlat.indexOf('.footer { text-align: center; margin-top: 54px') === -1);
