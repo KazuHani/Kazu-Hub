@@ -326,6 +326,16 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   gaps and section-title margins open up while the season is live so the snow
   never touches the card above. Static paint: shown on phones and in low-power
   mode too. `border-width: 0` keeps every card's layout as it was.
+- **Frozen pop-ups.** A stat tile's pop-up keeps the snow on top: `openModal`
+  calls `frostModal(modalPanel, seed)` once the panel is laid out and before
+  the fly-in, so the panel grows out of the (hidden) card already wearing its
+  snow. Drawn at once, not in an idle slice (one picture per click, needed on
+  the first frame), seeded per pop-up (101 + its index in `MODALS`), and
+  size-watched while open; `closeModal` calls `frostModal(null)` and the snow
+  rides the panel back onto the card. On phones (`max-width: 560px`) the
+  overlay starts 23px down and the panel's `dvh` cap shrinks to match, because
+  a real phone's `vh` is taller than its `dvh` and a tall pop-up otherwise
+  sits 10px from the top with its snow cut off.
 - **Snowfall (desktop only).** `KazuWeatherFx.layersFor(w, { festive: true })`
   adds a light snow (`FESTIVE_SNOW`, 0.32) whatever the sky is doing, unless it
   is really raining (rain and snow never share the canvas) or already snowing

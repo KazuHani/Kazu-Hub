@@ -1544,6 +1544,13 @@ body.season-christmas .right-now-grid,
 body.season-christmas .socials-grid,
 body.season-christmas .pc-specs-grid,
 body.season-christmas .stories-grid { row-gap: 30px; }
+/* The open pop-up wears the snow too (script.js frostModal). Desktop always
+   leaves at least 20px above it (13px of snow); a phone lets a tall pop-up run to 10px from the top,
+   which would cut the snow off, so it starts 23px down instead. */
+@media (max-width: 560px) {
+  body.season-christmas .modal-overlay { padding-top: 23px; }
+  body.season-christmas .modal-panel { max-height: min(90vh, calc(100dvh - 33px)); }
+}
 
 /* ---- Christmas: string lights along the top of the page ----
    Static SVG in index.html: steady bulbs with a soft glow (real fairy lights

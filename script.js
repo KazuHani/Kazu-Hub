@@ -2590,6 +2590,7 @@
     modalEl.hidden = false;                 // unhide first so afterRender() has real layout
     document.body.classList.add('modal-open');
     if (def.afterRender) def.afterRender();
+    frostModal(modalPanel, 101 + Object.keys(MODALS).indexOf(key)); // Christmas: the snow stays on top
     void modalEl.offsetWidth;               // reflow so the backdrop transition runs
     modalEl.classList.add('is-open');
     if (modalHiddenCard) { modalHiddenCard.style.visibility = ''; modalHiddenCard = null; }
@@ -2668,6 +2669,7 @@
     if (modalUpdater) { clearInterval(modalUpdater); modalUpdater = null; }
     const card = modalTrigger;
     modalTrigger = null; modalKey = null;
+    frostModal(null);                        // stop size-watching; the snow rides the panel back onto the card
     if (modalAnim) { modalAnim.cancel(); modalAnim = null; }
     clearTimeout(modalRevealTimer);
     const flew = flyModal(card, false, () => {            // hide + unmount once it has landed back
@@ -2772,6 +2774,23 @@
       else frostQueueCard(el);
     });
   }
+  // The open pop-up freezes over too, so the snow stays on top when a stat
+  // tile opens into its panel. openModal hands the panel over once it is laid
+  // out and before the fly-in, so the panel grows out of the card already
+  // wearing its snow (the card itself is hidden while the panel is out). Drawn
+  // straight away, not in an idle slice: it is one picture per click and it
+  // must be there on the panel's first frame. Seeded per pop-up, so each one
+  // always wears the same snow. While it is open the size watcher redraws it
+  // on a real width change (the window resized); closing hands over null.
+  let frostPanel = null;
+  function frostModal(panel, seed) {
+    if (frostPanel && frostRO) frostRO.unobserve(frostPanel.el);
+    frostPanel = panel && { el: panel, seed };
+    if (!frostOn || !panel) return;
+    frostSeeds.set(panel, seed);
+    frostDraw(panel);
+    if (frostRO) frostRO.observe(panel);
+  }
   function setFrost(on) {
     if (on === frostOn || !(KazuLib && KazuLib.frostCard && KazuLib.frostBorderImage)) return;
     frostOn = on;
@@ -2794,6 +2813,7 @@
       }), { rootMargin: '600px 0px' });
     }
     frostRescan();
+    if (frostPanel) frostModal(frostPanel.el, frostPanel.seed); // Christmas began with a pop-up open
   }
 
   // ---------- Seasonal effects ----------

@@ -28,7 +28,7 @@
   <script src="evals/emoji-free.js?v=1"></script>
   <script src="evals/perf-guards.js?v=5"></script>
   <script src="evals/site-control.js?v=1"></script>
-  <script src="evals/christmas.js?v=3"></script>
+  <script src="evals/christmas.js?v=4"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1052,6 +1052,18 @@
             });
           });
         }
+        // Opens a stat tile's pop-up and reads its frost straight away (it must be
+        // there on the panel's first frame, before the fly-in). tall pads the
+        // body past the screen. offsetTop ignores the fly-in transform.
+        function openSnowyModal(d, w, key, tall) {
+          d.querySelector('.stat-card[data-modal="' + key + '"]').click();
+          var p = d.querySelector('.modal-panel');
+          if (tall) { var pad = d.createElement('div'); pad.style.height = '2000px'; d.querySelector('.modal-body').appendChild(pad); }
+          var cs = w.getComputedStyle(p), out = cs.borderImageOutset.split(' ')[0];
+          var ok = p.classList.contains('xmas-frost') && cs.borderImageSource.indexOf('url("data:image/svg+xml') === 0 && out === '13px' && cs.borderTopWidth === '0px';
+          return { ok: ok, src: cs.borderImageSource, why: p.className + ' / outset ' + cs.borderImageOutset + ' / border ' + cs.borderTopWidth };
+        }
+        function closeSnowyModal(d) { d.querySelector('.modal-close').click(); }
         // '' when the snow on every card (13px tall) has at least 8px of air
         // under whatever sits directly above it; otherwise the first offenders.
         function snowClearance(d) {
@@ -1189,6 +1201,10 @@
           ok('Christmas live: the snow on every card clears whatever sits above it', snowClearance(d) === '', snowClearance(d));
           ok('Christmas live: no sideways scroll on desktop', d.documentElement.scrollWidth <= d.documentElement.clientWidth);
           ok('Christmas live: the cottage gets its snowman, wreath and eave lights', w.getComputedStyle(d.querySelector('.mf-christmas')).display === 'block');
+          var modalSnow = openSnowyModal(d, w, 'age'), modalSnow2 = (closeSnowyModal(d), openSnowyModal(d, w, 'bday'));
+          ok('Christmas live: an opened pop-up keeps the snow on top (its own border-image, 13px proud, drawn on its first frame)', modalSnow.ok, modalSnow.why);
+          ok('Christmas live: each pop-up wears its own snow', modalSnow2.ok && modalSnow2.src !== modalSnow.src);
+          closeSnowyModal(d);
           return christmasFrame(390);
         }).then(function (f) {
           frames.push(f);
@@ -1197,6 +1213,14 @@
           ok('Christmas live (phone): the snow clears the row above and there is no sideways scroll', snowClearance(d) === '' && d.documentElement.scrollWidth <= d.documentElement.clientWidth, snowClearance(d));
           var man = d.querySelector('.mf-christmas .mf-x-snow').getBoundingClientRect();
           ok('Christmas live (phone): the snowman is inside the phone crop of the meadow', man.left >= 0 && man.right <= w.innerWidth, man.left + '..' + man.right);
+          // worst case: a pop-up taller than the screen. On a real phone vh is
+          // taller than dvh (the address bar), so the dvh cap binds and the panel
+          // sits right at the overlay's top padding; an iframe can't show that,
+          // so the padding itself must leave the snow 8px of air.
+          var phoneSnow = openSnowyModal(d, w, 'age', true), panel = d.querySelector('.modal-panel'), ov = d.querySelector('.modal-overlay');
+          var padTop = parseFloat(w.getComputedStyle(ov).paddingTop), padBot = parseFloat(w.getComputedStyle(ov).paddingBottom);
+          ok('Christmas live (phone): a pop-up taller than the screen still has room above it for its snow, and still fits', phoneSnow.ok && padTop >= 13 + 8 && panel.offsetTop >= padTop && panel.offsetTop + panel.offsetHeight <= ov.clientHeight - padBot + 1, phoneSnow.why + ' / pad ' + padTop + ' / top ' + panel.offsetTop + ' h ' + panel.offsetHeight + ' of ' + ov.clientHeight);
+          closeSnowyModal(d);
           d.body.classList.add('low-power');
           ok('Christmas live (phone): low-power keeps the pine cards and the static frost', w.getComputedStyle(d.body).getPropertyValue('--card-bg').trim() === 'rgba(16,52,36,.95)' && w.getComputedStyle(d.querySelector('.stat-card')).borderImageSource.indexOf('url(') === 0);
           done();
@@ -1209,8 +1233,8 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=84', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=85', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=85', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=86', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {

@@ -19,6 +19,9 @@
        nothing is drawn until a card nears the viewport, a card is redrawn only
        when its width really changes or it gets too short, nothing runs once the
        season ends, rebuilt cards are picked up, and a missing lib.js is harmless.
+     - an opened pop-up keeps the snow on top: openModal freezes the panel
+       before its fly-in (drawn at once, seeded per pop-up), closing stops the
+       size watch, and phones leave room above a tall pop-up for the snow.
      - the weather rule: Christmas Day snows lightly unless it is raining.
      - the static decorations stay static, decorative and out of the way.
    Deterministic, local, no browser, no network. Zero failures is the threshold.
@@ -177,9 +180,12 @@
     ok('wiring: the frost section exists and sits before the season code that calls it', !!sec && source.indexOf('let frostOn = false;') < source.indexOf('function applySeasons()') && source.indexOf('let frostOn = false;') < source.indexOf('\n  applySiteConfig();\n'));
     ok('wiring: applySeasons freezes the cards and re-syncs the snowfall when Christmas flips', source.indexOf('setFrost(!!s.christmas);') !== -1 && source.indexOf('if (christmasLive !== !!s.christmas) { christmasLive = !!s.christmas; syncWeatherFx(); }') !== -1);
     ok('wiring: the weather layers learn it is Christmas, and Christmas snows before the weather arrives', source.indexOf('{ festive: christmasLive }') !== -1 && source.indexOf('if (!weatherCurrent && !WEATHER_FX_RAW && !christmasLive) return;') !== -1);
+    var openSrc = between(source, '  function openModal(key, trigger) {', '\n  }\n'), closeSrc = between(source, '  function closeModal() {', '\n  }\n');
+    ok('wiring: an opened pop-up is frozen once laid out and before its fly-in, seeded per pop-up', !!openSrc && openSrc.indexOf('frostModal(modalPanel, 101 + Object.keys(MODALS).indexOf(key));') > openSrc.indexOf('if (def.afterRender) def.afterRender();') && openSrc.indexOf('frostModal(') < openSrc.indexOf('flyModal('));
+    ok('wiring: closing a pop-up stops its size watch and leaves the snow on for the flight home', !!closeSrc && closeSrc.indexOf('frostModal(null);') !== -1 && !/xmas-frost|--xf/.test(closeSrc));
     ok('wiring: rebuilt control-panel cards are picked up', /function applySiteConfig\(\) \{[\s\S]*?frostRescan\(\);[\s\S]*?\n  \}/.test(source));
     ok('wiring: observers and idle slices only (no timers, no animation frames, no scroll handlers), and every draw goes through the idle queue', !!sec && !/setTimeout|setInterval|requestAnimationFrame|addEventListener/.test(sec) && sec.indexOf('new IntersectionObserver(') !== -1 && sec.indexOf('new ResizeObserver(') !== -1 &&
-      (sec.match(/frostDraw\(/g) || []).length === 2 && /function frostPump\(\) \{[^}]*frostDraw\(el\);/.test(sec) && (sec.match(/scheduleIdle\(frostPump, \d+\)/g) || []).length === 2);
+      (sec.match(/frostDraw\(/g) || []).length === 3 && /function frostPump\(\) \{[^}]*frostDraw\(el\);/.test(sec) && (sec.match(/scheduleIdle\(frostPump, \d+\)/g) || []).length === 2);
 
     // ---- script.js: the wiring, run for real against fakes ----
     (function () {
@@ -198,12 +204,13 @@
         IO.prototype.disconnect = function () { this.on = []; };
         function RO(cb) { this.cb = cb; this.on = []; ros.push(this); }
         RO.prototype.observe = function (el) { if (this.on.indexOf(el) === -1) this.on.push(el); };
+        RO.prototype.unobserve = function (el) { this.on = this.on.filter(function (e) { return e !== el; }); };
         RO.prototype.disconnect = function () { this.on = []; };
         var win = { IntersectionObserver: IO, ResizeObserver: RO };
         var doc = { querySelectorAll: function () { return cards.slice(); } };
         var idle = [];
         var api = new Function('KazuLib', 'document', 'window', 'getComputedStyle', 'IntersectionObserver', 'ResizeObserver', 'scheduleIdle',
-          sec + '\nreturn { setFrost: setFrost, frostRescan: frostRescan };')(
+          sec + '\nreturn { setFrost: setFrost, frostRescan: frostRescan, frostModal: frostModal };')(
           withLib ? L : null, doc, win, function () { return { borderTopLeftRadius: '24px' }; }, IO, RO, function (fn) { idle.push(fn); });
         api.ios = ios; api.ros = ros; api.idle = idle;
         api.step = function () { var fn = idle.shift(); if (fn) fn(); };
@@ -259,6 +266,26 @@
       ok('wiring (live): cards still queued when Christmas ends are dropped, not drawn', late.every(function (c) { return c.draws === 0; }) && hq.idle.length === 0);
       hq.setFrost(true); hq.ios[0].cb(late.map(function (el) { return { target: el, isIntersecting: true }; })); hq.flush();
       ok('wiring (live): and Christmas coming back draws them again', late.every(function (c) { return c.draws === 1; }));
+      // the pop-up: drawn the moment it opens (no idle slice), size-watched while open
+      var panel = card(560, 420), hm = harness(true, []);
+      hm.frostModal(panel, 101);
+      ok('wiring (live): outside Christmas an opened pop-up gets no snow', panel.draws === 0 && !panel.cls['xmas-frost']);
+      hm.setFrost(true);
+      ok('wiring (live): Christmas beginning with a pop-up open freezes it at once', panel.draws === 1 && panel.cls['xmas-frost'] && hm.idle.length === 0);
+      hm.frostModal(null);
+      var drawsBefore = panel.draws;
+      hm.frostModal(panel, 101);
+      ok('wiring (live): opening a pop-up draws its snow at once, before any idle slice, and size-watches it', panel.draws === drawsBefore + 1 && hm.idle.length === 0 && /^url\("data:image\/svg\+xml,/.test(panel.props['--xf']) && hm.ros[0].on.indexOf(panel) !== -1);
+      var ageSnow = panel.props['--xf'];
+      hm.frostModal(null); hm.frostModal(panel, 102);
+      var bdaySnow = panel.props['--xf'];
+      hm.frostModal(null); hm.frostModal(panel, 101);
+      ok('wiring (live): each pop-up wears its own snow, the same every time', bdaySnow !== ageSnow && panel.props['--xf'] === ageSnow);
+      panel.offsetWidth = 400; hm.resize(panel);
+      ok('wiring (live): a pop-up the window made narrower is redrawn at its new width', decodeURIComponent(panel.props['--xf']).indexOf("width='406'") !== -1);
+      var afterResize = panel.draws;
+      hm.frostModal(null);
+      ok('wiring (live): a closed pop-up is no longer size-watched', hm.ros[0].on.indexOf(panel) === -1 && panel.draws === afterResize);
     })();
 
     // ---- style.css ----
@@ -268,6 +295,9 @@
     var xmasRules = (css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^}]*(xmas-garland|xmas-frost|mf-christmas|mf-x-)[^{]*\{[^}]*\}/g) || []).join('\n');
     ok('css: every new Christmas decoration is static (no animation, no transition)', xmasRules.length > 0 && !/animation|transition/.test(xmasRules));
     ok('css: the string lights are hidden until Christmas and never catch clicks', /\.xmas-garland \{[^}]*pointer-events: none; display: none;/.test(css) && css.indexOf('body.season-christmas .xmas-garland { display: block; }') !== -1);
+    var mpad = /@media \(max-width: 560px\) \{\s*body\.season-christmas \.modal-overlay \{ padding-top: (\d+)px; \}\s*body\.season-christmas \.modal-panel \{ max-height: min\(90vh, calc\(100dvh - (\d+)px\)\); \}\s*\}/.exec(css);
+    var phonePad = (/\.modal-overlay \{ padding: (\d+)px; \}/.exec(css) || [])[1];
+    ok('css: on phones a tall pop-up starts low enough for its snow (8px clear at least) and still fits the screen', !!mpad && !!phonePad && +mpad[1] >= RISE + 8 && +mpad[2] === +mpad[1] + +phonePad, mpad ? mpad[1] + ' / ' + mpad[2] + ' / ' + phonePad : 'rule not found');
     ok('css: phones (always low-power) keep the pine Christmas cards', css.indexOf('body.low-power.season-christmas { --card-bg: rgba(16,52,36,.95); }') !== -1 && css.indexOf('body.low-power.season-christmas') > css.indexOf('body.low-power { --card-bg: rgba(40,63,98,.95); }'));
 
     // ---- the footer at night: still snow, and the credit line legible at every hour ----
