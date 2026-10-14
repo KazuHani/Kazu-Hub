@@ -26,9 +26,9 @@
   <script src="weather-fx.js?v=4"></script>
   <script src="evals/new-year-fireworks.js?v=3"></script>
   <script src="evals/emoji-free.js?v=1"></script>
-  <script src="evals/perf-guards.js?v=4"></script>
+  <script src="evals/perf-guards.js?v=5"></script>
   <script src="evals/site-control.js?v=1"></script>
-  <script src="evals/christmas.js?v=1"></script>
+  <script src="evals/christmas.js?v=2"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1180,8 +1180,7 @@
           var d = f.contentDocument, w = f.contentWindow;
           var g = d.querySelector('.xmas-garland'), gr = g.getBoundingClientRect();
           ok('Christmas live: the string lights hang across the full width of the top of the page, out of the way of clicks', w.getComputedStyle(g).display === 'block' && Math.abs(gr.top) < 1 && Math.abs(gr.width - w.innerWidth) < 1 && gr.height >= 64 && w.getComputedStyle(g).pointerEvents === 'none');
-          var hat = d.querySelector('.santa-hat'), hr = hat.getBoundingClientRect(), tr = d.querySelector('.title').getBoundingClientRect();
-          ok('Christmas live: the Santa hat shows on the avatar, above the name, and never catches clicks', w.getComputedStyle(hat).display === 'block' && hr.bottom < tr.top && hr.top >= 0 && w.getComputedStyle(hat).pointerEvents === 'none');
+          ok('Christmas live: no tree and no hat on the page', !d.querySelector('.xmas-scene, .santa-hat'));
           var card = d.querySelector('.stat-card'), cs = w.getComputedStyle(card);
           var out = cs.borderImageOutset.split(' '); // serialised shortest-form: '13px 3px 0px' when left = right
           out = [out[0], out[1] || out[0], out[2] || out[0], out[3] || out[1] || out[0]].join(' ');
@@ -1194,8 +1193,7 @@
         }).then(function (f) {
           frames.push(f);
           var d = f.contentDocument, w = f.contentWindow;
-          var hr = d.querySelector('.santa-hat').getBoundingClientRect();
-          ok('Christmas live (phone): the hat stays on screen and the lights still hang', hr.top >= 0 && hr.left >= 0 && hr.right <= w.innerWidth && w.getComputedStyle(d.querySelector('.xmas-garland')).display === 'block', hr.top + ' ' + hr.left + ' ' + hr.right);
+          ok('Christmas live (phone): the lights still hang across the top', w.getComputedStyle(d.querySelector('.xmas-garland')).display === 'block');
           ok('Christmas live (phone): the snow clears the row above and there is no sideways scroll', snowClearance(d) === '' && d.documentElement.scrollWidth <= d.documentElement.clientWidth, snowClearance(d));
           var man = d.querySelector('.mf-christmas .mf-x-snow').getBoundingClientRect();
           ok('Christmas live (phone): the snowman is inside the phone crop of the meadow', man.left >= 0 && man.right <= w.innerWidth, man.left + '..' + man.right);
@@ -1211,8 +1209,8 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=83', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=84', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=84', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=85', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
@@ -1823,7 +1821,7 @@
         ok('scroll anchor watches the top-level content blocks', scriptSrc.indexOf('function scrollAnchor()') !== -1 && scriptSrc.indexOf("document.querySelector('.container')") !== -1);
         ok('scroll anchor compensates only growth above the fold', scriptSrc.indexOf('preBottom <= 0') !== -1);
         ok('scroll anchor rides the smooth-scroll loop when it exists', scriptSrc.indexOf('window.kazuScrollAdjust') !== -1);
-        ok('fx watcher covers the scenery layers + hero', scriptSrc.indexOf("fxWatch(document.querySelector('.sakura-scene'))") !== -1 && scriptSrc.indexOf("fxWatch(document.querySelector('.xmas-scene'))") !== -1 && scriptSrc.indexOf("fxWatch(document.querySelector('.hero'))") !== -1 && scriptSrc.indexOf('fxWatch(atmosphereEl)') !== -1);
+        ok('fx watcher covers the scenery layers + hero', scriptSrc.indexOf("fxWatch(document.querySelector('.sakura-scene'))") !== -1 &&scriptSrc.indexOf("fxWatch(document.querySelector('.hero'))") !== -1 && scriptSrc.indexOf('fxWatch(atmosphereEl)') !== -1);
         ok('petals + drops are watched individually', scriptSrc.indexOf("querySelectorAll('.petal').forEach(fxWatch)") !== -1 && scriptSrc.indexOf("querySelectorAll('.drop').forEach(fxWatch)") !== -1);
         ok('scroll-reveal section present in the stylesheet', cssFlat.indexOf('============ SCROLL REVEAL ============') !== -1);
         ok('wheel hijacked non-passively', scriptSrc.indexOf("addEventListener('wheel'") !== -1 && scriptSrc.indexOf('{ passive: false }') !== -1);
@@ -1902,8 +1900,7 @@
         ok('no floaty bob on the profile picture', cssFlat.indexOf('floaty') === -1);
         ok('no idle sway on the sakura branches', cssFlat.indexOf('sakuraSway') === -1);
         ok('sakura scenery layer sits still without ambient fade', cssFlat.indexOf('.sakura-scene { animation:') === -1 && cssFlat.indexOf('.atmosphere { animation: ambientFade') === -1);
-        ok('tree lights twinkle with a reduced-motion kill switch', cssFlat.indexOf('@keyframes xmasTwinkle') !== -1 && cssFlat.indexOf('.xmas-lights circle { animation: none; }') !== -1);
-        ok('tree SVG upgraded: gradients, light string, presents', htmlSrc.indexOf('id="xmasG1"') !== -1 && htmlSrc.indexOf('class="xmas-lights"') !== -1 && htmlSrc.indexOf('id="xmasStar"') !== -1);
+        ok('no Christmas tree and no Santa hat (removed by the owner): no markup, styles, twinkle loop or watcher left behind', !/xmas-scene|xmas-tree|xmas-lights|xmasTwinkle|santa-hat/.test(htmlSrc + cssFlat + scriptSrc));
         ok('browser-chrome colour matches the new palette', scriptSrc.indexOf("'#071f16'") !== -1 && scriptSrc.indexOf("'#07251a'") === -1);
 
         // ---- Birthday theme (party palette, aligned hat, balloons) ----

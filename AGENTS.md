@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=83`,
-  `lib.js?v=39`, `script.js?v=84` (version query strings; see cache-busting
+- `index.html` — the whole page. Loads `style.css?v=84`,
+  `lib.js?v=39`, `script.js?v=85` (version query strings; see cache-busting
   below). Inline JSON-LD schema and the `#boot-tint` first-paint script
   (see "First paint" below) in the `<head>`.
 - `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -192,7 +192,7 @@ the pre-optimisation code, which is the point).
   transition, even compositor-only, even a 5px progress bar, makes the
   compositor and GPU process produce a frame on every vsync (144 a second on a
   fast display): about 0.19 CPU cores each, measured on a bare test page. The
-  seasonal loops (petals, rain drops, aurora, Christmas lights, the Pride halo)
+  seasonal loops (petals, rain drops, aurora, the Pride halo)
   are allowed because they ARE the feature and run only in season; the
   allow-list is pinned in `perf-guards.js`, so a new infinite loop must be
   added there on purpose. The Pride halo's spin used to sit on the base rule and
@@ -333,23 +333,22 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   Same canvas, same guards and budget as real snow; phones get none.
 - **Decorations.** String lights along the top of the page (`.xmas-garland`,
   static SVG, steady bulbs, no twinkle loop; the centre hook sits over the
-  profile picture), a Santa hat on the avatar (`.santa-hat`, sized in % of the
-  ring so it fits the phone avatar; the birthday party hat wins a shared
-  preview; it stands at most ~16% of the ring above it, because phones and
-  small tablets leave only that much headroom), and in the footer a snowman, a
-  wreath on the cottage door and lights under the eaves (`.mf-christmas`, its
-  colours are day/night `--mf-*` tokens like the rest of the field).
+  profile picture), and in the footer a snowman, a wreath on the cottage door
+  and lights under the eaves (`.mf-christmas`, its colours are day/night
+  `--mf-*` tokens like the rest of the field). There is deliberately no
+  Christmas tree and no Santa hat on the avatar: the owner removed both
+  (2026-10-14), and a gate test keeps them out.
 - **The footer at night** stays snow (moonlit blue-grey `--n-*` overrides), and
   the credit line switches ink at 65% daylight (`--m-ink`): dark on bright snow,
   light over a deeper bottom shade once it is darker. The switch point is where
   both pass WCAG AA; `evals/christmas.js` sweeps the whole day.
 - **Phones** keep the pine cards in low-power mode
   (`body.low-power.season-christmas` outranks the slate low-power fill).
-- **Cost** (`node evals/perf.js --date 2026-12-25T12:00:00Z`): frost, lights,
-  hat and footer add nothing measurable at idle on desktop. Desktop idles like
-  any snowy or rainy day (~0.34 cores, the weather canvas; 60 recalcs a second
-  from the tree's twinkle being ticked with it, the same as a rainy Christmas
-  before this). Phone load on Christmas Day: TBT ~140 ms vs ~120 ms without the
+- **Cost** (`node evals/perf.js --date 2026-12-25T12:00:00Z`): frost, lights
+  and footer add nothing measurable at idle on desktop. Desktop idles like any
+  snowy day (~0.21 cores, the weather canvas; 5 recalcs a second, inside the
+  idle budget; no running CSS animations, since the tree and its twinkle loop
+  are gone). Phone load on Christmas Day: TBT ~140 ms vs ~120 ms without the
   frost (it was ~280 ms before the frost moved to idle slices).
 - **Known gap** (unchanged): the Christmas palette and decorations are applied
   by `script.js`, so 25 December shows the blue tint for a moment first.

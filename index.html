@@ -207,7 +207,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,560&text=Kazu%20Hani%C2%A0&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,560&text=Kazu%20Hani%C2%A0&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=83">
+<link rel="stylesheet" href="style.css?v=84">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -393,75 +393,9 @@
     <span class="petal" style="left:8%;top:64%;--y0:0vh;--dx:10vw;font-size:14px;--po:.55;filter:blur(2.3px);--fall-y:115vh;animation-duration:21s,3.5s,5.3s;animation-delay:6s,-3.2s,-1.5s;"></span>
   </div>
 
-  <!-- christmas tree: revealed only on body.season-christmas, desktop/tablet only -->
-  <div class="xmas-scene" aria-hidden="true">
-    <svg class="xmas-tree" viewBox="0 0 200 260" focusable="false">
-      <defs>
-        <linearGradient id="xmasG1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#1a9b52"/><stop offset="1" stop-color="#0d5c2e"/>
-        </linearGradient>
-        <linearGradient id="xmasG2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#148545"/><stop offset="1" stop-color="#0a4e27"/>
-        </linearGradient>
-        <linearGradient id="xmasG3" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#0f7a3d"/><stop offset="1" stop-color="#083f1f"/>
-        </linearGradient>
-        <linearGradient id="xmasStar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#f5b301"/>
-        </linearGradient>
-      </defs>
-      <!-- warm ground glow + soft shadow -->
-      <ellipse cx="100" cy="248" rx="72" ry="10" fill="rgba(255,190,80,.14)"/>
-      <ellipse cx="100" cy="248" rx="46" ry="6" fill="rgba(0,0,0,.28)"/>
-      <!-- trunk (behind the bottom branch layer) -->
-      <rect x="88" y="218" width="24" height="30" rx="3" fill="#5a3a22"/>
-      <!-- glowing star -->
-      <path d="M100 4 l6.5 17 18 1.6 -13.6 12 3.8 17.6 -14.7 -9.2 -14.7 9.2 3.8 -17.6 -13.6 -12 18 -1.6 Z"
-            fill="url(#xmasStar)" style="filter:drop-shadow(0 0 7px rgba(255,213,74,.95))"/>
-      <!-- branch layers -->
-      <path d="M100 24 L152 112 L48 112 Z" fill="url(#xmasG1)"/>
-      <path d="M100 68 L162 166 L38 166 Z" fill="url(#xmasG2)"/>
-      <path d="M100 118 L174 222 L26 222 Z" fill="url(#xmasG3)"/>
-      <!-- snow blobs on the branch tips -->
-      <ellipse cx="49" cy="111" rx="9" ry="5" fill="#eaf6ff" opacity=".8"/>
-      <ellipse cx="151" cy="111" rx="9" ry="5" fill="#eaf6ff" opacity=".8"/>
-      <ellipse cx="39" cy="165" rx="10" ry="5.5" fill="#eaf6ff" opacity=".8"/>
-      <ellipse cx="161" cy="165" rx="10" ry="5.5" fill="#eaf6ff" opacity=".8"/>
-      <ellipse cx="27" cy="221" rx="11" ry="6" fill="#eaf6ff" opacity=".8"/>
-      <ellipse cx="173" cy="221" rx="11" ry="6" fill="#eaf6ff" opacity=".8"/>
-      <!-- ornaments: cranberry, gold, warm white -->
-      <circle cx="94" cy="70" r="5" fill="#e23b4e"/>
-      <circle cx="110" cy="100" r="5" fill="#ffd166"/>
-      <circle cx="86" cy="122" r="5" fill="#fff3d6"/>
-      <circle cx="120" cy="132" r="5" fill="#e23b4e"/>
-      <circle cx="70" cy="158" r="5" fill="#ffd166"/>
-      <circle cx="102" cy="176" r="5" fill="#e23b4e"/>
-      <circle cx="136" cy="178" r="5" fill="#fff3d6"/>
-      <circle cx="86" cy="206" r="5" fill="#ffd166"/>
-      <circle cx="118" cy="210" r="5" fill="#e23b4e"/>
-      <!-- twinkling light string (CSS animates opacity) -->
-      <g class="xmas-lights" fill="#ffe08a" style="filter:drop-shadow(0 0 4px rgba(255,224,138,.9))">
-        <circle cx="84" cy="86" r="3.2"/><circle cx="100" cy="94" r="3.2"/><circle cx="116" cy="86" r="3.2"/>
-        <circle cx="72" cy="140" r="3.2"/><circle cx="92" cy="148" r="3.2"/><circle cx="112" cy="140" r="3.2"/><circle cx="130" cy="148" r="3.2"/>
-        <circle cx="60" cy="196" r="3.2"/><circle cx="82" cy="204" r="3.2"/><circle cx="104" cy="196" r="3.2"/><circle cx="126" cy="204" r="3.2"/><circle cx="144" cy="196" r="3.2"/>
-      </g>
-      <!-- presents at the base -->
-      <g>
-        <rect x="34" y="228" width="26" height="20" rx="3" fill="#c22f47"/>
-        <rect x="45" y="228" width="4" height="20" fill="#ffd166"/>
-        <rect x="34" y="236" width="26" height="4" fill="#ffd166"/>
-      </g>
-      <g>
-        <rect x="142" y="230" width="22" height="18" rx="3" fill="#0f7a3d"/>
-        <rect x="151" y="230" width="4" height="18" fill="#e23b4e"/>
-        <rect x="142" y="237" width="22" height="4" fill="#e23b4e"/>
-      </g>
-    </svg>
-  </div>
-
   <!-- Christmas string lights draped along the top of the page: revealed only on
        body.season-christmas, every device. Steady bulbs on purpose (no twinkle, no
-       animation), the same cranberry / gold / warm white as the tree. The centre
+       animation), in the palette's cranberry / gold / warm white. The centre
        hook sits over the profile picture; narrow screens see the middle swags. -->
   <svg class="xmas-garland" viewBox="0 0 1600 64" preserveAspectRatio="xMidYMin slice" aria-hidden="true" focusable="false">
     <defs>
@@ -538,29 +472,6 @@
             <circle cx="33" cy="98" r="3" fill="#fff3b0"/>
             <circle cx="50" cy="8" r="11" fill="#ffd34d"/>
             <circle cx="46" cy="5" r="3.5" fill="#fff1b8"/>
-          </svg>
-          <!-- Santa hat: revealed only on body.season-christmas (the party hat wins on a shared preview) -->
-          <svg class="santa-hat" viewBox="0 0 124 100" aria-hidden="true" focusable="false">
-            <defs>
-              <linearGradient id="santaRed" x1="0" y1="0" x2="1" y2=".6">
-                <stop offset="0" stop-color="#e53346"/><stop offset=".6" stop-color="#c41d34"/><stop offset="1" stop-color="#8f1127"/>
-              </linearGradient>
-            </defs>
-            <!-- the cap, flopping over to the right -->
-            <path d="M18 78C21 52 33 27 55 15C71 6 91 7 104 20C110 26 114 33 113 41L106 40C101 32 92 29 84 35C88 47 95 62 101 75Z" fill="url(#santaRed)"/>
-            <path d="M84 35C92 29 101 32 106 40" fill="none" stroke="#7d0e22" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>
-            <path d="M29 68C32 49 41 33 54 23" fill="none" stroke="#ff7b84" stroke-width="3.2" stroke-linecap="round" opacity=".35"/>
-            <!-- fur brim: a soft band that sits around the crown -->
-            <path d="M9 82Q60 63 113 77" fill="none" stroke="#dcd5c8" stroke-width="17" stroke-linecap="round"/>
-            <path d="M9 80Q60 61 113 75" fill="none" stroke="#fbf8f1" stroke-width="14" stroke-linecap="round"/>
-            <g fill="#fbf8f1">
-              <circle cx="17" cy="73.5" r="4.6"/><circle cx="30" cy="69" r="4.2"/><circle cx="44" cy="65.6" r="4.6"/><circle cx="59" cy="64" r="4.3"/>
-              <circle cx="74" cy="64.6" r="4.6"/><circle cx="88" cy="66.8" r="4.2"/><circle cx="101" cy="70" r="4.5"/>
-            </g>
-            <!-- pompom -->
-            <circle cx="112.5" cy="45.5" r="10" fill="#dcd5c8"/>
-            <circle cx="111" cy="44" r="9" fill="#fbf8f1"/>
-            <circle cx="108" cy="41" r="3" fill="#ffffff"/>
           </svg>
         </div>
         <h1 class="title">Kazu&nbsp;Hani</h1>
@@ -1053,7 +964,7 @@
 
 <script src="lib.js?v=39"></script>
 <script src="site-config.js?v=1"></script>
-<script src="script.js?v=84"></script>
+<script src="script.js?v=85"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

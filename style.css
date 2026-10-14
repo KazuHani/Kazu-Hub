@@ -261,7 +261,7 @@ body.low-power .weather-fx { display: none !important; }
    preview show petals out of season. */
 html.no-sakura .sakura-branch { display: none; }
 html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }
-/* Christmas owns a pine/cranberry/gold palette + its own tree scene; the
+/* Christmas owns a pine/cranberry/gold palette; the
    pink branches would clash, so they sit the season out. The scene itself stays:
    the sun and moon live in it and must still cross the Christmas sky. */
 body.season-christmas .sakura-branch { display: none; }
@@ -1521,16 +1521,6 @@ html.season-halloween .halloween-decor { display: block; }
   .halloween-pumpkins { width: 76px; right: -22px; bottom: -10px; }
 }
 
-/* ---- Christmas tree: background, desktop/tablet only (>=769px) ---- */
-.xmas-scene { position: fixed; left: 0; bottom: 0; z-index: 0; pointer-events: none; display: none; }
-.xmas-tree { display: block; width: clamp(170px,19vw,280px); height: auto; filter: drop-shadow(0 10px 22px rgba(0,0,0,.5)); }
-.xmas-lights circle { animation: xmasTwinkle 2.6s ease-in-out infinite; }
-.xmas-lights circle:nth-child(2n) { animation-delay: .9s; }
-.xmas-lights circle:nth-child(3n) { animation-delay: 1.7s; }
-@keyframes xmasTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
-@media (min-width: 769px) { body.season-christmas .xmas-scene { display: block; } }
-@media (prefers-reduced-motion: reduce) { .xmas-lights circle { animation: none; } }
-
 /* ---- Christmas: frozen cards ----
    Every card and social tile freezes over: snow lying along its top edge,
    frost ferns growing in from the corners, a frosted haze and an icy rim at
@@ -1570,21 +1560,6 @@ body.season-christmas .stories-grid { row-gap: 30px; }
 }
 .xmas-garland-wire { fill: none; stroke: #0e1f16; stroke-width: 1.5; }
 body.season-christmas .xmas-garland { display: block; }
-
-/* ---- Christmas: Santa hat on the profile picture ----
-   Same idea as the birthday party hat: static, revealed by the season, and the
-   party hat wins if both are previewed at once. Sized and placed in % of the
-   avatar ring, so it fits the smaller phone avatar without its own rules, and
-   it stands at most ~15% of the ring above it: the tightest layouts (phones
-   and small tablets) leave only ~16% of headroom before the top of the page. */
-.santa-hat {
-  position: absolute; display: none;
-  width: 60%; height: auto; top: -11%; left: 33%;
-  transform: rotate(14deg); transform-origin: 40% 80%;
-  z-index: 3; pointer-events: none;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,.35));
-}
-body.season-christmas:not(.season-birthday) .santa-hat { display: block; }
 
 /* ---- Respect reduced motion: keep the halo, stop the spin (confetti is skipped in JS) ---- */
 @media (prefers-reduced-motion: reduce) { body.season-pride .pfp-ring::before { animation: none; } }
@@ -1763,8 +1738,8 @@ body.low-power .populated-in { animation: none; }
 /* ============ OFF-SCREEN POWER SAVE ============ */
 /* script.js tags fx layers with .fx-paused when they scroll out of the
    viewport (IntersectionObserver, 100px early-wake margin). Freezing
-   animation-play-state stops the compositor work for petals, rain, aurora,
-   branch sway and the tree lights while nothing
+   animation-play-state stops the compositor work for petals, rain, aurora
+   and branch sway while nothing
    can see them; every animation resumes mid-cycle when scrolled back. */
 .fx-paused, .fx-paused * { animation-play-state: paused !important; }
 
@@ -2403,7 +2378,7 @@ html.glass-scrolling .toast {
      - the liquid-glass SVG refraction, particle layers, canvas bursts and the
        wheel-lerp smooth scroll are skipped in script.js (nothing to override
        here — they never get built);
-     - the remaining ambient loops (branch sway, halo spin, twinkle,
+     - the remaining ambient loops (branch sway, halo spin,
        aurora drift, equalizer, pulse dots) and all entrance motion stop. */
 body.low-power { --card-blur: none; }
 body.low-power { --card-bg: rgba(40,63,98,.95); }
@@ -2434,7 +2409,6 @@ body.low-power .sakura-scene,
 body.low-power .sakura-branch--a,
 body.low-power .sakura-branch--b,
 body.low-power .aurora-ribbon,
-body.low-power .xmas-lights circle,
 body.low-power .pfp-ring,
 body.low-power .pfp-ring::before,
 body.low-power .title,

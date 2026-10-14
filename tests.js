@@ -1109,7 +1109,7 @@ ok('off-screen fx layers pause via .fx-paused', cssFlat.includes('.fx-paused, .f
 ok('scroll anchor watches the top-level content blocks', scriptSrc.includes('function scrollAnchor()') && scriptSrc.includes("document.querySelector('.container')"));
 ok('scroll anchor compensates only growth above the fold', scriptSrc.includes('preBottom <= 0'));
 ok('scroll anchor rides the smooth-scroll loop when it exists', scriptSrc.includes('window.kazuScrollAdjust'))
-ok('fx watcher covers the scenery layers + hero', scriptSrc.includes("fxWatch(document.querySelector('.sakura-scene'))") && scriptSrc.includes("fxWatch(document.querySelector('.xmas-scene'))") && scriptSrc.includes("fxWatch(document.querySelector('.hero'))") && scriptSrc.includes('fxWatch(atmosphereEl)'));
+ok('fx watcher covers the scenery layers + hero', scriptSrc.includes("fxWatch(document.querySelector('.sakura-scene'))") &&scriptSrc.includes("fxWatch(document.querySelector('.hero'))") && scriptSrc.includes('fxWatch(atmosphereEl)'));
 ok('petals + drops are watched individually', scriptSrc.includes("querySelectorAll('.petal').forEach(fxWatch)") && scriptSrc.includes("querySelectorAll('.drop').forEach(fxWatch)"));
 ok('scroll-reveal section present in the stylesheet', cssFlat.includes('============ SCROLL REVEAL ============'));
 
@@ -1189,8 +1189,7 @@ ok('christmas hides the sakura branches but keeps the scene (sun and moon still 
 ok('no floaty bob on the profile picture', !cssFlat.includes('floaty'));
 ok('no idle sway on the sakura branches', !cssFlat.includes('sakuraSway'));
 ok('sakura scenery layer sits still without ambient fade', !cssFlat.includes('.sakura-scene { animation:') && !cssFlat.includes('.atmosphere { animation: ambientFade'));
-ok('tree lights twinkle with a reduced-motion kill switch', cssFlat.includes('@keyframes xmasTwinkle') && cssFlat.includes('.xmas-lights circle { animation: none; }'));
-ok('tree SVG upgraded: gradients, light string, presents', htmlSrc.includes('id="xmasG1"') && htmlSrc.includes('class="xmas-lights"') && htmlSrc.includes('id="xmasStar"'));
+ok('no Christmas tree and no Santa hat (removed by the owner): no markup, styles, twinkle loop or watcher left behind', !/xmas-scene|xmas-tree|xmas-lights|xmasTwinkle|santa-hat/.test(htmlSrc + cssFlat + scriptSrc));
 ok('browser-chrome colour matches the new palette', scriptSrc.includes("'#071f16'") && !scriptSrc.includes("'#07251a'"));
 
 // ---- Birthday theme (party palette, aligned hat, balloons) ----

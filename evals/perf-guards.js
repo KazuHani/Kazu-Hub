@@ -61,7 +61,7 @@
     // Every infinite loop in the stylesheet must be one of these, each of which
     // is only ever on screen (or only ever running) when it is the feature.
     var allowed = ['.petal', '.drop', '.pulse-dot', '.music-viz span', 'body.season-pride .pfp-ring::before',
-      '.xmas-lights circle', '.aurora-ribbon--a', '.aurora-ribbon--b'];
+      '.aurora-ribbon--a', '.aurora-ribbon--b'];
     var found = [], re = /([^{}]+)\{([^{}]*)\}/g, m;
     while ((m = re.exec(flat))) {
       if (/\binfinite\b/.test(m[2]) && /animation/.test(m[2])) found.push(m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').trim());

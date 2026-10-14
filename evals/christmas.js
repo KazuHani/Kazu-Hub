@@ -1,7 +1,7 @@
 /* ============================================================================
    Christmas gates: the frozen cards (KazuLib.frostCard and the "Christmas
    frost" wiring in script.js), Christmas Day's snowfall (KazuWeatherFx), and
-   the static decorations (string lights, Santa hat, the cottage's snowman,
+   the static decorations (string lights, the cottage's snowman,
    wreath and eave lights). Shared by tests.js and tests.html; run standalone:
    node evals/christmas.js
    ----------------------------------------------------------------------------
@@ -238,9 +238,9 @@
     ok('css: the frost shows only on Christmas, keeps every card layout, and outranks the cards\' own borders', css.indexOf('html body.season-christmas .xmas-frost { border-style: solid; border-width: 0; border-image: var(--xf); }') !== -1 && !/[^\n]*\.xmas-frost[^{]*\{[^}]*\}/.test(css.replace('html body.season-christmas .xmas-frost { border-style: solid; border-width: 0; border-image: var(--xf); }', '')));
     var gap = /body\.season-christmas \.stories-grid \{ row-gap: (\d+)px; \}/.exec(css), title = /body\.season-christmas \.section-title \{ margin-bottom: (\d+)px; \}/.exec(css);
     ok('css: rows and section titles open up so the snow never touches the card above (8px clear at least)', !!gap && !!title && +gap[1] >= RISE + 8 && +title[1] >= RISE + 8 && ['stat-grid', 'right-now-grid', 'socials-grid', 'pc-specs-grid'].every(function (g) { return css.indexOf('body.season-christmas .' + g + ',') !== -1; }));
-    var xmasRules = (css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^}]*(xmas-garland|santa-hat|xmas-frost|mf-christmas|mf-x-)[^{]*\{[^}]*\}/g) || []).join('\n');
+    var xmasRules = (css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^}]*(xmas-garland|xmas-frost|mf-christmas|mf-x-)[^{]*\{[^}]*\}/g) || []).join('\n');
     ok('css: every new Christmas decoration is static (no animation, no transition)', xmasRules.length > 0 && !/animation|transition/.test(xmasRules));
-    ok('css: the string lights and the hat are hidden until Christmas and never catch clicks', /\.xmas-garland \{[^}]*pointer-events: none; display: none;/.test(css) && css.indexOf('body.season-christmas .xmas-garland { display: block; }') !== -1 && /\.santa-hat \{[^}]*display: none;[\s\S]*?pointer-events: none;/.test(css) && css.indexOf('body.season-christmas:not(.season-birthday) .santa-hat { display: block; }') !== -1);
+    ok('css: the string lights are hidden until Christmas and never catch clicks', /\.xmas-garland \{[^}]*pointer-events: none; display: none;/.test(css) && css.indexOf('body.season-christmas .xmas-garland { display: block; }') !== -1);
     ok('css: phones (always low-power) keep the pine Christmas cards', css.indexOf('body.low-power.season-christmas { --card-bg: rgba(16,52,36,.95); }') !== -1 && css.indexOf('body.low-power.season-christmas') > css.indexOf('body.low-power { --card-bg: rgba(40,63,98,.95); }'));
 
     // ---- the footer at night: still snow, and the credit line legible at every hour ----
@@ -271,8 +271,7 @@
     // ---- index.html ----
     var garland = (/<svg class="xmas-garland"[\s\S]*?<\/svg>/.exec(html) || [''])[0];
     ok('html: the string lights are decorative, steady and centred over the profile picture', /aria-hidden="true" focusable="false"/.test(garland) && (garland.match(/<use href="#xb-[rgw]" transform=/g) || []).length === 56 && /Q700 116 800 4Q900 116 1000 4/.test(garland) && !/<animate|class="[^"]*twinkle/.test(garland));
-    var hat = (/<svg class="santa-hat"[\s\S]*?<\/svg>/.exec(html) || [''])[0];
-    ok('html: the Santa hat sits in the avatar ring with the party hat, decorative only', !!hat && /aria-hidden="true" focusable="false"/.test(hat) && between(html, '<div class="pfp-ring">', '<h1 class="title">').indexOf('<svg class="santa-hat"') !== -1);
+    ok('html: the avatar carries only the birthday party hat (the owner removed the Santa hat)', html.indexOf('santa-hat') === -1 && between(html, '<div class="pfp-ring">', '<h1 class="title">').indexOf('<svg class="party-hat"') !== -1);
     var xm = (/<g class="mf-christmas">[\s\S]*?<\/g><\/g><\/svg>/.exec(html) || [''])[0];
     ok('html: the cottage gets a snowman, a door wreath and sixteen eave lights with halos', (xm.match(/class="mf-x-snow"/g) || []).length === 3 && xm.indexOf('class="mf-x-wreath"') !== -1 && (xm.match(/r="2.1"/g) || []).length === 16 && (xm.match(/r="7"/g) || []).length === 16 && html.indexOf('<radialGradient id="mf-x-halo">') !== -1);
   }

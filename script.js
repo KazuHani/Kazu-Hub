@@ -3520,7 +3520,7 @@
 
   // ---------- Off-screen power save ----------
   // Infinite CSS loops (branch sway, petal fall, rain, aurora, the hero
-  // float/shimmer, tree twinkle) keep compositing even after their layer
+  // float/shimmer) keep compositing even after their layer
   // scrolls out of view. One IntersectionObserver tags each fx layer with
   // .fx-paused as it leaves the viewport (100px early-wake margin on the
   // way back), and the stylesheet freezes every animation under it until
@@ -3538,7 +3538,6 @@
   function fxWatch(el) { if (fxObserver && el) fxObserver.observe(el); }
 
   fxWatch(document.querySelector('.sakura-scene'));
-  fxWatch(document.querySelector('.xmas-scene'));
   fxWatch(document.querySelector('.hero'));
   // The 100vh modes (rain/aurora) scroll away with the hero and pause; the
   // page-height blossom runway always intersects, so this is free there.
