@@ -73,6 +73,33 @@
 
   // Every element that opens must close, in order (the SVG has no text nodes
   // or comments, so a tag stack is a full well-formedness check here).
+  // The string lights' wire is "M x y" then quadratic "Q cx cy x y" swags; each
+  // bulb is a <use transform="translate(bx by)"> whose origin is the top of its
+  // cap. Returns '' when every cap sits on the wire, else the first miss. The
+  // wire once dipped twice as deep as the curve the bulbs were placed on.
+  function wireMisses(garland) {
+    var d = (/class="xmas-garland-wire" d="([^"]+)"/.exec(garland) || [])[1];
+    var bulbs = garland.match(/translate\(-?[\d.]+ -?[\d.]+\)/g) || [];
+    if (!d || !bulbs.length) return 'no wire or no bulbs';
+    var nums = (d.match(/-?\d*\.?\d+/g) || []).map(Number), segs = [];
+    if (!/^M[^A-Za-z]*(Q[^A-Za-z]*)+$/.test(d) || (nums.length - 2) % 4) return 'wire is not M then Q segments';
+    for (var k = 2; k < nums.length; k += 4) segs.push([nums[k - 2], nums[k - 1], nums[k], nums[k + 1], nums[k + 2], nums[k + 3]]);
+    for (var b = 0; b < bulbs.length; b++) {
+      var p = bulbs[b].match(/-?[\d.]+/g).map(Number), s = null;
+      for (var j = 0; j < segs.length && !s; j++) if (p[0] >= segs[j][0] && p[0] <= segs[j][4]) s = segs[j];
+      if (!s) return 'bulb ' + b + ' at x ' + p[0] + ' is past the wire';
+      var lo = 0, hi = 1, t = 0;
+      for (var it = 0; it < 50; it++) {
+        t = (lo + hi) / 2;
+        var x = (1 - t) * (1 - t) * s[0] + 2 * t * (1 - t) * s[2] + t * t * s[4];
+        if (x < p[0]) lo = t; else hi = t;
+      }
+      var y = (1 - t) * (1 - t) * s[1] + 2 * t * (1 - t) * s[3] + t * t * s[5];
+      if (Math.abs(y - p[1]) > 0.5) return 'bulb ' + b + ' at (' + p[0] + ', ' + p[1] + ') but the wire is at y ' + y.toFixed(2);
+    }
+    return '';
+  }
+
   function wellFormed(svg) {
     var re = /<(\/?)([a-zA-Z]+)[^>]*?(\/?)>/g, m, stack = [];
     while ((m = re.exec(svg)) !== null) {
@@ -270,7 +297,9 @@
 
     // ---- index.html ----
     var garland = (/<svg class="xmas-garland"[\s\S]*?<\/svg>/.exec(html) || [''])[0];
-    ok('html: the string lights are decorative, steady and centred over the profile picture', /aria-hidden="true" focusable="false"/.test(garland) && (garland.match(/<use href="#xb-[rgw]" transform=/g) || []).length === 56 && /Q700 116 800 4Q900 116 1000 4/.test(garland) && !/<animate|class="[^"]*twinkle/.test(garland));
+    ok('html: the string lights are decorative, steady and centred over the profile picture', /aria-hidden="true" focusable="false"/.test(garland) && (garland.match(/<use href="#xb-[rgw]" transform=/g) || []).length === 56 && /Q700 60 800 4Q900 60 1000 4/.test(garland) && !/<animate|class="[^"]*twinkle/.test(garland));
+    var wireOff = wireMisses(garland);
+    ok('html: every string-light bulb hangs from the wire (its cap within half a unit of the curve)', wireOff === '', wireOff);
     ok('html: the avatar carries only the birthday party hat (the owner removed the Santa hat)', html.indexOf('santa-hat') === -1 && between(html, '<div class="pfp-ring">', '<h1 class="title">').indexOf('<svg class="party-hat"') !== -1);
     var xm = (/<g class="mf-christmas">[\s\S]*?<\/g><\/g><\/svg>/.exec(html) || [''])[0];
     ok('html: the cottage gets a snowman, a door wreath and sixteen eave lights with halos', (xm.match(/class="mf-x-snow"/g) || []).length === 3 && xm.indexOf('class="mf-x-wreath"') !== -1 && (xm.match(/r="2.1"/g) || []).length === 16 && (xm.match(/r="7"/g) || []).length === 16 && html.indexOf('<radialGradient id="mf-x-halo">') !== -1);
