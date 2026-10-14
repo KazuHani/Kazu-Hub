@@ -1544,9 +1544,19 @@ body.season-christmas .right-now-grid,
 body.season-christmas .socials-grid,
 body.season-christmas .pc-specs-grid,
 body.season-christmas .stories-grid { row-gap: 30px; }
+/* While the pop-up flies, true-size copies of its snow and the card's ride
+   over it (script.js frostFly). The layer is only an anchor at the overlay's
+   top-left (0x0, so its composited layer is just the copies, not the whole
+   screen), contained so their per-frame size changes never touch the page's
+   layout. No blend mode: an isolated plus-lighter group over the whole screen
+   cost an offscreen pass every frame (perf.js modal, desktop, Christmas Day:
+   52 missed frames a run with it, 47 without, 45 with no copies at all). */
+.frost-flight { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; pointer-events: none; contain: size layout style; }
+.frost-flight > div { position: absolute; border-style: solid; border-width: 0; }
 /* The open pop-up wears the snow too (script.js frostModal). Desktop always
-   leaves at least 20px above it (13px of snow); a phone lets a tall pop-up run to 10px from the top,
-   which would cut the snow off, so it starts 23px down instead. */
+   leaves at least 20px above it (13px of snow); a phone lets a tall pop-up
+   run to 10px from the top, which would cut the snow off, so it starts 23px
+   down instead. */
 @media (max-width: 560px) {
   body.season-christmas .modal-overlay { padding-top: 23px; }
   body.season-christmas .modal-panel { max-height: min(90vh, calc(100dvh - 33px)); }

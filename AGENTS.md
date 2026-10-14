@@ -336,6 +336,29 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   overlay starts 23px down and the panel's `dvh` cap shrinks to match, because
   a real phone's `vh` is taller than its `dvh` and a tall pop-up otherwise
   sits 10px from the top with its snow cut off.
+- **Snow in flight.** The pop-up flies by `transform: scale(sx, sy)` from the
+  card's box, which would squash its own snow (a thin strip and tiny corners
+  on a card-sized panel). So `flyModal` calls `frostFly`: the panel's own frost
+  is hidden (`border-image-source: none` inline) and a `.frost-flight` layer
+  over it carries two true-size copies, the card's picture and the panel's.
+  Each is a box whose `left/top/width/height` (never a scale) follow the
+  panel's path with the same duration and easing, so the 9-slice keeps the
+  snow 13px and the corners whole on every frame. They cross-fade on the box's
+  own progress (same easing), so open and close mirror by shape: the panel's
+  picture fades in only once the box is at least two of its corners
+  (`2 * reach`) each way (any smaller and the browser shrinks the whole
+  9-slice, snow and all), then the card's fades out. The picture being flown
+  to sits underneath, so one copy is always whole and the snow never thins,
+  with no blend mode. `frostLand` (on the flight's finish, and before any new
+  flight) removes the layer and restores the panel's own frost. The layer is a
+  0x0 anchor with `contain: size layout style`: no screen-sized box and no
+  `plus-lighter`/`isolation`, which measured as an offscreen pass every frame
+  (`node evals/perf.js --scenarios modal --date 2026-12-25T12:00:00Z`,
+  desktop, three runs each: 45 missed frames a run before, 52 with the
+  blended layer, 47 as shipped; phone unchanged). On phones the panel's
+  transform runs on the compositor while the copies run on the main thread;
+  they sample the same timeline, so a slow main thread can make the snow
+  stutter but not drift.
 - **Snowfall (desktop only).** `KazuWeatherFx.layersFor(w, { festive: true })`
   adds a light snow (`FESTIVE_SNOW`, 0.32) whatever the sky is doing, unless it
   is really raining (rain and snow never share the canvas) or already snowing
