@@ -105,10 +105,13 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   observers, the static decorations, and the footer credit's contrast at every
   hour. Shared by `tests.js` and `tests.html` (which adds live frame checks);
   also runs alone (`node evals/christmas.js`).
-- `evals/modal-motion.js` — gate assertions for the pop-up motion and phone
-  pop-up text (see "Pop-up motion" below). Shared by `tests.js` and
-  `tests.html` (which adds live frame sweeps); also runs alone
-  (`node evals/modal-motion.js`).
+- `evals/modal-motion.js` — gate assertions for the pop-up motion (see
+  "Pop-up motion" below). Shared by `tests.js` and `tests.html` (which adds
+  live frame sweeps); also runs alone (`node evals/modal-motion.js`).
+- `evals/phone-type.js` — gate assertions for phone text that grows with the
+  screen, page and pop-ups (see "Phone text" below). Shared by `tests.js` and
+  `tests.html` (which measures every rule in a phone frame); also runs alone
+  (`node evals/phone-type.js`).
 - `evals/perf.js` — periodic eval (real Chrome over the DevTools protocol,
   plain Node >= 22, no dependencies, no network): idle CPU per process, style
   recalcs and layouts per second, scroll, hover and pop-up frame pacing and
@@ -418,22 +421,46 @@ shape only matched the card at the two ends.
   the page 15px and moving the card under the pop-up as it took off.
   `html { scrollbar-gutter: stable }` keeps the gutter; no effect with
   `html.has-cscroll` (no native bar) or overlay scrollbars.
-- **Phone text.** Under `max-width: 560px` every text class a pop-up renders
-  gets `clamp(B, B/3.2 vw, 1.3B)`, B being its old phone size: unchanged at
-  320px, 17% bigger at 375px, capped at 30%. The block is generated (one rule
-  per class) and is the last thing in `style.css`; `.modal-overlay
-  .modal-panel` outranks the per-pop-up phone overrides above it. Note that
-  with the reserved gutter `100vw` excludes a classic scrollbar.
+- **Phone text:** see "Phone text" below.
 - **Cost** (`node evals/perf.js --scenarios modal --date 2026-12-25T12:00:00Z`,
   vs the scale FLIP): desktop 41 to 36 missed frames, phone 3 to 3.
 - **Tests.** `evals/modal-motion.js` (shared by `tests.js` and `tests.html`,
   also `node evals/modal-motion.js`) walks the keyframes the way the browser
   interpolates them (exact card and panel at the ends, straight-line path,
   round corners every step), checks the shadow parsing, pins the wiring and
-  the CSS, and checks every phone type rule keeps the formula. `tests.html`
-  freezes real flights every 10ms on desktop and phone (`shapeSweep`): round
-  corners, exact card and panel ends, shadow box on the clipped box; and
-  checks the phone sizes against `100vw` and that nothing overflows sideways.
+  the CSS. `tests.html` freezes real flights every 10ms on desktop and phone
+  (`shapeSweep`): round corners, exact card and panel ends, shadow box on the
+  clipped box.
+
+## Phone text
+
+On phones (`max-width: 560px`) text grows with the screen. Every fixed size B
+becomes `clamp(B, B/3.2 vw, 1.3B)`: B (the old phone size) at 320px and below,
+B x width / 320 above that (17% bigger at 375px), capped at 30% from 416px.
+Sizes already written in `vw` (the title, stat values, headlines) already grew
+and are left alone.
+
+- **Two generated blocks at the end of `style.css`.** "Page text": one
+  `body <selector>` rule for every fixed px font-size in the main phone block
+  (before its modal rules). "Pop-up text": one `.modal-overlay .modal-panel
+  <class>` rule for every text class the pop-ups render, which outranks the
+  per-pop-up phone overrides (age, countdown). Both come after everything they
+  override. Changing a base size in the main phone block means changing its
+  rule too; `evals/phone-type.js` re-derives the list and fails otherwise.
+- **Columns that hold growing text grow with it.** The PC storage size column
+  is `clamp(72px, 22.5vw, 93.6px)`: "240 GB" at 20px is 65px in Fredoka but
+  69px in the fallback font shown until Fredoka loads, which already spilled
+  the old fixed 68px column.
+- **`100vw`** excludes a classic scrollbar, because the gutter is reserved
+  (`scrollbar-gutter: stable`, see "Pop-up motion"). Phones have overlay
+  scrollbars, so there it is the screen width.
+- **Tests.** `evals/phone-type.js`: every rule keeps the formula, the page
+  block covers exactly the main block's fixed sizes with the same bases, the
+  pop-up block covers every pop-up text class, the order, the storage column.
+  Its sources are normalised to LF (a Windows checkout has CRLF files).
+  `tests.html` reads every growing rule the phone frame actually loaded,
+  measures it on the page against `100vw`, and checks that no text spills
+  sideways (page and pop-ups) and the page never scrolls sideways.
 
 ## Conventions and gotchas
 

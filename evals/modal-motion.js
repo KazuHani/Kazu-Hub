@@ -1,5 +1,5 @@
 /* ============================================================================
-   Pop-up motion and phone pop-up text gates. Shared by tests.js and
+   Pop-up motion gates. Shared by tests.js and
    tests.html; run standalone:  node evals/modal-motion.js
    ----------------------------------------------------------------------------
    What is pinned and why:
@@ -20,9 +20,7 @@
      - style.css keeps the scrollbar gutter when a pop-up locks the page: where
        the native bar shows, losing it widened the page 15px and moved every
        card under the pop-up as it took off.
-     - style.css: every text class a pop-up renders gets a phone size of
-       clamp(B, B * 100vw / 320, 1.3 * B), so it grows with the screen from
-       today's size at 320px to at most 30% bigger.
+     - (the phone text sizes, pop-up and page, are evals/phone-type.js)
    Deterministic, local, no browser, no network. Zero failures is the threshold.
    ========================================================================== */
 (function (global) {
@@ -55,16 +53,9 @@
     };
   }
 
-  // The phone type rules: [selector, min, vw, max] from the last block.
-  function phoneTypeRules(css) {
-    var at = css.lastIndexOf('/* ---- Pop-up text on phones grows with the screen ----');
-    if (at < 0) return null;
-    var block = css.slice(at), out = [], re = /\.modal-overlay \.modal-panel ([^{]+?) \{ font-size: clamp\(([\d.]+)px, ([\d.]+)vw, ([\d.]+)px\); \}/g, m;
-    while ((m = re.exec(block))) out.push([m[1], +m[2], +m[3], +m[4]]);
-    return { block: block, rules: out };
-  }
 
   function run(L, source, css, ok, eq) {
+    source = String(source).replace(/\r\n/g, '\n'); css = String(css).replace(/\r\n/g, '\n'); // a Windows checkout has CRLF files
     // ---- KazuLib.modalMorphFrames ----
     var cases = [
       // [name, from, to, r0, r1]
@@ -118,13 +109,7 @@
     // ---- style.css ----
     ok('css: the panel and the shadow box both scale from their top-left corner (the morph maths assumes it)', /\.modal-panel \{[^}]*transform-origin: 0 0;/.test(css) && /\.modal-flight-shadow \{[^}]*position: absolute;[^}]*transform-origin: 0 0;/.test(css));
     ok('css: locking the page for a pop-up keeps the scrollbar gutter, so no card moves under it (the flight starts where the card is)', /\nhtml \{ scrollbar-gutter: stable; \}/.test(css) && /body\.modal-open \{ overflow: hidden; \}/.test(css));
-    var pt = phoneTypeRules(css), need = ['.modal-title', '.modal-body', '.modal-lead', '.modal-lead-src', '.modal-credit', '.modal-note', '.modal-row-sub', '.modal-btn', '.tz-label', '.tz-time', '.tz-meta',
-      '.forecast-label', '.forecast-condition', '.forecast-temps', '.forecast-precip', '.forecast-empty', '.age-head', '.age-head .age-sub', '.stat-tile-num', '.stat-tile-label', '.sign-name', '.fun-title', '.fun-num', '.fun-label', '.cd-num', '.cd-label'];
-    var formulaBad = pt ? pt.rules.filter(function (r) { return Math.abs(r[2] - r[1] / 3.2) > 0.0001 || Math.abs(r[3] - r[1] * 1.3) > 0.0001; }).map(function (r) { return r[0]; }) : ['block missing'];
-    var have = pt ? pt.rules.map(function (r) { return r[0]; }) : [];
-    var missing = need.filter(function (s) { return have.indexOf(s) === -1; });
-    ok('css: on phones every pop-up text size is clamp(B, B/3.2 vw, 1.3B): today\'s size at 320px, growing with the screen, 30% at most', !!pt && pt.rules.length === need.length && !formulaBad.length && !missing.length, formulaBad.concat(missing.map(function (s) { return 'missing ' + s; })).join(', '));
-    ok('css: the phone text block is the last word (inside max-width 560px, after every other pop-up rule)', !!pt && /^\/\* ---- Pop-up text on phones[\s\S]*?\*\/\n@media \(max-width: 560px\) \{\n[^}]*\}(\n  [^\n]*\})*\n\}\s*$/.test(pt.block));
+    // phone text sizes: evals/phone-type.js
   }
 
   global.KazuModalMotionChecks = { run: run, parseFrame: parseFrame, seen: seen };

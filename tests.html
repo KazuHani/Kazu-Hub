@@ -29,7 +29,8 @@
   <script src="evals/perf-guards.js?v=5"></script>
   <script src="evals/site-control.js?v=1"></script>
   <script src="evals/christmas.js?v=5"></script>
-  <script src="evals/modal-motion.js?v=2"></script>
+  <script src="evals/modal-motion.js?v=4"></script>
+  <script src="evals/phone-type.js?v=4"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1346,6 +1347,37 @@
           });
           ok('pop-up text (phone): sizes grow with the screen (a 375px page reads 375/320 of the 320px size)', typeBad.length === 0 && vw > 320, typeBad.join(' | ') + ' / 100vw ' + vw);
           ok('pop-up text (phone): the bigger text never runs out of its box sideways', overflowBad.length === 0, overflowBad.join(' || '));
+          // Page text: every growing rule the frame actually loaded, measured on
+          // the first element it styles that is on the page.
+          var grow = [], measured = 0, pageBad = [];
+          Array.prototype.forEach.call(d.styleSheets, function (sh) {
+            var rs; try { rs = sh.cssRules; } catch (e) { return; }
+            Array.prototype.forEach.call(rs, function (mr) {
+              if (!mr.media || mr.media.mediaText !== '(max-width: 560px)') return;
+              Array.prototype.forEach.call(mr.cssRules, function (r) {
+                var m = r.style && /^clamp\(([\d.]+)px, ([\d.]+)vw, ([\d.]+)px\)$/.exec(r.style.fontSize);
+                if (m && /^body /.test(r.selectorText)) grow.push({ sel: r.selectorText, base: +m[1], max: +m[3] });
+              });
+            });
+          });
+          grow.forEach(function (g) {
+            var el = Array.prototype.filter.call(d.querySelectorAll(g.sel), function (e) { return e.getClientRects().length; })[0];
+            if (!el) return;
+            measured++;
+            var got = parseFloat(w.getComputedStyle(el).fontSize), exp = Math.min(g.max, g.base * vw / 320);
+            if (Math.abs(got - exp) > .1) pageBad.push(g.sel + ' ' + got + 'px, want ' + exp.toFixed(2));
+          });
+          ok('page text (phone): every growing size the page loaded is width / 320 of its 320px size (measured on the page)', grow.length >= 25 && measured >= 20 && !pageBad.length, grow.length + ' rules, ' + measured + ' measured / ' + pageBad.slice(0, 4).join(' | '));
+          // nothing runs out sideways: no page scroll, and no text box wider
+          // than itself unless it is meant to clip with an ellipsis
+          var spill = [];
+          Array.prototype.forEach.call(d.querySelectorAll('.hero *, main *, .container *'), function (e) {
+            if (spill.length > 3 || e.closest('.modal-overlay') || !e.getClientRects().length || !e.clientWidth || e.children.length || !e.textContent.trim()) return;
+            var cs = w.getComputedStyle(e);
+            if (cs.textOverflow === 'ellipsis' || cs.overflowX === 'auto' || cs.overflowX === 'scroll') return;
+            if (e.scrollWidth > e.clientWidth + 1) spill.push((e.className || e.tagName) + ' ' + e.scrollWidth + '>' + e.clientWidth);
+          });
+          ok('page text (phone): the bigger text never spills sideways and the page does not scroll sideways', !spill.length && d.documentElement.scrollWidth <= d.documentElement.clientWidth, spill.join(' | ') + ' / page ' + d.documentElement.scrollWidth + ' vs ' + d.documentElement.clientWidth);
           d.getAnimations().forEach(function (a) { a.cancel(); });
           d.body.classList.add('low-power');
           ok('Christmas live (phone): low-power keeps the pine cards and the static frost', w.getComputedStyle(d.body).getPropertyValue('--card-bg').trim() === 'rgba(16,52,36,.95)' && w.getComputedStyle(d.querySelector('.stat-card')).borderImageSource.indexOf('url(') === 0);
@@ -1359,7 +1391,7 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=88', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=90', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=88', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
@@ -1372,6 +1404,7 @@
         KazuSiteControlChecks.run(KazuSiteConfig, scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), swSrc.replace(/\r\n/g, '\n'), ok, eq);
         KazuChristmasChecks.run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
         KazuModalMotionChecks.run(L, scriptSrc, cssSrc, ok, eq);
+        KazuPhoneTypeChecks.run(cssSrc, ok);
         ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
         ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);

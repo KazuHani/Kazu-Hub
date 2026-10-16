@@ -2549,7 +2549,10 @@ body.low-power .scroll-reveal {
   .pc-gpu-mark { padding-top: 12px; }
   .pc-gpu-mark strong { font-size: clamp(40px, 11vw, 54px); }
   .pc-gpu-mark span { font-size: 10px; }
-  .pc-storage-entry { grid-template-columns: 68px minmax(0, 1fr); gap: 10px; }
+  /* The size column grows with its text (same clamp as the page text below).
+     72px base: "240 GB" is 65px in Fredoka at 20px but 69px in the fallback
+     font shown until Fredoka loads, which spilled the old 68px column. */
+  .pc-storage-entry { grid-template-columns: clamp(72px, 22.5vw, 93.6px) minmax(0, 1fr); gap: 10px; }
   .pc-storage-entry dt { font-size: 20px; }
   .pc-storage-entry dd { font-size: 13px; }
   .pc-spec-entry dt { font-size: 11px; margin-bottom: 2px; }
@@ -2670,8 +2673,8 @@ body.low-power .scroll-reveal {
    had before (still what a 320px screen gets), so a 375px phone reads it 17%
    bigger and a 430px one 30% bigger, never more. One rule per text class the
    pop-ups render; .modal-overlay .modal-panel outranks the per-pop-up phone
-   overrides above (age, countdown) and this block sits last so it wins ties.
-   evals/modal-motion.js checks every rule keeps that formula. */
+   overrides above (age, countdown) and this block comes after them so it
+   wins ties. evals/phone-type.js checks every rule keeps that formula. */
 @media (max-width: 560px) {
   .modal-overlay .modal-panel .modal-title { font-size: clamp(20px, 6.25vw, 26px); }
   .modal-overlay .modal-panel .modal-body { font-size: clamp(15px, 4.6875vw, 19.5px); }
@@ -2699,4 +2702,44 @@ body.low-power .scroll-reveal {
   .modal-overlay .modal-panel .fun-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
   .modal-overlay .modal-panel .cd-num { font-size: clamp(26px, 8.125vw, 33.8px); }
   .modal-overlay .modal-panel .cd-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
+}
+
+/* ---- Page text on phones grows with the screen ----
+   Same rule as the pop-ups above: every fixed px size B in the main phone
+   block (max-width: 560px, before its modal rules) becomes
+   clamp(B, B * width / 320px, 1.3 * B). Sizes already written in vw (the
+   title, stat values, headlines) already grow and are left as they are.
+   Generated from that block; evals/phone-type.js re-derives the list and
+   fails if a size there has no rule here or a rule breaks the formula. */
+@media (max-width: 560px) {
+  body .quote-text { font-size: clamp(14.5px, 4.5313vw, 18.85px); }
+  body .quote-author { font-size: clamp(11px, 3.4375vw, 14.3px); }
+  body .stat-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
+  body .stat-sub { font-size: clamp(12px, 3.75vw, 15.6px); }
+  body .stat-faint { font-size: clamp(11px, 3.4375vw, 14.3px); }
+  body .stat-loading-text { font-size: clamp(13px, 4.0625vw, 16.9px); }
+  body .section-title { font-size: clamp(22px, 6.875vw, 28.6px); }
+  body .presence-name { font-size: clamp(18px, 5.625vw, 23.4px); }
+  body .presence-status { font-size: clamp(12px, 3.75vw, 15.6px); }
+  body .info-pill-emoji { font-size: clamp(22px, 6.875vw, 28.6px); }
+  body .info-pill-value { font-size: clamp(15px, 4.6875vw, 19.5px); }
+  body .info-pill-sub { font-size: clamp(11.5px, 3.5938vw, 14.95px); }
+  body .spotify-song { font-size: clamp(14.5px, 4.5313vw, 18.85px); }
+  body .mal-title { font-size: clamp(14px, 4.375vw, 18.2px); }
+  body .mal-sub { font-size: clamp(11.5px, 3.5938vw, 14.95px); }
+  body .lb-title { font-size: clamp(15.5px, 4.8438vw, 20.15px); }
+  body .pc-spec-card-title { font-size: clamp(14px, 4.375vw, 18.2px); }
+  body .pc-gpu-mark span { font-size: clamp(10px, 3.125vw, 13px); }
+  body .pc-storage-entry dt { font-size: clamp(20px, 6.25vw, 26px); }
+  body .pc-storage-entry dd { font-size: clamp(13px, 4.0625vw, 16.9px); }
+  body .pc-spec-entry dt { font-size: clamp(11px, 3.4375vw, 14.3px); }
+  body .pc-spec-entry dd, body .pc-spec-list--build dd { font-size: clamp(17px, 5.3125vw, 22.1px); }
+  body .music-playlist-sub { font-size: clamp(12px, 3.75vw, 15.6px); }
+  body .music-track-num { font-size: clamp(13.5px, 4.2188vw, 17.55px); }
+  body .music-track-name { font-size: clamp(14.5px, 4.5313vw, 18.85px); }
+  body .music-track-artist { font-size: clamp(11.5px, 3.5938vw, 14.95px); }
+  body .social-name { font-size: clamp(15px, 4.6875vw, 19.5px); }
+  body .social-handle { font-size: clamp(12px, 3.75vw, 15.6px); }
+  body .story-desc { font-size: clamp(13.5px, 4.2188vw, 17.55px); }
+  body .story-cta { font-size: clamp(12.5px, 3.9063vw, 16.25px); }
 }
