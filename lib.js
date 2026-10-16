@@ -1528,7 +1528,10 @@
         '<stop offset="0" stop-color="#e6f3ff" stop-opacity="0"/><stop offset="1" stop-color="#e6f3ff" stop-opacity=".15"/></linearGradient>';
       haze += '<rect x="' + e[2] + '" y="' + e[3] + '" width="' + e[4] + '" height="' + e[5] + '" fill="url(#e' + e[0] + ')"/>';
     });
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + IW + '" height="' + IH + '" viewBox="0 0 ' + IW + ' ' + IH + '">' +
+    // preserveAspectRatio none: a flying copy's edge piece (frostFlightPieces)
+    // shows the picture stretched along one axis, as border-image stretch does;
+    // at natural size (every border-image) it changes nothing
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + IW + '" height="' + IH + '" viewBox="0 0 ' + IW + ' ' + IH + '" preserveAspectRatio="none">' +
       '<defs>' +
       '<clipPath id="c"><rect ' + rect + '/></clipPath>' +
       '<mask id="m" maskUnits="userSpaceOnUse" ' + full + '>' + fade + '</mask>' +
@@ -1552,7 +1555,13 @@
       reach: reach,
       slice: [FROST_RISE + reach, FROST_SIDE + reach, reach, FROST_SIDE + reach],
       width: [FROST_RISE + reach, FROST_SIDE + reach, reach, FROST_SIDE + reach],
-      outset: [FROST_RISE, FROST_SIDE, 0, FROST_SIDE]
+      outset: [FROST_RISE, FROST_SIDE, 0, FROST_SIDE],
+      // how far in from the outside of the picture each side draws anything
+      // between its corners (t r b l): the snow and the haze band (+1px of
+      // anti-aliasing). The crystals and corner haze fade out within reach of
+      // their corner, which is where the edge slices start, so past this depth
+      // an edge slice is empty and a flying copy can leave it out
+      depth: [FROST_RISE + band + 1, FROST_SIDE + band + 1, band + 1, FROST_SIDE + band + 1]
     };
   }
 
@@ -1562,6 +1571,82 @@
     if (!f || typeof f.svg !== 'string') return '';
     var uri = 'data:image/svg+xml,' + f.svg.replace(/"/g, "'").replace(/%/g, '%25').replace(/#/g, '%23').replace(/</g, '%3C').replace(/>/g, '%3E');
     return 'url("' + uri + '") ' + f.slice.join(' ') + ' / ' + f.width.join('px ') + 'px / ' + f.outset.join('px ') + 'px stretch';
+  }
+
+  // A frost picture's border-image on a box, cut into its eight drawn pieces
+  // (four corners, four edges; the middle is never drawn), so a flying copy
+  // can be moved by transform alone and stay on the compositor with the
+  // pop-up it rides. f = { w, h, slice, outset }: the size the picture was
+  // drawn for and its frostCard slice / outset (t r b l); box = { left, top,
+  // width, height } in px. Each piece is { sx, sy, sw, sh }: the part of the
+  // image (natural size, w + left/right outset by h + top/bottom outset),
+  // and { x, y, kx, ky }: where its top-left lands and how much it is stretched,
+  // i.e. transform: translate(x, y) scale(kx, ky) from origin 0 0. Corners are
+  // never stretched; edges stretch along their length only (border-image
+  // stretch). Every value is linear in the box, so a straight-line box path
+  // interpolates to the exact border-image on every frame. A box smaller than
+  // the picture's two corners gives an edge a negative stretch: the caller
+  // keeps such a picture invisible until it fits. Each corner bleeds
+  // FROST_BLEED px into the edges beside it: two layers meeting at a
+  // fractional pixel each anti-alias it and the background shows through as
+  // a hairline, so the corner covers the seam with the same image column the
+  // edge starts with.
+  var FROST_BLEED = 1;
+  function frostPieces(f, box) {
+    var t = f.slice[0], r = f.slice[1], b = f.slice[2], l = f.slice[3];
+    var iw = f.w + f.outset[1] + f.outset[3], ih = f.h + f.outset[0] + f.outset[2];
+    var ax = box.left - f.outset[3], ay = box.top - f.outset[0];
+    var aw = box.width + f.outset[1] + f.outset[3], ah = box.height + f.outset[0] + f.outset[2];
+    var mw = iw - l - r, mh = ih - t - b; // the image's edge runs
+    var dw = aw - l - r, dh = ah - t - b; // the same runs on the box
+    // edges keep only the depth that has anything drawn (f.depth, from
+    // frostCard), anchored on the outside: the rest is empty, and a flying
+    // copy would otherwise composite all of it every frame
+    var depth = f.depth || f.slice;
+    var et = Math.min(t, depth[0]), er = Math.min(r, depth[1]), eb = Math.min(b, depth[2]), el = Math.min(l, depth[3]);
+    var e = FROST_BLEED;
+    function piece(sx, sy, sw, sh, x, y, w, h) {
+      return { sx: sx, sy: sy, sw: sw, sh: sh, x: x, y: y, kx: w / sw, ky: h / sh };
+    }
+    // a corner: natural size, grown by the bleed toward its two edges
+    function corner(sx, sy, sw, sh, x, y, inX, inY) {
+      return piece(sx - (inX < 0 ? e : 0), sy - (inY < 0 ? e : 0), sw + e, sh + e, x - (inX < 0 ? e : 0), y - (inY < 0 ? e : 0), sw + e, sh + e);
+    }
+    return [
+      corner(0, 0, l, t, ax, ay, 1, 1),                                 // top-left
+      piece(l, 0, mw, et, ax + l, ay, dw, et),                          // top (the snow)
+      corner(iw - r, 0, r, t, ax + aw - r, ay, -1, 1),                  // top-right
+      piece(iw - er, t, er, mh, ax + aw - er, ay + t, er, dh),          // right
+      corner(iw - r, ih - b, r, b, ax + aw - r, ay + ah - b, -1, -1),   // bottom-right
+      piece(l, ih - eb, mw, eb, ax + l, ay + ah - eb, dw, eb),          // bottom
+      corner(0, ih - b, l, b, ax, ay + ah - b, 1, -1),                  // bottom-left
+      piece(0, t, el, mh, ax, ay + t, el, dh)                           // left
+    ];
+  }
+
+  // How each piece of a flying copy is laid out and moved (script.js
+  // frostFly), for a flight between two boxes. A piece is laid out at the
+  // larger of its two end sizes, its slice of the picture stretched to fit by
+  // background-size, and only ever scaled down from there: the compositor
+  // rasterizes an animated layer at its largest scale, so an edge laid out at
+  // the card's size and stretched 4.7x to the pop-up's was rastered at ~14x
+  // on a 3x phone (perf.js modal, phone, Christmas Day: 17 missed frames a
+  // run that way, 11 this way).
+  // Per piece: { w, h } the layout size, { bw, bh } background-size, { bx, by }
+  // background-position, and ends [at a, at b], each { x, y, kx, ky } for
+  // transform: translate(x, y) scale(kx, ky) from origin 0 0. |kx|, |ky| <= 1.
+  function frostFlightPieces(f, a, b) {
+    var iw = f.w + f.outset[1] + f.outset[3], ih = f.h + f.outset[0] + f.outset[2];
+    var pa = frostPieces(f, a), pb = frostPieces(f, b);
+    return pa.map(function (p, i) {
+      var q = pb[i];
+      var w = Math.max(Math.abs(p.sw * p.kx), Math.abs(q.sw * q.kx)), h = Math.max(Math.abs(p.sh * p.ky), Math.abs(q.sh * q.ky));
+      var fx = w / p.sw, fy = h / p.sh; // picture px to layout px
+      return {
+        w: w, h: h, bw: iw * fx, bh: ih * fy, bx: -p.sx * fx, by: -p.sy * fy,
+        ends: [{ x: p.x, y: p.y, kx: p.kx / fx, ky: p.ky / fy }, { x: q.x, y: q.y, kx: q.kx / fx, ky: q.ky / fy }]
+      };
+    });
   }
 
   // Pop-up motion. The panel used to fly by transform: scale(sx, sy) from the
@@ -1691,5 +1776,8 @@
     frostReach: frostReach,
     frostCard: frostCard,
     frostBorderImage: frostBorderImage,
+    frostPieces: frostPieces,
+    frostFlightPieces: frostFlightPieces,
+    FROST_BLEED: FROST_BLEED,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

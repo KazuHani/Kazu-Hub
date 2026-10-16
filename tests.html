@@ -21,14 +21,14 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=40"></script>
+  <script src="lib.js?v=41"></script>
   <script src="site-config.js?v=1"></script>
   <script src="weather-fx.js?v=4"></script>
   <script src="evals/new-year-fireworks.js?v=3"></script>
   <script src="evals/emoji-free.js?v=1"></script>
   <script src="evals/perf-guards.js?v=5"></script>
   <script src="evals/site-control.js?v=1"></script>
-  <script src="evals/christmas.js?v=5"></script>
+  <script src="evals/christmas.js?v=6"></script>
   <script src="evals/modal-motion.js?v=4"></script>
   <script src="evals/phone-type.js?v=4"></script>
   <script>
@@ -1039,6 +1039,42 @@
         // Christmas fixture: the frost is drawn as cards near the viewport (an
         // IntersectionObserver), so this frame is moved on screen (invisible, and
         // never in the way of clicks) and every scroll reveal is settled first.
+        // Renders frost pictures (several sizes, seeds and radii) to a canvas
+        // at 3x and returns '' when every pixel of each edge slice past that
+        // side's depth (KazuLib.frostCard's depth) is fully transparent: the
+        // part of the 9-slice a flying copy leaves out (KazuLib.frostPieces).
+        function frostDepthPixels() {
+          var sizes = [[252, 144, 24, 1], [760, 626, 26, 102], [356, 600, 20, 103], [170, 145, 18, 5], [1040, 384, 24, 9]], S = 3;
+          return Promise.all(sizes.map(function (z) {
+            var f = KazuLib.frostCard({ w: z[0], h: z[1], r: z[2], seed: z[3] });
+            var iw = z[0] + f.outset[1] + f.outset[3], ih = z[1] + f.outset[0] + f.outset[2];
+            var t = f.slice[0], r = f.slice[1], b = f.slice[2], l = f.slice[3], dp = f.depth;
+            var img = new Image();
+            img.src = 'data:image/svg+xml,' + encodeURIComponent(f.svg);
+            return img.decode().then(function () {
+              var c = document.createElement('canvas');
+              c.width = iw * S; c.height = ih * S;
+              var x = c.getContext('2d');
+              x.drawImage(img, 0, 0, c.width, c.height);
+              // [x, y, w, h] in picture px: each edge run, from its depth inward
+              // (a 1px margin each way for the scaled sampling)
+              var empty = [[l + 1, dp[0] + 1, iw - l - r - 2, t - dp[0] - 2], [iw - r + 1, t + 1, r - dp[1] - 2, ih - t - b - 2],
+                [l + 1, ih - b + 1, iw - l - r - 2, b - dp[2] - 2], [dp[3] + 1, t + 1, l - dp[3] - 2, ih - t - b - 2]];
+              var names = ['top', 'right', 'bottom', 'left'], found = [];
+              empty.forEach(function (q, i) {
+                if (q[2] <= 0 || q[3] <= 0) return;
+                var px = x.getImageData(Math.round(q[0] * S), Math.round(q[1] * S), Math.round(q[2] * S), Math.round(q[3] * S)).data, max = 0;
+                for (var k = 3; k < px.length; k += 4) if (px[k] > max) max = px[k];
+                if (max > 0) found.push(names[i] + ' alpha ' + max);
+              });
+              // and the depth itself is not empty (the snow, the haze band)
+              var top = x.getImageData(Math.round((l + 1) * S), 0, Math.round((iw - l - r - 2) * S), Math.round(dp[0] * S)).data, any = 0;
+              for (var k2 = 3; k2 < top.length; k2 += 4) if (top[k2] > any) any = top[k2];
+              if (!any) found.push('top depth is empty');
+              return found.length ? z.slice(0, 2).join('x') + ': ' + found.join(', ') : '';
+            });
+          })).then(function (rs) { return rs.filter(Boolean).join(' | '); }, function (e) { return 'could not render: ' + (e && e.message || e); });
+        }
         function christmasFrame(width) {
           return frame('weather=none&time=12:00&season=christmas', width).then(function (f) {
             f.style.cssText = 'position:fixed;left:0;top:0;height:640px;border:0;opacity:0;pointer-events:none;width:' + width + 'px';
@@ -1065,7 +1101,7 @@
           if (tall) { var pad = d.createElement('div'); pad.style.height = '2000px'; d.querySelector('.modal-body').appendChild(pad); }
           var cs = w.getComputedStyle(p), out = cs.borderImageOutset.split(' ')[0];
           var gs = d.querySelectorAll('.frost-flight > div'), url = xf.slice(0, xf.indexOf('") ') + 2);
-          var carried = gs.length ? cs.borderImageSource === 'none' && w.getComputedStyle(gs[0]).borderImageSource === url : cs.borderImageSource === url; // flown to: underneath
+          var carried = gs.length ? cs.borderImageSource === 'none' && gs[0].children.length === 8 && w.getComputedStyle(gs[0].children[0]).backgroundImage === url : cs.borderImageSource === url; // flown to: underneath
           var ok = p.classList.contains('xmas-frost') && url.indexOf('url("data:image/svg+xml') === 0 && carried && out === '13px' && cs.borderTopWidth === '0px';
           return { ok: ok, src: xf, why: p.className + ' / ' + gs.length + ' flying copies / outset ' + cs.borderImageOutset + ' / border ' + cs.borderTopWidth };
         }
@@ -1098,11 +1134,22 @@
             anims.forEach(function (a) { a.pause(); a.currentTime = t; });
             var pr = visibleBox(p, w), clear = 1;
             gs.forEach(function (g, i) {
-              var b = g.getBoundingClientRect(), cs = w.getComputedStyle(g), op = +cs.opacity, bw = cs.borderImageWidth.split(' ');
-              var reach = parseFloat(bw[2] || bw[0]); // the bottom width is the corner reach
+              // the eight pieces, in order: top-left, top, top-right, right,
+              // bottom-right, bottom, bottom-left, left (KazuLib.frostPieces)
+              var op = +w.getComputedStyle(g).opacity, pc = Array.prototype.map.call(g.children, function (c) { return { r: c.getBoundingClientRect(), w: c.offsetWidth, h: c.offsetHeight }; });
               clear *= 1 - op;
-              if (Math.abs(b.left - pr.left) > .5 || Math.abs(b.top - pr.top) > .5 || Math.abs(b.width - pr.width) > .5 || Math.abs(b.height - pr.height) > .5) bad.push(t + 'ms copy ' + i + ' off the panel');
-              if (op > .001 && Math.min(b.width, b.height) < 2 * reach - .5) bad.push(t + 'ms copy ' + i + ' squashed (' + Math.round(b.width) + 'x' + Math.round(b.height) + ', corners ' + reach + ')');
+              if (pc.length !== 8) { bad.push('copy ' + i + ' has ' + pc.length + ' pieces'); return; }
+              // the border-image area: the box plus the snow's 13px rise and 3px overhang
+              var tl = pc[0].r, br = pc[4].r;
+              if (Math.abs(tl.left - (pr.left - 3)) > .5 || Math.abs(tl.top - (pr.top - 13)) > .5 || Math.abs(br.right - (pr.left + pr.width + 3)) > .5 || Math.abs(br.bottom - (pr.top + pr.height)) > .5) bad.push(t + 'ms copy ' + i + ' off the panel');
+              if (op <= .001) return;
+              // seen: corners at natural size, the snow its own height, and every
+              // edge running forwards from one corner to the next (a box too small
+              // for the picture would turn an edge inside out)
+              if (![0, 2, 4, 6].every(function (k) { return Math.abs(pc[k].r.width - pc[k].w) < .5 && Math.abs(pc[k].r.height - pc[k].h) < .5; }) || Math.abs(pc[1].r.height - pc[1].h) > .5) bad.push(t + 'ms copy ' + i + ' squashed');
+              // (each corner overlaps its edges by the bleed, so no seam shows)
+              var e = w.KazuLib.FROST_BLEED;
+              if (Math.abs(pc[1].r.left - (pc[0].r.right - e)) > .5 || Math.abs(pc[1].r.right - (pc[2].r.left + e)) > .5 || Math.abs(pc[3].r.top - (pc[2].r.bottom - e)) > .5 || Math.abs(pc[3].r.bottom - (pc[4].r.top + e)) > .5) bad.push(t + 'ms copy ' + i + ' edges do not meet the corners');
             });
             if (gs.length === 2 && clear > .01) bad.push(t + 'ms snow thins to ' + (1 - clear).toFixed(2));
           }
@@ -1302,7 +1349,10 @@
           finishFlights(d);
           var shapes = ['time', 'age', 'bday'].map(function (k) { return [shapeSweep(d, w, k, false), shapeSweep(d, w, k, true)].filter(Boolean).join(' / '); }).filter(Boolean);
           ok('pop-up motion (desktop): every frame is a true rounded box, from exactly the card to exactly the panel and back, with its shadow under it', shapes.length === 0, shapes.join(' || '));
-          return christmasFrame(390);
+          return frostDepthPixels().then(function (bad) {
+            ok('frost pixels: between the corners nothing is drawn past each edge\'s depth, so a flying copy can crop its edges to it (rendered at 3x)', bad === '', bad);
+            return christmasFrame(390);
+          });
         }).then(function (f) {
           frames.push(f);
           var d = f.contentDocument, w = f.contentWindow;
@@ -1391,8 +1441,8 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=90', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=88', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=91', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=89', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {

@@ -2784,7 +2784,7 @@
     if (!f) return; // not laid out yet (hidden, or still 0 wide): the ResizeObserver tries again
     el.style.setProperty('--xf', KazuLib.frostBorderImage(f));
     el.classList.add('xmas-frost');
-    frostDrawn.set(el, { w, reach: f.reach });
+    frostDrawn.set(el, { w, h, reach: f.reach, slice: f.slice, outset: f.outset, depth: f.depth }); // all frostPieces needs to fly it
   }
   function frostStale(el) {
     const d = frostDrawn.get(el);
@@ -2819,16 +2819,19 @@
     frostDraw(panel);
     if (frostRO) frostRO.observe(panel);
   }
-  // The pop-up flies by transform (scaled from the card's box to its own), so
-  // its own picture would be squashed with it: a thin strip of snow and tiny
-  // corners on a card-sized panel. While it flies its own frost is hidden and
-  // two true-size copies ride over it instead, the card's picture and the
-  // panel's: each is a box whose real size (not a scale) follows the panel's
-  // path with the same timing, so the 9-slice keeps the snow 13px tall and the
-  // corners whole on every frame. They cross-fade, so the flight starts as
-  // exactly the card and lands as exactly the panel (the reverse on close).
-  // flyModal calls frostLand when the flight finishes or is cut short, which
-  // removes them and hands the panel its own frost back.
+  // The pop-up flies as a clipped, translated box (KazuLib.modalMorphFrames),
+  // so its own border-image would not follow the box: it is hidden while it
+  // flies and two true-size copies ride over the box instead, the card's
+  // picture and the panel's. Each copy is its 9-slice cut into eight pieces
+  // (KazuLib.frostPieces): corners only move, edges move and stretch along
+  // their length, so the snow stays 13px tall and the corners whole on every
+  // frame. Every piece moves by transform alone with the panel's own timing:
+  // the panel's flight (transform + clip-path) runs on the compositor in
+  // Chrome, and so do these, so the snow cannot lag the box when the main
+  // thread is busy, and nothing repaints per frame. They cross-fade, so the
+  // flight starts as exactly the card and lands as exactly the panel (the
+  // reverse on close). flyModal calls frostLand when the flight finishes or
+  // is cut short, which removes them and hands the panel its own frost back.
   let frostFlight = null; // { layer, panel } while a pop-up is in the air
   function frostLand() {
     if (!frostFlight) return;
@@ -2838,18 +2841,17 @@
   }
   function frostFly(host, panel, card, from, to, opening, timing) {
     frostLand();
-    const panelXf = panel.classList.contains('xmas-frost') && panel.style.getPropertyValue('--xf');
-    if (!frostOn || !panelXf) return;
-    const cardXf = card && card.classList.contains('xmas-frost') && card.style.getPropertyValue('--xf');
-    const box = (r) => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
-    const path = opening ? [box(from), box(to)] : [box(to), box(from)];
+    const pic = (el) => el && el.classList.contains('xmas-frost') && frostDrawn.get(el) && { d: frostDrawn.get(el), xf: el.style.getPropertyValue('--xf') };
+    const panelPic = pic(panel);
+    if (!frostOn || !panelPic || !KazuLib.frostFlightPieces) return;
+    const cardPic = pic(card);
     // The cross-fade runs on the box's own progress (same easing), so it is
     // tied to the shape, not the clock: open and close mirror each other. The
     // panel's picture only fits a box at least two of its corners wide and
     // tall (any smaller and the browser shrinks the whole 9-slice, snow and
     // all), so it only shows once the box has grown that far; p0 is that
     // point, 0 at the card and 1 at the panel.
-    const reach = (frostDrawn.get(panel) || {}).reach || 0;
+    const reach = panelPic.d.reach;
     const fitAt = (c, p) => (2 * reach <= c ? 0 : p <= c ? 1 : Math.min(1, (2 * reach - c) / (p - c)));
     const p0 = Math.max(fitAt(from.width, to.width), fitAt(from.height, to.height));
     // [opacity, progress] along an opening (a close runs them backwards): the
@@ -2861,17 +2863,34 @@
     const layer = document.createElement('div');
     layer.className = 'frost-flight';
     host.appendChild(layer);
-    const stack = opening ? [[panelXf, panelFade], [cardXf, cardFade]] : [[cardXf, cardFade], [panelXf, panelFade]];
-    stack.forEach(([xf, keys]) => {
-      if (!xf) return; // a card not frozen yet: the panel's snow just fades in
+    const move = (s) => ({ transform: 'translate(' + s.x + 'px, ' + s.y + 'px) scale(' + s.kx + ', ' + s.ky + ')' });
+    // Each picture's url() (an ~18 KB data URI) is parsed once, in one rule its
+    // eight pieces share: handed down as a custom property, every piece
+    // re-tokenized it, and the take-off frame's style pass on a 4x-throttled
+    // phone went from ~5 ms to ~30 ms (perf.js modal --trace).
+    const sheet = document.createElement('style');
+    layer.appendChild(sheet);
+    let rules = '';
+    const stack = opening ? [[panelPic, panelFade], [cardPic, cardFade]] : [[cardPic, cardFade], [panelPic, panelFade]];
+    stack.forEach(([p, keys], i) => {
+      if (!p) return; // a card not frozen yet: the panel's snow just fades in
       const g = document.createElement('div');
-      g.style.borderImage = xf;
+      g.className = 'f' + i;
+      rules += '.frost-flight > .f' + i + ' > div { background-image: ' + p.xf.slice(0, p.xf.indexOf('") ') + 2) + '; }\n';
       layer.appendChild(g);
+      // each piece laid out at its larger end and only ever scaled down, so
+      // the compositor never rasterizes it bigger than it is ever seen
+      KazuLib.frostFlightPieces(p.d, from, to).forEach((s) => {
+        const piece = document.createElement('div');
+        piece.style.cssText = 'width:' + s.w + 'px;height:' + s.h + 'px;background-size:' + s.bw + 'px ' + s.bh + 'px;background-position:' + s.bx + 'px ' + s.by + 'px';
+        g.appendChild(piece);
+        piece.animate(opening ? [move(s.ends[0]), move(s.ends[1])] : [move(s.ends[1]), move(s.ends[0])], timing);
+      });
       const fade = keys.map(([a, o]) => ({ opacity: a, offset: opening ? o : 1 - o }));
       if (!opening) fade.reverse();
-      g.animate(path, timing);
       g.animate(fade, timing);
     });
+    sheet.textContent = rules;
     panel.style.borderImageSource = 'none';
     frostFlight = { layer, panel };
   }

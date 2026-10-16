@@ -1545,14 +1545,17 @@ body.season-christmas .socials-grid,
 body.season-christmas .pc-specs-grid,
 body.season-christmas .stories-grid { row-gap: 30px; }
 /* While the pop-up flies, true-size copies of its snow and the card's ride
-   over it (script.js frostFly). The layer is only an anchor at the overlay's
-   top-left (0x0, so its composited layer is just the copies, not the whole
-   screen), contained so their per-frame size changes never touch the page's
-   layout. No blend mode: an isolated plus-lighter group over the whole screen
-   cost an offscreen pass every frame (perf.js modal, desktop, Christmas Day:
-   52 missed frames a run with it, 47 without, 45 with no copies at all). */
+   over it (script.js frostFly): each copy (> div, which carries its fade) is
+   its 9-slice cut into eight pieces (> div > div), every piece one slice of
+   the picture (its image set by a rule in the layer's own <style>, its size
+   and slice inline), moved and stretched by transform alone so the whole
+   flight stays on the compositor with the pop-up and repaints nothing.
+   The layer is only an anchor at the overlay's top-left (0x0, so nothing is
+   screen-sized). No blend mode: an isolated plus-lighter group over the whole
+   screen cost an offscreen pass every frame (perf.js modal, desktop). */
 .frost-flight { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; pointer-events: none; contain: size layout style; }
-.frost-flight > div { position: absolute; border-style: solid; border-width: 0; }
+.frost-flight > div { position: absolute; left: 0; top: 0; }
+.frost-flight > div > div { position: absolute; left: 0; top: 0; transform-origin: 0 0; background-repeat: no-repeat; }
 /* The open pop-up wears the snow too (script.js frostModal). Desktop always
    leaves at least 20px above it (13px of snow); a phone lets a tall pop-up
    run to 10px from the top, which would cut the snow off, so it starts 23px

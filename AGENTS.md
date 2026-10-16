@@ -348,9 +348,34 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   off, so it cannot wear its own snow while flying. `flyModal` calls `frostFly`: the panel's own frost
   is hidden (`border-image-source: none` inline) and a `.frost-flight` layer
   over it carries two true-size copies, the card's picture and the panel's.
-  Each is a box whose `left/top/width/height` (never a scale) follow the
-  panel's path with the same duration and easing, so the 9-slice keeps the
-  snow 13px and the corners whole on every frame. They cross-fade on the box's
+  Each copy is its 9-slice cut into eight pieces (`KazuLib.frostPieces`: four
+  corners at natural size, four edges stretched along their length only, the
+  middle never drawn), every piece one slice of the picture as a background,
+  moved by `transform: translate() scale()` alone with the panel's duration
+  and easing. `KazuLib.frostFlightPieces` lays each piece out at the larger of
+  its two end sizes (its slice stretched to fit by `background-size`, which
+  is why the frost SVG has `preserveAspectRatio="none"`; at natural size,
+  i.e. every border-image, that changes nothing) and only ever scales it down:
+  the compositor rasterizes an animated layer at its largest scale, and an
+  edge laid out at the card's size and scaled up 4.7x was rastered ~14x on a
+  3x phone. Edges are cropped to `depth` (from `frostCard`: the snow and the
+  11px haze band, +1px), because between the corners nothing is drawn deeper
+  (crystals and corner haze fade out within `reach` of their corner; tests.html
+  renders pictures at 3x and checks those pixels are all transparent). Each
+  picture's url() is parsed once, in a rule in the layer's own `<style>` that
+  its eight pieces share: as an inherited custom property every piece
+  re-tokenized the ~18 KB data URI and a phone's take-off style pass went from
+  ~5 ms to ~30 ms. Every piece's position and stretch are linear
+  in the box, so the straight-line box path interpolates to the exact
+  border-image on every frame: the snow keeps 13px and the corners stay
+  whole. Transform-only means the copies run on the compositor, like the
+  panel's own flight (transform + `clip-path`, which Chrome 152 composites:
+  checked by blocking the main thread mid-flight, where a `left`-animated
+  control froze and the panel and snow kept growing together). So the snow
+  cannot lag the box when the main thread is busy, and nothing repaints per
+  frame. Each corner bleeds `FROST_BLEED` (1px) into its edges: two layers
+  meeting at a fractional pixel each anti-alias it and the background showed
+  through as a hairline. They cross-fade on the box's
   own progress (same easing), so open and close mirror by shape: the panel's
   picture fades in only once the box is at least two of its corners
   (`2 * reach`) each way (any smaller and the browser shrinks the whole
@@ -359,10 +384,20 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   with no blend mode. `frostLand` (on the flight's finish, and before any new
   flight) removes the layer and restores the panel's own frost. The layer is a
   0x0 anchor with `contain: size layout style`: no screen-sized box and no
-  `plus-lighter`/`isolation`, which measured as an offscreen pass every frame
-  (`node evals/perf.js --scenarios modal --date 2026-12-25T12:00:00Z`,
-  desktop, three runs each: 45 missed frames a run before, 52 with the
-  blended layer, 47 as shipped; phone unchanged). The copies follow the same
+  `plus-lighter`/`isolation`, which measured as an offscreen pass every frame.
+  Cost (`node evals/perf.js --scenarios modal --date 2026-12-25T12:00:00Z`,
+  missed frames a run, against the same build with `frostFly` disabled,
+  three runs each, 2026-10-16): desktop the same (72 vs 73 on a loaded
+  machine, 35 vs 36 on a quiet one); phone 5 vs 10. The phone cost is one
+  longer take-off frame per flight (painting the 16 new pieces on a
+  4x-throttled CPU); the flight itself keeps running on the compositor. Tried
+  and measured: building the second copy a frame later would save at most ~2
+  (one copy alone measured 9), and a lighter SVG for the edge pieces ~1 (not
+  worth editing the data URI); laying pieces out at their larger end took it
+  from 17 to 11, cropping the edges to their depth to ~10.
+  The earlier main-thread copies cost nothing on a phone, but froze in exactly
+  those heavy take-off frames, so the snow lagged the box at the start of
+  every flight. The copies follow the same
   straight-line box as the clipped panel, so they sit exactly on it (tests.html
   checks every 10ms against the clipped box, not the panel's bounding rect).
 - **Snowfall (desktop only).** `KazuWeatherFx.layersFor(w, { festive: true })`

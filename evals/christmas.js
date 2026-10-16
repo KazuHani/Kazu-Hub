@@ -22,8 +22,10 @@
      - an opened pop-up keeps the snow on top: openModal freezes the panel
        before its fly-in (drawn at once, seeded per pop-up), closing stops the
        size watch, and phones leave room above a tall pop-up for the snow.
-     - the pop-up flies by scale, so while it flies true-size copies of the
-       tile's snow and its own ride its exact box (real size, never a scale):
+     - the pop-up flies as a clipped box on the compositor, so while it flies
+       true-size copies of the tile's snow and its own ride its exact box, each
+       its border-image cut into eight pieces moved by transform alone
+       (KazuLib.frostPieces; exact border-image at every point of the path):
        the picture flown to sits underneath and one copy is always whole, so
        the snow never thins; the pop-up's picture never shows on a box too
        small for its corners (the browser would shrink it); open and close
@@ -174,6 +176,68 @@
     var aBi = L.frostBorderImage(a);
     ok('frost: the crystals fade out by the corner radius and the middle of the 9-slice is never drawn', /<radialGradient id="ftl" gradientUnits="userSpaceOnUse" cx="3" cy="13" r="87">/.test(a.svg) && /<mask id="m"/.test(a.svg) && !/\bfill\b/.test(aBi.slice(aBi.indexOf('") ') + 3)));
 
+    // ---- KazuLib.frostPieces: a picture's border-image as eight pieces ----
+    // At every size and seed the pieces must be exactly the border-image:
+    // corners at natural size, edges stretched only along their length, the
+    // eight dest rects tiling the border band with no gap or overlap and the
+    // source rects tiling the image's border (middle never drawn); and every
+    // number must be linear in the box, which is what lets a straight-line
+    // box path interpolate to the exact border-image on every frame.
+    // Run with and without the picture's depth: with it (as script.js flies
+    // them) each edge keeps only the part that has anything drawn, anchored on
+    // the outside of the picture; without it, the whole slice.
+    var pieceBad = [];
+    [[252, 144], [760, 626], [335, 217], [170, 145], [356, 600], [1040, 384]].forEach(function (sz) { [false, true].forEach(function (crop) {
+      var f = L.frostCard({ w: sz[0], h: sz[1], r: 24, seed: 3 }), d = { w: sz[0], h: sz[1], slice: f.slice, outset: f.outset };
+      if (crop) d.depth = f.depth;
+      var t = f.slice[0], r = f.slice[1], b = f.slice[2], l = f.slice[3], iw = sz[0] + f.outset[1] + f.outset[3], ih = sz[1] + f.outset[0] + f.outset[2];
+      var dep = crop ? f.depth : f.slice, et = Math.min(t, dep[0]), er = Math.min(r, dep[1]), eb = Math.min(b, dep[2]), el = Math.min(l, dep[3]);
+      if (crop && !(et < t && er < r && eb < b && el < l)) pieceBad.push(sz.join('x') + ' depth crops nothing');
+      [{ left: 40, top: 90, width: sz[0], height: sz[1] }, { left: 7.5, top: 300.25, width: sz[0] * 1.7 + .3, height: sz[1] * 1.3 }].forEach(function (box, bi) {
+        var ps = L.frostPieces(d, box), tag = sz.join('x') + (bi ? ' grown' : '') + (crop ? ' cropped' : '');
+        var dest = ps.map(function (p) { return [p.x, p.y, p.sw * p.kx, p.sh * p.ky]; });
+        var ax = box.left - f.outset[3], ay = box.top - f.outset[0], aw = box.width + f.outset[1] + f.outset[3], ah = box.height + f.outset[0] + f.outset[2];
+        var near = function (a, c) { return Math.abs(a - c) < 1e-9; };
+        // corners natural size, at the four corners of the border-image area
+        if (![0, 2, 4, 6].every(function (i) { return ps[i].kx === 1 && ps[i].ky === 1; })) pieceBad.push(tag + ' corner stretched');
+        if (ps[1].ky !== 1 || ps[5].ky !== 1 || ps[3].kx !== 1 || ps[7].kx !== 1) pieceBad.push(tag + ' edge stretched across');
+        if (!near(dest[0][0], ax) || !near(dest[0][1], ay) || !near(dest[4][0] + dest[4][2], ax + aw) || !near(dest[4][1] + dest[4][3], ay + ah)) pieceBad.push(tag + ' area');
+        // dest: each edge exactly fills between its two corners' slice lines,
+        // and each corner overlaps its two edges by the bleed (no seam)
+        var e = L.FROST_BLEED;
+        if (!(e >= 1) || !near(dest[0][0] + dest[0][2], dest[1][0] + e) || !near(dest[1][0] + dest[1][2], dest[2][0] + e) || !near(dest[2][1] + dest[2][3], dest[3][1] + e) || !near(dest[3][1] + dest[3][3], dest[4][1] + e) ||
+          !near(dest[6][0] + dest[6][2], dest[5][0] + e) || !near(dest[5][0] + dest[5][2], dest[4][0] + e) || !near(dest[0][1] + dest[0][3], dest[7][1] + e) || !near(dest[7][1] + dest[7][3], dest[6][1] + e)) pieceBad.push(tag + ' dest gap or no bleed');
+        if (!near(dest[1][0], ax + l) || !near(dest[1][2], aw - l - r)) pieceBad.push(tag + ' top edge not on its slice lines');
+        // every edge sits against the outside of the picture
+        if (!near(dest[1][1], ay) || !near(dest[3][0] + dest[3][2], ax + aw) || !near(dest[5][1] + dest[5][3], ay + ah) || !near(dest[7][0], ax)) pieceBad.push(tag + ' edge off the outside');
+        // source: the image's border, slice widths t r b l, edges between
+        // (as deep as they draw), corners grown by the bleed into the edges
+        var src = ps.map(function (p) { return [p.sx, p.sy, p.sw, p.sh].join(); }).join(' ');
+        var want = [[0, 0, l + e, t + e], [l, 0, iw - l - r, et], [iw - r - e, 0, r + e, t + e], [iw - er, t, er, ih - t - b], [iw - r - e, ih - b - e, r + e, b + e], [l, ih - eb, iw - l - r, eb], [0, ih - b - e, l + e, b + e], [0, t, el, ih - t - b]].map(function (a) { return a.join(); }).join(' ');
+        if (src !== want) pieceBad.push(tag + ' source');
+        // at the size it was drawn for, nothing is stretched at all
+        if (!bi && !ps.every(function (p) { return near(p.kx, 1) && near(p.ky, 1); })) pieceBad.push(tag + ' stretched at its own size');
+      });
+      // flown between two boxes: each piece laid out at its larger end, never
+      // scaled up at either end, and at both ends exactly that end's piece
+      var fa = { left: 20, top: 400, width: sz[0], height: sz[1] }, fb = { left: 5, top: 30, width: Math.max(sz[0] * 2.2, 380), height: Math.max(sz[1] * 3, 600) };
+      var fl = L.frostFlightPieces(d, fa, fb), ea = L.frostPieces(d, fa), eb2 = L.frostPieces(d, fb);
+      fl.forEach(function (s, i) {
+        [[s.ends[0], ea[i]], [s.ends[1], eb2[i]]].forEach(function (x) {
+          var m = x[0], p = x[1];
+          if (Math.abs(m.kx) > 1 + 1e-9 || Math.abs(m.ky) > 1 + 1e-9) pieceBad.push(sz.join('x') + ' piece ' + i + ' scaled up');
+          if (Math.abs(m.x - p.x) > 1e-9 || Math.abs(m.y - p.y) > 1e-9 || Math.abs(s.w * m.kx - p.sw * p.kx) > 1e-6 || Math.abs(s.h * m.ky - p.sh * p.ky) > 1e-6) pieceBad.push(sz.join('x') + ' piece ' + i + ' end off');
+        });
+        if (Math.abs(-s.bx * iw / s.bw - ea[i].sx) > 1e-6 || Math.abs(-s.by * ih / s.bh - ea[i].sy) > 1e-6) pieceBad.push(sz.join('x') + ' piece ' + i + ' wrong slice');
+      });
+      // linear: the pieces of the box halfway are the average of the ends
+      var A = { left: 10, top: 20, width: sz[0], height: sz[1] }, B = { left: 300, top: 5, width: sz[0] * 2.4, height: sz[1] * 1.9 };
+      var M = { left: (A.left + B.left) / 2, top: (A.top + B.top) / 2, width: (A.width + B.width) / 2, height: (A.height + B.height) / 2 };
+      var pa = L.frostPieces(d, A), pb = L.frostPieces(d, B), pm = L.frostPieces(d, M);
+      if (!pm.every(function (p, i) { return ['x', 'y', 'kx', 'ky'].every(function (k) { return Math.abs(p[k] - (pa[i][k] + pb[i][k]) / 2) < 1e-9; }); })) pieceBad.push(sz.join('x') + ' not linear');
+    }); });
+    ok('frost pieces: eight pieces are exactly the border-image (corners natural size, edges stretched along only and only as deep as they draw, no gap, middle never drawn), linear in the box, and flown without ever scaling up', !pieceBad.length, pieceBad.slice(0, 4).join(' | '));
+
     // ---- KazuWeatherFx: Christmas Day's snowfall ----
     var clear = FX.layersFor({ code: 0, cloudCover: 0, windKmh: 5 }, { festive: true });
     eq('snowfall: a clear Christmas Day snows lightly, with no cloud invented', [clear.snow, clear.rain, clear.clouds, clear.active], [FX.FESTIVE_SNOW, 0, 0, true]);
@@ -207,8 +271,9 @@
         return el;
       }
       // a DOM node just big enough for a flight: children, removal, animations
-      function node() {
-        var n = { children: [], style: {}, anims: [], parent: null };
+      function node(tag) {
+        var n = { tag: tag, children: [], anims: [], parent: null, props: {}, className: '', textContent: '' };
+        n.style = { setProperty: function (k, v) { n.props[k] = v; } };
         n.appendChild = function (c) { c.parent = n; n.children.push(c); };
         n.remove = function () { if (n.parent) n.parent.children.splice(n.parent.children.indexOf(n), 1); n.parent = null; };
         n.animate = function (keys, timing) { n.anims.push({ keys: keys, timing: timing }); };
@@ -306,13 +371,13 @@
       ok('wiring (live): a closed pop-up is no longer size-watched', hm.ros[0].on.indexOf(panel) === -1 && panel.draws === afterResize);
 
       // the flight: a weather tile (252x144) opening into its pop-up (760x626)
-      // and back. The pop-up flies by scale, so its own snow would squash; the
-      // copies must ride its exact box at true size the whole way.
+      // and back. The pop-up flies as a clipped box on the compositor; the
+      // copies must ride its exact box at true size the whole way, moved by
+      // transform alone so they stay on the compositor with it.
       var tile = card(252, 144), pop = card(760, 626), hf = harness(true, [tile]), host = node();
       var tileR = { left: 302, top: 387, width: 252, height: 144 }, popR = { left: 48, top: 144, width: 760, height: 626 };
       var T = { duration: 520, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'both' };
       var REACH = 92; // the pop-up picture's corners: frostReach(760, 626)
-      function px(r) { return { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' }; }
       function opAt(keys, q) { // a fade's opacity at progress q (keyframes are linear between offsets)
         for (var i = 1; i < keys.length; i++) {
           if (q > keys[i].offset) continue;
@@ -329,35 +394,86 @@
         var bad = [];
         for (var q = 0; q <= 1.000001; q += 0.005) {
           var w = a.width + (b.width - a.width) * q, h = a.height + (b.height - a.height) * q;
-          var ops = gs.map(function (g) { return opAt(g.anims[1].keys, q); });
+          var ops = gs.map(function (g) { return opAt(g.anims[0].keys, q); });
           var clear = ops.reduce(function (m, o) { return m * (1 - o); }, 1);
           if (clear > 1e-9) bad.push(q.toFixed(3) + ' snow thins to ' + (1 - clear).toFixed(3));
           if (ops[panelAt] > 0 && Math.min(w, h) < 2 * REACH - 1e-6) bad.push(q.toFixed(3) + ' squashed ' + Math.round(w) + 'x' + Math.round(h) + ' at ' + ops[panelAt].toFixed(2));
         }
         return bad.slice(0, 3).join(' | ');
       }
+      function urlOf(xf) { return xf.slice(0, xf.indexOf('") ') + 2); }
+      // the copies on a flight layer (its first child is the <style> holding
+      // each copy's picture), and the picture a copy carries: the url() in the
+      // one rule its eight pieces share
+      function copies(layer) { return layer ? layer.children.filter(function (c) { return c.tag === 'div'; }) : []; }
+      function pic(g) {
+        var sheet = g.parent && g.parent.children.filter(function (c) { return c.tag === 'style'; })[0];
+        var m = sheet && new RegExp('\\.frost-flight > \\.' + g.className + ' > div \\{ background-image: (url\\("[^"]*"\\)); \\}').exec(sheet.textContent);
+        return m ? m[1] : null;
+      }
+      // a piece's transform at progress q, interpolated as the browser does a
+      // translate() scale() pair (each number linearly), as { x, y, kx, ky }
+      function tfAt(keys, q) {
+        var re = /^translate\(([-\d.e]+)px, ([-\d.e]+)px\) scale\(([-\d.e]+), ([-\d.e]+)\)$/;
+        var a = re.exec(keys[0].transform), b = re.exec(keys[1].transform);
+        if (!a || !b || Object.keys(keys[0]).join() !== 'transform' || Object.keys(keys[1]).join() !== 'transform') return null;
+        var v = [1, 2, 3, 4].map(function (i) { return +a[i] + (+b[i] - +a[i]) * q; });
+        return { x: v[0], y: v[1], kx: v[2], ky: v[3] };
+      }
+      function boxAt(a, b, q) { return { left: a.left + (b.left - a.left) * q, top: a.top + (b.top - a.top) * q, width: a.width + (b.width - a.width) * q, height: a.height + (b.height - a.height) * q }; }
+      // '' unless, somewhere along the path (a to b), a copy's pieces leave the
+      // exact border-image of the box on that path (KazuLib.frostPieces of
+      // it): each piece must show exactly its slice of the picture, sit where
+      // that slice goes and be its size, and never be scaled up (it is laid
+      // out at its larger end, so the compositor never rasters it bigger)
+      function piecesBad(g, d, a, b) {
+        var bad = [], ps = g.children, lay = L.frostFlightPieces(d, tileR, popR);
+        var iw = d.w + d.outset[1] + d.outset[3];
+        if (ps.length !== 8) return ps.length + ' pieces';
+        ps.forEach(function (pc, i) {
+          var s = lay[i], css = 'width:' + s.w + 'px;height:' + s.h + 'px;background-size:' + s.bw + 'px ' + s.bh + 'px;background-position:' + s.bx + 'px ' + s.by + 'px';
+          if (pc.style.cssText !== css) bad.push('piece ' + i + ' layout ' + pc.style.cssText);
+          if (pc.anims.length !== 1 || pc.anims[0].timing !== T) bad.push('piece ' + i + ' timing');
+        });
+        for (var q = 0; q <= 1.000001 && !bad.length; q += 0.05) {
+          var want = L.frostPieces(d, boxAt(a, b, q));
+          ps.forEach(function (pc, i) {
+            var t = tfAt(pc.anims[0].keys, q), w = want[i], s = lay[i], k = s.bw / iw; // layout px per picture px, along x
+            if (!t) { bad.push('piece ' + i + ' animates more than transform'); return; }
+            if (Math.abs(t.x - w.x) > 1e-6 || Math.abs(t.y - w.y) > 1e-6 || Math.abs(s.w * t.kx - w.sw * w.kx) > 1e-6 || Math.abs(s.h * t.ky - w.sh * w.ky) > 1e-6) bad.push(q.toFixed(2) + ' piece ' + i + ' off');
+            if (Math.abs(-s.bx / k - w.sx) > 1e-6 || Math.abs(s.w / k - w.sw) > 1e-6) bad.push('piece ' + i + ' shows the wrong slice');
+            if ((q === 0 || q > 0.999) && (Math.abs(t.kx) > 1 + 1e-9 || Math.abs(t.ky) > 1 + 1e-9)) bad.push('piece ' + i + ' scaled up at an end');
+          });
+        }
+        return bad.slice(0, 3).join(' | ');
+      }
+      var popD = { w: 760, h: 626 }, tileD = { w: 252, h: 144 };
+      [[popD, L.frostCard({ w: 760, h: 626, r: 24, seed: 1 })], [tileD, L.frostCard({ w: 252, h: 144, r: 24, seed: 1 })]].forEach(function (x) { x[0].slice = x[1].slice; x[0].outset = x[1].outset; x[0].depth = x[1].depth; });
       hf.frostFly(host, pop, tile, tileR, popR, true, T);
       ok('flight (live): outside Christmas a pop-up flies with no snow copies', host.children.length === 0 && pop.style.borderImageSource === undefined);
       hf.setFrost(true); hf.enter(tile); hf.frostModal(pop, 102);
       hf.frostFly(host, pop, tile, tileR, popR, true, T);
-      var layer = host.children[0], gs = layer ? layer.children : [];
+      var layer = host.children[0], gs = copies(layer);
       // opening: the pop-up's picture (flown to) underneath, the tile's on top
-      ok('flight (live): opening hides the pop-up\'s own snow and flies two copies over it on one layer, the picture it flies to underneath', host.children.length === 1 && layer.className === 'frost-flight' && gs.length === 2 && gs[0].style.borderImage === pop.props['--xf'] && gs[1].style.borderImage === tile.props['--xf'] && pop.style.borderImageSource === 'none');
-      ok('flight (live): each copy is a real box on the pop-up\'s path (left/top/width/height, never a scale), with its exact timing', gs.length === 2 && gs.every(function (g) { return g.anims.length === 2 && JSON.stringify(g.anims[0].keys) === JSON.stringify([px(tileR), px(popR)]) && g.anims[0].timing === T && g.anims[1].timing === T; }));
+      ok('flight (live): opening hides the pop-up\'s own snow and flies two copies over it on one layer, the picture it flies to underneath', host.children.length === 1 && layer.className === 'frost-flight' && gs.length === 2 && pic(gs[0]) === urlOf(pop.props['--xf']) && pic(gs[1]) === urlOf(tile.props['--xf']) && pop.style.borderImageSource === 'none');
+      var openPieces = gs.length === 2 ? piecesBad(gs[0], popD, tileR, popR) || piecesBad(gs[1], tileD, tileR, popR) : 'no copies';
+      ok('flight (live): each copy is its eight border-image pieces, moved by transform alone (compositor) with the pop-up\'s timing, landing on the exact border-image of the box at every point of the path', !openPieces && gs.every(function (g) { return g.anims.length === 1 && g.anims[0].timing === T; }), openPieces);
+      var flat = gs.length === 2 ? gs.every(function (g) { return [0, 2, 4, 6].every(function (i) { return [0, .3, .7, 1].every(function (q) { var t = tfAt(g.children[i].anims[0].keys, q); return t && t.kx === 1 && t.ky === 1; }); }) && [0, .5, 1].every(function (q) { return tfAt(g.children[1].anims[0].keys, q).ky === 1; }); }) : false;
+      ok('flight (live): corners are never stretched and the snow (top edge) never changes height', flat);
       var openBad = gs.length === 2 ? flightBad(gs, tileR, popR, 0) : 'no copies';
       ok('flight (live): opening, the snow never thins and the pop-up\'s picture never shows on a box too small for it', !openBad, openBad);
-      ok('flight (live): opening starts as exactly the tile and lands as exactly the pop-up', gs.length === 2 && opAt(gs[1].anims[1].keys, 0) === 1 && opAt(gs[0].anims[1].keys, 0) === 0 && opAt(gs[1].anims[1].keys, 1) === 0 && opAt(gs[0].anims[1].keys, 1) === 1);
+      ok('flight (live): opening starts as exactly the tile and lands as exactly the pop-up', gs.length === 2 && opAt(gs[1].anims[0].keys, 0) === 1 && opAt(gs[0].anims[0].keys, 0) === 0 && opAt(gs[1].anims[0].keys, 1) === 0 && opAt(gs[0].anims[0].keys, 1) === 1);
       var p0 = (2 * REACH - 144) / (626 - 144); // the box is 184 tall (two 92px corners) here
-      ok('flight (live): the pop-up\'s snow starts showing the moment its corners fit, not later', gs.length === 2 && Math.abs(gs[0].anims[1].keys[1].offset - p0) < 1e-9, gs.length && gs[0].anims[1].keys[1].offset + ' vs ' + p0);
+      ok('flight (live): the pop-up\'s snow starts showing the moment its corners fit, not later', gs.length === 2 && Math.abs(gs[0].anims[0].keys[1].offset - p0) < 1e-9, gs.length && gs[0].anims[0].keys[1].offset + ' vs ' + p0);
       hf.frostFly(host, pop, tile, tileR, popR, false, T);
-      var back = host.children[0], bgs = back ? back.children : [];
+      var back = host.children[0], bgs = copies(back);
       var closeBad = bgs.length === 2 ? flightBad(bgs, popR, tileR, 1) : 'no copies';
       ok('flight (live): a new flight replaces the last (one layer at a time)', host.children.length === 1 && back !== layer);
-      ok('flight (live): closing puts the tile\'s picture underneath, runs the path backwards, never thins or squashes, and lands as exactly the tile', bgs.length === 2 && bgs[0].style.borderImage === tile.props['--xf'] && JSON.stringify(bgs[0].anims[0].keys) === JSON.stringify([px(popR), px(tileR)]) && !closeBad && opAt(bgs[0].anims[1].keys, 0) === 0 && opAt(bgs[1].anims[1].keys, 0) === 1 && opAt(bgs[0].anims[1].keys, 1) === 1 && opAt(bgs[1].anims[1].keys, 1) === 0, closeBad);
+      ok('flight (live): closing puts the tile\'s picture underneath, runs the path backwards, never thins or squashes, and lands as exactly the tile', bgs.length === 2 && pic(bgs[0]) === urlOf(tile.props['--xf']) && !piecesBad(bgs[0], tileD, popR, tileR) && !piecesBad(bgs[1], popD, popR, tileR) && !closeBad && opAt(bgs[0].anims[0].keys, 0) === 0 && opAt(bgs[1].anims[0].keys, 0) === 1 && opAt(bgs[0].anims[0].keys, 1) === 1 && opAt(bgs[1].anims[0].keys, 1) === 0, closeBad);
       var mirrorBad = bgs.length === 2 ? 0 : 1;
       for (var mq = 0; mq <= 1.000001 && !mirrorBad; mq += 0.01) {
-        if (Math.abs(opAt(bgs[0].anims[1].keys, mq) - opAt(gs[1].anims[1].keys, 1 - mq)) > 1e-9) mirrorBad++; // the tile's picture
-        if (Math.abs(opAt(bgs[1].anims[1].keys, mq) - opAt(gs[0].anims[1].keys, 1 - mq)) > 1e-9) mirrorBad++; // the pop-up's
+        if (Math.abs(opAt(bgs[0].anims[0].keys, mq) - opAt(gs[1].anims[0].keys, 1 - mq)) > 1e-9) mirrorBad++; // the tile's picture
+        if (Math.abs(opAt(bgs[1].anims[0].keys, mq) - opAt(gs[0].anims[0].keys, 1 - mq)) > 1e-9) mirrorBad++; // the pop-up's
       }
       ok('flight (live): opening and closing mirror each other by shape', mirrorBad === 0);
       hf.frostLand();
@@ -366,8 +482,8 @@
       try { hf.frostLand(); } catch (e) { threwLand = true; }
       ok('flight (live): landing with nothing in the air is harmless', !threwLand);
       hf.frostFly(host, pop, card(252, 144), tileR, popR, true, T);
-      var solo = host.children[0] ? host.children[0].children : [];
-      ok('flight (live): a tile not frozen yet flies only the pop-up\'s snow, fading in once it fits', solo.length === 1 && solo[0].style.borderImage === pop.props['--xf'] && opAt(solo[0].anims[1].keys, 0) === 0 && opAt(solo[0].anims[1].keys, p0) === 0 && opAt(solo[0].anims[1].keys, 1) === 1);
+      var solo = copies(host.children[0]);
+      ok('flight (live): a tile not frozen yet flies only the pop-up\'s snow, fading in once it fits', solo.length === 1 && pic(solo[0]) === urlOf(pop.props['--xf']) && opAt(solo[0].anims[0].keys, 0) === 0 && opAt(solo[0].anims[0].keys, p0) === 0 && opAt(solo[0].anims[0].keys, 1) === 1);
       hf.frostLand(); hf.setFrost(false);
       hf.frostFly(host, pop, tile, tileR, popR, true, T);
       ok('flight (live): once Christmas ends a pop-up flies with no snow copies', host.children.length === 0 && pop.style.borderImageSource === '');
@@ -380,8 +496,9 @@
     var xmasRules = (css.replace(/\/\*[\s\S]*?\*\//g, '').match(/[^}]*(xmas-garland|xmas-frost|mf-christmas|mf-x-)[^{]*\{[^}]*\}/g) || []).join('\n');
     ok('css: every new Christmas decoration is static (no animation, no transition)', xmasRules.length > 0 && !/animation|transition/.test(xmasRules));
     ok('css: the string lights are hidden until Christmas and never catch clicks', /\.xmas-garland \{[^}]*pointer-events: none; display: none;/.test(css) && css.indexOf('body.season-christmas .xmas-garland { display: block; }') !== -1);
-    var flightCss = (/\.frost-flight \{[^}]*\}\s*\.frost-flight > div \{[^}]*\}/.exec(css) || [''])[0];
-    ok('css: the flying snow sits over the pop-up on a 0x0 contained anchor that never catches clicks', flightCss.indexOf('.frost-flight { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; pointer-events: none; contain: size layout style; }') === 0 && flightCss.indexOf('.frost-flight > div { position: absolute; border-style: solid; border-width: 0; }') !== -1);
+    var flightCss = (/\.frost-flight \{[^}]*\}\s*\.frost-flight > div \{[^}]*\}\s*\.frost-flight > div > div \{[^}]*\}/.exec(css) || [''])[0];
+    ok('css: the flying snow sits over the pop-up on a 0x0 contained anchor that never catches clicks, its pieces moved from their top-left', flightCss.indexOf('.frost-flight { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; pointer-events: none; contain: size layout style; }') === 0 && flightCss.indexOf('.frost-flight > div { position: absolute; left: 0; top: 0; }') !== -1 && flightCss.indexOf('.frost-flight > div > div { position: absolute; left: 0; top: 0; transform-origin: 0 0; background-repeat: no-repeat; }') !== -1);
+    ok('css: the flying snow paints nothing per frame (no border-image to re-lay, no background-size to re-scale)', !!flightCss && !/border-image|background-size/.test(flightCss));
     ok('css: no blend mode, isolation or paint containment on the flying snow (each cost a screen-sized offscreen pass every frame)', !!flightCss && !/mix-blend-mode|isolation|contain: (strict|paint)|inset: 0/.test(flightCss));
     var mpad = /@media \(max-width: 560px\) \{\s*body\.season-christmas \.modal-overlay \{ padding-top: (\d+)px; \}\s*body\.season-christmas \.modal-panel \{ max-height: min\(90vh, calc\(100dvh - (\d+)px\)\); \}\s*\}/.exec(css);
     var phonePad = (/\.modal-overlay \{ padding: (\d+)px; \}/.exec(css) || [])[1];
