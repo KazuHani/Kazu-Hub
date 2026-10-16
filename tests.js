@@ -998,6 +998,7 @@ require('./evals/emoji-free.js').run(L, scriptSrc, [{ name: 'index.html', text: 
 require('./evals/perf-guards.js').run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
 require('./evals/site-control.js').run(require('./site-config.js'), scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), fs.readFileSync(__dirname + '/sw.js', 'utf8').replace(/\r\n/g, '\n'), ok, eq);
 require('./evals/christmas.js').run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
+require('./evals/modal-motion.js').run(L, scriptSrc, cssSrc, ok, eq);
 
 // ---- evals/perf.js statistics helpers (Node only: the harness itself needs Chrome) ----
 // The browser eval reports through these, so a wrong percentile or a summed-instead-

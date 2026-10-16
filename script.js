@@ -2600,43 +2600,66 @@
     if (def.live) { def.live(); modalUpdater = setInterval(def.live, 1000); }
   }
 
-  // Pop-up motion (FLIP): the panel starts as the clicked card (same position and
-  // size), grows into its resting place, and on close shrinks back onto the card.
-  // The panel's own content cross-fades so it never shows squashed text. Falls
-  // back to a plain fade with no trigger, a hidden card, reduced motion, or no
-  // Web Animations support.
+  // Pop-up motion: the panel starts as the clicked card (same position, size and
+  // corners), grows into its resting place, and on close shrinks back onto the
+  // card. It keeps its real size the whole way: KazuLib.modalMorphFrames moves
+  // it with a translate and trims it with a clip-path inset (true round corners,
+  // the card's radius to the panel's), so every frame is a real rounded box on
+  // desktop and phones alike, never a squashed one. The clip also cuts off the
+  // drop shadow, so a shadow-only box (flightShadow) flies underneath. The
+  // panel's own content cross-fades in, at full size, as the box opens around
+  // it. Falls back to a plain fade with no trigger, a hidden card, reduced
+  // motion, or no Web Animations support.
   const MODAL_OPEN_MS = 520, MODAL_CLOSE_MS = 440;
   const MODAL_EASE = 'cubic-bezier(.32,.72,0,1)';   // same smooth settle both ways (no snap at either end)
   let modalAnim = null;
   let modalHiddenCard = null;   // the card hidden while its panel is out
   let modalRevealTimer = 0;     // brings the card back under the panel as it lands
+  let modalShadow = null;       // the shadow-only box while a pop-up is in the air
+  function flightShadowLand() { if (modalShadow) { modalShadow.remove(); modalShadow = null; } }
+  // A box the panel's size and corners carrying only its drop shadow. It flies
+  // by transform alone (compositor only, no repaint), so its blur is scaled
+  // with it; a soft shadow under the box does not show that, a squashed panel
+  // did. Sits under the panel, over the dimmed backdrop.
+  function flightShadow(from, to, opening, timing) {
+    flightShadowLand();
+    const cs = getComputedStyle(modalPanel);
+    const shadow = KazuLib.outerShadows(cs.boxShadow);
+    if (!shadow) return;
+    const el = document.createElement('div');
+    el.className = 'modal-flight-shadow';
+    el.style.cssText = 'left:' + to.left + 'px;top:' + to.top + 'px;width:' + to.width + 'px;height:' + to.height + 'px;border-radius:' + cs.borderTopLeftRadius + ';box-shadow:' + shadow;
+    modalEl.insertBefore(el, modalPanel);
+    const frames = [
+      { transform: 'translate(' + (from.left - to.left) + 'px, ' + (from.top - to.top) + 'px) scale(' + from.width / to.width + ', ' + from.height / to.height + ')' },
+      { transform: 'translate(0px, 0px) scale(1, 1)' }
+    ];
+    if (!opening) frames.reverse();
+    el.animate(frames, timing);
+    if (!opening) el.animate([{ opacity: 1, offset: 0 }, { opacity: 1, offset: .86 }, { opacity: 0, offset: 1 }], { duration: timing.duration, easing: 'linear', fill: 'both' });
+    modalShadow = el;
+  }
   function flyModal(card, opening, onDone) {
     const done = () => { if (onDone) onDone(); };
     frostLand();                            // a flight cut short leaves no snow in the air
+    flightShadowLand();                     // nor a shadow
     if (!modalPanel.animate) { done(); return false; }
     const to = modalPanel.getBoundingClientRect();
     const from = card && card.isConnected ? card.getBoundingClientRect() : null;
-    const fly = !REDUCED_MOTION && from && from.width > 0 && from.height > 0 && to.width > 0 && to.height > 0;
-    const sx = fly ? from.width / to.width : 1, sy = fly ? from.height / to.height : 1;
-    const away = fly
-      ? 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px) scale(' + sx + ',' + sy + ')'
-      : 'translateY(10px) scale(.97)';
-    // keep the corners looking like the card's while the panel is scaled down
-    const cardR = fly ? parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0 : 0;
+    const cardR = from ? parseFloat(getComputedStyle(card).borderTopLeftRadius) || 0 : 0;
     const panelR = parseFloat(getComputedStyle(modalPanel).borderTopLeftRadius) || 0;
-    // Phones: transform-only keyframes stay on the compositor; animating the corner
-    // radius repaints every frame and was a big part of the mobile lag.
-    const lite = !!(window.matchMedia && window.matchMedia('(pointer: coarse), (max-width: 768px)').matches);
+    const morph = !REDUCED_MOTION && from ? KazuLib.modalMorphFrames(from, to, cardR, panelR) : null;
+    const fly = !!morph;
     const frames = fly
-      ? [lite ? { transform: away } : { transform: away, borderRadius: (cardR / sx) + 'px / ' + (cardR / sy) + 'px' },
-         lite ? { transform: 'none' } : { transform: 'none', borderRadius: panelR + 'px' }]
-      : [{ transform: away, opacity: 0 }, { transform: 'none', opacity: 1 }];
+      ? morph
+      : [{ transform: 'translateY(10px) scale(.97)', opacity: 0 }, { transform: 'none', opacity: 1 }];
     if (!opening) frames.reverse();
     const ms = REDUCED_MOTION ? 180 : (opening ? MODAL_OPEN_MS : MODAL_CLOSE_MS);
     const anim = modalPanel.animate(frames, { duration: ms, easing: MODAL_EASE, fill: 'both' });
     modalAnim = anim;
-    // blurring a moving, scaling panel is what janks; it is off while flying
+    // blurring a moving, clipped panel is what janks; it is off while flying
     if (fly) modalPanel.classList.add('is-flying');
+    if (fly) flightShadow(from, to, opening, { duration: ms, easing: MODAL_EASE, fill: 'both' });
     // Christmas: the snow flies at its true size, not squashed by the scale
     if (fly) frostFly(modalEl, modalPanel, card, from, to, opening, { duration: ms, easing: MODAL_EASE, fill: 'both' });
     if (fly) {
@@ -2659,6 +2682,7 @@
       if (modalAnim !== anim) return;
       modalPanel.classList.remove('is-flying');
       frostLand();                          // the panel's own snow takes over in the same frame
+      flightShadowLand();                   // and its own shadow (on a close both have melted away by now)
       // leave the panel in its settled state, then drop the fill so layout is normal
       if (opening) { anim.cancel(); modalAnim = null; Array.from(modalPanel.children).forEach((el) => el.getAnimations().forEach((a) => a.cancel())); }
       done();

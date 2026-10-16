@@ -105,6 +105,10 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   observers, the static decorations, and the footer credit's contrast at every
   hour. Shared by `tests.js` and `tests.html` (which adds live frame checks);
   also runs alone (`node evals/christmas.js`).
+- `evals/modal-motion.js` — gate assertions for the pop-up motion and phone
+  pop-up text (see "Pop-up motion" below). Shared by `tests.js` and
+  `tests.html` (which adds live frame sweeps); also runs alone
+  (`node evals/modal-motion.js`).
 - `evals/perf.js` — periodic eval (real Chrome over the DevTools protocol,
   plain Node >= 22, no dependencies, no network): idle CPU per process, style
   recalcs and layouts per second, scroll, hover and pop-up frame pacing and
@@ -336,9 +340,9 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   overlay starts 23px down and the panel's `dvh` cap shrinks to match, because
   a real phone's `vh` is taller than its `dvh` and a tall pop-up otherwise
   sits 10px from the top with its snow cut off.
-- **Snow in flight.** The pop-up flies by `transform: scale(sx, sy)` from the
-  card's box, which would squash its own snow (a thin strip and tiny corners
-  on a card-sized panel). So `flyModal` calls `frostFly`: the panel's own frost
+- **Snow in flight.** The pop-up is clipped to a true-size box in flight (see
+  "Pop-up motion" below), and a border-image under a clip-path would be cut
+  off, so it cannot wear its own snow while flying. `flyModal` calls `frostFly`: the panel's own frost
   is hidden (`border-image-source: none` inline) and a `.frost-flight` layer
   over it carries two true-size copies, the card's picture and the panel's.
   Each is a box whose `left/top/width/height` (never a scale) follow the
@@ -355,10 +359,9 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   `plus-lighter`/`isolation`, which measured as an offscreen pass every frame
   (`node evals/perf.js --scenarios modal --date 2026-12-25T12:00:00Z`,
   desktop, three runs each: 45 missed frames a run before, 52 with the
-  blended layer, 47 as shipped; phone unchanged). On phones the panel's
-  transform runs on the compositor while the copies run on the main thread;
-  they sample the same timeline, so a slow main thread can make the snow
-  stutter but not drift.
+  blended layer, 47 as shipped; phone unchanged). The copies follow the same
+  straight-line box as the clipped panel, so they sit exactly on it (tests.html
+  checks every 10ms against the clipped box, not the panel's bounding rect).
 - **Snowfall (desktop only).** `KazuWeatherFx.layersFor(w, { festive: true })`
   adds a light snow (`FESTIVE_SNOW`, 0.32) whatever the sky is doing, unless it
   is really raining (rain and snow never share the canvas) or already snowing
@@ -385,6 +388,52 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   frost (it was ~280 ms before the frost moved to idle slices).
 - **Known gap** (unchanged): the Christmas palette and decorations are applied
   by `script.js`, so 25 December shows the blue tint for a moment first.
+
+## Pop-up motion
+
+A stat tile opens into its pop-up and closes back onto it (`flyModal` in
+`script.js`). Up to 2026-10-16 this was a `transform: scale(sx, sy)` FLIP: a
+360px-wide phone pop-up scaled to a half-width card was about 0.47 x 0.17, so
+its corners became flat ellipses (desktop animated `border-radius` to
+compensate; phones skipped that for speed and went almost square), and the
+shape only matched the card at the two ends.
+
+- **Morph, not scale.** `KazuLib.modalMorphFrames(from, to, cardR, panelR)`
+  returns two keyframes: the panel keeps its real size, a translate carries its
+  top-left corner along the path and a `clip-path: inset(... round r)` trims it
+  to the box on that path, the radius going from the card's to the panel's.
+  Every frame is a real rounded box, the card exactly at one end and the panel
+  exactly at the other, on every device. A scale appears only for an axis where
+  the card is bigger than the panel (a clip cannot grow a box), with the radius
+  divided by it. The content keeps its real size and fades in as the box opens.
+  Both the panel and the shadow box have `transform-origin: 0 0`; the maths
+  assumes it.
+- **Shadow.** The clip cuts the drop shadow off, so `flightShadow` puts a
+  shadow-only box (`.modal-flight-shadow`, the panel's outer shadows from
+  `KazuLib.outerShadows`, inset glint dropped) under the panel, flown by
+  transform alone. `flightShadowLand` removes it when the flight finishes or a
+  new one starts.
+- **No page shift.** `body.modal-open { overflow: hidden }` used to drop the
+  native scrollbar where one shows (touch with classic bars, no-JS), widening
+  the page 15px and moving the card under the pop-up as it took off.
+  `html { scrollbar-gutter: stable }` keeps the gutter; no effect with
+  `html.has-cscroll` (no native bar) or overlay scrollbars.
+- **Phone text.** Under `max-width: 560px` every text class a pop-up renders
+  gets `clamp(B, B/3.2 vw, 1.3B)`, B being its old phone size: unchanged at
+  320px, 17% bigger at 375px, capped at 30%. The block is generated (one rule
+  per class) and is the last thing in `style.css`; `.modal-overlay
+  .modal-panel` outranks the per-pop-up phone overrides above it. Note that
+  with the reserved gutter `100vw` excludes a classic scrollbar.
+- **Cost** (`node evals/perf.js --scenarios modal --date 2026-12-25T12:00:00Z`,
+  vs the scale FLIP): desktop 41 to 36 missed frames, phone 3 to 3.
+- **Tests.** `evals/modal-motion.js` (shared by `tests.js` and `tests.html`,
+  also `node evals/modal-motion.js`) walks the keyframes the way the browser
+  interpolates them (exact card and panel at the ends, straight-line path,
+  round corners every step), checks the shadow parsing, pins the wiring and
+  the CSS, and checks every phone type rule keeps the formula. `tests.html`
+  freezes real flights every 10ms on desktop and phone (`shapeSweep`): round
+  corners, exact card and panel ends, shadow box on the clipped box; and
+  checks the phone sizes against `100vw` and that nothing overflows sideways.
 
 ## Conventions and gotchas
 

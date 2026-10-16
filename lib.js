@@ -1564,7 +1564,59 @@
     return 'url("' + uri + '") ' + f.slice.join(' ') + ' / ' + f.width.join('px ') + 'px / ' + f.outset.join('px ') + 'px stretch';
   }
 
+  // Pop-up motion. The panel used to fly by transform: scale(sx, sy) from the
+  // card's box, which squashes everything it paints: the corners turn into
+  // flat ellipses (on phones, where the radius was not compensated, almost
+  // square) and the shape only matches the card at the two ends. Instead the
+  // panel keeps its real size and two things move together: a translate that
+  // carries its top-left corner along the path, and a clip-path inset that
+  // trims it down to the box on that path, with true round corners going from
+  // the card's radius to the panel's. Every frame is then a real rounded box,
+  // the card at one end, the panel at the other. A scale is only used for an
+  // axis where the card is bigger than the panel (a clip cannot grow a box),
+  // and the radius is divided by it so the corners stay round.
+  // from / to: { left, top, width, height } (viewport px). r0 / r1: the card's
+  // and the panel's corner radius. Returns the [card, panel] keyframes, or null
+  // for unusable boxes.
+  function modalMorphFrames(from, to, r0, r1) {
+    var ok = function (b) { return b && isFinite(b.left) && isFinite(b.top) && b.width > 0 && b.height > 0 && isFinite(b.width) && isFinite(b.height); };
+    if (!ok(from) || !ok(to)) return null;
+    r0 = Math.max(0, +r0 || 0); r1 = Math.max(0, +r1 || 0);
+    var n = function (v) { return +(+v).toFixed(3); };
+    var sx = Math.max(1, from.width / to.width), sy = Math.max(1, from.height / to.height);
+    var right = to.width - from.width / sx, bottom = to.height - from.height / sy;
+    var rr = Math.min(r0, from.width / 2, from.height / 2);
+    return [
+      {
+        transform: 'translate(' + n(from.left - to.left) + 'px, ' + n(from.top - to.top) + 'px) scale(' + n(sx) + ', ' + n(sy) + ')',
+        clipPath: 'inset(0px ' + n(right) + 'px ' + n(bottom) + 'px 0px round ' + n(rr / sx) + 'px / ' + n(rr / sy) + 'px)'
+      },
+      {
+        transform: 'translate(0px, 0px) scale(1, 1)',
+        clipPath: 'inset(0px 0px 0px 0px round ' + n(r1) + 'px / ' + n(r1) + 'px)'
+      }
+    ];
+  }
+
+  // The outer (drop) shadows of a computed box-shadow list, inset ones
+  // dropped: the clip-path that shapes a flying pop-up also cuts its drop
+  // shadow off, so a shadow-only box carries it instead. '' when none.
+  function outerShadows(css) {
+    if (!css || css === 'none') return '';
+    var parts = [], depth = 0, start = 0;
+    for (var i = 0; i < css.length; i++) {
+      var ch = css.charAt(i);
+      if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+      else if (ch === ',' && depth === 0) { parts.push(css.slice(start, i)); start = i + 1; }
+    }
+    parts.push(css.slice(start));
+    return parts.map(function (s) { return s.trim(); }).filter(function (s) { return s && !/\binset\b/.test(s); }).join(', ');
+  }
+
   global.KazuLib = {
+    modalMorphFrames: modalMorphFrames,
+    outerShadows: outerShadows,
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
     escapeHtml: escapeHtml,

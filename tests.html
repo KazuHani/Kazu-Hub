@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=39"></script>
+  <script src="lib.js?v=40"></script>
   <script src="site-config.js?v=1"></script>
   <script src="weather-fx.js?v=4"></script>
   <script src="evals/new-year-fireworks.js?v=3"></script>
@@ -29,6 +29,7 @@
   <script src="evals/perf-guards.js?v=5"></script>
   <script src="evals/site-control.js?v=1"></script>
   <script src="evals/christmas.js?v=5"></script>
+  <script src="evals/modal-motion.js?v=2"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1073,13 +1074,28 @@
         // fits: a box at least two of its corners wide and tall), and the snow
         // never thins (one copy is always whole where both have snow). '' too
         // when motion is reduced (no flight).
+        // The box a flying pop-up shows on screen: it keeps its real size and is
+        // trimmed by a clip-path inset (KazuLib.modalMorphFrames), so its
+        // bounding rect is the whole panel; the clip's right and bottom insets
+        // (scaled with it, transform-origin 0 0) take it down to what is seen.
+        // Also returns the corner radius as seen, x and y.
+        function visibleBox(p, w) {
+          var pr = p.getBoundingClientRect(), cs = w.getComputedStyle(p);
+          var m = cs.transform === 'none' ? [1, 0, 0, 1] : cs.transform.slice(7, -1).split(',').map(Number);
+          var ins = /^inset\(([^)]*?)(?: round ([^)]*))?\)$/.exec(cs.clipPath);
+          var v = ins ? ins[1].trim().split(/\s+/).map(parseFloat) : [0];
+          v = [v[0], v[1] === undefined ? v[0] : v[1], v[2] === undefined ? v[0] : v[2], v[3] === undefined ? (v[1] === undefined ? v[0] : v[1]) : v[3]];
+          var rad = ins && ins[2] ? ins[2].split('/').map(function (s) { return parseFloat(s); }) : [parseFloat(cs.borderTopLeftRadius)];
+          if (rad.length < 2 || isNaN(rad[1])) rad[1] = rad[0];
+          return { left: pr.left + v[3] * m[0], top: pr.top + v[0] * m[3], width: pr.width - (v[1] + v[3]) * m[0], height: pr.height - (v[0] + v[2]) * m[3], rx: rad[0] * m[0], ry: rad[1] * m[3] };
+        }
         function flightSweep(d, w, ms) {
           var p = d.querySelector('.modal-panel'), gs = Array.prototype.slice.call(d.querySelectorAll('.frost-flight > div')), bad = [];
           if (!gs.length) return w.matchMedia('(prefers-reduced-motion: reduce)').matches ? '' : 'no flying snow';
           var anims = d.getAnimations().filter(function (a) { return a.effect && a.effect.target && a.effect.target.closest('.modal-overlay'); });
           for (var t = 0; t <= ms && bad.length < 3; t += 10) {
             anims.forEach(function (a) { a.pause(); a.currentTime = t; });
-            var pr = p.getBoundingClientRect(), clear = 1;
+            var pr = visibleBox(p, w), clear = 1;
             gs.forEach(function (g, i) {
               var b = g.getBoundingClientRect(), cs = w.getComputedStyle(g), op = +cs.opacity, bw = cs.borderImageWidth.split(' ');
               var reach = parseFloat(bw[2] || bw[0]); // the bottom width is the corner reach
@@ -1090,6 +1106,52 @@
             if (gs.length === 2 && clear > .01) bad.push(t + 'ms snow thins to ' + (1 - clear).toFixed(2));
           }
           return bad.join(' | ');
+        }
+        // Opens (or closes) a pop-up from its card and freezes the flight every
+        // 10ms. '' when, at every step, what is seen is a true rounded box (round
+        // corners, never squashed ellipses), it starts as exactly the card (box
+        // and corners) and lands as exactly the panel, and the drop shadow's box
+        // rides under it. Works in any season (no snow needed).
+        function shapeSweep(d, w, key, closing) {
+          var card = d.querySelector('.stat-card[data-modal="' + key + '"]'), p = d.querySelector('.modal-panel'), bad = [];
+          var cr = card.getBoundingClientRect(), cR = parseFloat(w.getComputedStyle(card).borderTopLeftRadius);
+          card.click();
+          var anims = function () { return d.getAnimations().filter(function (a) { return a.effect && a.effect.target && a.effect.target.closest('.modal-overlay'); }); };
+          if (closing) { anims().forEach(function (a) { a.finish(); }); d.querySelector('.modal-close').click(); }
+          var as = anims(), ms = closing ? 440 : 520, sh = d.querySelector('.modal-flight-shadow');
+          if (!as.length) return w.matchMedia('(prefers-reduced-motion: reduce)').matches ? '' : 'no flight';
+          as.forEach(function (a) { a.pause(); a.currentTime = ms; });
+          var rest = closing ? null : visibleBox(p, w);
+          if (closing) { as.forEach(function (a) { a.currentTime = 0; }); rest = visibleBox(p, w); }
+          var near = function (a, b, e) { return Math.abs(a - b) <= (e || .75); };
+          var same = function (a, b) { return near(a.left, b.left) && near(a.top, b.top) && near(a.width, b.width) && near(a.height, b.height); };
+          var fmt = function (b) { return [b.left, b.top, b.width, b.height].map(Math.round).join(','); };
+          for (var t = 0; t <= ms && bad.length < 3; t += 10) {
+            as.forEach(function (a) { a.currentTime = t; });
+            var v = visibleBox(p, w);
+            if (!near(v.rx, v.ry, .25)) bad.push(t + 'ms corners squashed (' + v.rx.toFixed(1) + ' x ' + v.ry.toFixed(1) + ')');
+            if (sh) { var s = sh.getBoundingClientRect(); if (!same(s, v)) bad.push(t + 'ms shadow ' + fmt(s) + ' off the box ' + fmt(v)); }
+          }
+          as.forEach(function (a) { a.currentTime = closing ? ms : 0; });
+          var atCard = visibleBox(p, w);
+          if (!same(atCard, cr) || !near(atCard.rx, cR)) bad.push('card end ' + fmt(atCard) + ' r' + atCard.rx.toFixed(1) + ' vs card ' + fmt(cr) + ' r' + cR);
+          as.forEach(function (a) { a.currentTime = closing ? 0 : ms; });
+          var atPanel = visibleBox(p, w), pR = parseFloat(w.getComputedStyle(p).borderTopLeftRadius);
+          if (!same(atPanel, rest) || !near(atPanel.rx, pR)) bad.push('panel end ' + fmt(atPanel) + ' r' + atPanel.rx.toFixed(1) + ' vs ' + fmt(rest) + ' r' + pR);
+          as.forEach(function (a) { a.finish(); });
+          return bad.join(' | ');
+        }
+        function finishFlights(d) {
+          d.getAnimations().forEach(function (a) { if (a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('.modal-overlay')) a.finish(); });
+        }
+        // '' when no text in the open pop-up runs out of its box sideways.
+        function modalOverflow(d) {
+          var bad = [];
+          Array.prototype.forEach.call(d.querySelectorAll('.modal-panel, .modal-panel *'), function (e) {
+            if (e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0 && d.defaultView.getComputedStyle(e).overflowX !== 'visible') bad.push(e.className + ' ' + e.scrollWidth + '>' + e.clientWidth);
+            if (e.children.length === 0 && e.textContent.trim() && e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0) bad.push(e.className + ' text ' + e.scrollWidth + '>' + e.clientWidth);
+          });
+          return bad.slice(0, 3).join(' | ');
         }
         function closeSnowyModal(d) { d.querySelector('.modal-close').click(); }
         // '' when the snow on every card (13px tall) has at least 8px of air
@@ -1236,6 +1298,9 @@
           ok('Christmas live: each pop-up wears its own snow', modalSnow2.ok && modalSnow2.src !== modalSnow.src);
           ok('Christmas live: the snow flies with the pop-up at its true size, opening and closing (on the panel\'s box every 10ms, never squashed, the snow never thins)', openSweep === '' && closeSweep === '', openSweep + ' / ' + closeSweep);
           closeSnowyModal(d);
+          finishFlights(d);
+          var shapes = ['time', 'age', 'bday'].map(function (k) { return [shapeSweep(d, w, k, false), shapeSweep(d, w, k, true)].filter(Boolean).join(' / '); }).filter(Boolean);
+          ok('pop-up motion (desktop): every frame is a true rounded box, from exactly the card to exactly the panel and back, with its shadow under it', shapes.length === 0, shapes.join(' || '));
           return christmasFrame(390);
         }).then(function (f) {
           frames.push(f);
@@ -1258,6 +1323,29 @@
           closeSnowyModal(d);
           var phoneClose = flightSweep(d, w, 440);
           ok('Christmas live (phone): the snow flies with the pop-up at its true size, opening and closing', phoneOpen === '' && phoneClose === '', phoneOpen + ' / ' + phoneClose);
+          finishFlights(d);
+          var phoneShapes = ['time', 'age', 'bday'].map(function (k) { return [shapeSweep(d, w, k, false), shapeSweep(d, w, k, true)].filter(Boolean).join(' / '); }).filter(Boolean);
+          ok('pop-up motion (phone): every frame is a true rounded box (no flat corners), from exactly the card to exactly the panel and back', phoneShapes.length === 0, phoneShapes.join(' || '));
+          // phone text grows with the screen: width / 320 of the 320px size
+          // 100vw as the page sees it: the frame less the reserved scrollbar
+          // gutter (a phone has none)
+          var probe = d.createElement('div'); probe.style.cssText = 'position:absolute;width:100vw;height:0';
+          d.body.appendChild(probe); var vw = probe.getBoundingClientRect().width; probe.remove();
+          var typeBad = [], overflowBad = [];
+          ['time', 'age', 'bday'].forEach(function (k) {
+            d.querySelector('.stat-card[data-modal="' + k + '"]').click();
+            finishFlights(d);
+            var want = { time: [['.tz-time', 28], ['.modal-note', 14]], age: [['.stat-tile-num', 18], ['.fun-label', 11], ['.age-head', 21]], bday: [['.cd-num', 26], ['.modal-btn', 14], ['.modal-credit', 12]] }[k];
+            want.forEach(function (x) {
+              var el = d.querySelector('.modal-panel ' + x[0]), got = el ? parseFloat(w.getComputedStyle(el).fontSize) : NaN, exp = Math.min(x[1] * 1.3, x[1] * vw / 320);
+              if (!(Math.abs(got - exp) < .1)) typeBad.push(k + ' ' + x[0] + ' ' + got + 'px, want ' + exp.toFixed(2));
+            });
+            var o = modalOverflow(d); if (o) overflowBad.push(k + ': ' + o);
+            closeSnowyModal(d);
+            finishFlights(d);
+          });
+          ok('pop-up text (phone): sizes grow with the screen (a 375px page reads 375/320 of the 320px size)', typeBad.length === 0 && vw > 320, typeBad.join(' | ') + ' / 100vw ' + vw);
+          ok('pop-up text (phone): the bigger text never runs out of its box sideways', overflowBad.length === 0, overflowBad.join(' || '));
           d.getAnimations().forEach(function (a) { a.cancel(); });
           d.body.classList.add('low-power');
           ok('Christmas live (phone): low-power keeps the pine cards and the static frost', w.getComputedStyle(d.body).getPropertyValue('--card-bg').trim() === 'rgba(16,52,36,.95)' && w.getComputedStyle(d.querySelector('.stat-card')).borderImageSource.indexOf('url(') === 0);
@@ -1271,8 +1359,8 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=86', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=87', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=88', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=88', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
@@ -1283,6 +1371,7 @@
         KazuPerfGuards.run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
         KazuSiteControlChecks.run(KazuSiteConfig, scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), swSrc.replace(/\r\n/g, '\n'), ok, eq);
         KazuChristmasChecks.run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
+        KazuModalMotionChecks.run(L, scriptSrc, cssSrc, ok, eq);
         ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
         ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
