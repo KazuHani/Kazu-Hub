@@ -42,10 +42,11 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=84`,
-  `lib.js?v=39`, `script.js?v=85` (version query strings; see cache-busting
-  below). Inline JSON-LD schema and the `#boot-tint` first-paint script
-  (see "First paint" below) in the `<head>`.
+- `index.html` — the whole page. Loads `style.css?v=92`,
+  `lib.js?v=41`, `site-config.js?v=1`, `i18n.js?v=1`, `script.js?v=89` (version
+  query strings; see cache-busting below). Inline JSON-LD schema, the
+  `#boot-tint` first-paint script (see "First paint" below) and the
+  `#boot-lang` script (see "Language switch" below) in the `<head>`.
 - `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
@@ -108,6 +109,17 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 - `evals/modal-motion.js` — gate assertions for the pop-up motion (see
   "Pop-up motion" below). Shared by `tests.js` and `tests.html` (which adds
   live frame sweeps); also runs alone (`node evals/modal-motion.js`).
+- `i18n.js` — the English / Japanese switch (`KazuI18n`). Pure, DOM-free
+  translation core (phrase table + rules for text `script.js` composes) plus
+  a thin DOM shell that only runs while Japanese is on. Loaded after
+  `site-config.js` and before `script.js`, versioned `?v=1`, precached. See
+  "Language switch" below.
+- `evals/i18n.js` — gate assertions for the language switch: every visible
+  string and label in `index.html` has Japanese (or is a name on `KEEP`), the
+  run-time text families read out of `script.js` all translate, a table of
+  composed strings, the DOM translator against fake nodes, and `#boot-lang`
+  against `pickLang`. Shared by `tests.js` and `tests.html`; also runs alone
+  (`node evals/i18n.js`).
 - `evals/phone-type.js` — gate assertions for phone text that grows with the
   screen, page and pop-ups (see "Phone text" below). Shared by `tests.js` and
   `tests.html` (which measures every rule in a phone frame); also runs alone
@@ -681,7 +693,7 @@ These are load-bearing; read before editing.
   APIs always fetched fresh. Preserve that strategy.
 - **localStorage keys in use:** `kazu-dev-seasons`, `kazu-discord-cache`,
   `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
-  `kazu-site-config`, `kazu-notice-dismissed`. Don't collide.
+  `kazu-site-config`, `kazu-notice-dismissed`, `kazu-lang`. Don't collide.
 
 ## Working agreements (from CLAUDE.md)
 
@@ -753,6 +765,51 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
 - **Tests.** `evals/site-control.js` (shared by `tests.js` and `tests.html`) runs the
   contract, the source pins and the real cache and first-paint logic against fakes.
 - **Privacy.** Every visit makes one request to the Firebase host named in the meta tag.
+
+## Language switch (English / Japanese)
+
+A pill at the top right of the page (`.lang-switch`, first thing in
+`.container`) switches between English and 日本語. **English is the page's own
+language and the default**; Japanese is a layer that `i18n.js` puts on top, so
+`index.html` and `script.js` stay plain English and know nothing about it.
+
+- **How text gets translated.** `KazuI18n.translate(text)` returns Japanese or
+  `null`: an exact phrase table first (`PHRASES`, keys whitespace-collapsed
+  with straight apostrophes), then `RULES` for text `script.js` builds at run
+  time (the clock goes 24-hour, en-GB dates become `2026年10月19日(月)`,
+  countdowns, Steam hours, MAL progress, Discord timers, toasts), and
+  `"A · B"` is translated part by part. Anything unknown stays English, so live
+  content and control-panel text are never mangled.
+- **The DOM shell.** Switching to Japanese walks `<body>` once (text nodes plus
+  `title` / `aria-label` / `alt` / `placeholder`) and connects a
+  MutationObserver that translates whatever `script.js` writes afterwards
+  (callbacks run before the next paint, so no English flashes). Every swap is
+  recorded; switching back puts the exact originals back (keeping any fresh
+  English `script.js` wrote meanwhile), reverses stray Japanese phrases, and
+  disconnects the observer. **The English page runs none of it.**
+- **Never translated:** `SKIP_SELECTOR` in `i18n.js` (live names and titles:
+  Discord / Steam / Spotify fields, game, anime, film and song titles, the quote,
+  story titles, the dev panel) and anything marked `translate="no"`. Put new
+  live-content elements there.
+- **The choice** is saved as `kazu-lang`; `?lang=ja|en` wins for one load without
+  saving. `#boot-lang` in `<head>` reads the same choice before first paint: it
+  sets `<html lang="ja">` and `html.i18n-pending` (page text hidden) until
+  `i18n.js` has run, with a 3 s failsafe. A gate test sweeps it against
+  `pickLang`.
+- **Adding or changing copy.** Add the Japanese line to `PHRASES` (or a rule for
+  composed text). Names, brands and product models go on `KEEP` in
+  `evals/i18n.js` instead. The gate fails on any visible string or label in
+  `index.html` that has neither, and on a new weather condition, status,
+  pop-up title or empty state in `script.js` without Japanese. Japanese values
+  must be unique (switching back looks them up in reverse) and emoji-free.
+- **Layout notes.** The birthday pop-up head puts the age first in Japanese;
+  its counter (歳) comes from a `html[lang="ja"]` `::after` rule in `style.css`.
+  Zodiac signs, weekdays and fonts need nothing else: the page's fonts have no
+  kana, so browsers fall back per glyph to the system Japanese font
+  (`<html lang="ja">` makes them pick Japanese glyph forms).
+- **Not translated by design:** the quote (English source text), song, game,
+  anime and story titles, and announcement text from the control panel unless
+  it matches a known phrase.
 
 ## Emoji-free content
 
