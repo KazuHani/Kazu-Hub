@@ -344,6 +344,9 @@ body.season-christmas .sakura-branch { display: none; }
   font-style: italic; font-weight: 600; font-size: 16px; line-height: 1.45; color: var(--ink);
 }
 .quote-text::before { content: '”'; } .quote-text::after { content: '”'; }
+/* Japanese quote: upright (an oblique kana is a synthetic slant) in 「」. */
+html[lang="ja"] .quote-text { font-style: normal; }
+html[lang="ja"] .quote-text::before { content: '「'; } html[lang="ja"] .quote-text::after { content: '」'; }
 .quote-author {
   margin-top: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em;
   text-transform: uppercase; color: var(--accent);
@@ -442,11 +445,11 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 .discord-card, .steam-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; }
 .discord-card { background: linear-gradient(150deg,#1e2147 0%,#404ee0 60%,#1e2147 100%); box-shadow: 0 16px 38px rgba(40,40,110,.32); backdrop-filter: none; border: none; }
 .steam-card { background: linear-gradient(150deg,#1b2838 0%,#2a475e 60%,#1b2838 100%); box-shadow: 0 16px 38px rgba(20,40,70,.32); backdrop-filter: none; border: none; }
-.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; position: relative; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; position: relative; }
 .card-head-title { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
 .pill-link {
   position: relative; overflow: hidden; font-size: 12px; font-weight: 800; text-decoration: none;
-  padding: 5px 11px; border-radius: 999px; display: inline-block;
+  padding: 5px 11px; border-radius: 999px; display: inline-block; white-space: nowrap; flex-shrink: 0;
   transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease;
 }
 .pill-link:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 6px 16px rgba(0,0,0,.18); filter: brightness(1.12); }
@@ -494,7 +497,7 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 .retry-btn {
   appearance: none; border: 1px solid rgba(140,180,230,.4); background: rgba(120,170,230,.16);
   color: inherit; font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .04em;
-  border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  border-radius: 999px; padding: 6px 14px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
   transition: transform .25s ease, background .25s ease;
 }
 .retry-btn:hover { transform: translateY(-1px); background: rgba(120,170,230,.3); }

@@ -789,6 +789,66 @@
     };
   }
 
+  // ---- Japanese titles for the MAL card (AniList) --------------------------
+  // In Japanese mode the MAL card shows each show's native title. MAL's own
+  // feeds carry none (load.json's title_localized is null; Jikan's user list
+  // omits title_japanese), so they come from AniList's public GraphQL API,
+  // which indexes every entry by its MAL id: one POST for every row, no key,
+  // CORS-clean. Rows keep only their url, so the id is read back out of it.
+  function malIdFromUrl(url) {
+    var m = /^https:\/\/myanimelist\.net\/(?:anime|manga)\/(\d+)(?:[\/?#]|$)/.exec(String(url || ''));
+    var id = m ? parseInt(m[1], 10) : 0;
+    return id > 0 ? id : null;
+  }
+  function malIdList(ids) {
+    var out = [];
+    (ids || []).forEach(function (id) { if (typeof id === 'number' && id > 0 && id % 1 === 0 && out.indexOf(id) === -1) out.push(id); });
+    return out.slice(0, 50); // one AniList page
+  }
+  // The POST body for AniList, or null when there is nothing to ask for. Each
+  // half is only sent when it has ids: an empty idMal_in is ignored by
+  // AniList and would return 50 unrelated shows.
+  function anilistTitlesQuery(animeIds, mangaIds) {
+    var a = malIdList(animeIds), m = malIdList(mangaIds);
+    if (!a.length && !m.length) return null;
+    var vars = [], parts = [], variables = {};
+    if (a.length) { vars.push('$a: [Int]'); parts.push('a: Page(perPage: 50) { media(idMal_in: $a, type: ANIME) { idMal title { native } } }'); variables.a = a; }
+    if (m.length) { vars.push('$m: [Int]'); parts.push('m: Page(perPage: 50) { media(idMal_in: $m, type: MANGA) { idMal title { native } } }'); variables.m = m; }
+    return { query: 'query (' + vars.join(', ') + ') { ' + parts.join(' ') + ' }', variables: variables };
+  }
+  // AniList's answer -> { anime: { malId: native }, manga: {...} }, keeping
+  // only ids that were asked for and titles that are real, short strings.
+  function anilistTitlesParse(json, animeIds, mangaIds) {
+    var out = { anime: {}, manga: {} };
+    var data = json && json.data;
+    function take(page, ids, into) {
+      var want = malIdList(ids);
+      var list = page && Array.isArray(page.media) ? page.media : [];
+      list.forEach(function (x) {
+        var id = x && x.idMal, t = x && x.title && x.title.native;
+        if (want.indexOf(id) === -1 || typeof t !== 'string') return;
+        t = t.replace(/\s+/g, ' ').trim();
+        if (t && t.length <= 200) into[id] = t;
+      });
+    }
+    if (data) { take(data.a, animeIds, out.anime); take(data.m, mangaIds, out.manga); }
+    return out;
+  }
+  // localStorage copy of the titles ('kazu-mal-ja'), so Japanese visitors see
+  // them at once on the next load. Sanitised, at most 100 per kind.
+  function malJaCacheParse(raw) {
+    var out = { anime: {}, manga: {} };
+    var j = null;
+    try { j = JSON.parse(raw); } catch (e) { return out; }
+    ['anime', 'manga'].forEach(function (k) {
+      var src = j && typeof j[k] === 'object' ? j[k] : null;
+      if (!src) return;
+      var keys = Object.keys(src).filter(function (id) { return /^\d+$/.test(id) && typeof src[id] === 'string' && src[id] && src[id].length <= 200; });
+      keys.slice(-100).forEach(function (id) { out[k][id] = src[id]; });
+    });
+    return out;
+  }
+
   // ---- Discord presence (localStorage fallback when Lanyard is down) --------
   // Reads the stored Discord presence snapshot (written after every successful
   // fetch or WebSocket update). When Lanyard is unreachable or blocked, the
@@ -1746,6 +1806,10 @@
     malMangaRow: malMangaRow,
     malMangaListRow: malMangaListRow,
     malMangaCacheParse: malMangaCacheParse,
+    malIdFromUrl: malIdFromUrl,
+    anilistTitlesQuery: anilistTitlesQuery,
+    anilistTitlesParse: anilistTitlesParse,
+    malJaCacheParse: malJaCacheParse,
     ratingStars: ratingStars,
     letterboxdWatchedLabel: letterboxdWatchedLabel,
     parseLetterboxdRss: parseLetterboxdRss,

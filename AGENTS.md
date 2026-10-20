@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=93`,
-  `lib.js?v=41`, `site-config.js?v=1`, `i18n.js?v=2`, `script.js?v=89` (version
+- `index.html` — the whole page. Loads `style.css?v=94`,
+  `lib.js?v=42`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=90` (version
   query strings; see cache-busting below). Inline JSON-LD schema, the
   `#boot-tint` first-paint script (see "First paint" below) and the
   `#boot-lang` script (see "Language switch" below) in the `<head>`.
@@ -693,7 +693,7 @@ These are load-bearing; read before editing.
   APIs always fetched fresh. Preserve that strategy.
 - **localStorage keys in use:** `kazu-dev-seasons`, `kazu-discord-cache`,
   `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
-  `kazu-site-config`, `kazu-notice-dismissed`, `kazu-lang`. Don't collide.
+  `kazu-site-config`, `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`. Don't collide.
 
 ## Working agreements (from CLAUDE.md)
 
@@ -790,7 +790,31 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
 - **Never translated:** `SKIP_SELECTOR` in `i18n.js` (live names and titles:
   Discord / Steam / Spotify fields, game, anime, film and song titles, the quote,
   story titles, the dev panel) and anything marked `translate="no"`. Put new
-  live-content elements there.
+  live-content elements there. Product names (the PC parts), brand kickers
+  (DISCORD, STEAM, YOUTUBE MUSIC), handles, song, film and story titles stay
+  English on purpose: that is how Japanese sites write them.
+- **Live data with its own Japanese: `data-ja`.** An element with
+  `data-ja="..."` and a single text node shows that text in Japanese mode, even
+  inside `SKIP_SELECTOR`, and is restored on English. The MAL card uses it:
+  `script.js` asks AniList's public GraphQL API (`graphql.anilist.co`, no key,
+  CORS-clean) for each row's native title by MAL id, one POST for every anime
+  and manga row (`KazuLib.anilistTitlesQuery` / `anilistTitlesParse`; ids come
+  out of the row url via `malIdFromUrl`). It only asks while the page is in
+  Japanese, and again on `kazu-langchange` (fired by `i18n.js` on every
+  switch). Titles are kept in `kazu-mal-ja` (at most 100 per kind,
+  `malJaCacheParse`); an id AniList doesn't answer for is not asked again that
+  visit. MAL's own feeds carry no Japanese title (`load.json`'s
+  `title_localized` is null), hence AniList.
+- **The quote.** zenquotes is English only, so Japanese mode shows a quote
+  from `QUOTES` in `i18n.js` (`[English, Japanese, author in Japanese]`):
+  the quote's own translation when it is one of `FALLBACK_QUOTES`, otherwise
+  `QUOTES[hash(text) % n]`, the same pick every time for the same English.
+  `createQuoteSync` keeps text and author paired and puts the latest English
+  back on a switch. A gate test fails if a `FALLBACK_QUOTES` line in
+  `script.js` has no row in `QUOTES`. Japanese quotes are upright in 「」.
+- **Japanese labels run longer.** Header pills (`.pill-link`) and `.retry-btn`
+  are `white-space: nowrap; flex-shrink: 0` so プロフィール → and 再試行 never
+  break over two lines; gate-tested.
 - **The choice** is saved as `kazu-lang`; `?lang=ja|en` wins for one load without
   saving. With neither, the **device language** decides: the first entry in
   `navigator.languages` (falling back to `navigator.language`) whose primary

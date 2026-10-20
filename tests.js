@@ -261,6 +261,26 @@ eq('malListRow coerces bad watched/img', (function () {
   return [r.watched, r.img];
 })(), [0, '']);
 
+// ---- Japanese MAL titles (AniList) ----
+eq('malIdFromUrl: Jikan anime url', L.malIdFromUrl('https://myanimelist.net/anime/59062/Gachiakuta'), 59062);
+eq('malIdFromUrl: load.json manga url', L.malIdFromUrl('https://myanimelist.net/manga/2'), 2);
+eq('malIdFromUrl: bare site, other hosts, junk -> null', [L.malIdFromUrl('https://myanimelist.net'), L.malIdFromUrl('https://evil.example/anime/3'), L.malIdFromUrl('https://myanimelist.net/anime/0'), L.malIdFromUrl('https://myanimelist.net/anime/12abc'), L.malIdFromUrl(null)], [null, null, null, null, null]);
+eq('anilistTitlesQuery: nothing to ask -> null', [L.anilistTitlesQuery([], []), L.anilistTitlesQuery(null, undefined), L.anilistTitlesQuery([0, -1, 1.5, '7'], [])], [null, null, null]);
+const aq = L.anilistTitlesQuery([59062, 59062, 31964], []);
+ok('anilistTitlesQuery: anime only sends only the ANIME half, deduped', /type: ANIME/.test(aq.query) && !/MANGA|\$m/.test(aq.query) && JSON.stringify(aq.variables) === '{"a":[59062,31964]}', JSON.stringify(aq));
+const mq = L.anilistTitlesQuery([], [2]);
+ok('anilistTitlesQuery: manga only sends only the MANGA half', /type: MANGA/.test(mq.query) && !/ANIME|\$a/.test(mq.query) && JSON.stringify(mq.variables) === '{"m":[2]}', JSON.stringify(mq));
+eq('anilistTitlesQuery: caps at one page of 50', L.anilistTitlesQuery(Array.from({ length: 80 }, (_, i) => i + 1), []).variables.a.length, 50);
+const aniJson = { data: {
+  a: { media: [{ idMal: 59062, title: { native: 'ガチアクタ' } }, { idMal: 999, title: { native: '頼んでない' } }, { idMal: 31964, title: { native: '  僕の  ヒーロー ' } }, { idMal: 5, title: { native: null } }, null] },
+  m: { media: [{ idMal: 2, title: { native: 'ベルセルク' } }, { idMal: 13, title: { native: 'x'.repeat(201) } }] },
+} };
+eq('anilistTitlesParse: keeps asked-for ids, tidies whitespace, drops junk and over-long titles', L.anilistTitlesParse(aniJson, [59062, 31964, 5], [2, 13]), { anime: { 59062: 'ガチアクタ', 31964: '僕の ヒーロー' }, manga: { 2: 'ベルセルク' } });
+eq('anilistTitlesParse: errors or nothing -> empty maps', [L.anilistTitlesParse(null, [1], []), L.anilistTitlesParse({ errors: [{}] }, [1], [])], [{ anime: {}, manga: {} }, { anime: {}, manga: {} }]);
+eq('malJaCacheParse: round-trips', L.malJaCacheParse(JSON.stringify({ anime: { 59062: 'ガチアクタ' }, manga: { 2: 'ベルセルク' } })), { anime: { 59062: 'ガチアクタ' }, manga: { 2: 'ベルセルク' } });
+eq('malJaCacheParse: bad JSON, null, junk keys and values -> clean', [L.malJaCacheParse('{nope'), L.malJaCacheParse(null), L.malJaCacheParse(JSON.stringify({ anime: { abc: 'x', 3: 7, 4: '' }, manga: 'no' }))], [{ anime: {}, manga: {} }, { anime: {}, manga: {} }, { anime: {}, manga: {} }]);
+eq('malJaCacheParse: keeps at most 100 per kind', Object.keys(L.malJaCacheParse(JSON.stringify({ anime: Object.fromEntries(Array.from({ length: 130 }, (_, i) => [String(i + 1), 't' + i])), manga: {} })).anime).length, 100);
+
 // ---- discordCacheParse (localStorage fallback when Lanyard is down) ----
 const discordCached = {
   discord_user: { id: '346360416827473921', username: 'kazu_hani', global_name: 'Kazu | ハニ ', avatar: 'd102a6d0085aa76bbdc7969b4235943d' },

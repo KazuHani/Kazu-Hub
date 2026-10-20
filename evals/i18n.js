@@ -19,6 +19,13 @@
      - Device language: with no ?lang= and no saved choice, the first English
        or Japanese entry in navigator.languages decides; a saved or ?lang=
        choice always beats it.
+     - Quotes: every FALLBACK_QUOTES line in script.js has its Japanese in
+       QUOTES (same author always the same Japanese name), any other quote
+       maps to a stable entry, and the text/author pair stays in step and
+       restores the latest English (createQuoteSync on fake elements).
+     - data-ja: live data carrying its own Japanese (MAL native titles) is
+       shown in Japanese mode even inside a skipped subtree, and restored.
+     - Header pills never wrap (the Japanese labels are longer).
      - Theme: the switch (and the announcement strip it shares tokens with)
        takes its colours from the active palette. Every palette that sets
        --accent also sets --chip-bg / --chip-bd / --on-accent; the pressed
@@ -284,6 +291,73 @@
     ok('i18n: i18n.js loads after site-config.js and before script.js (its observer must be live before script.js writes)', !!ver && html.indexOf('<script src="site-config.js') < html.indexOf('<script src="i18n.js') && html.indexOf('<script src="i18n.js') < html.indexOf('<script src="script.js'));
     ok('i18n: the service worker precaches the same i18n.js version', !!ver && sw.indexOf("'./i18n.js?v=" + ver + "'") !== -1);
     ok('i18n: the switch has a 44px tap target on touch screens', /@media \(pointer: coarse\) \{ \.lang-switch-btn \{ min-height: 44px;/.test(css));
+    // ---- quotes ----
+    var fbBlock = (/const FALLBACK_QUOTES = \[([\s\S]*?)\n  \];/.exec(scriptSrc) || [])[1] || '';
+    var fb = [], fre = /\['((?:[^'\\]|\\.)*)', '((?:[^'\\]|\\.)*)'\]/g, fm;
+    while ((fm = fre.exec(fbBlock))) fb.push([fm[1].replace(/\\'/g, "'"), fm[2].replace(/\\'/g, "'")]);
+    ok('quotes: FALLBACK_QUOTES is read out of script.js', fb.length >= 40, fb.length);
+    var qByKey = {};
+    I.QUOTES.forEach(function (q) { qByKey[q[0].replace(/[‘’]/g, "'")] = q; });
+    var missingQ = fb.filter(function (q) { return !qByKey[q[0].replace(/[‘’]/g, "'")]; });
+    ok('quotes: every fallback quote has its Japanese in QUOTES', !missingQ.length, missingQ.map(function (q) { return q[0]; }).join(' | '));
+    var authorJa = {}, authorClash = [];
+    fb.forEach(function (q) {
+      var row = qByKey[q[0].replace(/[‘’]/g, "'")];
+      if (!row) return;
+      if (authorJa[q[1]] && authorJa[q[1]] !== row[2]) authorClash.push(q[1]);
+      authorJa[q[1]] = row[2];
+      var got = I.quoteJa(q[0]);
+      if (got.text !== row[1] || got.author !== row[2]) authorClash.push('quoteJa: ' + q[0]);
+    });
+    ok('quotes: each fallback quote maps to its own line, and one author is always one Japanese name', !authorClash.length, authorClash.join(' | '));
+    var jaTexts = I.QUOTES.map(function (q) { return q[1]; });
+    ok('quotes: Japanese lines are unique and Japanese', jaTexts.every(function (t, i) { return jaTexts.indexOf(t) === i && /[\u3040-\u30ff\u4e00-\u9fff]/.test(t); }));
+    ok('quotes: no Japanese quote or author carries an emoji', I.QUOTES.every(function (q) { return stripEmoji(q[1]) === q[1] && stripEmoji(q[2]) === q[2]; }));
+    var phraseVals = Object.keys(I.PHRASES).map(function (k) { return I.PHRASES[k]; });
+    ok('quotes: no Japanese quote collides with a page phrase (switching back stays unambiguous)', jaTexts.every(function (t) { return phraseVals.indexOf(t) === -1; }));
+    var zen = 'Act without expectation.';
+    ok('quotes: any other quote maps to a real entry, the same one every time', I.quoteJa(zen).text === I.quoteJa(zen).text && jaTexts.indexOf(I.quoteJa(zen).text) !== -1 && I.quoteJa(' Act  without expectation. ').text === I.quoteJa(zen).text);
+    eq('quotes: curly apostrophes match the straight key', I.quoteJa('It always seems impossible until it’s done.').author, 'ネルソン・マンデラ');
+    var spread = {};
+    ['a', 'b', 'Life is short.', 'Keep going.', 'Be kind.', 'Stay curious.', 'Rest is work too.', 'Ship it.'].forEach(function (t) { spread[I.quoteJa(t).text] = 1; });
+    ok('quotes: unknown quotes spread over the table, not all onto one line', Object.keys(spread).length >= 4, Object.keys(spread).length);
+    function fakeBox(t) { return { textContent: t }; }
+    var qs = I.createQuoteSync(I.quoteJa), qt = fakeBox('The future belongs to those who believe in the beauty of their dreams.'), qa = fakeBox('— Eleanor Roosevelt');
+    qs.sync(qt, qa);
+    eq('quote sync: shows the Japanese pair', [qt.textContent, qa.textContent], ['未来は、自分の夢の美しさを信じる人のものだ。', '— エレノア・ルーズベルト']);
+    qs.sync(qt, qa);
+    eq('quote sync: a second sync changes nothing', [qt.textContent, qa.textContent], ['未来は、自分の夢の美しさを信じる人のものだ。', '— エレノア・ルーズベルト']);
+    qt.textContent = 'Quality is not an act, it is a habit.'; qs.sync(qt, qa);
+    qa.textContent = '— Aristotle'; qs.sync(qt, qa);
+    eq('quote sync: a new English quote (text then author) gets its own pair', [qt.textContent, qa.textContent], ['質とは一度の行いではなく、習慣である。', '— アリストテレス']);
+    qs.restore(qt, qa);
+    eq('quote sync: restore puts back the latest English', [qt.textContent, qa.textContent], ['Quality is not an act, it is a habit.', '— Aristotle']);
+    var et = fakeBox(''), ea = fakeBox('');
+    I.createQuoteSync(I.quoteJa).sync(et, ea);
+    eq('quote sync: no quote yet, nothing written', [et.textContent, ea.textContent], ['', '']);
+    ok('quotes: Japanese quote is upright in 「」', css.indexOf('html[lang="ja"] .quote-text { font-style: normal; }') !== -1 && css.indexOf("html[lang=\"ja\"] .quote-text::before { content: '「'; }") !== -1);
+
+    // ---- data-ja (live data with its own Japanese) ----
+    var tJa = fakeText('Gachiakuta'), tMulti = fakeText('Berserk'), tSame = fakeText('ONE PIECE');
+    var titleEl = fakeEl({ 'data-ja': 'ガチアクタ' }, [tJa], true);
+    var multiEl = fakeEl({ 'data-ja': 'ベルセルク' }, [tMulti, fakeText(' x')], true);
+    var sameEl = fakeEl({ 'data-ja': 'ONE PIECE' }, [tSame], true);
+    var row = fakeEl({}, [titleEl, multiEl, sameEl]);
+    var trJa = I.createTranslator(T, I.untranslate);
+    trJa.walk(row);
+    eq('data-ja: a skipped title with data-ja shows its Japanese', tJa.nodeValue, 'ガチアクタ');
+    eq('data-ja: an element with more than one child is left alone', tMulti.nodeValue, 'Berserk');
+    eq('data-ja: only real swaps are recorded', trJa.size(), 1);
+    trJa.restore(row);
+    eq('data-ja: restore puts the English title back', tJa.nodeValue, 'Gachiakuta');
+    ok('data-ja: script.js gives both MAL lists data-ja titles, escaped', (scriptSrc.match(/malTitleHtml\('(anime|manga)', x\)/g) || []).length === 2 && scriptSrc.indexOf(' data-ja="\' + escapeHtml(ja) + \'"') !== -1);
+    ok('data-ja: AniList is only asked while the page is in Japanese, and again on a switch', scriptSrc.indexOf('if (malJaBusy || !pageIsJapanese()') !== -1 && scriptSrc.indexOf("document.addEventListener('kazu-langchange', loadMalJa);") !== -1);
+    ok('data-ja: the render signatures include the Japanese titles (a late title repaints)', (scriptSrc.match(/JSON\.stringify\(rows\) \+ rows\.map\(\(x\) => malJaTitle\('(anime|manga)', x\.url\)\)/g) || []).length === 2);
+
+    // ---- header pills ----
+    ok('pills: header pills never wrap and never shrink', /\.pill-link \{[^}]*white-space: nowrap; flex-shrink: 0;/.test(css));
+    ok('pills: the Retry button never wraps or shrinks (再試行 broke over two lines)', /\.retry-btn \{[^}]*white-space: nowrap; flex-shrink: 0;/.test(css));
+
     // ---- theme: the switch follows the active palette ----
     function rule(sel) { var at = css.indexOf('\n' + sel + ' {'); if (at === -1) return null; var open = css.indexOf('{', at); return css.slice(open + 1, css.indexOf('}', open)); }
     var swRule = rule('.lang-switch'), onRule = rule('.lang-switch-btn[aria-pressed="true"]'), blRule = rule('.hub-bulletin');

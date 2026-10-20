@@ -18,7 +18,14 @@
        English restores the exact original text and disconnects the observer,
        so the default page pays nothing at all.
      - Elements that hold names and titles (SKIP_SELECTOR) are never touched,
-       nor is anything marked translate="no".
+       nor is anything marked translate="no". Two exceptions inside them:
+         - an element carrying data-ja="..." (live data that came with its
+           own Japanese, e.g. the MAL card's native titles from AniList)
+           shows that text in Japanese mode;
+         - the quote: zenquotes only speaks English, so Japanese mode shows
+           a quote from QUOTES instead (the English quote's own translation
+           when it is one of them, otherwise one picked by a hash of the
+           English text, so the same quote always maps the same way).
      - The choice is kept in localStorage ('kazu-lang'); ?lang=ja|en wins for
        one page load without being saved. With neither, the device language
        decides (navigator.languages, first English or Japanese entry), and
@@ -102,7 +109,7 @@
     'Online, not in a game right now': 'オンライン、今はゲームをしていません',
 
     // Steam
-    'View profile →': 'プロフィールを見る →',
+    'View profile →': 'プロフィール →',
     'Recently played': '最近プレイしたゲーム',
     'Connecting to Steam…': 'Steamに接続中…',
     'My library, achievements & playtime.': 'ライブラリ、実績、プレイ時間。',
@@ -394,6 +401,109 @@
     return nav.language ? [nav.language] : [];
   }
 
+  // ---- Quotes ---------------------------------------------------------------
+  // [English, Japanese, author in Japanese]. Holds every FALLBACK_QUOTES entry
+  // in script.js (a gate test keeps them in step); Japanese mode shows these
+  // because the live quote API has no Japanese.
+  var QUOTES = [
+    ['The only way to do great work is to love what you do.', '偉大な仕事をする唯一の方法は、自分のしていることを愛することだ。', 'スティーブ・ジョブズ'],
+    ["Believe you can and you're halfway there.", 'できると信じれば、もう半分は達成している。', 'セオドア・ルーズベルト'],
+    ['It does not matter how slowly you go as long as you do not stop.', '止まりさえしなければ、どれだけゆっくり進んでもかまわない。', '孔子'],
+    ["Whether you think you can or you think you can't, you're right.", 'できると思っても、できないと思っても、どちらも正しい。', 'ヘンリー・フォード'],
+    ['Success is not final, failure is not fatal: it is the courage to continue that counts.', '成功は終わりではなく、失敗は致命的ではない。大切なのは続ける勇気だ。', 'ウィンストン・チャーチル'],
+    ['The future belongs to those who believe in the beauty of their dreams.', '未来は、自分の夢の美しさを信じる人のものだ。', 'エレノア・ルーズベルト'],
+    ['Hardships often prepare ordinary people for an extraordinary destiny.', '困難は、ふつうの人を特別な運命へと導く準備になることが多い。', 'C・S・ルイス'],
+    ['It is during our darkest moments that we must focus to see the light.', 'いちばん暗いときにこそ、光を見ることに集中しなければならない。', 'アリストテレス'],
+    ['Do not wait to strike till the iron is hot; make it hot by striking.', '鉄が熱くなるまで打つのを待つな。打って熱くせよ。', 'ウィリアム・バトラー・イェイツ'],
+    ["You miss 100% of the shots you don't take.", '打たなかったシュートは、100%外れる。', 'ウェイン・グレツキー'],
+    ['Act as if what you do makes a difference. It does.', '自分の行動が世界を変えるかのように行動しよう。実際に変えるのだから。', 'ウィリアム・ジェームズ'],
+    ['Success usually comes to those who are too busy to be looking for it.', '成功はたいてい、探している暇もないほど忙しい人のもとにやってくる。', 'ヘンリー・デイヴィッド・ソロー'],
+    ["Don't watch the clock; do what it does. Keep going.", '時計を見るな。時計と同じことをしよう。進み続けるんだ。', 'サム・レヴェンソン'],
+    ["Everything you've ever wanted is on the other side of fear.", '望んできたものはすべて、恐怖の向こう側にある。', 'ジョージ・アデア'],
+    ["Hard work beats talent when talent doesn't work hard.", '才能が努力しないとき、努力は才能に勝つ。', 'ティム・ノトキ'],
+    ['Dream big and dare to fail.', '大きな夢を持ち、失敗を恐れるな。', 'ノーマン・ヴォーン'],
+    ["Opportunities don't happen, you create them.", 'チャンスは起こるものではなく、自分でつくるものだ。', 'クリス・グロッサー'],
+    ['I find that the harder I work, the more luck I seem to have.', '懸命に働くほど、運が味方してくれるようだ。', 'トーマス・ジェファーソン'],
+    ['The only limit to our realization of tomorrow is our doubts of today.', '明日を実現するうえで唯一の限界は、今日の疑いだ。', 'フランクリン・D・ルーズベルト'],
+    ['What you get by achieving your goals is not as important as what you become by achieving your goals.', '目標を達成して得るものより、目標を達成することでなれる自分のほうが大切だ。', 'ジグ・ジグラー'],
+    ['You are never too old to set another goal or to dream a new dream.', '新しい目標を立てるのにも、新しい夢を見るのにも、遅すぎることはない。', 'C・S・ルイス'],
+    ["It always seems impossible until it's done.", '何事も、成し遂げるまでは不可能に思えるものだ。', 'ネルソン・マンデラ'],
+    ["Don't be afraid to give up the good to go for the great.", '最高を目指すために、良いものを手放すことを恐れるな。', 'ジョン・D・ロックフェラー'],
+    ['The way to get started is to quit talking and begin doing.', '始めるには、話すのをやめて動き出すことだ。', 'ウォルト・ディズニー'],
+    ["If you are working on something exciting that you care about, you don't have to be pushed.", '心から大切なワクワクすることに取り組んでいれば、誰かに背中を押してもらう必要はない。', 'スティーブ・ジョブズ'],
+    ['Success is walking from failure to failure with no loss of enthusiasm.', '成功とは、情熱を失わずに失敗から失敗へと歩き続けることだ。', 'ウィンストン・チャーチル'],
+    ['Quality is not an act, it is a habit.', '質とは一度の行いではなく、習慣である。', 'アリストテレス'],
+    ['Either you run the day, or the day runs you.', '一日を動かすか、一日に動かされるかのどちらかだ。', 'ジム・ローン'],
+    ['Energy and persistence conquer all things.', '気力と粘り強さは、すべてに打ち勝つ。', 'ベンジャミン・フランクリン'],
+    ['Believe in yourself and all that you are.', '自分自身と、自分のすべてを信じよう。', 'クリスチャン・D・ラーソン'],
+    ['Knowing yourself is the beginning of all wisdom.', '自分を知ることは、すべての知恵の始まりである。', 'アリストテレス'],
+    ["You don't have to be great to start, but you have to start to be great.", '始めるのに優れている必要はないが、優れた人になるには始めなければならない。', 'ジグ・ジグラー'],
+    ['Strive not to be a success, but rather to be of value.', '成功者になろうとするより、価値ある人になろうと努めよ。', 'アルベルト・アインシュタイン'],
+    ['The mind is everything. What you think you become.', '心がすべてだ。人は思ったとおりの自分になる。', 'ブッダ'],
+    ['Failure will never overtake me if my determination to succeed is strong enough.', '成功への決意が十分に強ければ、失敗に追いつかれることは決してない。', 'オグ・マンディーノ'],
+    ['We may encounter many defeats but we must not be defeated.', '何度負けることがあっても、打ちのめされてはならない。', 'マヤ・アンジェロウ'],
+    ['Imagine your life is perfect in every respect; what would it look like?', '人生があらゆる面で完璧だと想像してみよう。それはどんな姿だろう？', 'ブライアン・トレーシー'],
+    ['We generate fears while we sit. We overcome them by action.', '恐れは座っている間に生まれ、行動することで乗り越えられる。', 'ヘンリー・リンク'],
+    ['Whatever the mind dwells upon, it expands.', '心がとどまるものは、何であれ大きくなっていく。', 'ロバート・クーパー'],
+    ['Limitations live only in our minds. If we use our imaginations, our possibilities become limitless.', '限界は心の中にしかない。想像力を使えば、可能性は無限になる。', 'ジェイミー・パオリネッティ'],
+    ['You take your life in your own hands, and what happens? A terrible thing: no one to blame.', '自分の人生を自分の手に握ると何が起こるか。恐ろしいことに、誰のせいにもできなくなる。', 'エリカ・ジョング'],
+    ["What's money? A man is a success if he gets up in the morning and goes to bed at night and in between does what he wants.", 'お金が何だというんだ。朝起きて夜眠り、その間に好きなことをしていれば、その人は成功者だ。', 'ボブ・ディラン'],
+    ['A successful man is one who can lay a firm foundation with the bricks others have thrown at him.', '成功者とは、他人に投げつけられたレンガで確かな土台を築ける人のことだ。', 'デイヴィッド・ブリンクリー'],
+    ['The road to success and the road to failure are almost exactly the same.', '成功への道と失敗への道は、ほとんどまったく同じだ。', 'コリン・R・デイヴィス'],
+    ['The only place where your dream becomes impossible is in your own thinking.', '夢が不可能になる唯一の場所は、自分の頭の中だ。', 'ロバート・H・シュラー'],
+    ['All progress takes place outside the comfort zone.', 'すべての進歩は、居心地のいい場所の外で起こる。', 'マイケル・ジョン・ボバック'],
+    ['Push yourself, because no one else is going to do it for you.', '自分の背中は自分で押そう。ほかの誰も押してはくれないのだから。', '作者不詳'],
+    ['Great things never come from comfort zones.', '偉大なことは、居心地のいい場所からは決して生まれない。', '作者不詳'],
+    ['Sometimes later becomes never. Do it now.', '「あとで」は、ときに「永遠にやらない」になる。今やろう。', '作者不詳'],
+    ['Little things make big days.', '小さなことが、大きな一日をつくる。', '作者不詳'],
+    ["Don't stop when you're tired. Stop when you're done.", '疲れたときではなく、やり終えたときに止まろう。', '作者不詳']
+  ];
+  var QUOTE_INDEX = null;
+  function quoteKey(text) { return normKey(String(text || '')); }
+  // English quote -> { text, author } in Japanese. Known quotes get their own
+  // translation; any other text gets QUOTES[hash % n], stable per text.
+  function quoteJa(text) {
+    if (!QUOTE_INDEX) {
+      QUOTE_INDEX = {};
+      QUOTES.forEach(function (q, i) { QUOTE_INDEX[quoteKey(q[0])] = i; });
+    }
+    var key = quoteKey(text);
+    var i = Object.prototype.hasOwnProperty.call(QUOTE_INDEX, key) ? QUOTE_INDEX[key] : -1;
+    if (i === -1) {
+      var h = 0;
+      for (var c = 0; c < key.length; c++) h = (h * 31 + key.charCodeAt(c)) >>> 0;
+      i = h % QUOTES.length;
+    }
+    return { text: QUOTES[i][1], author: QUOTES[i][2] };
+  }
+  // Keeps the quote's text and author in step: Japanese mode shows the pair
+  // quoteJa picks, and remembers the English underneath (including any new
+  // quote script.js writes meanwhile) so English mode can put it back.
+  // Works on anything with textContent, so Node can test it.
+  function createQuoteSync(pick) {
+    var en = null, shown = null;
+    function sync(t, a) {
+      if (!t || !a) return;
+      var ct = t.textContent, ca = a.textContent;
+      if (!en) en = { t: ct, a: ca };
+      if (!shown || ct !== shown.t) en.t = ct;
+      if (!shown || ca !== shown.a) en.a = ca;
+      if (!String(en.t).trim()) { shown = null; return; }
+      var q = pick(en.t);
+      shown = { t: q.text, a: '— ' + q.author };
+      if (ct !== shown.t) t.textContent = shown.t;
+      if (ca !== shown.a) a.textContent = shown.a;
+    }
+    function restore(t, a) {
+      if (t && a && en && shown) {
+        if (t.textContent === shown.t) t.textContent = en.t;
+        if (a.textContent === shown.a) a.textContent = en.a;
+      }
+      en = null; shown = null;
+    }
+    return { sync: sync, restore: restore };
+  }
+
   // ---- DOM translator (works on anything node-shaped, so Node can test it) --
   var ATTRS = ['title', 'aria-label', 'alt', 'placeholder'];
   // Names and titles: live API content, the quote, product names. Never translated.
@@ -420,7 +530,16 @@
     function walk(node) {
       if (!node) return;
       if (node.nodeType === 3) { if (!skipped(node.parentElement)) text(node); return; }
-      if (node.nodeType !== 1 || skipped(node)) return;
+      if (node.nodeType !== 1) return;
+      // Live data that brought its own Japanese (data-ja): swap the element's
+      // single text node, even inside the names-and-titles skip list.
+      var ja = node.getAttribute('data-ja');
+      var only = node.childNodes && node.childNodes.length === 1 ? node.childNodes[0] : null;
+      if (ja && only && only.nodeType === 3) {
+        if (only.nodeValue !== ja) { texts.push([only, only.nodeValue, ja]); only.nodeValue = ja; }
+        return;
+      }
+      if (skipped(node)) return;
       for (var i = 0; i < ATTRS.length; i++) attr(node, ATTRS[i]);
       var kids = node.childNodes;
       for (var j = 0; j < kids.length; j++) walk(kids[j]);
@@ -468,6 +587,9 @@
     translate: translate,
     untranslate: untranslate,
     pickLang: pickLang,
+    QUOTES: QUOTES,
+    quoteJa: quoteJa,
+    createQuoteSync: createQuoteSync,
     deviceLang: deviceLang,
     navLangs: navLangs,
     createTranslator: createTranslator,
@@ -486,10 +608,18 @@
   var dom = createTranslator(translate, untranslate);
   var observer = null;
   var prunes = 0;
+  var quote = createQuoteSync(quoteJa);
+  function quoteEls() { return [document.getElementById('quoteText'), document.getElementById('quoteAuthor')]; }
+  function inQuote(n) {
+    var el = n && (n.nodeType === 1 ? n : n.parentElement);
+    return !!(el && el.closest && el.closest('#quoteBox'));
+  }
 
   function onMutations(records) {
+    var quoteTouched = false;
     for (var i = 0; i < records.length; i++) {
       var r = records[i];
+      if (inQuote(r.target)) { quoteTouched = true; continue; }
       if (r.type === 'childList') {
         for (var j = 0; j < r.addedNodes.length; j++) dom.walk(r.addedNodes[j]);
       } else if (r.type === 'characterData') {
@@ -498,6 +628,7 @@
         dom.attr(r.target, r.attributeName);
       }
     }
+    if (quoteTouched) { var q = quoteEls(); quote.sync(q[0], q[1]); }
     if (observer) observer.takeRecords(); // our own writes, already handled
     if (++prunes >= 600) { prunes = 0; dom.prune(); }
   }
@@ -512,8 +643,10 @@
   function apply(lang) {
     current = isLang(lang) ? lang : 'en';
     root.setAttribute('lang', current);
+    var q = quoteEls();
     if (current === 'ja') {
       if (document.body) dom.walk(document.body);
+      quote.sync(q[0], q[1]);
       if (!observer && typeof MutationObserver !== 'undefined' && document.body) {
         observer = new MutationObserver(onMutations);
         observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
@@ -521,9 +654,12 @@
     } else {
       if (observer) { observer.disconnect(); observer = null; }
       dom.restore(document.body);
+      quote.restore(q[0], q[1]);
     }
     syncButtons();
     root.classList.remove('i18n-pending');
+    // script.js listens to fetch what only Japanese mode needs (MAL titles).
+    try { document.dispatchEvent(new CustomEvent('kazu-langchange', { detail: { lang: current } })); } catch (e) {}
   }
 
   function setLang(lang) {

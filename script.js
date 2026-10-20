@@ -1864,16 +1864,69 @@
     idle.classList.toggle('hidden', !empty);
   }
 
+  // ---- Japanese titles (AniList; fetched only while the page is in Japanese) ----
+  // The rows stay English; each title carries data-ja with its native title
+  // and i18n.js shows that in Japanese mode. Titles are kept in localStorage,
+  // and an id AniList didn't answer for is not asked again this visit.
+  const MAL_JA_KEY = 'kazu-mal-ja';
+  let malJa = { anime: {}, manga: {} };
+  try { if (KazuLib && KazuLib.malJaCacheParse) malJa = KazuLib.malJaCacheParse(localStorage.getItem(MAL_JA_KEY)); } catch (e) {}
+  const malJaTried = new Set();
+  let malJaBusy = false;
+  function pageIsJapanese() {
+    return !!(window.KazuI18n && typeof KazuI18n.lang === 'function' && KazuI18n.lang() === 'ja');
+  }
+  function malJaTitle(kind, url) {
+    const id = KazuLib && KazuLib.malIdFromUrl ? KazuLib.malIdFromUrl(url) : null;
+    return (id && malJa[kind][id]) || '';
+  }
+  function malTitleHtml(kind, x) {
+    const ja = malJaTitle(kind, x.url);
+    return '<div class="mal-title"' + (ja ? ' data-ja="' + escapeHtml(ja) + '"' : '') + '>' + escapeHtml(x.title) + '</div>';
+  }
+  async function loadMalJa() {
+    if (malJaBusy || !pageIsJapanese() || !KazuLib || !KazuLib.anilistTitlesQuery) return;
+    const need = (rows, kind) => rows
+      .map((x) => KazuLib.malIdFromUrl(x.url))
+      .filter((id) => id && !malJa[kind][id] && !malJaTried.has(kind + id));
+    const a = need(malAnimeRows, 'anime'), m = need(malMangaRows, 'manga');
+    const body = KazuLib.anilistTitlesQuery(a, m);
+    if (!body) return;
+    a.forEach((id) => malJaTried.add('anime' + id));
+    m.forEach((id) => malJaTried.add('manga' + id));
+    malJaBusy = true;
+    try {
+      const r = await fetchT('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error('AniList status ' + r.status);
+      const got = KazuLib.anilistTitlesParse(await r.json(), a, m);
+      Object.assign(malJa.anime, got.anime);
+      Object.assign(malJa.manga, got.manga);
+      try { localStorage.setItem(MAL_JA_KEY, JSON.stringify(malJa)); } catch (e) {}
+      malJaBusy = false;
+      if (Object.keys(got.anime).length) renderMalRows(malAnimeRows);
+      if (Object.keys(got.manga).length) renderMalMangaRows(malMangaRows);
+    } catch (e) {
+      console.warn('AniList Japanese titles failed:', e);
+    } finally {
+      malJaBusy = false;
+    }
+  }
+  document.addEventListener('kazu-langchange', loadMalJa);
+
   function renderMalRows(rows) {
     malAnimeRows = rows;
-    const sig = JSON.stringify(rows);
+    const sig = JSON.stringify(rows) + rows.map((x) => malJaTitle('anime', x.url)).join('|');
     if (sig !== lastMalAnimeSig) {
       lastMalAnimeSig = sig;
       $('malList').innerHTML = rows.map((x) => (
         '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
           (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
           '<div class="mal-info">' +
-            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+            malTitleHtml('anime', x) +
             '<div class="mal-progress">' +
               (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
               '<div class="mal-eps">Ep ' + x.watched + ' / ' + (x.total || '?') + '</div>' +
@@ -1886,6 +1939,7 @@
 
     popReveal($('malLoaded'), $('malLoading'));
     $('malError').classList.add('hidden');
+    loadMalJa();
   }
 
   function renderMalMangaRows(rows) {
@@ -1893,14 +1947,14 @@
     const section = $('malMangaSection');
     const list = $('malMangaList');
     if (section && list) {
-      const sig = JSON.stringify(rows);
+      const sig = JSON.stringify(rows) + rows.map((x) => malJaTitle('manga', x.url)).join('|');
       if (sig !== lastMalMangaSig) {
         lastMalMangaSig = sig;
         list.innerHTML = rows.map((x) => (
           '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
             (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
             '<div class="mal-info">' +
-              '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+              malTitleHtml('manga', x) +
               '<div class="mal-progress">' +
                 (x.total ? '<div class="mal-bar"><span style="width:' + x.pct + '%;"></span></div>' : '') +
                 '<div class="mal-eps">Ch ' + x.read + ' / ' + (x.total || '?') + '</div>' +
@@ -1912,6 +1966,7 @@
       section.classList.toggle('hidden', rows.length === 0);
     }
     updateMalIdle();
+    loadMalJa();
   }
 
   function malCacheRead() {
