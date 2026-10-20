@@ -303,8 +303,39 @@ body.season-christmas .sakura-branch { display: none; }
   /* No idle bob: the profile picture sits still (vetoed by the owner). */
 }
 .pfp {
+  position: relative; z-index: 1; /* above .chiikawa-peek, which hides behind it */
   display: block; width: 181px; height: 181px; border-radius: 50%;
   background: var(--card-bg); object-fit: cover;
+}
+/* ---- Chiikawa peek (Japanese mode) ----
+   Chiikawa sits dead centre behind the picture (fully covered: its corners are
+   ~68px from the centre, the picture's rim 90px), tilted toward the upper left,
+   clear of the Halloween pumpkins (bottom right) and the party hat (top).
+   A peek slides it out along its own tilt until head and cheeks clear the rim,
+   wobbles, holds, and slides back. One-shot: script.js adds .is-peeking, drops
+   it on animationend and re-arms a timer (KazuLib.chiikawaPeekDelay), so
+   nothing runs between visits (no infinite loop: see evals/perf-guards.js).
+   Sizes are percentages of the ring, so the phone picture scales with it. */
+.chiikawa-peek {
+  display: none; position: absolute; z-index: 0; left: 50%; top: 50%;
+  width: 50%; height: auto; opacity: 0; pointer-events: none; user-select: none;
+  transform: translate(-50%, -50%) rotate(-38deg) translateY(0);
+  filter: drop-shadow(0 3px 5px rgba(40,60,90,.22));
+}
+html[lang="ja"] .chiikawa-peek { display: block; }
+html[lang="ja"] .chiikawa-peek.is-peeking { animation: chiikawaPeek 3.4s cubic-bezier(.3,.7,.4,1) both; }
+html[lang="ja"] .chiikawa-peek.is-still { opacity: 1; transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); }
+@keyframes chiikawaPeek {
+  0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-38deg) translateY(0); }
+  5%   { opacity: 1; }
+  24%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-102%); }
+  31%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); }
+  40%  { transform: translate(-50%, -50%) rotate(-30deg) translateY(-96%); }
+  50%  { transform: translate(-50%, -50%) rotate(-45deg) translateY(-96%); }
+  59%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); }
+  76%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); animation-timing-function: cubic-bezier(.5,0,.75,0); }
+  95%  { opacity: 1; transform: translate(-50%, -50%) rotate(-38deg) translateY(0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(-38deg) translateY(0); }
 }
 /* Editorial serif wordmark instead of the old rounded-sans + rainbow-shimmer
    combo (the saturated multi-stop gradient sliding forever was the thing that

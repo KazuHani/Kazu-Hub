@@ -846,6 +846,23 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
   Zodiac signs, weekdays and fonts need nothing else: the page's fonts have no
   kana, so browsers fall back per glyph to the system Japanese font
   (`<html lang="ja">` makes them pick Japanese glyph forms).
+- **Chiikawa peek (Japanese only).** `assets/chiikawa.webp` (trimmed from
+  `assets/Chiikawa.png`, 192px wide for 2x) sits dead centre behind the
+  profile picture (`.chiikawa-peek`, `z-index: 0` under `.pfp`'s `1`), tilted
+  -38deg toward the upper left, clear of the Halloween pumpkins and the party
+  hat. `display: none` unless `<html lang="ja">`, and `loading="lazy"`, so the
+  English page never downloads it. A peek is the one-shot `chiikawaPeek`
+  keyframes (3.4 s: slide out along the tilt, wobble, hold, slide back);
+  `initChiikawaPeek` in `script.js` adds `.is-peeking`, drops it on
+  `animationend` and re-arms a timer: first peek 1.2 s after the page turns
+  Japanese (after the picture's entrance pop), then every 7-12 s
+  (`KazuLib.chiikawaPeekDelay`). No timer while the tab is hidden or the
+  picture is scrolled away (IntersectionObserver). Never an infinite CSS loop
+  (perf guards). `KazuLib.chiikawaPeekMode`: reduced motion parks it in the
+  peek pose (`.is-still`); low-power still animates on purpose, because every
+  phone trips low-power and the peek is one composited transform. Gates:
+  `evals/chiikawa.js` (helpers, markup, CSS, and the real loop sliced out of
+  `script.js` against fake timers).
 - **Not translated by design:** the quote (English source text), song, game,
   anime and story titles, and announcement text from the control panel unless
   it matches a known phrase.

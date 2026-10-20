@@ -1625,6 +1625,32 @@
     };
   }
 
+  // ---- Chiikawa peek (Japanese mode) -------------------------------------
+  // Chiikawa hides behind the profile picture while the page is in Japanese
+  // and peeks out over its rim now and then. How it shows:
+  //   'off'   English page: not rendered at all.
+  //   'still' reduced motion: parked in the peeking pose, no motion.
+  //   'move'  one-shot peek animations, re-armed by a timer (no infinite CSS loop).
+  // Low-power still moves: every phone trips it (coarse pointer + small
+  // screen), and a peek is one composited transform on a 92px image for 3.4 s
+  // every 7-12 s, with no timer while hidden or scrolled away.
+  function chiikawaPeekMode(o) {
+    o = o || {};
+    if (o.lang !== 'ja') return 'off';
+    return o.reducedMotion ? 'still' : 'move';
+  }
+  // Wait before peek number n (0 = the first after the page turns Japanese).
+  // The first waits out the profile picture's entrance pop (~1 s); later ones
+  // are spaced 7-12 s apart so it reads as a visit, not a loop. r in [0, 1).
+  var CHIIKAWA_FIRST_MS = 1200, CHIIKAWA_GAP_MS = 7000, CHIIKAWA_JITTER_MS = 5000;
+  function chiikawaPeekDelay(n, r) {
+    if (!(n > 0)) return CHIIKAWA_FIRST_MS;
+    r = +r;
+    if (!(r >= 0)) r = 0;
+    if (r >= 1) r = 0.999;
+    return Math.round(CHIIKAWA_GAP_MS + r * CHIIKAWA_JITTER_MS);
+  }
+
   // A frostCard result as one CSS border-image value (the image as a data URI
   // with only the characters a url() needs escaped, so it stays small).
   function frostBorderImage(f) {
@@ -1840,6 +1866,8 @@
     frostReach: frostReach,
     frostCard: frostCard,
     frostBorderImage: frostBorderImage,
+    chiikawaPeekMode: chiikawaPeekMode,
+    chiikawaPeekDelay: chiikawaPeekDelay,
     frostPieces: frostPieces,
     frostFlightPieces: frostFlightPieces,
     FROST_BLEED: FROST_BLEED,

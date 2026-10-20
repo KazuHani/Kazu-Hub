@@ -1021,6 +1021,7 @@ require('./evals/christmas.js').run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
 require('./evals/modal-motion.js').run(L, scriptSrc, cssSrc, ok, eq);
 require('./evals/phone-type.js').run(cssSrc, ok);
 require('./evals/i18n.js').run(require('./i18n.js'), htmlSrc, scriptSrc, cssSrc, fs.readFileSync(__dirname + '/sw.js', 'utf8'), L.stripEmoji, ok, eq);
+require('./evals/chiikawa.js').run(L, htmlSrc, scriptSrc, cssSrc, fs.readFileSync(__dirname + '/sw.js', 'utf8'), ok, eq);
 
 // ---- evals/perf.js statistics helpers (Node only: the harness itself needs Chrome) ----
 // The browser eval reports through these, so a wrong percentile or a summed-instead-
