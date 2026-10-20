@@ -43,7 +43,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 ## Code layout
 
 - `index.html` — the whole page. Loads `style.css?v=92`,
-  `lib.js?v=41`, `site-config.js?v=1`, `i18n.js?v=1`, `script.js?v=89` (version
+  `lib.js?v=41`, `site-config.js?v=1`, `i18n.js?v=2`, `script.js?v=89` (version
   query strings; see cache-busting below). Inline JSON-LD schema, the
   `#boot-tint` first-paint script (see "First paint" below) and the
   `#boot-lang` script (see "Language switch" below) in the `<head>`.
@@ -792,10 +792,17 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
   story titles, the dev panel) and anything marked `translate="no"`. Put new
   live-content elements there.
 - **The choice** is saved as `kazu-lang`; `?lang=ja|en` wins for one load without
-  saving. `#boot-lang` in `<head>` reads the same choice before first paint: it
+  saving. With neither, the **device language** decides: the first entry in
+  `navigator.languages` (falling back to `navigator.language`) whose primary
+  subtag is `en` or `ja` (`deviceLang`), else English. So `ja-JP` gets
+  Japanese, `['fr-FR', 'ja']` gets Japanese, `['en-GB', 'ja']` and `de-DE`
+  get English. The device pick is never saved; only a tap on the switch is,
+  so a saved choice always beats the device. Order: `?lang=` > `kazu-lang` >
+  device > English (`pickLang(search, stored, langs)`).
+  `#boot-lang` in `<head>` reads the same choice before first paint: it
   sets `<html lang="ja">` and `html.i18n-pending` (page text hidden) until
   `i18n.js` has run, with a 3 s failsafe. A gate test sweeps it against
-  `pickLang`.
+  `pickLang` over query x saved value x device languages x blocked storage.
 - **Adding or changing copy.** Add the Japanese line to `PHRASES` (or a rule for
   composed text). Names, brands and product models go on `KEEP` in
   `evals/i18n.js` instead. The gate fails on any visible string or label in

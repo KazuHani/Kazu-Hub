@@ -16,7 +16,11 @@
        Japanese line carries an emoji.
      - The DOM translator, against fake nodes: walk, skip list, attributes,
        restore, and "script.js wrote fresh English meanwhile" survives restore.
-     - #boot-lang makes the same choice as KazuI18n.pickLang for every case,
+     - Device language: with no ?lang= and no saved choice, the first English
+       or Japanese entry in navigator.languages decides; a saved or ?lang=
+       choice always beats it.
+     - #boot-lang makes the same choice as KazuI18n.pickLang for every case
+       (query x saved value x device languages x blocked storage),
        the switch markup, load order and the service worker precache.
    Deterministic, local, no browser, no network. Zero failures is the threshold.
    ========================================================================== */
@@ -185,6 +189,23 @@
     eq('i18n: ?lang=en wins over a saved Japanese', I.pickLang('?x=1&lang=EN', 'ja'), 'en');
     eq('i18n: an unknown ?lang= is ignored', I.pickLang('?lang=de', 'ja'), 'ja');
 
+    // ---- device language ----
+    eq('i18n device: a Japanese device gets Japanese', I.pickLang('', null, ['ja-JP']), 'ja');
+    eq('i18n device: a bare "ja" counts', I.deviceLang(['ja']), 'ja');
+    eq('i18n device: an English device stays English', I.pickLang('', null, ['en-GB', 'ja']), 'en');
+    eq('i18n device: the first language the site speaks wins (fr, ja, en)', I.pickLang('', null, ['fr-FR', 'ja', 'en-US']), 'ja');
+    eq('i18n device: a device with neither falls back to English', I.pickLang('', null, ['de-DE', 'fr']), 'en');
+    eq('i18n device: case and underscores are tolerated', I.deviceLang(['JA_jp']), 'ja');
+    eq('i18n device: "jam" or "eng" are not Japanese or English', I.deviceLang(['jam', 'eng', 'ja']), 'ja');
+    eq('i18n device: empty, missing or junk lists give null', [I.deviceLang([]), I.deviceLang(null), I.deviceLang(undefined), I.deviceLang([null, '', 42])], [null, null, null, null]);
+    eq('i18n device: a saved English beats a Japanese device', I.pickLang('', 'en', ['ja-JP']), 'en');
+    eq('i18n device: a saved Japanese beats an English device', I.pickLang('', 'ja', ['en-US']), 'ja');
+    eq('i18n device: ?lang=en beats a Japanese device', I.pickLang('?lang=en', null, ['ja-JP']), 'en');
+    eq('i18n device: a junk saved value lets the device decide', I.pickLang('', 'fr', ['ja-JP']), 'ja');
+    eq('i18n device: navLangs prefers navigator.languages', I.navLangs({ languages: ['ja-JP', 'en'], language: 'en-US' }), ['ja-JP', 'en']);
+    eq('i18n device: navLangs falls back to navigator.language', [I.navLangs({ language: 'ja-JP' }), I.navLangs({ languages: [], language: 'ja' })], [['ja-JP'], ['ja']]);
+    eq('i18n device: navLangs copes with no navigator at all', [I.navLangs(undefined), I.navLangs({})], [[], []]);
+
     // ---- the DOM translator against fake nodes ----
     var tWeather = fakeText('Weather'), tName = fakeText('Online'), tTitle = fakeText(' Next birthday ');
     var named = fakeEl({}, [tName], true);
@@ -220,26 +241,31 @@
     var bm = /<script id="boot-lang">([\s\S]*?)<\/script>/.exec(html);
     var headEnd = html.indexOf('</head>');
     ok('i18n: #boot-lang sits in <head> and is synchronous', !!bm && html.indexOf('<script id="boot-lang">') < headEnd && !/<script[^>]*id="boot-lang"[^>]*(async|defer|type=)/.test(html));
-    function boot(search, stored, throws) {
+    function boot(search, stored, throws, nav) {
       var html = { attrs: {}, classes: [], setAttribute: function (k, v) { this.attrs[k] = v; }, classList: null };
       html.classList = { add: function (c) { html.classes.push(c); }, remove: function (c) { html.classes = html.classes.filter(function (x) { return x !== c; }); } };
       var timers = [];
       var storage = { getItem: function (k) { if (throws) throw new Error('blocked'); return k === 'kazu-lang' ? stored : null; } };
-      new Function('location', 'localStorage', 'document', 'setTimeout', bm[1])({ search: search }, storage, { documentElement: html }, function (f, ms) { timers.push([f, ms]); });
+      new Function('location', 'localStorage', 'document', 'setTimeout', 'navigator', bm[1])({ search: search }, storage, { documentElement: html }, function (f, ms) { timers.push([f, ms]); }, nav || {});
       return { lang: html.attrs.lang || 'en', pending: html.classes.indexOf('i18n-pending') !== -1, timers: timers, html: html };
     }
     if (bm) {
       var searches = ['', '?lang=ja', '?lang=en', '?lang=JA', '?x=1&lang=ja', '?lang=de', '?lang=jax', '?xlang=ja'];
       var stores = [null, 'ja', 'en', 'fr'];
+      var navs = [{}, { language: 'ja-JP' }, { language: 'en-GB' }, { languages: ['ja-JP', 'en'] }, { languages: ['en-US', 'ja'] },
+        { languages: ['fr-FR', 'ja'], language: 'fr-FR' }, { languages: ['de', 'fr'] }, { languages: [], language: 'ja' }, { languages: ['JA_jp'] },
+        { languages: ['jam', 'ja'] }, { languages: [null, 'ja'] }];
       var mismatch = [];
-      searches.forEach(function (s) { stores.forEach(function (st) {
-        var b = boot(s, st), want = I.pickLang(s, st);
-        if (b.lang !== want || b.pending !== (want === 'ja')) mismatch.push(s + '/' + st + ' -> ' + b.lang);
-      }); });
+      searches.forEach(function (s) { stores.forEach(function (st) { navs.forEach(function (n) { [false, true].forEach(function (blocked) {
+        var b = boot(s, st, blocked, n), want = I.pickLang(s, blocked ? null : st, I.navLangs(n));
+        if (b.lang !== want || b.pending !== (want === 'ja')) mismatch.push(s + '/' + st + '/' + JSON.stringify(n) + (blocked ? '/blocked' : '') + ' -> ' + b.lang);
+      }); }); }); });
       ok('i18n: #boot-lang makes the same choice as KazuI18n.pickLang in every case', !mismatch.length, mismatch.join(', '));
       var b = boot('', 'ja');
       ok('i18n: #boot-lang has a failsafe that shows the page again', b.timers.length === 1 && b.timers[0][1] <= 3000 && (b.timers[0][0](), !b.html.classes.length));
       eq('i18n: #boot-lang survives blocked storage (English)', boot('', null, true).lang, 'en');
+      eq('i18n: #boot-lang still reads the device language when storage is blocked', boot('', null, true, { languages: ['ja-JP'] }).lang, 'ja');
+      eq('i18n: #boot-lang hides an English first paint on a Japanese device', boot('', null, false, { languages: ['ja-JP'] }).pending, true);
     }
     ok('i18n: the pending state hides the page text and nothing else', css.indexOf('html.i18n-pending .container, html.i18n-pending .footer { visibility: hidden; }') !== -1);
 

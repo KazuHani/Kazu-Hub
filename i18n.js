@@ -20,7 +20,10 @@
      - Elements that hold names and titles (SKIP_SELECTOR) are never touched,
        nor is anything marked translate="no".
      - The choice is kept in localStorage ('kazu-lang'); ?lang=ja|en wins for
-       one page load without being saved. The inline #boot-lang script in
+       one page load without being saved. With neither, the device language
+       decides (navigator.languages, first English or Japanese entry), and
+       that is never saved, so it follows the device until the visitor picks
+       one on the switch. The inline #boot-lang script in
        <head> sets <html lang> and hides the page text until this file has
        run, so a Japanese visitor never sees an English first paint.
 
@@ -365,11 +368,30 @@
   }
 
   function isLang(v) { return LANGS.indexOf(v) !== -1; }
-  // ?lang= wins for this load, then the saved choice, then English.
-  function pickLang(search, stored) {
+  // The device's preferred languages (navigator.languages, most preferred
+  // first, e.g. ['ja-JP', 'en-US']): the first one the site speaks, by its
+  // primary subtag. null when none is English or Japanese.
+  function deviceLang(langs) {
+    if (!langs || typeof langs.length !== 'number') return null;
+    for (var i = 0; i < langs.length; i++) {
+      var p = String(langs[i] || '').split(/[-_]/)[0].toLowerCase();
+      if (isLang(p)) return p;
+    }
+    return null;
+  }
+  // ?lang= wins for this load, then the saved choice, then the device
+  // language, then English.
+  function pickLang(search, stored, langs) {
     var m = /[?&]lang=([a-z]+)/i.exec(String(search || ''));
     if (m && isLang(m[1].toLowerCase())) return m[1].toLowerCase();
-    return isLang(stored) ? stored : 'en';
+    if (isLang(stored)) return stored;
+    return deviceLang(langs) || 'en';
+  }
+  // navigator.languages where it exists, else the single navigator.language.
+  function navLangs(nav) {
+    if (!nav) return [];
+    if (nav.languages && nav.languages.length) return nav.languages;
+    return nav.language ? [nav.language] : [];
   }
 
   // ---- DOM translator (works on anything node-shaped, so Node can test it) --
@@ -446,6 +468,8 @@
     translate: translate,
     untranslate: untranslate,
     pickLang: pickLang,
+    deviceLang: deviceLang,
+    navLangs: navLangs,
     createTranslator: createTranslator,
     lang: function () { return 'en'; }
   };
@@ -513,7 +537,7 @@
 
   var stored = null;
   try { stored = localStorage.getItem(STORE_KEY); } catch (e) {}
-  var start = pickLang(global.location && global.location.search, stored);
+  var start = pickLang(global.location && global.location.search, stored, navLangs(global.navigator));
 
   document.addEventListener('click', function (e) {
     var btn = e.target && e.target.closest && e.target.closest('[data-lang-set]');

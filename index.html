@@ -230,8 +230,9 @@
   ]
 }
 </script>
-<!-- Language: English is the default; a visitor who picked Japanese (the switch at
-     the top of the page, saved as kazu-lang) or opened ?lang=ja gets <html lang="ja">
+<!-- Language: a visitor who picked Japanese (the switch at the top of the page,
+     saved as kazu-lang), opened ?lang=ja, or picked neither on a device whose
+     preferred languages put Japanese before English, gets <html lang="ja">
      and the page text hidden until i18n.js (end of <body>) has translated it, so an
      English first paint never flashes. The 3 s timeout is the failsafe if i18n.js
      never runs. tests.js compares this choice with KazuI18n.pickLang. -->
@@ -240,7 +241,12 @@
   try {
     var m = /[?&]lang=([a-z]+)/i.exec(location.search);
     var q = m ? m[1].toLowerCase() : '';
-    var lang = (q === 'en' || q === 'ja') ? q : localStorage.getItem('kazu-lang');
+    var lang = (q === 'en' || q === 'ja') ? q : null;
+    if (!lang) { try { lang = localStorage.getItem('kazu-lang'); } catch (e) {} }
+    if (lang !== 'en' && lang !== 'ja') {
+      var d = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+      for (var i = 0; i < d.length && !(lang === 'en' || lang === 'ja'); i++) lang = String(d[i] || '').split(/[-_]/)[0].toLowerCase();
+    }
     if (lang === 'ja') {
       var r = document.documentElement;
       r.setAttribute('lang', 'ja');
@@ -990,7 +996,7 @@
 
 <script src="lib.js?v=41"></script>
 <script src="site-config.js?v=1"></script>
-<script src="i18n.js?v=1"></script>
+<script src="i18n.js?v=2"></script>
 <script src="script.js?v=89"></script>
 <script>
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
