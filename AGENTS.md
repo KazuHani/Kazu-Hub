@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=92`,
+- `index.html` — the whole page. Loads `style.css?v=93`,
   `lib.js?v=41`, `site-config.js?v=1`, `i18n.js?v=2`, `script.js?v=89` (version
   query strings; see cache-busting below). Inline JSON-LD schema, the
   `#boot-tint` first-paint script (see "First paint" below) and the
@@ -809,6 +809,14 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
   `index.html` that has neither, and on a new weather condition, status,
   pop-up title or empty state in `script.js` without Japanese. Japanese values
   must be unique (switching back looks them up in reverse) and emoji-free.
+- **Colours follow the palette.** The switch (and the announcement strip's
+  default tone) paint with `--chip-bg`, `--chip-bd` and `--on-accent`, set in
+  every palette block that sets `--accent` (default `body`,
+  `body.season-christmas`, `html.season-halloween body`). `--chip-bg` is the
+  card colour made near-solid (alpha >= .85) because the switch has no blur;
+  `--on-accent` is the dark label on the accent-filled pressed button. A new
+  palette must set all three: `evals/i18n.js` finds every `--accent` block and
+  fails if one is missing or if the idle or pressed label drops under 4.5:1.
 - **Layout notes.** The birthday pop-up head puts the age first in Japanese;
   its counter (歳) comes from a `html[lang="ja"]` `::after` rule in `style.css`.
   Zodiac signs, weekdays and fonts need nothing else: the page's fonts have no

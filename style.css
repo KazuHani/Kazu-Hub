@@ -52,6 +52,13 @@ body {
   --card-blur: blur(10px);
   --card-bd: 1px solid rgba(92,150,220,.55);
   --card-shadow: 0 14px 34px rgba(3,10,24,.16);
+  /* Flat, unblurred chrome (language switch, announcement strip): the card
+     colour made near-solid so text stays readable without the blur, and the
+     dark label colour for anything filled with --accent. Every palette that
+     repaints the cards sets all three. */
+  --chip-bg: rgba(46,70,108,.86);
+  --chip-bd: 1px solid rgba(92,150,220,.55);
+  --on-accent: #0b1a2b;
 }
 
 .hidden { display: none !important; }
@@ -345,11 +352,12 @@ body.season-christmas .sakura-branch { display: none; }
 /* ---- Language switch (i18n.js) ----
    English / 日本語, top right of the page. It tucks into the container's top
    padding so the hero barely moves. Flat fill like the announcement strip: no
-   blur, no animation, nothing running at rest. */
+   blur, no animation, nothing running at rest. Colours come from the active
+   palette's chip tokens, so it follows Christmas, Halloween and the rest. */
 .lang-switch {
   display: flex; gap: 2px; width: max-content; margin: calc(-1 * clamp(12px, 3vw, 40px)) 0 14px auto;
   padding: 3px; border-radius: 999px;
-  background: rgba(46,70,108,.86); border: 1px solid rgba(92,150,220,.55);
+  background: var(--chip-bg); border: var(--chip-bd);
 }
 .lang-switch-btn {
   appearance: none; border: 0; background: none; color: var(--ink-soft); cursor: pointer;
@@ -357,7 +365,7 @@ body.season-christmas .sakura-branch { display: none; }
   padding: 7px 14px; border-radius: 999px;
 }
 .lang-switch-btn:hover { color: var(--ink); }
-.lang-switch-btn[aria-pressed="true"] { background: var(--accent); color: #0b1a2b; }
+.lang-switch-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 .lang-switch-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 @media (pointer: coarse) { .lang-switch-btn { min-height: 44px; padding: 0 16px; } }
 /* Japanese visitor, before i18n.js has run: keep the English text off screen
@@ -374,7 +382,7 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 .hub-bulletin {
   display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px 14px;
   margin: 0 0 22px; padding: 12px 18px; border-radius: 18px;
-  background: rgba(46,70,108,.86); border: 1px solid rgba(92,150,220,.55);
+  background: var(--chip-bg); border: var(--chip-bd);
   color: var(--ink); text-align: center; font-weight: 700; font-size: 15px; line-height: 1.45;
 }
 .hub-bulletin[hidden] { display: none; }
@@ -382,13 +390,14 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 .hub-bulletin--warn { background: rgba(110,74,12,.9); border-color: rgba(240,180,80,.65); }
 .hub-bulletin-text { min-width: 0; overflow-wrap: anywhere; }
 .hub-bulletin-link {
-  font-size: 13px; font-weight: 800; text-decoration: none; color: #0b1a2b; background: var(--accent);
+  font-size: 13px; font-weight: 800; text-decoration: none; color: var(--on-accent); background: var(--accent);
   padding: 6px 14px; border-radius: 999px;
 }
 .hub-bulletin-link:hover { filter: brightness(1.1); }
 .hub-bulletin-close {
   font: inherit; font-size: 13px; font-weight: 800; color: var(--ink); background: none;
-  border: 1px solid rgba(234,244,255,.55); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+  border: 1px solid rgba(234,244,255,.55); border-color: color-mix(in srgb, var(--ink) 55%, transparent);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer;
 }
 .hub-bulletin-close:hover { border-color: var(--ink); }
 .hub-bulletin-link[hidden], .hub-bulletin-close[hidden] { display: none; }
@@ -1419,6 +1428,7 @@ body.season-christmas {
   --accent: #ffd166;
   --card-bg: rgba(16,52,36,.66); --card-blur: blur(12px);
   --card-bd: 1px solid rgba(255,209,102,.38); --card-shadow: 0 14px 34px rgba(2,16,10,.45);
+  --chip-bg: rgba(16,52,36,.9); --chip-bd: 1px solid rgba(255,209,102,.38); --on-accent: #0c2e1f;
 }
 
 /* ---- Christmas: hero + cards follow the palette ---- */
@@ -1479,6 +1489,8 @@ html.season-halloween body {
   --card-bg: rgba(61,40,66,.86);
   --card-bd: 1px solid rgba(223,159,103,.4);
   --card-shadow: 0 14px 34px rgba(24,12,28,.32);
+  --chip-bg: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), rgba(61,40,66,.9);
+  --chip-bd: 1px solid rgba(223,159,103,.4); --on-accent: #382137;
   --hw-pumpkin: #dc8948; --hw-rib: #b76b39; --hw-face: #ffe2a0; --hw-stem: #82916b;
   --hw-bat: #332333;
 }

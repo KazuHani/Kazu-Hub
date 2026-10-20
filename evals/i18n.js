@@ -19,6 +19,11 @@
      - Device language: with no ?lang= and no saved choice, the first English
        or Japanese entry in navigator.languages decides; a saved or ?lang=
        choice always beats it.
+     - Theme: the switch (and the announcement strip it shares tokens with)
+       takes its colours from the active palette. Every palette that sets
+       --accent also sets --chip-bg / --chip-bd / --on-accent; the pressed
+       label passes 4.5:1 on the accent and the idle label passes 4.5:1 on a
+       near-solid chip, in the default, Christmas and Halloween palettes.
      - #boot-lang makes the same choice as KazuI18n.pickLang for every case
        (query x saved value x device languages x blocked storage),
        the switch markup, load order and the service worker precache.
@@ -279,6 +284,33 @@
     ok('i18n: i18n.js loads after site-config.js and before script.js (its observer must be live before script.js writes)', !!ver && html.indexOf('<script src="site-config.js') < html.indexOf('<script src="i18n.js') && html.indexOf('<script src="i18n.js') < html.indexOf('<script src="script.js'));
     ok('i18n: the service worker precaches the same i18n.js version', !!ver && sw.indexOf("'./i18n.js?v=" + ver + "'") !== -1);
     ok('i18n: the switch has a 44px tap target on touch screens', /@media \(pointer: coarse\) \{ \.lang-switch-btn \{ min-height: 44px;/.test(css));
+    // ---- theme: the switch follows the active palette ----
+    function rule(sel) { var at = css.indexOf('\n' + sel + ' {'); if (at === -1) return null; var open = css.indexOf('{', at); return css.slice(open + 1, css.indexOf('}', open)); }
+    var swRule = rule('.lang-switch'), onRule = rule('.lang-switch-btn[aria-pressed="true"]'), blRule = rule('.hub-bulletin');
+    ok('theme: the switch fill and border come from the palette, no fixed colours', !!swRule && /background: var\(--chip-bg\);/.test(swRule) && /border: var\(--chip-bd\);/.test(swRule) && !/rgba?\(|#[0-9a-f]{3}/i.test(swRule), swRule);
+    ok('theme: the pressed button is the palette accent with its own label colour', !!onRule && /background: var\(--accent\)/.test(onRule) && /color: var\(--on-accent\)/.test(onRule) && !/#[0-9a-f]{3}/i.test(onRule), onRule);
+    ok('theme: the announcement strip uses the same palette tokens', !!blRule && /background: var\(--chip-bg\);/.test(blRule) && /border: var\(--chip-bd\);/.test(blRule) && /color: var\(--on-accent\)/.test(rule('.hub-bulletin-link') || ''));
+    function hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
+    function lum(c) { var v = c.map(function (x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }
+    function contrast(a, b) { var l1 = lum(a), l2 = lum(b); return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05); }
+    function tok(body, name) { var m = new RegExp('--' + name + ':\s*([^;]+);').exec(body); return m ? m[1].trim() : null; }
+    var palettes = [], pre = /([^{}]+)\{([^{}]*--accent:[^{}]*)\}/g, pm;
+    while ((pm = pre.exec(css))) palettes.push({ sel: pm[1].replace(/\/\*[\s\S]*?\*\//g, '').trim(), body: pm[2] });
+    var palSels = palettes.map(function (p) { return p.sel; });
+    ok('theme: the default, Christmas and Halloween palettes are all found', palSels.indexOf('body') !== -1 && palSels.indexOf('body.season-christmas') !== -1 && palSels.indexOf('html.season-halloween body') !== -1, palSels.join(' | '));
+    palettes.forEach(function (p) {
+      var accent = tok(p.body, 'accent'), on = tok(p.body, 'on-accent'), chip = tok(p.body, 'chip-bg'), bd = tok(p.body, 'chip-bd'), soft = tok(p.body, 'ink-soft');
+      ok('theme [' + p.sel + ']: sets --chip-bg, --chip-bd and --on-accent', !!(chip && bd && on), [chip, bd, on].join(' / '));
+      if (!(chip && on && accent && soft)) return;
+      var cr = contrast(hex2rgb(on), hex2rgb(accent));
+      ok('theme [' + p.sel + ']: pressed label on the accent is at least 4.5:1', cr >= 4.5, cr.toFixed(2));
+      var fill = /rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)\s*$/.exec(chip);
+      ok('theme [' + p.sel + ']: the chip ends in a near-solid fill (alpha >= .85, no blur behind it)', !!fill && +fill[4] >= 0.85, chip);
+      if (fill) {
+        var ci = contrast(hex2rgb(soft), [+fill[1], +fill[2], +fill[3]]);
+        ok('theme [' + p.sel + ']: idle label on the chip is at least 4.5:1', ci >= 4.5, ci.toFixed(2));
+      }
+    });
     ok('i18n: the switch runs no transition or animation at rest', !/\.lang-switch[^{]*\{[^}]*(transition|animation)/.test(css));
   }
 
