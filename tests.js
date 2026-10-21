@@ -34,6 +34,25 @@ eq('leaves safe text alone', L.escapeHtml('Baldur’s Gate 3'), 'Baldur’s Gate
 eq('handles non-strings', L.escapeHtml(null), '');
 eq('escapes ampersand first', L.escapeHtml('a&b<c'), 'a&amp;b&lt;c');
 
+// ---- safeLink (API links stay on the card's own https host) ----
+// Regression: Jikan's anime url, the Letterboxd <link> and ListenBrainz's
+// spotify_id used to reach href unchecked, so a hacked API or CORS proxy
+// could plant a javascript: or phishing link. evals/link-safety.js sweeps the
+// full hostile corpus; these pin the original failure.
+eq('safeLink keeps a real MAL link', L.safeLink('https://myanimelist.net/anime/1/x', L.MAL_HOSTS), 'https://myanimelist.net/anime/1/x');
+eq('safeLink refuses javascript:', L.safeLink('javascript:alert(1)', L.MAL_HOSTS), '');
+eq('safeLink refuses another host', L.safeLink('https://evil.example/anime/1', L.MAL_HOSTS), '');
+eq('safeLink refuses an http downgrade', L.safeLink('http://myanimelist.net/anime/1', L.MAL_HOSTS), '');
+eq('safeLink refuses credentials', L.safeLink('https://myanimelist.net@evil.example/', L.MAL_HOSTS), '');
+eq('safeLink refuses non-strings', L.safeLink(null, L.MAL_HOSTS), '');
+eq('malRow ignores a javascript: url from Jikan', L.malRow({ episodes_watched: 1, anime: { mal_id: 7, url: 'javascript:alert(1)', title: 'X' } }).url, 'https://myanimelist.net/anime/7');
+eq('malMangaRow ignores an off-site url from Jikan', L.malMangaRow({ chapters_read: 1, manga: { mal_id: 9, url: 'https://evil.example/', title: 'X' } }).url, 'https://myanimelist.net/manga/9');
+eq('malCacheParse refuses a cached javascript: url', L.malCacheParse(JSON.stringify({ rows: [{ url: 'javascript:alert(1)', title: 't' }] })), null);
+eq('malMangaCacheParse refuses a cached javascript: url', L.malMangaCacheParse(JSON.stringify({ rows: [{ url: 'javascript:alert(1)', title: 't' }] })), null);
+eq('parseLetterboxdRss drops an entry with a javascript: link', L.parseLetterboxdRss('<item><letterboxd:filmTitle>F</letterboxd:filmTitle><link>javascript:alert(1)</link></item>'), null);
+eq('letterboxdCacheParse refuses a cached off-site link', L.letterboxdCacheParse(JSON.stringify({ entry: { title: 't', link: 'https://evil.example/' } })), null);
+eq('listenbrainzRow drops a javascript: spotify_id', L.listenbrainzRow({ track_metadata: { track_name: 'S', additional_info: { spotify_id: 'javascript:alert(1)' } } }).url, '');
+
 // ---- UK wall-clock frame (machine/timezone independent) ----
 eq('ukWallParts: BST is UTC+1', (function () { const w = L.ukWallParts(new Date(Date.UTC(2026, 6, 15, 23, 30))); return [w.year, w.month, w.day, w.hours, w.minutes]; })(), [2026, 6, 16, 0, 30]);
 eq('ukWallParts: GMT is UTC+0', (function () { const w = L.ukWallParts(new Date(Date.UTC(2026, 0, 15, 23, 30))); return [w.year, w.month, w.day, w.hours, w.minutes]; })(), [2026, 0, 15, 23, 30]);
@@ -299,16 +318,16 @@ const cacheRow = { url: 'https://myanimelist.net/anime/1/x', title: 'Cowboy Bebo
 const cacheRows = L.malCacheParse(JSON.stringify({ at: 1752700000000, rows: [cacheRow] }));
 eq('malCacheParse round-trips a written payload', cacheRows, [cacheRow]);
 ok('malCacheParse recomputes pct, ignores stored pct', (function () {
-  const r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', watched: 1, total: 4, pct: 99, img: '' }] }));
+  const r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'https://myanimelist.net/anime/1', title: 't', watched: 1, total: 4, pct: 99, img: '' }] }));
   return r && r[0].pct === 25;
 })());
 eq('malCacheParse valid empty list → []', L.malCacheParse(JSON.stringify({ at: 1, rows: [] })), []);
 eq('malCacheParse bad JSON → null', L.malCacheParse('{nope'), null);
 eq('malCacheParse null → null', L.malCacheParse(null), null);
 eq('malCacheParse missing rows → null', L.malCacheParse(JSON.stringify({ at: 1 })), null);
-eq('malCacheParse row without title → null', L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: '' }] })), null);
+eq('malCacheParse row without title → null', L.malCacheParse(JSON.stringify({ rows: [{ url: 'https://myanimelist.net/anime/1', title: '' }] })), null);
 eq('malCacheParse coerces bad total/watched', (function () {
-  const r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', watched: -3, total: 'x' }] }));
+  const r = L.malCacheParse(JSON.stringify({ rows: [{ url: 'https://myanimelist.net/anime/1', title: 't', watched: -3, total: 'x' }] }));
   return r && [r[0].watched, r[0].total, r[0].pct, r[0].img];
 })(), [0, null, 0, '']);
 
@@ -350,7 +369,7 @@ eq('malMangaListRow coerces bad read/img', (function () {
 const mangaCacheRow = { url: 'https://myanimelist.net/manga/2/x', title: 'Berserk', read: 42, total: null, pct: 0, img: 'https://img/m.jpg' };
 eq('malMangaCacheParse round-trips a written payload', L.malMangaCacheParse(JSON.stringify({ at: 1752700000000, rows: [mangaCacheRow] })), [mangaCacheRow]);
 ok('malMangaCacheParse recomputes pct', (function () {
-  const r = L.malMangaCacheParse(JSON.stringify({ rows: [{ url: 'u', title: 't', read: 1, total: 4, pct: 99, img: '' }] }));
+  const r = L.malMangaCacheParse(JSON.stringify({ rows: [{ url: 'https://myanimelist.net/manga/1', title: 't', read: 1, total: 4, pct: 99, img: '' }] }));
   return r && r[0].pct === 25;
 })());
 eq('malMangaCacheParse valid empty list → []', L.malMangaCacheParse(JSON.stringify({ at: 1, rows: [] })), []);
@@ -412,9 +431,9 @@ eq('parseLetterboxdRss null → null', L.parseLetterboxdRss(null), null);
 eq('letterboxdCacheParse round-trips a written entry', L.letterboxdCacheParse(JSON.stringify({ at: 1, entry: lbEntry })), lbEntry);
 eq('letterboxdCacheParse bad JSON → null', L.letterboxdCacheParse('{nope'), null);
 eq('letterboxdCacheParse null → null', L.letterboxdCacheParse(null), null);
-eq('letterboxdCacheParse entry without title → null', L.letterboxdCacheParse(JSON.stringify({ entry: { link: 'u' } })), null);
+eq('letterboxdCacheParse entry without title → null', L.letterboxdCacheParse(JSON.stringify({ entry: { link: 'https://letterboxd.com/kazuhani/film/x/' } })), null);
 ok('letterboxdCacheParse recomputes stars from rating', (function () {
-  const r = L.letterboxdCacheParse(JSON.stringify({ entry: { title: 't', link: 'u', rating: 4.5, stars: 'wrong' } }));
+  const r = L.letterboxdCacheParse(JSON.stringify({ entry: { title: 't', link: 'https://letterboxd.com/kazuhani/film/x/', rating: 4.5, stars: 'wrong' } }));
   return r && r.stars === '★★★★½';
 })());
 
@@ -1022,6 +1041,7 @@ require('./evals/modal-motion.js').run(L, scriptSrc, cssSrc, ok, eq);
 require('./evals/phone-type.js').run(cssSrc, ok);
 require('./evals/i18n.js').run(require('./i18n.js'), htmlSrc, scriptSrc, cssSrc, fs.readFileSync(__dirname + '/sw.js', 'utf8'), L.stripEmoji, ok, eq);
 require('./evals/chiikawa.js').run(L, htmlSrc, scriptSrc, cssSrc, fs.readFileSync(__dirname + '/sw.js', 'utf8'), ok, eq);
+require('./evals/link-safety.js').run(L, scriptSrc, ok, eq);
 
 // ---- evals/perf.js statistics helpers (Node only: the harness itself needs Chrome) ----
 // The browser eval reports through these, so a wrong percentile or a summed-instead-

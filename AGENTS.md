@@ -124,6 +124,12 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   screen, page and pop-ups (see "Phone text" below). Shared by `tests.js` and
   `tests.html` (which measures every rule in a phone frame); also runs alone
   (`node evals/phone-type.js`).
+- `evals/link-safety.js` — gate assertions for links from outside the site
+  (see "API links" below): a hostile corpus (`javascript:`, `data:`, http
+  downgrades, lookalike hosts, credentials, odd ports) through every lib.js
+  builder that makes a link, plus a pin on every href sink in `script.js`.
+  Shared by `tests.js` and `tests.html`; also runs alone
+  (`node evals/link-safety.js`).
 - `evals/perf.js` — periodic eval (real Chrome over the DevTools protocol,
   plain Node >= 22, no dependencies, no network): idle CPU per process, style
   recalcs and layouts per second, scroll, hover and pop-up frame pacing and
@@ -684,6 +690,15 @@ These are load-bearing; read before editing.
   used by the page, mirror that fallback pattern.
 - **HTML escaping.** API-sourced strings (Steam game names, MAL titles, etc.)
   go through `KazuLib.escapeHtml` before any `innerHTML` interpolation.
+- **API links.** Escaping cannot make a hostile link safe (`href="javascript:..."`
+  is valid markup), so any link that arrives from an API, a CORS proxy or a
+  localStorage copy goes through `KazuLib.safeLink(url, hosts)` in the lib.js
+  builder that shapes it: https only, default port, no credentials, host on the
+  card's list (`MAL_HOSTS`, `LETTERBOXD_HOSTS`, `SPOTIFY_HOSTS`). A refused link
+  falls back to a URL built from a validated id, or the row is dropped. Links
+  built from a fixed host plus a checked id (Steam app ids, YouTube video ids)
+  need no list. Adding an href sink to `script.js` fails `evals/link-safety.js`
+  until it is added to that file's reviewed list with the reason it is safe.
 - **Style.** Plain ES5-ish in `lib.js` (`var`, function expressions, IIFE
   attaching to a global), modern JS (arrow functions, `const`/`let`) in
   `script.js` and `sw.js`. Heavy header-comment banners explain intent at the

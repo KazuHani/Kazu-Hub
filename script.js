@@ -1823,8 +1823,11 @@
     const watched = (typeof entry.episodes_watched === 'number' && entry.episodes_watched >= 0) ? entry.episodes_watched : 0;
     const total = (typeof a.episodes === 'number' && a.episodes > 0) ? a.episodes : null;
     const img = (a.images && a.images.jpg && (a.images.jpg.small_image_url || a.images.jpg.image_url)) || '';
+    // Jikan's own link field is never trusted without lib.js's safeLink, so
+    // the fallback builds the link from the numeric id instead.
+    const id = (typeof a.mal_id === 'number' && a.mal_id > 0) ? a.mal_id : null;
     return {
-      url: a.url || (a.mal_id ? 'https://myanimelist.net/anime/' + a.mal_id : 'https://myanimelist.net'),
+      url: id ? 'https://myanimelist.net/anime/' + id : 'https://myanimelist.net',
       title: a.title_english || a.title,
       watched, total,
       pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,

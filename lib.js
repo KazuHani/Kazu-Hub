@@ -25,6 +25,26 @@
     });
   }
 
+  // ---- Links from API data -------------------------------------------------
+  // escapeHtml keeps a value inside its attribute, but it cannot make a hostile
+  // link safe: href="javascript:..." is valid markup, and so is a phishing page
+  // on another host. Every link that arrives from an API, a CORS proxy or a
+  // localStorage copy of one passes through here before it can reach an href:
+  // parsed by the WHATWG URL parser (the same one the browser follows), https
+  // only, default port, no username/password, and the host must be one the
+  // card expects. Returns the normalised href, or '' so the caller falls back
+  // to a URL it builds itself (or drops the row).
+  var MAL_HOSTS = ['myanimelist.net'];
+  var LETTERBOXD_HOSTS = ['letterboxd.com'];
+  var SPOTIFY_HOSTS = ['open.spotify.com'];
+  function safeLink(url, hosts) {
+    if (typeof url !== 'string' || !url || !Array.isArray(hosts)) return '';
+    var u;
+    try { u = new URL(url); } catch (e) { return ''; }
+    if (u.protocol !== 'https:' || u.username || u.password || u.port) return '';
+    return hosts.indexOf(u.hostname) === -1 ? '' : u.href;
+  }
+
   // ---- UK wall clock -------------------------------------------------------
   // Age/birthday maths run in the Europe/London wall-clock frame, not the
   // visitor's local frame: Kazu's birthday starts at midnight in the UK,
@@ -757,7 +777,7 @@
     var total = (typeof a.episodes === 'number' && a.episodes > 0) ? a.episodes : null;
     var img = (a.images && a.images.jpg && (a.images.jpg.small_image_url || a.images.jpg.image_url)) || '';
     return {
-      url: a.url || (a.mal_id ? 'https://myanimelist.net/anime/' + a.mal_id : 'https://myanimelist.net'),
+      url: safeLink(a.url, MAL_HOSTS) || (a.mal_id ? 'https://myanimelist.net/anime/' + a.mal_id : 'https://myanimelist.net'),
       title: a.title_english || a.title,
       watched: watched,
       total: total, // null = episode count unknown (usually still airing)
@@ -889,11 +909,12 @@
     for (var i = 0; i < payload.rows.length; i++) {
       var r = payload.rows[i];
       if (!r || typeof r.title !== 'string' || !r.title) return null;
-      if (typeof r.url !== 'string' || !r.url) return null;
+      var url = safeLink(r.url, MAL_HOSTS);
+      if (!url) return null;
       var total = (typeof r.total === 'number' && r.total > 0) ? r.total : null;
       var watched = (typeof r.watched === 'number' && r.watched >= 0) ? r.watched : 0;
       rows.push({
-        url: r.url,
+        url: url,
         title: r.title,
         watched: watched,
         total: total,
@@ -915,7 +936,7 @@
     var total = (typeof m.chapters === 'number' && m.chapters > 0) ? m.chapters : null;
     var img = (m.images && m.images.jpg && (m.images.jpg.small_image_url || m.images.jpg.image_url)) || '';
     return {
-      url: m.url || (m.mal_id ? 'https://myanimelist.net/manga/' + m.mal_id : 'https://myanimelist.net'),
+      url: safeLink(m.url, MAL_HOSTS) || (m.mal_id ? 'https://myanimelist.net/manga/' + m.mal_id : 'https://myanimelist.net'),
       title: m.title_english || m.title,
       read: read,
       total: total, // null = chapter count unknown (usually still publishing)
@@ -957,11 +978,12 @@
     for (var i = 0; i < payload.rows.length; i++) {
       var r = payload.rows[i];
       if (!r || typeof r.title !== 'string' || !r.title) return null;
-      if (typeof r.url !== 'string' || !r.url) return null;
+      var url = safeLink(r.url, MAL_HOSTS);
+      if (!url) return null;
       var total = (typeof r.total === 'number' && r.total > 0) ? r.total : null;
       var read = (typeof r.read === 'number' && r.read >= 0) ? r.read : 0;
       rows.push({
-        url: r.url,
+        url: url,
         title: r.title,
         read: read,
         total: total,
@@ -1026,7 +1048,7 @@
       if (!year) year = tm[2];
     }
     if (!title) return null;
-    var link = rssPick(item, 'link');
+    var link = safeLink(rssPick(item, 'link'), LETTERBOXD_HOSTS);
     if (!link) return null;
     var desc = rssPick(item, 'description');
     var imgM = /<img[^>]+src="([^"]+)"/.exec(desc);
@@ -1051,14 +1073,15 @@
     try { payload = JSON.parse(raw); } catch (e) { return null; }
     var e2 = payload && payload.entry;
     if (!e2 || typeof e2.title !== 'string' || !e2.title) return null;
-    if (typeof e2.link !== 'string' || !e2.link) return null;
+    var link = safeLink(e2.link, LETTERBOXD_HOSTS);
+    if (!link) return null;
     var rating = (typeof e2.rating === 'number' && e2.rating > 0 && e2.rating <= 5) ? e2.rating : null;
     return {
       title: e2.title,
       year: (typeof e2.year === 'string' && /^\d{4}$/.test(e2.year)) ? e2.year : null,
       rating: rating,
       stars: ratingStars(rating),
-      link: e2.link,
+      link: link,
       poster: typeof e2.poster === 'string' ? e2.poster : '',
       watched: typeof e2.watched === 'string' ? e2.watched : '',
       rewatch: e2.rewatch === true,
@@ -1077,7 +1100,7 @@
       name: tm.track_name,
       artist: typeof tm.artist_name === 'string' ? tm.artist_name : '',
       playingNow: listen.playing_now === true,
-      url: typeof info.spotify_id === 'string' ? info.spotify_id : '',
+      url: safeLink(info.spotify_id, SPOTIFY_HOSTS),
     };
   }
 
@@ -1791,6 +1814,10 @@
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
     escapeHtml: escapeHtml,
+    safeLink: safeLink,
+    MAL_HOSTS: MAL_HOSTS,
+    LETTERBOXD_HOSTS: LETTERBOXD_HOSTS,
+    SPOTIFY_HOSTS: SPOTIFY_HOSTS,
     stripEmoji: stripEmoji,
     ukWallParts: ukWallParts,
     newYearCelebrationYear: newYearCelebrationYear,
