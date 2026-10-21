@@ -1043,6 +1043,25 @@ require('./evals/i18n.js').run(require('./i18n.js'), htmlSrc, scriptSrc, cssSrc,
 require('./evals/chiikawa.js').run(L, htmlSrc, scriptSrc, cssSrc, fs.readFileSync(__dirname + '/sw.js', 'utf8'), ok, eq);
 require('./evals/link-safety.js').run(L, scriptSrc, ok, eq);
 
+// ---- Content-Security-Policy (index.html) ----
+const CSP = require('./evals/csp.js');
+const cspSha = (t) => require('crypto').createHash('sha256').update(t, 'utf8').digest('base64');
+const cspShipped = ['lib.js', 'site-config.js', 'i18n.js', 'script.js', 'weather-fx.js', 'sw.js']
+  .map((name) => ({ name, text: fs.readFileSync(__dirname + '/' + name, 'utf8').replace(/\r\n/g, '\n') }));
+CSP.run(htmlSrc, cspShipped, cspSha, ok, eq);
+// The guard itself (Node only: it needs synchronous SHA-256). An edited inline
+// script and a planted handler must each fail the gate; a CRLF checkout must not.
+function cspFailures(html) {
+  const f = [];
+  CSP.run(html, [], cspSha, (n, v) => { if (!v) f.push(n); }, (n, a, e) => { if (JSON.stringify(a) !== JSON.stringify(e)) f.push(n + ' ' + JSON.stringify(a)); });
+  return f;
+}
+const cspDrift = cspFailures(htmlSrc.replace("navigator.serviceWorker.register('sw.js')", "navigator.serviceWorker.register('./sw.js')"));
+ok('csp guard: editing an inline script fails the gate and names it', cspDrift.some((f) => f.indexOf('#sw-register') !== -1), cspDrift);
+ok('csp guard: a planted onclick= attribute fails the gate', cspFailures(htmlSrc.replace('<header class="hero">', '<header class="hero" onclick="alert(1)">')).length > 0);
+eq('csp guard: a CRLF checkout hashes the same as LF (the HTML parser normalises line endings)', cspFailures(htmlSrc.replace(/\r?\n/g, '\r\n')), []);
+eq('csp guard: JSON-LD and scripts inside comments are not counted', CSP.inlineScripts('<!-- <script>x</script> --><script type="application/ld+json">{}</script><script id="a">y</script>').map((s) => s.id), ['a']);
+
 // ---- evals/perf.js statistics helpers (Node only: the harness itself needs Chrome) ----
 // The browser eval reports through these, so a wrong percentile or a summed-instead-
 // of-maxed renderer CPU would quietly mislead every perf decision made from it.
@@ -1792,7 +1811,7 @@ ok('meadow: the window lights switch on when it is dark enough, in every season 
   ok('meadow: scales with the page between 860px and 1800px wide, centred, and phones see the middle of it', css.indexOf('width: clamp(860px, 100%, 1800px); height: auto; aspect-ratio: 1440 / 340; overflow: visible;') !== -1 && css.indexOf('display: block; position: relative; left: 50%; translate: -50% 0;') !== -1 && css.indexOf('@media (max-width: 600px) { .meadow-art { translate: calc(-50% - 44px) 0; } }') !== -1);
   ok('meadow: the old footer rules (fixed 80px content-visibility placeholder, plain text style) are gone', cssFlat.indexOf('contain-intrinsic-size: auto 80px') === -1 && cssFlat.indexOf('.footer { text-align: center; margin-top: 54px') === -1);
 })();
-ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" onload="this.media=\'all\'"'));
+ok('fonts no longer render-blocking', htmlSrc.includes('rel="stylesheet" media="print" data-font>') && htmlSrc.includes("t.hasAttribute('data-font')) t.media = 'all'"));
 
 // ---- Single time-of-day palette (light theme + toggle fully removed) ----
 ok('no light theme selectors or bootstrap left', !cssFlat.includes('data-theme="light"') && !htmlSrc.includes('data-theme="light"') && !scriptSrc.includes('data-theme'));

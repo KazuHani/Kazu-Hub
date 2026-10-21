@@ -35,6 +35,7 @@
   <script src="evals/i18n.js?v=3"></script>
   <script src="evals/chiikawa.js?v=1"></script>
   <script src="evals/link-safety.js?v=1"></script>
+  <script src="evals/csp.js?v=1"></script>
   <script>
     (function () {
       var out = document.getElementById('out');
@@ -1792,6 +1793,22 @@
           ok('Halloween footer has three lanterns and their pools follow the existing light switch', (htmlSrc.match(/class="mf-hw-pumpkin"/g) || []).length === 3 && cssFlat.indexOf('.mf-hw-pool { fill: url(#mf-hw-pool); opacity: var(--m-lit); }') !== -1 && cssFlat.indexOf('.mf-hw-lit { fill: var(--mf-pumpkin-lit); opacity: var(--m-lit); }') !== -1);
         })();
 
+        // CSP hashes need SHA-256, which a browser only offers asynchronously:
+        // digest every inline script first, then run the shared gate.
+        function cspChecks(html, shipped) {
+          if (!(window.crypto && crypto.subtle && window.TextEncoder)) { row(true, 'csp: crypto.subtle needs http(s) or localhost (skipped)'); return Promise.resolve(); }
+          var scripts = KazuCspChecks.inlineScripts(html);
+          return Promise.all(scripts.map(function (s) {
+            return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s.text)).then(function (buf) {
+              return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+            });
+          })).then(function (digests) {
+            var map = {};
+            scripts.forEach(function (s, i) { map[s.text] = digests[i]; });
+            KazuCspChecks.run(html, shipped, function (t) { return map[t]; }, ok, eq);
+          });
+        }
+
         // Exercise the real worker with in-memory responses/caches: no network needed.
         async function serviceWorkerCacheChecks(source) {
           var listeners = {}, writes = [], requested = [], response = null, waits = [];
@@ -2029,7 +2046,7 @@
           ok('meadow: scales with the page between 860px and 1800px wide, centred, and phones see the middle of it', css.indexOf('width: clamp(860px, 100%, 1800px); height: auto; aspect-ratio: 1440 / 340; overflow: visible;') !== -1 && css.indexOf('display: block; position: relative; left: 50%; translate: -50% 0;') !== -1 && css.indexOf('@media (max-width: 600px) { .meadow-art { translate: calc(-50% - 44px) 0; } }') !== -1);
           ok('meadow: the old footer rules (fixed 80px content-visibility placeholder, plain text style) are gone', cssFlat.indexOf('contain-intrinsic-size: auto 80px') === -1 && cssFlat.indexOf('.footer { text-align: center; margin-top: 54px') === -1);
         })();
-        ok('fonts no longer render-blocking', htmlSrc.indexOf('rel="stylesheet" media="print" onload="this.media=\'all\'"') !== -1);
+        ok('fonts no longer render-blocking', htmlSrc.indexOf('rel="stylesheet" media="print" data-font>') !== -1 && htmlSrc.indexOf("t.hasAttribute('data-font')) t.media = 'all'") !== -1);
         ok('social tiles are solid brand tiles (not glass .card members)', htmlSrc.indexOf('class="card social-card') === -1);
         eq('every social tile carries a brand modifier', htmlSrc.split('class="social-card social-card--').length - 1, 7);
         ok('brand gradient stops exist for all seven socials', ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'].every(function (n) { return cssFlat.indexOf('.social-card--' + n + ' ') !== -1; }));
@@ -2176,7 +2193,8 @@
         ok('liquid glass uses convex heightfield profile', scriptSrc.indexOf('1.0 - (edgeDistance / mapBevel)') !== -1 && scriptSrc.indexOf('1.0 - om4') !== -1);
         ok('liquid glass gates low-end hardware and reduced transparency', scriptSrc.indexOf('KazuLib.isLowEndDevice') !== -1 && scriptSrc.indexOf('prefers-reduced-transparency') !== -1);
         ok('liquid glass decimates large cards for 75% fill-rate reduction', scriptSrc.indexOf('decimate = (w > 220 || h > 220)') !== -1 && scriptSrc.indexOf('0xFF808080') !== -1);
-        return serviceWorkerCacheChecks(swSrc).then(function () {
+        var cspShipped = [{ name: 'script.js', text: scriptSrc }, { name: 'sw.js', text: swSrc.replace(/\r\n/g, '\n') }, { name: 'weather-fx.js', text: fxSrc }];
+        return cspChecks(htmlSrc, cspShipped).then(function () { return serviceWorkerCacheChecks(swSrc); }).then(function () {
           s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ') : (pass + ' passed, ' + fail + ' FAILED ');
           s.className = fail === 0 ? 'pass' : 'fail';
         });

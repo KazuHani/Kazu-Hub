@@ -42,11 +42,13 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=94`,
-  `lib.js?v=42`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=90` (version
-  query strings; see cache-busting below). Inline JSON-LD schema, the
-  `#boot-tint` first-paint script (see "First paint" below) and the
-  `#boot-lang` script (see "Language switch" below) in the `<head>`.
+- `index.html` — the whole page. Loads `style.css?v=95`,
+  `lib.js?v=44`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=92` (version
+  query strings; see cache-busting below). A Content-Security-Policy meta at the
+  top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
+  the `#boot-tint` first-paint script (see "First paint" below), the
+  `#boot-handlers` script and the `#boot-lang` script (see "Language switch"
+  below) in the `<head>`.
 - `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
@@ -130,6 +132,13 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   builder that makes a link, plus a pin on every href sink in `script.js`.
   Shared by `tests.js` and `tests.html`; also runs alone
   (`node evals/link-safety.js`).
+- `evals/csp.js` — gate assertions for the Content-Security-Policy (see
+  "Content-Security-Policy" below): hashes every inline script the way the
+  browser does and fails, naming the script and its new hash, when one drifts;
+  also pins the policy's shape and that the page and its JS need nothing the
+  policy forbids. `node evals/csp.js --fix` rewrites the hashes. Shared by
+  `tests.js` and `tests.html` (which hashes with `crypto.subtle`); also runs
+  alone (`node evals/csp.js`).
 - `evals/perf.js` — periodic eval (real Chrome over the DevTools protocol,
   plain Node >= 22, no dependencies, no network): idle CPU per process, style
   recalcs and layouts per second, scroll, hover and pop-up frame pacing and
@@ -709,6 +718,33 @@ These are load-bearing; read before editing.
 - **localStorage keys in use:** `kazu-dev-seasons`, `kazu-discord-cache`,
   `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
   `kazu-site-config`, `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`. Don't collide.
+
+## Content-Security-Policy
+
+`index.html` carries `<meta http-equiv="Content-Security-Policy">` as the first thing
+after `<meta charset>`: `script-src 'self'` plus one `'sha256-...'` per inline script,
+`object-src 'none'`, `base-uri 'self'`. Nothing else (APIs, images, fonts, frames,
+styles) is restricted. It is the second layer behind escaping and `safeLink` (see
+"API links"): a planted `<script>`, an `onclick=` attribute, a `javascript:` link,
+`eval`/`new Function` or a script from another host is refused by the browser even if
+a future bug lets one into the page.
+
+- **Editing an inline script changes its hash**, and the browser then refuses to run
+  it. Run `node evals/csp.js --fix` after any edit to `#boot-control`, `#boot-tint`,
+  `#boot-handlers`, `#boot-lang`, `#boot-power` or `#sw-register`; the gate tests fail,
+  naming the script and the hash it needs, until you do. A new inline script needs an
+  `id` and the same `--fix`. JSON-LD is a data block and needs no hash.
+- **No inline event handlers.** `onload=`/`onerror=` attributes are blocked (allowing
+  them would need `'unsafe-hashes'`, which not every browser in use supports, and
+  a browser without it would never apply the fonts). `#boot-handlers`, placed before the font
+  links, holds the two the page had: capturing `load`/`error` listeners on the
+  document flip `link[data-font]` to `media="all"` and hide a `.music-cover` that
+  fails. The listener exists before the elements are parsed, so neither can be missed.
+- **What it does not cover.** A meta policy cannot set `frame-ancestors` or reporting
+  (GitHub Pages sends no custom headers). Code run over the DevTools protocol is exempt,
+  which is why `evals/perf.js`'s injected init script still works.
+- **Checked:** Chrome over http, from `file://` (headless, `'self'` matches) and in
+  `tests.html`'s live iframes; every boot script runs with no refusal in the console.
 
 ## Working agreements (from CLAUDE.md)
 
