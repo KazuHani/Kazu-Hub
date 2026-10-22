@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=95`,
+- `index.html` — the whole page. Loads `style.css?v=96`,
   `lib.js?v=44`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=92` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
@@ -126,6 +126,10 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   screen, page and pop-ups (see "Phone text" below). Shared by `tests.js` and
   `tests.html` (which measures every rule in a phone frame); also runs alone
   (`node evals/phone-type.js`).
+- `evals/hero-fill.js` — gate assertions for the name and quote filling the
+  width on phones and small tablets (see "Hero on phones" below). Shared by
+  `tests.js` and `tests.html` (which measures the hero in page frames); also
+  runs alone (`node evals/hero-fill.js`).
 - `evals/link-safety.js` — gate assertions for links from outside the site
   (see "API links" below): a hostile corpus (`javascript:`, `data:`, http
   downgrades, lookalike hosts, credentials, odd ports) through every lib.js
@@ -334,6 +338,8 @@ records the requested season. Static SVG bats and profile pumpkins show with
 the effective palette, and the meadow becomes an autumn field with three
 jack-o'-lanterns. Their faces, halos and pools use the cottage's existing
 `--m-lit` switch. All artwork remains static on phones and low-power devices.
+On phones (`max-width: 480px`) the bats are `min(340px, 100%)` wide: a fixed
+340px spilled a 320px screen 10px sideways.
 
 ## Christmas (25 December)
 
@@ -499,8 +505,8 @@ shape only matched the card at the two ends.
 On phones (`max-width: 560px`) text grows with the screen. Every fixed size B
 becomes `clamp(B, B/3.2 vw, 1.3B)`: B (the old phone size) at 320px and below,
 B x width / 320 above that (17% bigger at 375px), capped at 30% from 416px.
-Sizes already written in `vw` (the title, stat values, headlines) already grew
-and are left alone.
+Sizes already written in `vw` (stat values, headlines) already grew and are
+left alone; the name and the quote also follow "Hero on phones" below.
 
 - **Two generated blocks at the end of `style.css`.** "Page text": one
   `body <selector>` rule for every fixed px font-size in the main phone block
@@ -523,6 +529,38 @@ and are left alone.
   `tests.html` reads every growing rule the phone frame actually loaded,
   measures it on the page against `100vw`, and checks that no text spills
   sideways (page and pop-ups) and the page never scrolls sideways.
+
+## Hero on phones
+
+Up to 768px (phones, foldables, small tablets) the name and the quote fill the
+width. One block in `style.css` ("Hero on phones and small tablets"), placed
+before the main phone block:
+
+- **The name** is `clamp(40px, min(16.5vw, 16vh), 112px)`, the only size rule
+  it has on narrow screens (the main phone block sets none). "Kazu Hani" then
+  covers about 80% of the hero on a phone, 74% at 590px and 65% at 768px.
+  Fraunces' optical sizing narrows the letters as they grow, so the share falls
+  off on wider screens. `16vh` only binds on a screen wider than it is tall: a
+  small phone held sideways (667 x 375) gets 60px instead of 110px. Desktop
+  (769px and up) keeps `clamp(42px,7.4vw,80px)`.
+- **The quote** is 17px / 12.5px (text / author) in the main phone block,
+  grown by the "Page text" rules to 22.1px / 16.25px from 416px. From 561px to
+  768px the hero block holds them at 22.1px / 16.25px, so nothing jumps at
+  560px. The phone quote box has 6px side padding, so long quotes use the width.
+- **The quote box** opens to `max-height: 420px` (200px on desktop). A 320
+  character quote is 352px tall at 430px, the tallest case measured.
+- **Tests.** `evals/hero-fill.js`: the rule layout and order, the quote sizes
+  against the phone bases, the box height, and a fill model. `TITLE_EM` (the
+  name's width per px of font size, measured in Chrome) plus the container
+  padding gives the name's share of the hero at 15 widths from 280px to 768px.
+  It must be 70-86% up to 600px and at least 60% up to 768px, and the name's
+  box must fit in a 5em fallback font. Held sideways at 667 x 375, the name may
+  take at most a fifth of the screen's height. `tests.html` (`heroLayoutCheck`) loads
+  the page at 320px (Halloween), 390px, 390px (Halloween), 590px and 1200px.
+  It measures the real share against the model (within 3 points), checks the
+  name is clear of the picture, the pumpkins and the quote, checks there is no
+  sideways scroll, and checks that a 320 character quote is not cut off.
+  Desktop keeps its sizes. If the title font is re-cut, re-measure `TITLE_EM`.
 
 ## Conventions and gotchas
 

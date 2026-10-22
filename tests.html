@@ -31,6 +31,7 @@
   <script src="evals/christmas.js?v=6"></script>
   <script src="evals/modal-motion.js?v=4"></script>
   <script src="evals/phone-type.js?v=4"></script>
+  <script src="evals/hero-fill.js?v=1"></script>
   <script src="i18n.js?v=3"></script>
   <script src="evals/i18n.js?v=3"></script>
   <script src="evals/chiikawa.js?v=1"></script>
@@ -1260,6 +1261,38 @@
             ok('PC live (' + width + 'px): platform text fills the card height with larger type', Math.abs(last.getBoundingClientRect().bottom - bottom) < 2 && parseFloat(w.getComputedStyle(last.querySelector('dd')).fontSize) >= 20);
           }
         }
+        // Live hero eval: on phones and small tablets the name covers the share
+        // of the hero evals/hero-fill.js models (which holds its TITLE_EM to the
+        // real font), clear of the picture, its pumpkins and the quote, with no
+        // sideways scroll; a 320 character quote opens in full; desktop keeps
+        // its masthead sizes. The quote is swapped in and put back after.
+        var LONG_QUOTE = 'Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. And the only way to do great work is to love what you do. If you have not found it yet, keep looking, and do not settle. As with all matters of the heart, you will know when you find it.';
+        function heroLayoutCheck(f, width, tag) {
+          var d = f.contentDocument, w = f.contentWindow, name = 'hero live (' + width + 'px' + (tag ? ', ' + tag : '') + '): ';
+          var hero = d.querySelector('.hero'), t = d.querySelector('.title'), box = d.getElementById('quoteBox'), qt = d.getElementById('quoteText'), qa = d.getElementById('quoteAuthor');
+          var keep = [qt.textContent, qa.textContent, box.classList.contains('visible')];
+          t.getAnimations().forEach(function (a) { a.finish(); });
+          box.style.transition = 'none';
+          qt.textContent = 'Little things make big days.'; qa.textContent = '— Unknown'; box.classList.add('visible');
+          var rt = d.createRange(), rq = d.createRange();
+          rt.selectNodeContents(t); rq.selectNodeContents(qt);
+          var tx = rt.getBoundingClientRect(), qx = rq.getBoundingClientRect(), hr = hero.getBoundingClientRect(), ring = d.querySelector('.pfp-ring').getBoundingClientRect();
+          var pumpkins = d.querySelector('.halloween-pumpkins'), pr = w.getComputedStyle(pumpkins).display === 'none' ? null : pumpkins.getBoundingClientRect();
+          var px = parseFloat(w.getComputedStyle(t).fontSize), fill = tx.width / hero.clientWidth, qpx = w.getComputedStyle(qt).fontSize, apx = w.getComputedStyle(qa).fontSize;
+          if (width <= 768) {
+            var model = KazuHeroFillChecks.em(px) * px / hero.clientWidth;
+            ok(name + 'the name covers 70-86% of the hero (60% from 600px), as the hero-fill model says', fill >= (width <= 600 ? 0.7 : 0.6) && fill <= 0.86 && Math.abs(fill - model) < 0.03, fill.toFixed(3) + ' measured, ' + model.toFixed(3) + ' modelled, ' + px + 'px');
+          } else {
+            ok(name + 'desktop keeps the masthead name (80px at most) and the 16px / 12px quote', px <= 80 && qpx === '16px' && apx === '12px', px + 'px / ' + qpx + ' / ' + apx);
+          }
+          if (width > 560 && width <= 768) ok(name + 'the quote is 22.1px and its author 16.25px, where the phone sizes top out', qpx === '22.1px' && apx === '16.25px', qpx + ' / ' + apx);
+          ok(name + 'the name sits inside the hero, below the picture and its pumpkins, above the quote, and the page does not scroll sideways',
+            tx.left >= hr.left - 0.5 && tx.right <= hr.right + 0.5 && tx.top >= ring.bottom && (!pr || tx.top >= pr.bottom) && qx.top >= tx.bottom && d.documentElement.scrollWidth <= d.documentElement.clientWidth,
+            'name ' + Math.round(tx.left) + '..' + Math.round(tx.right) + ' x ' + Math.round(tx.top) + '..' + Math.round(tx.bottom) + ' / hero ' + Math.round(hr.left) + '..' + Math.round(hr.right) + ' / ring ' + Math.round(ring.bottom) + (pr ? ' / pumpkins ' + Math.round(pr.bottom) : '') + ' / quote ' + Math.round(qx.top) + ' / page ' + d.documentElement.scrollWidth + ' vs ' + d.documentElement.clientWidth);
+          qt.textContent = LONG_QUOTE; qa.textContent = '— Steve Jobs';
+          ok(name + 'a 320 character quote opens in full (the box cuts nothing off)', box.scrollHeight <= box.clientHeight + 1, box.scrollHeight + ' > ' + box.clientHeight);
+          qt.textContent = keep[0]; qa.textContent = keep[1]; box.classList.toggle('visible', keep[2]); box.style.transition = '';
+        }
         // Set the tint on the meadow itself (script.js rewrites the root's copy every minute).
         function probe(w, meadow, l, sunset) {
           meadow.style.setProperty('--bg-l', l);
@@ -1294,11 +1327,21 @@
           btn.classList.remove('hidden');
           var br = btn.getBoundingClientRect(), hit = d.elementFromPoint(br.left + br.width / 2, br.top + br.height / 2);
           ok('meadow live: the back-to-top button still sits on top of the meadow', !!hit && btn.contains(hit) && br.bottom > mr.top);
+          heroLayoutCheck(f, 1200);
           return frame('weather=none&time=12:00&season=none', 390);
         }).then(function (f) {
           frames.push(f);
           var d = f.contentDocument, w = f.contentWindow, m = d.querySelector('.meadow'), mr = m.getBoundingClientRect();
           ok('meadow live: on a phone width it is still shown, at the minimum 860px scene height, with no sideways scroll', w.getComputedStyle(m).display !== 'none' && Math.abs(mr.height - 203) <= 2 && d.documentElement.scrollWidth <= d.documentElement.clientWidth, mr.height + ' ' + d.documentElement.scrollWidth + '/' + d.documentElement.clientWidth);
+          heroLayoutCheck(f, 390);
+          return frame('weather=none&time=12:00&season=none', 590);
+        }).then(function (f) {
+          frames.push(f);
+          heroLayoutCheck(f, 590);
+          return frame('weather=none&time=12:00&season=halloween', 320);
+        }).then(function (f) {
+          frames.push(f);
+          heroLayoutCheck(f, 320, 'Halloween');
           return frame('weather=none&time=12:00&season=christmas', 1200);
         }).then(function (f) {
           frames.push(f);
@@ -1330,6 +1373,7 @@
           var d = f.contentDocument, w = f.contentWindow, m = d.querySelector('.meadow');
           var night = probe(w, m, 0, 0);
           var lanterns = Array.prototype.slice.call(m.querySelectorAll('.mf-hw-pumpkin'));
+          heroLayoutCheck(f, 390, 'Halloween');
           ok('Halloween live: night lights reach full strength on phones, with warm faces and light pools', night.glow === 1 && parseFloat(w.getComputedStyle(m.querySelector('.mf-hw-lit')).opacity) === 1 && parseFloat(w.getComputedStyle(m.querySelector('.mf-hw-pool')).opacity) === 1 && rgbOf(w.getComputedStyle(m.querySelector('.mf-hw-lit')).fill)[0] > 200);
           ok('Halloween live: all three lanterns survive the phone crop with no horizontal scrolling', lanterns.every(function (p) { var r = p.getBoundingClientRect(); return r.left >= 0 && r.right <= w.innerWidth; }) && d.documentElement.scrollWidth <= d.documentElement.clientWidth);
           d.body.classList.add('low-power');
@@ -1461,7 +1505,7 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=95', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=96', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=92', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
@@ -1475,6 +1519,7 @@
         KazuChristmasChecks.run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
         KazuModalMotionChecks.run(L, scriptSrc, cssSrc, ok, eq);
         KazuPhoneTypeChecks.run(cssSrc, ok);
+        KazuHeroFillChecks.run(cssSrc, ok);
         KazuI18nChecks.run(KazuI18n, htmlSrc, scriptSrc, cssSrc, swSrc, L.stripEmoji, ok, eq);
         KazuChiikawaChecks.run(L, htmlSrc, scriptSrc, cssSrc, swSrc, ok, eq);
         KazuLinkSafetyChecks.run(L, scriptSrc, ok, eq);
