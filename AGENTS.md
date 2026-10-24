@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=96`,
+- `index.html` — the whole page. Loads `style.css?v=97`,
   `lib.js?v=44`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=92` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
@@ -547,6 +547,14 @@ before the main phone block:
   grown by the "Page text" rules to 22.1px / 16.25px from 416px. From 561px to
   768px the hero block holds them at 22.1px / 16.25px, so nothing jumps at
   560px. The phone quote box has 6px side padding, so long quotes use the width.
+- **The picture and the stat boxes** keep the name's proportions. In the main
+  phone block `.pfp` is `clamp(124px, min(44vw, 34vh), 181px)` (181px is the
+  desktop picture, reached at 411px; it was 132px at 412px under a 68px name)
+  and `.stat-value` is `clamp(19px, 6.4vw, 34px)` (it was 21px at 412px). That
+  is about 2.7x and .39x the name's size at every phone width. 6.4vw is the
+  most the widest time string (5.4em in Fredoka 600) allows in a half-width box
+  at 320px, so all four values share one size and stay on one line. The 360px
+  block no longer pins `.stat-value` to 18px.
 - **The quote box** opens to `max-height: 420px` (200px on desktop). A 320
   character quote is 352px tall at 430px, the tallest case measured.
 - **Tests.** `evals/hero-fill.js`: the rule layout and order, the quote sizes
@@ -561,6 +569,10 @@ before the main phone block:
   name is clear of the picture, the pumpkins and the quote, checks there is no
   sideways scroll, and checks that a 320 character quote is not cut off.
   Desktop keeps its sizes. If the title font is re-cut, re-measure `TITLE_EM`.
+  The same file pins the picture at 1.9-2.9x the name and a value at .33-.45x
+  it, the widest time string (`VALUE_EM`) fitting its box, and a value staying
+  1.3x the line under it, at every phone width; `heroLayoutCheck` measures the
+  real picture and values too. If the value font changes, re-measure `VALUE_EM`.
 
 ## Conventions and gotchas
 
