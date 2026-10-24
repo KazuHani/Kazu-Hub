@@ -23,6 +23,39 @@ html { scroll-behavior: smooth; }
 html { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
 body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
 
+/* ============ GLOBAL FONT SIZES ============
+   Two knobs for every font size on the site:
+   - --font-size-big: headers and names (h1-h6, the hero name, section/card/modal
+     titles, Discord/Steam display names, playlist and story titles)
+   - --font-size-small: everything else (body copy, labels, pills, buttons, stats)
+   !important is deliberate: it beats the per-component and media-query sizes
+   further down, so changing the two values below resizes the whole page. */
+:root {
+  --font-size-big: 32px;
+  --font-size-small: 14px;
+}
+
+body,
+body * {
+  font-size: var(--font-size-small) !important;
+}
+
+h1, h1 *,
+h2, h2 *,
+h3, h3 *,
+h4, h4 *,
+h5, h5 *,
+h6, h6 *,
+.title, .title *,
+.section-title, .section-title *,
+.card-head-title, .card-head-title *,
+.presence-name, .presence-name *,
+.modal-title, .modal-title *,
+.story-title, .story-title *,
+.music-playlist-name, .music-playlist-name * {
+  font-size: var(--font-size-big) !important;
+}
+
 body {
   position: relative;
   min-height: 100vh;
@@ -2572,178 +2605,9 @@ body.low-power .scroll-reveal {
    needs no size overrides; this block only covers what a narrow touch
    screen does differently. */
 @media (max-width: 560px) {
-  .container {
-    padding-top: clamp(20px, 4vh, 36px);
-    padding-left: max(14px, env(safe-area-inset-left));
-    padding-right: max(14px, env(safe-area-inset-right));
-    padding-bottom: max(48px, env(safe-area-inset-bottom));
-  }
-
-  /* Hero: balanced avatar and typography */
-  .hero { padding: 2px 0 6px; }
-  /* The picture and the stat values keep the name's proportions: the picture
-     is about 2.7x the name's size and a value about .39x (evals/hero-fill.js).
-     44vw is 181px, the desktop picture, from 411px up; 34vh holds a small
-     phone held sideways to its 124px floor. */
-  .pfp { width: clamp(124px, min(44vw, 34vh), 181px); height: clamp(124px, min(44vw, 34vh), 181px); }
-  /* the name's size is the hero block's (max-width: 768px) */
-  .title {
-    margin: 12px 0 4px;
-    padding: .04em .1em;
-  }
-  .quote-box { padding: 0 6px; }
-  .quote-box.visible { padding: 12px 6px; margin-top: 2px; }
-  .quote-text { font-size: 17px; line-height: 1.4; }
-  .quote-author { font-size: 12.5px; margin-top: 6px; }
-
-  /* Stat strip: punchy 2x2 bento grid */
-  .stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 20px;
-  }
-  .stat-card {
-    border-radius: 18px;
-    padding: 14px 8px;
-  }
-  .stat-label { font-size: 11px; letter-spacing: .08em; }
-  .stat-value {
-    font-size: clamp(19px, 6.4vw, 34px);
-    margin-top: 4px;
-    line-height: 1.1;
-  }
-  .stat-sub { font-size: 12px; margin-top: 3px; }
-  .stat-faint { font-size: 11px; }
-  .stat-loading-text { font-size: 13px; }
-
-  /* Section titles */
-  .section-title {
-    font-size: 22px;
-    margin: 32px 0 12px;
-    gap: 8px;
-  }
-
-  /* Right now cards */
-  .right-now-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
-  .discord-card, .steam-card, .mal-card, .lb-card {
-    border-radius: 20px;
-    padding: 16px 14px;
-  }
-  .card-head { margin-bottom: 12px; }
-  .avatar-img, .steam-avatar {
-    width: 52px; height: 52px; border-radius: 15px;
-  }
-  .status-dot { width: 16px; height: 16px; border-width: 2.5px; }
-  .presence-name { font-size: 18px; }
-  .presence-status { font-size: 12px; }
-  .info-pill {
-    margin-top: 12px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    gap: 10px;
-  }
-  .info-pill-emoji { font-size: 22px; }
-  .info-pill-icon { width: 26px; height: 26px; }
-  .info-pill-value { font-size: 15px; }
-  .info-pill-sub { font-size: 11.5px; }
-  .spotify-art { width: 38px; height: 38px; }
-  .spotify-song { font-size: 14.5px; }
-  .mal-row { padding: 8px 6px; }
-  .mal-thumb { width: 38px; height: 52px; border-radius: 8px; }
-  .mal-title { font-size: 14px; }
-  .mal-sub { font-size: 11.5px; }
-  .lb-entry { gap: 12px; }
-  .lb-poster { width: 48px; border-radius: 7px; }
-  .lb-title { font-size: 15.5px; }
-
-  /* PC Specs */
-  .pc-spec-card {
-    border-radius: 20px;
-    padding: 16px 14px;
-  }
-  .pc-spec-card-title { font-size: 14px; margin-bottom: 10px; }
-  .pc-spec-feature-name { font-size: clamp(20px, 5.2vw, 26px); }
-  .pc-gpu-mark { padding-top: 12px; }
-  .pc-gpu-mark strong { font-size: clamp(40px, 11vw, 54px); }
-  .pc-gpu-mark span { font-size: 10px; }
-  /* The size column grows with its text (same clamp as the page text below).
-     72px base: "240 GB" is 65px in Fredoka at 20px but 69px in the fallback
-     font shown until Fredoka loads, which spilled the old 68px column. */
-  .pc-storage-entry { grid-template-columns: clamp(72px, 22.5vw, 93.6px) minmax(0, 1fr); gap: 10px; }
-  .pc-storage-entry dt { font-size: 20px; }
-  .pc-storage-entry dd { font-size: 13px; }
-  .pc-spec-entry dt { font-size: 11px; margin-bottom: 2px; }
-  .pc-spec-entry dd, .pc-spec-list--build dd { font-size: 17px; }
-  .pc-spec-list { gap: 12px; }
-
-  /* YouTube Music Playlist */
-  .music-card {
-    border-radius: 20px;
-    padding: 16px 14px;
-  }
-  .music-cover-wrap { width: 110px; height: 110px; border-radius: 16px; }
-  .music-playlist-name { font-size: clamp(20px, 5.2vw, 24px); }
-  .music-playlist-sub { font-size: 12px; }
-  .music-track-row { padding: 9px 4px; gap: 10px; }
-  .music-track-num { font-size: 13.5px; width: 14px; }
-  .music-track-name { font-size: 14.5px; }
-  .music-track-artist { font-size: 11.5px; }
-
-  /* Socials: clean 2-column grid */
-  .socials-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .social-card {
-    padding: 18px 10px 14px;
-    border-radius: 18px;
-  }
-  .social-card:last-child:nth-child(odd) {
-    grid-column: span 2;
-    padding: 16px 14px 14px;
-  }
-  .social-mark { width: 36px; height: 36px; margin-bottom: 8px; }
-  .social-mark svg { width: 30px; height: 30px; }
-  .social-name { font-size: 15px; }
-  .social-handle { font-size: 12px; }
-
-  /* Stories */
-  .stories-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-  }
-  .story-card {
-    border-radius: 20px;
-    padding: 20px 16px;
-  }
-  .story-title { font-size: clamp(22px, 6vw, 26px); margin: 10px 0 6px; }
-  .story-desc { font-size: 13.5px; max-width: 100%; }
-  .story-cta { margin-top: 14px; padding: 8px 14px; font-size: 12.5px; }
-
-  /* Modals: mobile dynamic viewport */
-  .modal-overlay { padding: 10px; }
-  .modal-panel {
-    padding: 20px 14px 22px;
-    border-radius: 20px;
-    max-height: min(90vh, calc(100dvh - 20px));
-  }
-  .modal-title { font-size: 20px; margin: 2px 34px 14px 2px; }
-  .modal-close { top: 10px; right: 10px; width: 36px; height: 36px; font-size: 22px; }
-  .countdown { gap: 6px; }
-  .cd-cell { padding: 8px 3px; border-radius: 12px; }
-  .cd-num { font-size: clamp(19px, 5.2vw, 25px); }
-  .cd-label { font-size: 10px; letter-spacing: .05em; }
-  .forecast-strip { gap: 6px; }
-  .forecast-day { padding: 8px 3px; }
-  .forecast-emoji { font-size: 20px; }
-  .forecast-temps { font-size: 13px; }
-  .fun-grid { gap: 8px; }
-  .fun-cell { padding: 8px 10px; border-radius: 12px; gap: 8px; }
-  .fun-emoji { font-size: 22px; }
-  .fun-num { font-size: 16px; }
+  /* A phone's vh is taller than what is on screen (the address bar), so the
+     pop-up is capped by dvh too. */
+  .modal-panel { max-height: min(90vh, calc(100dvh - 2 * var(--ov-pad))); }
   .toast {
     width: min(calc(100vw - 24px), 380px);
     bottom: max(16px, env(safe-area-inset-bottom, 16px));
@@ -2769,95 +2633,4 @@ body.low-power .scroll-reveal {
     transform: scale(0.97);
     transition-duration: .08s;
   }
-}
-
-/* Extra small devices (<= 360px) */
-@media (max-width: 360px) {
-  .container {
-    padding-left: max(10px, env(safe-area-inset-left));
-    padding-right: max(10px, env(safe-area-inset-right));
-  }
-  .stat-grid { gap: 8px; }
-  .stat-card { padding: 12px 6px; }
-  .socials-grid { gap: 8px; }
-  .social-card { padding: 14px 6px 12px; }
-  .cd-num { font-size: 18px; }
-  .cd-label { font-size: 9px; }
-}
-
-/* ---- Pop-up text on phones grows with the screen ----
-   Each size is clamp(B, B * width / 320px, 1.3 * B): B is the phone size it
-   had before (still what a 320px screen gets), so a 375px phone reads it 17%
-   bigger and a 430px one 30% bigger, never more. One rule per text class the
-   pop-ups render; .modal-overlay .modal-panel outranks the per-pop-up phone
-   overrides above (age, countdown) and this block comes after them so it
-   wins ties. evals/phone-type.js checks every rule keeps that formula. */
-@media (max-width: 560px) {
-  .modal-overlay .modal-panel .modal-title { font-size: clamp(20px, 6.25vw, 26px); }
-  .modal-overlay .modal-panel .modal-body { font-size: clamp(15px, 4.6875vw, 19.5px); }
-  .modal-overlay .modal-panel .modal-lead { font-size: clamp(14px, 4.375vw, 18.2px); }
-  .modal-overlay .modal-panel .modal-lead-src { font-size: clamp(12px, 3.75vw, 15.6px); }
-  .modal-overlay .modal-panel .modal-credit { font-size: clamp(12px, 3.75vw, 15.6px); }
-  .modal-overlay .modal-panel .modal-note { font-size: clamp(14px, 4.375vw, 18.2px); }
-  .modal-overlay .modal-panel .modal-row-sub { font-size: clamp(13px, 4.0625vw, 16.9px); }
-  .modal-overlay .modal-panel .modal-btn { font-size: clamp(14px, 4.375vw, 18.2px); }
-  .modal-overlay .modal-panel .tz-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  .modal-overlay .modal-panel .tz-time { font-size: clamp(28px, 8.75vw, 36.4px); }
-  .modal-overlay .modal-panel .tz-meta { font-size: clamp(12px, 3.75vw, 15.6px); }
-  .modal-overlay .modal-panel .forecast-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  .modal-overlay .modal-panel .forecast-condition { font-size: clamp(12px, 3.75vw, 15.6px); }
-  .modal-overlay .modal-panel .forecast-temps { font-size: clamp(13px, 4.0625vw, 16.9px); }
-  .modal-overlay .modal-panel .forecast-precip { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  .modal-overlay .modal-panel .forecast-empty { font-size: clamp(13px, 4.0625vw, 16.9px); }
-  .modal-overlay .modal-panel .age-head { font-size: clamp(21px, 6.5625vw, 27.3px); }
-  .modal-overlay .modal-panel .age-head .age-sub { font-size: clamp(14px, 4.375vw, 18.2px); }
-  .modal-overlay .modal-panel .stat-tile-num { font-size: clamp(18px, 5.625vw, 23.4px); }
-  .modal-overlay .modal-panel .stat-tile-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  .modal-overlay .modal-panel .sign-name { font-size: clamp(17px, 5.3125vw, 22.1px); }
-  .modal-overlay .modal-panel .fun-title { font-size: clamp(12px, 3.75vw, 15.6px); }
-  .modal-overlay .modal-panel .fun-num { font-size: clamp(16px, 5vw, 20.8px); }
-  .modal-overlay .modal-panel .fun-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  .modal-overlay .modal-panel .cd-num { font-size: clamp(26px, 8.125vw, 33.8px); }
-  .modal-overlay .modal-panel .cd-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
-}
-
-/* ---- Page text on phones grows with the screen ----
-   Same rule as the pop-ups above: every fixed px size B in the main phone
-   block (max-width: 560px, before its modal rules) becomes
-   clamp(B, B * width / 320px, 1.3 * B). Sizes already written in vw (stat
-   values, headlines, and the name in the hero block) already grow and are
-   left as they are.
-   Generated from that block; evals/phone-type.js re-derives the list and
-   fails if a size there has no rule here or a rule breaks the formula. */
-@media (max-width: 560px) {
-  body .quote-text { font-size: clamp(17px, 5.3125vw, 22.1px); }
-  body .quote-author { font-size: clamp(12.5px, 3.9063vw, 16.25px); }
-  body .stat-label { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  body .stat-sub { font-size: clamp(12px, 3.75vw, 15.6px); }
-  body .stat-faint { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  body .stat-loading-text { font-size: clamp(13px, 4.0625vw, 16.9px); }
-  body .section-title { font-size: clamp(22px, 6.875vw, 28.6px); }
-  body .presence-name { font-size: clamp(18px, 5.625vw, 23.4px); }
-  body .presence-status { font-size: clamp(12px, 3.75vw, 15.6px); }
-  body .info-pill-emoji { font-size: clamp(22px, 6.875vw, 28.6px); }
-  body .info-pill-value { font-size: clamp(15px, 4.6875vw, 19.5px); }
-  body .info-pill-sub { font-size: clamp(11.5px, 3.5938vw, 14.95px); }
-  body .spotify-song { font-size: clamp(14.5px, 4.5313vw, 18.85px); }
-  body .mal-title { font-size: clamp(14px, 4.375vw, 18.2px); }
-  body .mal-sub { font-size: clamp(11.5px, 3.5938vw, 14.95px); }
-  body .lb-title { font-size: clamp(15.5px, 4.8438vw, 20.15px); }
-  body .pc-spec-card-title { font-size: clamp(14px, 4.375vw, 18.2px); }
-  body .pc-gpu-mark span { font-size: clamp(10px, 3.125vw, 13px); }
-  body .pc-storage-entry dt { font-size: clamp(20px, 6.25vw, 26px); }
-  body .pc-storage-entry dd { font-size: clamp(13px, 4.0625vw, 16.9px); }
-  body .pc-spec-entry dt { font-size: clamp(11px, 3.4375vw, 14.3px); }
-  body .pc-spec-entry dd, body .pc-spec-list--build dd { font-size: clamp(17px, 5.3125vw, 22.1px); }
-  body .music-playlist-sub { font-size: clamp(12px, 3.75vw, 15.6px); }
-  body .music-track-num { font-size: clamp(13.5px, 4.2188vw, 17.55px); }
-  body .music-track-name { font-size: clamp(14.5px, 4.5313vw, 18.85px); }
-  body .music-track-artist { font-size: clamp(11.5px, 3.5938vw, 14.95px); }
-  body .social-name { font-size: clamp(15px, 4.6875vw, 19.5px); }
-  body .social-handle { font-size: clamp(12px, 3.75vw, 15.6px); }
-  body .story-desc { font-size: clamp(13.5px, 4.2188vw, 17.55px); }
-  body .story-cta { font-size: clamp(12.5px, 3.9063vw, 16.25px); }
 }
