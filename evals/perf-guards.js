@@ -161,7 +161,7 @@
     }
     var hints = (html.match(/<link rel="(?:preconnect|dns-prefetch)" href="[^"]+"/g) || []).join('\n');
     ok('perf: no preconnect to hosts the page never fetches (corsproxy.io, api.listenbrainz.org); the shared CORS proxy is warmed instead',
-      hints.indexOf('corsproxy.io') === -1 && hints.indexOf('listenbrainz') === -1 && hints.indexOf('preconnect" href="https://proxy.cors.sh"') !== -1);
+      hints.indexOf('corsproxy.io') === -1 && hints.indexOf('listenbrainz') === -1 && hints.indexOf('proxy.cors.sh') === -1 && hints.indexOf('preconnect" href="https://api.cors.lol"') !== -1);
     ok('perf: only hosts used within the first seconds get a full preconnect (an idle socket is dropped after ~10s); late ones get DNS only',
       (hints.match(/rel="preconnect"/g) || []).length <= 7 && hints.indexOf('dns-prefetch" href="//zenquotes.io"') !== -1 && hints.indexOf('preconnect" href="https://zenquotes.io"') === -1);
 

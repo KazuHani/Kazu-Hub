@@ -1092,6 +1092,21 @@
     return w.year + '-' + pad(w.month + 1) + '-' + pad(w.day);
   }
 
+  // ---- Failure memory for flaky hosts ---------------------------------------
+  // The free CORS proxies and Jikan fail in long stretches (DNS gone, 429 after
+  // a burst, 12 s timeouts). Without memory every poll of every card retried
+  // them, which is what earned the 429s and a console full of errors. down()
+  // says whether a key is still resting; fail() rests it for `ms`; ok() clears
+  // it. Time is passed in so the maths is testable.
+  function backoffCreate(ms) {
+    var until = {};
+    return {
+      down: function (key, now) { return (until[key] || 0) > now; },
+      fail: function (key, now) { until[key] = now + ms; },
+      ok: function (key) { delete until[key]; },
+    };
+  }
+
   // ---- Quote (localStorage copy) --------------------------------------------
   // The last quote zenquotes dealt: { q, a } with the text required. Printed
   // through textContent, so the checks only keep junk out.
@@ -2072,6 +2087,7 @@
     weatherCacheParse: weatherCacheParse,
     ukDateIso: ukDateIso,
     quoteCacheParse: quoteCacheParse,
+    backoffCreate: backoffCreate,
     malRow: malRow,
     malListRow: malListRow,
     malCacheParse: malCacheParse,

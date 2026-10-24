@@ -57,13 +57,13 @@
 <!-- Warm up DNS+TLS for the hosts the staged boot reaches in its first seconds
      (CORS-mode ⇒ crossorigin). A preconnected socket that sits unused for ~10s
      is dropped, so only hosts used inside that window get one; hosts reached
-     later get a DNS-only hint below. proxy.cors.sh is the shared CORS proxy
+     later get a DNS-only hint below. api.cors.lol is the shared CORS proxy
      (Steam at +2s, then Letterboxd, the playlist feed and the MAL fallback);
-     corsproxy.io and api.listenbrainz.org used to be here but are never
-     fetched any more. -->
+     proxy.cors.sh, corsproxy.io and api.listenbrainz.org used to be here but
+     are never fetched any more. -->
 <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
 <link rel="preconnect" href="https://api.lanyard.rest" crossorigin>
-<link rel="preconnect" href="https://proxy.cors.sh" crossorigin>
+<link rel="preconnect" href="https://api.cors.lol" crossorigin>
 <link rel="preconnect" href="https://api.jikan.moe" crossorigin>
 <!-- The Discord avatar is one of the first images painted: full handshake
      (no crossorigin — plain <img> loads aren't CORS-mode). -->
@@ -1052,10 +1052,10 @@ document.addEventListener('error', function (e) {
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=45"></script>
+<script src="lib.js?v=46"></script>
 <script src="site-config.js?v=1"></script>
 <script src="i18n.js?v=3"></script>
-<script src="script.js?v=94"></script>
+<script src="script.js?v=95"></script>
 <script id="sw-register">
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

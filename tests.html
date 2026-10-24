@@ -21,7 +21,7 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=45"></script>
+  <script src="lib.js?v=46"></script>
   <script src="site-config.js?v=1"></script>
   <script src="weather-fx.js?v=5"></script>
   <script src="evals/new-year-fireworks.js?v=3"></script>
@@ -1586,7 +1586,7 @@
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('style.css?v=98', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=94', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=95', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=5', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('AGENTS.md', { cache: 'no-store' }).then(function (r) { return r.text(); })
@@ -2254,7 +2254,19 @@
         ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split('const r2 = await proxyFetch(listUrl);').length - 1 === 2);
         ok('letterboxd RSS bypasses the HTTP cache', scriptSrc.indexOf('const r = await proxyFetch(rss);') !== -1);
         ok('youtube playlist feed bypasses the HTTP cache', scriptSrc.indexOf('const r = await proxyFetch(feed);') !== -1);
-        ok('one proxy helper feeds every cross-origin card', scriptSrc.indexOf("return fetchT('https://proxy.cors.sh/' + target, opts);") !== -1 && scriptSrc.indexOf("fetchT('https://corsproxy.io") === -1);
+        ok('one proxy helper feeds every cross-origin card, none of the dead proxies remain', scriptSrc.indexOf("'https://api.cors.lol/?url='") !== -1 && scriptSrc.indexOf("'https://api.allorigins.win/raw?url='") !== -1 && scriptSrc.indexOf('proxy.cors.sh') === -1 && scriptSrc.indexOf('corsproxy.io') === -1);
+        ok('a proxy that errors, 429s or 5xxs is rested instead of retried every poll', scriptSrc.indexOf('hostRest.fail(key, Date.now())') !== -1 && scriptSrc.indexOf('r.status === 429') !== -1);
+        ok('jikan is rested after a failure so polls skip its 12s timeout', scriptSrc.split("hostRest.down('jikan', Date.now())").length - 1 === 2 && scriptSrc.split("hostRest.fail('jikan', Date.now())").length - 1 === 2);
+        ok('the quote goes through the proxy (zenquotes sends no CORS header)', scriptSrc.indexOf("proxyFetch('https://zenquotes.io/api/random')") !== -1 && scriptSrc.indexOf("fetchT('https://zenquotes.io") === -1);
+        (function () {
+          var b = KazuLib.backoffCreate(300000);
+          ok('backoff: a fresh key is up', b.down('p', 1000) === false);
+          b.fail('p', 1000);
+          ok('backoff: a failed key rests for the window', b.down('p', 300999) === true);
+          ok('backoff: ...and is retried once the window passes', b.down('p', 301000) === false);
+          b.fail('p', 5000); b.ok('p');
+          ok('backoff: ok() clears a rest early, other keys unaffected', b.down('p', 5001) === false && b.down('q', 5001) === false);
+        })();
         ok('playlist tracks ride the poller loop', scriptSrc.indexOf('{ fn: loadPlaylistTracks,') !== -1);
         ok('playlist card has a live-swap mount point', htmlSrc.indexOf('id="musicFeatured"') !== -1);
         // Every live fetch rides fetchT (script.js): a 12s AbortSignal.timeout so a

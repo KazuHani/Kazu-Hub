@@ -338,21 +338,40 @@
   }
 
   // ---------- Cross-origin proxy ----------
-  // Steam, Letterboxd, YouTube and MAL send no Access-Control-Allow-Origin,
-  // so the browser can only reach them through a CORS proxy. corsproxy.io
-  // played that role until it went key-only; proxy.cors.sh serves the same
-  // raw byte passthrough with no key today. If keyless access ever stops, a
-  // free cors.sh key is public by design and pinned to this site's Origin —
-  // paste it into CORS_PROXY_KEY and every loader below picks it up.
-  const CORS_PROXY_KEY = '';
+  // Steam, Letterboxd, YouTube, MAL and zenquotes send no
+  // Access-Control-Allow-Origin, so the browser can only reach them through a
+  // CORS proxy. The free ones come and go (two earlier ones went key-only or left DNS,
+  // and api.cors.lol answers 429 after a burst), so
+  // proxyFetch walks a list and rests any proxy that errors, 429s or 5xxs for
+  // PROXY_REST_MS, instead of every poll of every card hammering it again.
+  // CORS_PROXY_URL is the permanent fix: deploy workers/cors-proxy (see its
+  // README), paste the worker URL here and it is tried first.
+  const CORS_PROXY_URL = '';
+  const PROXIES = [
+    CORS_PROXY_URL && function (t) { return CORS_PROXY_URL + '?url=' + encodeURIComponent(t); },
+    function (t) { return 'https://api.cors.lol/?url=' + encodeURIComponent(t); },
+    function (t) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(t); },
+  ].filter(Boolean);
+  const PROXY_REST_MS = 5 * 60 * 1000;
+  const hostRest = KazuLib && KazuLib.backoffCreate
+    ? KazuLib.backoffCreate(PROXY_REST_MS)
+    : { down: function () { return false; }, fail: function () {}, ok: function () {} };
   async function proxyFetch(target) {
-    const opts = { cache: 'no-store' };
-    if (CORS_PROXY_KEY) opts.headers = { 'x-cors-api-key': CORS_PROXY_KEY };
-    try {
-      const r = await (function () { return fetchT('https://proxy.cors.sh/' + target, opts); })();
-      if (r && r.ok) return r;
-    } catch (e) {}
-    return fetchT('https://api.cors.lol/?url=' + encodeURIComponent(target), { cache: 'no-store' });
+    let last = null;
+    for (let i = 0; i < PROXIES.length; i++) {
+      const key = 'proxy' + i;
+      if (hostRest.down(key, Date.now())) continue;
+      try {
+        const r = await fetchT(PROXIES[i](target), { cache: 'no-store' });
+        if (r.status === 429 || r.status === 403 || r.status >= 500) { hostRest.fail(key, Date.now()); last = r; continue; }
+        hostRest.ok(key);
+        return r;
+      } catch (e) {
+        hostRest.fail(key, Date.now());
+      }
+    }
+    if (last) return last;
+    throw new Error('every CORS proxy is resting or failed');
   }
 
   // ---------- Render dedup signatures ----------
@@ -2146,6 +2165,7 @@
   // because MAL sends no Access-Control-Allow-Origin.
   async function fetchMalRows() {
     try {
+      if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
       const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' });
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
@@ -2158,6 +2178,7 @@
         .filter(Boolean)
         .slice(0, 3);
     } catch (e) {
+      hostRest.fail('jikan', Date.now());
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
       const r2 = await proxyFetch(listUrl);
@@ -2200,6 +2221,7 @@
     const mRow = KazuLib.malMangaRow;
     const mListRow = KazuLib.malMangaListRow;
     try {
+      if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
       const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' });
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
@@ -2209,6 +2231,7 @@
         .filter(Boolean)
         .slice(0, 2);
     } catch (e) {
+      hostRest.fail('jikan', Date.now());
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
       const r2 = await proxyFetch(listUrl);
@@ -2531,7 +2554,8 @@
   async function loadQuote() {
     if (siteSectionOff('quote')) return;
     try {
-      const r = await fetchT('https://zenquotes.io/api/random');
+      const r = await proxyFetch('https://zenquotes.io/api/random');
+      if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
       const q = j && j[0];
       if (!q || !q.q) throw new Error('bad payload');

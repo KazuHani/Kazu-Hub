@@ -1213,7 +1213,19 @@ ok('jikan anime + manga bypass the HTTP cache', scriptSrc.includes("'/animelist?
 ok('MAL load.json fallbacks bypass the HTTP cache', scriptSrc.split('const r2 = await proxyFetch(listUrl);').length - 1 === 2);
 ok('letterboxd RSS bypasses the HTTP cache', scriptSrc.includes('const r = await proxyFetch(rss);'));
 ok('youtube playlist feed bypasses the HTTP cache', scriptSrc.includes('const r = await proxyFetch(feed);'));
-ok('one proxy helper feeds every cross-origin card', scriptSrc.includes("return fetchT('https://proxy.cors.sh/' + target, opts);") && !scriptSrc.includes("fetchT('https://corsproxy.io"));
+ok('one proxy helper feeds every cross-origin card, none of the dead proxies remain', scriptSrc.includes("'https://api.cors.lol/?url='") && scriptSrc.includes("'https://api.allorigins.win/raw?url='") && !scriptSrc.includes('proxy.cors.sh') && !scriptSrc.includes('corsproxy.io'));
+ok('a proxy that errors, 429s or 5xxs is rested instead of retried every poll', scriptSrc.includes('hostRest.fail(key, Date.now())') && scriptSrc.includes('r.status === 429'));
+ok('jikan is rested after a failure so polls skip its 12s timeout', scriptSrc.split("hostRest.down('jikan', Date.now())").length - 1 === 2 && scriptSrc.split("hostRest.fail('jikan', Date.now())").length - 1 === 2);
+ok('the quote goes through the proxy (zenquotes sends no CORS header)', scriptSrc.includes("proxyFetch('https://zenquotes.io/api/random')") && !scriptSrc.includes("fetchT('https://zenquotes.io"));
+{
+  const b = L.backoffCreate(300000);
+  ok('backoff: a fresh key is up', b.down('p', 1000) === false);
+  b.fail('p', 1000);
+  ok('backoff: a failed key rests for the window', b.down('p', 1000 + 299999) === true);
+  ok('backoff: ...and is retried once the window passes', b.down('p', 1000 + 300000) === false);
+  b.fail('p', 5000); b.ok('p');
+  ok('backoff: ok() clears a rest early, other keys unaffected', b.down('p', 5001) === false && b.down('q', 5001) === false);
+}
 ok('playlist tracks ride the poller loop', scriptSrc.includes('{ fn: loadPlaylistTracks,'));
 ok('playlist card has a live-swap mount point', htmlSrc.includes('id="musicFeatured"'));
 // Every live fetch rides fetchT (script.js): a 12s AbortSignal.timeout so a
