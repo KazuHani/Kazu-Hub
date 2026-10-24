@@ -150,7 +150,7 @@
         var v = d[1].replace(/ ?!important$/, ''), m;
         if (/^[\d.]+(em|%)$/.test(v) || v === 'inherit') return;
         // the global font-size block: sizes come from the text-scale tiers (small, body, lead, title, name)
-        if (/^var\(--font-size-(small|body|lead|title|display|name)\)$/.test(v)) { varCount++; return; }
+        if (/^var\(--font-size-(small|body|lead|title|display|feature|mark|name)\)$/.test(v)) { varCount++; return; }
         if ((m = /^([\d.]+)px$/.exec(v))) {
           if (+m[1] < 12 && !DEV_SMALL_OK.test(r.sel)) floors.push(r.sel + ' ' + v);
           return;

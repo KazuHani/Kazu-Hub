@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=106`,
+- `index.html` — the whole page. Loads `style.css?v=108`,
   `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=95` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
@@ -161,6 +161,11 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   anything passes its desktop cap, a size shrinks as the window grows,
   name > title > lead > body > small stops holding, or a role (page heading,
   card header, row, secondary line) lands in the wrong tier. Shared by
+  Inside a card (`.card`, `.pc-spec-card`, each a size container) the unit is
+  `max(3.6cqi, viewport unit)` capped at 19px, so text fills wide cards and never
+  drops below the page size; the GPU name and badge (`--font-size-feature`,
+  `--font-size-mark`) are `cqi` clamps. The gate pins that floor, the cap and
+  those two clamps.
   `tests.js` and `tests.html`; also runs alone (`node evals/font-scale.js`,
   which prints the sizes per width).
 - `evals/sky-seam.js` — periodic eval (real Chrome, plain Node >= 22, no

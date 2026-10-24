@@ -81,17 +81,33 @@
 
     // Which tier a selector's rule sets.
     var tierOf = {};
-    css.replace(/([^{}]+)\{\s*font-size: var\(--font-size-(small|body|lead|title|display|name)\) !important;\s*\}/g, function (_, sels, t) {
+    css.replace(/([^{}]+)\{\s*font-size: var\(--font-size-(small|body|lead|title|display|feature|mark|name)\) !important;\s*\}/g, function (_, sels, t) {
       sels.split(',').forEach(function (s) { s = s.trim().replace(/^\/\*[\s\S]*?\*\/\s*/, ''); if (s && !/ \*$/.test(s)) tierOf[s] = t; });
       return '';
     });
+    // Inside a card the unit also follows the card's width: it may grow past the viewport unit, never fall below it.
+    var cardM = /\.card,\s*\.pc-spec-card \{([^}]*)\}/.exec(css), card = cardM ? cardM[1] : '';
+    var cu = /--font-unit:\s*clamp\(([\d.]+)px,\s*max\(([\d.]+)cqi,\s*([\d.]+)px \+ ([\d.]+)vw\),\s*([\d.]+)px\)/.exec(card);
+    var cardOk = !!cu && /container-type: inline-size/.test(card) && +cu[1] >= S.unit.min && +cu[3] === S.unit.base && +cu[4] === S.unit.vw && +cu[5] > S.unit.max;
+    ok('font scale: every card is a size container whose unit is max(card width, viewport unit), floored at the page unit', cardOk, card.replace(/\s+/g, ' '));
+    if (cu) {
+      var cap = +cu[5], capBad = [];
+      if (cap > 19.5) capBad.push('unit ' + cap);
+      if (cap * 1.2 > 23.5) capBad.push('lead ' + (cap * 1.2).toFixed(1));
+      if (cap * 1.6 > 31) capBad.push('title ' + (cap * 1.6).toFixed(1));
+      if (cap * 1.75 > 34) capBad.push('display ' + (cap * 1.75).toFixed(1));
+      ok('font scale: text in the widest card is still sane (unit <= 19.5px, lead <= 23.5px, title <= 31px, display <= 34px)', capBad.length === 0, capBad.join(' | '));
+    }
+    var fm = /--font-size-feature:\s*clamp\(([\d.]+)px,\s*[\d.]+cqi,\s*([\d.]+)px\)/.exec(card), mk = /--font-size-mark:\s*clamp\(([\d.]+)px,\s*[\d.]+cqi,\s*([\d.]+)px\)/.exec(card);
+    ok('font scale: the GPU name and badge fill their card (cqi clamps, name 22..46px, badge 40..100px)',
+      !!fm && !!mk && +fm[1] >= 22 && +fm[2] <= 46 && +mk[1] >= 40 && +mk[2] <= 100, (fm || []).slice(1) + ' / ' + (mk || []).slice(1));
     ok('font scale: body text is the body tier', /body,\nbody \* \{\s*font-size: var\(--font-size-body\) !important;/.test(css));
     var want = {
       '.section-title': 'title', '.stat-value': 'display', '.music-playlist-name': 'title', '.story-title': 'title', '.modal-title': 'title',
       '.card-head-title': 'lead', '.presence-name': 'lead', '.mal-title': 'lead', '.lb-title': 'lead', '.social-name': 'lead',
       '.music-track-name': 'body', '.story-desc': 'body',
       '.stat-label': 'body', '.stat-sub': 'body', '.mal-title': 'body', '.social-handle': 'small', '.music-track-artist': 'small', '.pill-link': 'small', '.mal-eps': 'small',
-      '.title': 'name'
+      '.title': 'name', '.pc-spec-feature-name': 'feature', '.pc-gpu-mark strong': 'mark', '.pc-spec-list--build dd': 'body'
     };
     var wrong = Object.keys(want).filter(function (s) { return tierOf[s] !== want[s]; }).map(function (s) { return s + ': ' + tierOf[s] + ' (want ' + want[s] + ')'; });
     ok('font scale: page headings are title, card headers lead, rows body, secondary lines small, the name its own tier', wrong.length === 0, wrong.join(' | '));

@@ -25,7 +25,8 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
 
 /* ============ TEXT SCALE (automatic) ============
    Every font size on the page is calculated from the screen width. One number,
-   --font-unit, follows the window (14px on a phone, 16px on a desktop); the
+   --font-unit, follows the window (14px on a phone, 16px on a desktop) and,
+   inside a card, the card's width (up to 19px); the
    six sizes below are fixed ratios of it, so the hierarchy is the same on
    every display and only the overall size changes:
      small  .875 x unit  labels, handles, artists, secondary lines  (12.3px .. 14px)
@@ -40,12 +41,30 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
    per-component sizes further down. */
 :root {
   --font-unit: clamp(14px, 13px + .25vw, 16px);
+  --font-size-name: clamp(44px, 24px + 6vw, 84px);
+}
+
+/* Inside a card the unit also follows the card's own width (every card is a
+   size container), so text makes use of a wide card instead of sitting at the
+   page-wide size. It can only grow past the viewport unit, never fall below
+   it, and tops out at 19px. The GPU name and badge scale to their card too. */
+.card,
+.pc-spec-card {
+  container-type: inline-size;
+  --font-unit: clamp(14px, max(3.6cqi, 13px + .25vw), 19px);
+  --font-size-feature: clamp(22px, 7cqi, 42px);
+  --font-size-mark: clamp(40px, 15cqi, 80px);
+}
+
+/* The tiers are re-derived in every card so they pick up the card's unit. */
+:root,
+.card,
+.pc-spec-card {
   --font-size-small: calc(var(--font-unit) * .875);
   --font-size-body: var(--font-unit);
   --font-size-lead: calc(var(--font-unit) * 1.2);
   --font-size-title: calc(var(--font-unit) * 1.6);
   --font-size-display: calc(var(--font-unit) * 1.75);
-  --font-size-name: clamp(44px, 24px + 6vw, 84px);
 }
 
 body,
@@ -62,9 +81,7 @@ body * {
 .story-title,
 .story-title *,
 .modal-title,
-.modal-title *,
-.pc-spec-feature-name,
-.pc-spec-feature-name * {
+.modal-title * {
   font-size: var(--font-size-title) !important;
 }
 
@@ -73,6 +90,16 @@ body * {
 .to-top,
 .to-top * {
   font-size: var(--font-size-display) !important;
+}
+
+.pc-spec-feature-name,
+.pc-spec-feature-name * {
+  font-size: var(--font-size-feature) !important;
+}
+
+.pc-gpu-mark strong,
+.pc-gpu-mark strong * {
+  font-size: var(--font-size-mark) !important;
 }
 
 .card-head-title,
@@ -122,6 +149,10 @@ body * {
 .stat-sub *,
 .mal-title,
 .mal-title *,
+.pc-spec-list--build dd,
+.pc-spec-list--build dd *,
+.pc-gpu-mark span,
+.pc-gpu-mark span *,
 .lb-stars,
 .lb-stars *,
 .social-mark--text,
