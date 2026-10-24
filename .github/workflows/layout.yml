@@ -5,7 +5,9 @@ name: layout eval
 # 1920px (mouse) and to 1366px (touch), in English and Japanese, and fails if
 # any text or picture jumps or shrinks as the window widens, a grid leaves an
 # orphan row, text spills or the page scrolls sideways (evals/layout-sweep.js,
-# "Fluid sizing" in AGENTS.md). It never runs on push or pull_request, so it
+# "Fluid sizing" in AGENTS.md). It also screenshots the sky near sunset and
+# fails if it stops in a line at the fold (evals/sky-seam.js, "Sky edges" in
+# AGENTS.md). It never runs on push or pull_request, so it
 # cannot block a deploy; run it by hand from the Actions tab (workflow_dispatch)
 # or wait for the weekly schedule.
 on:
@@ -26,10 +28,16 @@ jobs:
       - name: sweep every width, mouse and touch, English and Japanese
         run: node evals/layout-sweep.js --out layout-sweep.json
 
+      - name: the sky never stops in a line at the fold (sunset, short windows, phone)
+        if: always()
+        run: node evals/sky-seam.js --out sky-seam
+
       - name: keep the snapshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: layout-sweep
-          path: layout-sweep.json
+          path: |
+            layout-sweep.json
+            sky-seam/
           if-no-files-found: ignore

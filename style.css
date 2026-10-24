@@ -121,7 +121,7 @@ body {
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
 
 /* ---- Sakura scenery: moon + overhanging branches ---- */
-/* Sunset sky. An absolute, viewport-tall layer at the top of the page (it
+/* Sunset sky. An absolute layer at the top of the page (it
    scrolls away with the hero, like the scenery) painted first, so the sun,
    moon and branches sit in front of it. Two stacked palettes crossfade on
    --sunset-late: ::before is golden-hour orange (the sun still up), ::after
@@ -134,9 +134,15 @@ body {
    edge, ~70% down: the end of the sky arc). Static gradients with an opacity
    that steps ~1% a minute: no animation, so it costs nothing and shows on
    every device, phones and low-power mode included. Christmas has its own
-   pine palette and skips it. */
+   pine palette and skips it.
+   The glow is still ~30% strong at the bottom of the first screen, so the
+   layer runs on past it (128vh) and every vertical size and stop is in vh,
+   not %: the first screen paints exactly as before, and below it the glow
+   fades out on its own. At 100vh the layer used to stop in a hard line as
+   soon as you scrolled. evals/sky-edges.js checks every gradient here is
+   transparent before the box ends. */
 .sunset-sky {
-  position: absolute; top: 0; left: 0; right: 0; height: 100vh;
+  position: absolute; top: 0; left: 0; right: 0; height: 128vh;
   z-index: 0; pointer-events: none; overflow: hidden;
   opacity: var(--sunset, 0);
 }
@@ -144,14 +150,14 @@ body {
 .sunset-sky::before {
   opacity: calc(1 - var(--sunset-late, 0));
   background:
-    radial-gradient(150% 76% at 100% 60%, rgba(255,150,45,.96) 0%, rgba(255,120,50,.7) 22%, rgba(255,92,72,.4) 46%, rgba(255,92,72,.14) 66%, rgba(255,92,72,0) 84%),
-    linear-gradient(to bottom, rgba(30,28,88,0) 0%, rgba(84,58,128,.3) 20%, rgba(214,96,104,.42) 40%, rgba(255,152,60,.6) 57%, rgba(255,196,96,.4) 69%, rgba(255,196,96,.1) 80%, rgba(255,196,96,0) 92%);
+    radial-gradient(150% 76vh at 100% 60vh, rgba(255,150,45,.96) 0%, rgba(255,120,50,.7) 22%, rgba(255,92,72,.4) 46%, rgba(255,92,72,.14) 66%, rgba(255,92,72,0) 84%),
+    linear-gradient(to bottom, rgba(30,28,88,0) 0vh, rgba(84,58,128,.3) 20vh, rgba(214,96,104,.42) 40vh, rgba(255,152,60,.6) 57vh, rgba(255,196,96,.4) 69vh, rgba(255,196,96,.1) 80vh, rgba(255,196,96,0) 92vh);
 }
 .sunset-sky::after {
   opacity: var(--sunset-late, 0);
   background:
-    radial-gradient(150% 76% at 100% 62%, rgba(238,92,124,.74) 0%, rgba(196,72,144,.5) 26%, rgba(112,62,152,.3) 52%, rgba(84,62,152,.1) 70%, rgba(84,62,152,0) 86%),
-    linear-gradient(to bottom, rgba(24,22,84,0) 0%, rgba(58,44,132,.38) 20%, rgba(150,70,152,.42) 42%, rgba(240,112,112,.4) 58%, rgba(255,142,92,.26) 70%, rgba(255,142,92,.08) 80%, rgba(255,142,92,0) 92%);
+    radial-gradient(150% 76vh at 100% 62vh, rgba(238,92,124,.74) 0%, rgba(196,72,144,.5) 26%, rgba(112,62,152,.3) 52%, rgba(84,62,152,.1) 70%, rgba(84,62,152,0) 86%),
+    linear-gradient(to bottom, rgba(24,22,84,0) 0vh, rgba(58,44,132,.38) 20vh, rgba(150,70,152,.42) 42vh, rgba(240,112,112,.4) 58vh, rgba(255,142,92,.26) 70vh, rgba(255,142,92,.08) 80vh, rgba(255,142,92,0) 92vh);
 }
 body.season-christmas .sunset-sky { display: none; }
 /* Anchored to the top of the page (absolute, not fixed): it scrolls away
@@ -169,6 +175,14 @@ body.season-christmas .sunset-sky { display: none; }
   --sakura-petal-deep: #e2709c;
   --sakura-bud: #d95f8f;
   --sakura-stamen: #ffe9f2;
+}
+/* Clip sideways only (the sun and moon slide out through the page edges) and
+   let the horizon glow, the low sun's halo and the branches run on below the
+   first screen and fade out on their own. Clipped at 100vh they ended in a
+   hard line once you scrolled a short window. Without clip support the
+   layer keeps overflow: hidden. */
+@supports (overflow: clip) {
+  .sakura-scene { overflow: clip visible; }
 }
 /* Dev-only trajectory overlay. The SVG uses the same percentage frame as
    skyArcPoint(), so it scales with the scenery without JS resize work. It is

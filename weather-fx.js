@@ -256,7 +256,11 @@
       sc.clouds.s[i] = s;
       sc.clouds.v[i] = i % 3;
       sc.clouds.x[i] = rng() * (W + SPRITE_W * s) - SPRITE_W * s;
-      sc.clouds.y[i] = (0.0 + rng() * 0.6) * H - SPRITE_H * s * 0.35; // upper sky, partly off the top is fine
+      // Upper sky, partly off the top is fine. Never past the bottom: the cloud
+      // canvas is one viewport tall and scrolls with the page, so a cloud cut
+      // by its edge shows as a straight line once you scroll (windows under
+      // 570px tall reached it).
+      sc.clouds.y[i] = Math.min((0.0 + rng() * 0.6) * H - SPRITE_H * s * 0.35, H - SPRITE_H * s);
     }
     return sc;
   }

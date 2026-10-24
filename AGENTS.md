@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=97`,
-  `lib.js?v=44`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=92` (version
+- `index.html` — the whole page. Loads `style.css?v=98`,
+  `lib.js?v=45`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=94` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
@@ -136,13 +136,24 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   each from phone to desktop, filling the width on phones and small tablets
   (see "Hero" below). Shared by `tests.js` and `tests.html` (which measures
   the hero in page frames); also runs alone (`node evals/hero-fill.js`).
+- `evals/sky-edges.js` — gate assertions that no sky layer stops in a line
+  below the first screen (see "Sky edges" below): the sunset's gradients end
+  inside its box and are placed in vh, the scenery clips sideways only, and
+  every cloud stays inside its canvas at every window size. Shared by
+  `tests.js` and `tests.html` (which also checks the gradients the browser
+  resolves in a page frame); also runs alone (`node evals/sky-edges.js`).
+- `evals/sky-seam.js` — periodic eval (real Chrome, plain Node >= 22, no
+  dependencies): screenshots the sky alone near sunset, scrolled a fifth of
+  a screen, at desktop, short-window and phone sizes, decodes the PNG and
+  fails when the colour jumps more than 2.5 levels at the fold. Before the
+  fix it measured 47-79 levels there; after, 0.5-1.3. Usage is in its header.
 - `evals/layout-sweep.js` — periodic eval (real Chrome, plain Node >= 22, no
   dependencies; real web fonts unless `--fonts stub`): every live card filled
   from fixtures, the window resized every 8px from 280px to 1920px (mouse) and
   to 1366px (touch), in English and Japanese, plain and Halloween, the
   pop-ups every 80px; fails on anything `fluid-layout.js` `analyse()` reports.
   Prints a table of key sizes at familiar widths. Usage is in its header.
-- `evals/chrome-harness.js` — the real-browser plumbing both periodic evals
+- `evals/chrome-harness.js` — the real-browser plumbing the periodic evals
   share: static server, API fixtures and routing, Chrome launcher, the pinned
   clock and fake Lanyard socket, and the page opener.
 - `evals/link-safety.js` — gate assertions for links from outside the site
@@ -713,6 +724,25 @@ These are load-bearing; read before editing.
   step), so it shows on phones and in low-power mode too; only Christmas hides it.
   Changing the timing means editing `sunsetGlow` AND the matching numbers in
   the boot script. The gradient stops live in `style.css` (`.sunset-sky`).
+- **Sky edges (no line at the fold).** The sunset, the scenery and the cloud
+  canvas are anchored to the top of the page, so whatever one of them still
+  paints where its box ends shows as a hard horizontal line the moment you
+  scroll. Each layer must fade out on its own:
+  - `.sunset-sky` is 128vh tall, and every vertical radius, centre and stop
+    in its gradients is in vh (never %), so the first screen paints the same
+    whatever the box height and the glow (about 30% strong at 100vh) fades
+    out below the fold. Before 24 Oct 2026 it was a 100vh box and cut the
+    sunset off right across the "Right now" cards. If you move a stop or the
+    glow, keep its transparent end above 128vh or grow the box.
+  - `.sakura-scene` is `overflow: clip visible` (behind `@supports`; older
+    browsers keep `overflow: hidden`): clipped sideways for the sun and moon
+    sliding out through the page edges, free downwards so the horizon glow,
+    the low sun's halo and the branches fade out on short windows.
+  - Clouds never sit lower than one sprite height above the bottom of their
+    one-viewport canvas (`createScene` in `weather-fx.js`; windows under
+    570px tall used to cut them).
+  `evals/sky-edges.js` gates all three; `evals/sky-seam.js` measures the real
+  pixels at the fold in Chrome (weekly in `layout.yml`).
 - **Meadow footer (a grassy field with a house).** The last thing on the
   page is a full-bleed illustrated field: cottage, trees, picket fences, a
   path and wildflowers, with the credit line resting on the grass. It is one
@@ -785,7 +815,9 @@ These are load-bearing; read before editing.
   - *Clouds scroll with the page.* They draw to their own canvas
     (`.weather-fx--clouds`, `position: absolute`, viewport-tall at the top like
     the sky scenery) so they stay put and scroll away with the hero, natively
-    smooth; rain, snow and wind stay on the fixed canvas.
+    smooth; rain, snow and wind stay on the fixed canvas. Because that canvas
+    ends at the fold, `createScene` never places a cloud lower than one
+    sprite height above its bottom (see "Sky edges").
   - The canvas is inserted between `.sakura-scene` and `.atmosphere`, so
     clouds pass in front of the sun/moon and rain falls in front of the
     branches while petals stay on top. New always-on visuals in this layer
