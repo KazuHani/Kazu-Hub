@@ -20,7 +20,7 @@
      - style.css keeps the scrollbar gutter when a pop-up locks the page: where
        the native bar shows, losing it widened the page 15px and moved every
        card under the pop-up as it took off.
-     - (the phone text sizes, pop-up and page, are evals/phone-type.js)
+     - (the pop-up text sizes are evals/fluid-layout.js)
    Deterministic, local, no browser, no network. Zero failures is the threshold.
    ========================================================================== */
 (function (global) {
@@ -109,7 +109,7 @@
     // ---- style.css ----
     ok('css: the panel and the shadow box both scale from their top-left corner (the morph maths assumes it)', /\.modal-panel \{[^}]*transform-origin: 0 0;/.test(css) && /\.modal-flight-shadow \{[^}]*position: absolute;[^}]*transform-origin: 0 0;/.test(css));
     ok('css: locking the page for a pop-up keeps the scrollbar gutter, so no card moves under it (the flight starts where the card is)', /\nhtml \{ scrollbar-gutter: stable; \}/.test(css) && /body\.modal-open \{ overflow: hidden; \}/.test(css));
-    // phone text sizes: evals/phone-type.js
+    // pop-up text sizes: evals/fluid-layout.js
   }
 
   global.KazuModalMotionChecks = { run: run, parseFrame: parseFrame, seen: seen };

@@ -500,9 +500,13 @@
     ok('css: the flying snow sits over the pop-up on a 0x0 contained anchor that never catches clicks, its pieces moved from their top-left', flightCss.indexOf('.frost-flight { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; pointer-events: none; contain: size layout style; }') === 0 && flightCss.indexOf('.frost-flight > div { position: absolute; left: 0; top: 0; }') !== -1 && flightCss.indexOf('.frost-flight > div > div { position: absolute; left: 0; top: 0; transform-origin: 0 0; background-repeat: no-repeat; }') !== -1);
     ok('css: the flying snow paints nothing per frame (no border-image to re-lay, no background-size to re-scale)', !!flightCss && !/border-image|background-size/.test(flightCss));
     ok('css: no blend mode, isolation or paint containment on the flying snow (each cost a screen-sized offscreen pass every frame)', !!flightCss && !/mix-blend-mode|isolation|contain: (strict|paint)|inset: 0/.test(flightCss));
-    var mpad = /@media \(max-width: 560px\) \{\s*body\.season-christmas \.modal-overlay \{ padding-top: (\d+)px; \}\s*body\.season-christmas \.modal-panel \{ max-height: min\(90vh, calc\(100dvh - (\d+)px\)\); \}\s*\}/.exec(css);
-    var phonePad = (/\.modal-overlay \{ padding: (\d+)px; \}/.exec(css) || [])[1];
-    ok('css: on phones a tall pop-up starts low enough for its snow (8px clear at least) and still fits the screen', !!mpad && !!phonePad && +mpad[1] >= RISE + 8 && +mpad[2] === +mpad[1] + +phonePad, mpad ? mpad[1] + ' / ' + mpad[2] + ' / ' + phonePad : 'rule not found');
+    // The overlay's padding is fluid (--ov-pad, its smallest value on a 320px
+    // phone); the Christmas rule adds the same extra to the top padding and
+    // takes it off the panel's dvh cap, so the panel still fits.
+    var mpad = /@media \(max-width: 560px\) \{\s*body\.season-christmas \.modal-overlay \{ padding-top: calc\(var\(--ov-pad\) \+ (\d+)px\); \}\s*body\.season-christmas \.modal-panel \{ max-height: min\(90vh, calc\(100dvh - 2 \* var\(--ov-pad\) - (\d+)px\)\); \}\s*\}/.exec(css);
+    var phonePad = (/--ov-pad: clamp\((\d+)px, [\d.]+vw, \d+px\); padding: var\(--ov-pad\);/.exec(css) || [])[1];
+    var phoneCap = /\.modal-panel \{ max-height: min\(90vh, calc\(100dvh - 2 \* var\(--ov-pad\)\)\); \}/.test(css);
+    ok('css: on phones a tall pop-up starts low enough for its snow (8px clear at least) and still fits the screen', !!mpad && !!phonePad && phoneCap && +phonePad + +mpad[1] >= RISE + 8 && +mpad[2] === +mpad[1], mpad ? phonePad + ' + ' + mpad[1] + ' / ' + mpad[2] + ' / cap ' + phoneCap : 'rule not found');
     ok('css: phones (always low-power) keep the pine Christmas cards', css.indexOf('body.low-power.season-christmas { --card-bg: rgba(16,52,36,.95); }') !== -1 && css.indexOf('body.low-power.season-christmas') > css.indexOf('body.low-power { --card-bg: rgba(40,63,98,.95); }'));
 
     // ---- the footer at night: still snow, and the credit line legible at every hour ----

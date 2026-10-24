@@ -11,7 +11,7 @@
      rewrite the hashes (the gate tests fail until you do). Inline onload= /
      onerror= attributes are not allowed; #boot-handlers holds those. Keep this
      above every <script>: a meta policy only covers what comes after it. -->
-<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-lc9TeEi/tnOHYrHDJSOCMo409nN9FQCZr0AiqeSLBP8=' 'sha256-E1QyAoxJOutuJfXWHvQfOwgq/Yn0jf7skbj7UTvyW8o=' 'sha256-BoxsJ+40xCQDVEkACD7h317m5SKttO4nckRBRJvIp3I=' 'sha256-VZRMXUewa6uT6JqK+o9SQSBu2+Qxij4/NyjZntP1enU=' 'sha256-mC17ZXYusW+S7CEgFzYRdu1G2EK+L5m361PPhu7mecg=' 'sha256-Qp1RT2bCCRpdcKiXL0Bwb4Y5gz3glMDRZeKqF9nIhJk='; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-lc9TeEi/tnOHYrHDJSOCMo409nN9FQCZr0AiqeSLBP8=' 'sha256-E1QyAoxJOutuJfXWHvQfOwgq/Yn0jf7skbj7UTvyW8o=' 'sha256-wPKSohE+njV5wVEs53E3TGOueNRiQ6Ic0i/OE/4JCaY=' 'sha256-BoxsJ+40xCQDVEkACD7h317m5SKttO4nckRBRJvIp3I=' 'sha256-VZRMXUewa6uT6JqK+o9SQSBu2+Qxij4/NyjZntP1enU=' 'sha256-mC17ZXYusW+S7CEgFzYRdu1G2EK+L5m361PPhu7mecg=' 'sha256-Qp1RT2bCCRpdcKiXL0Bwb4Y5gz3glMDRZeKqF9nIhJk='; object-src 'none'; base-uri 'self'">
 <title>Kazu Hani</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="kazu-control" content="">
@@ -204,6 +204,29 @@
   } catch (e) {}
 })();
 </script>
+<!-- Repeat visits: script.js paints each Right-now card from its localStorage
+     copy, but the browser paints the page before script.js (at the end of
+     <body>) runs, so the cards would show their loading rows first and then
+     jump to full height (measured CLS 0.32 on a throttled phone). When any card
+     copy exists, the cards are held out of sight from the first paint until
+     script.js has painted them (it removes this style in the same task); hidden
+     elements never count as a layout shift. 8 s failsafe, like sky-pending. -->
+<script id="boot-cards">
+(function () {
+  try {
+    var keys = ['kazu-discord-cache', 'kazu-steam-cache', 'kazu-mal-cache', 'kazu-lb-cache'];
+    for (var i = 0; i < keys.length; i++) {
+      if (!localStorage.getItem(keys[i])) continue;
+      var hold = document.createElement('style');
+      hold.id = 'boot-cards-hold';
+      hold.textContent = '.right-now-grid > .card { visibility: hidden; }';
+      document.head.appendChild(hold);
+      setTimeout(function () { if (hold.parentNode) hold.parentNode.removeChild(hold); }, 8000);
+      return;
+    }
+  } catch (e) {}
+})();
+</script>
 <!-- Event handlers that used to sit inline on elements (onload / onerror
      attributes). The Content-Security-Policy at the top allows no inline
      handlers, so they live in this hashed script instead. It runs before those
@@ -238,7 +261,7 @@ document.addEventListener('error', function (e) {
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" media="print" data-font>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,560&text=Kazu%20Hani%C2%A0&display=swap" rel="stylesheet" media="print" data-font>
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,560&text=Kazu%20Hani%C2%A0&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=96">
+<link rel="stylesheet" href="style.css?v=97">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -1029,10 +1052,10 @@ document.addEventListener('error', function (e) {
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=44"></script>
+<script src="lib.js?v=45"></script>
 <script src="site-config.js?v=1"></script>
 <script src="i18n.js?v=3"></script>
-<script src="script.js?v=92"></script>
+<script src="script.js?v=93"></script>
 <script id="sw-register">
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

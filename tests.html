@@ -21,21 +21,22 @@
   <div id="summary">Running…</div>
   <div id="out"></div>
 
-  <script src="lib.js?v=44"></script>
+  <script src="lib.js?v=45"></script>
   <script src="site-config.js?v=1"></script>
   <script src="weather-fx.js?v=4"></script>
   <script src="evals/new-year-fireworks.js?v=3"></script>
   <script src="evals/emoji-free.js?v=1"></script>
   <script src="evals/perf-guards.js?v=5"></script>
   <script src="evals/site-control.js?v=1"></script>
-  <script src="evals/christmas.js?v=6"></script>
-  <script src="evals/modal-motion.js?v=4"></script>
-  <script src="evals/phone-type.js?v=4"></script>
-  <script src="evals/hero-fill.js?v=1"></script>
+  <script src="evals/christmas.js?v=7"></script>
+  <script src="evals/modal-motion.js?v=5"></script>
+  <script src="evals/fluid-layout.js?v=1"></script>
+  <script src="evals/hero-fill.js?v=2"></script>
   <script src="i18n.js?v=3"></script>
   <script src="evals/i18n.js?v=3"></script>
   <script src="evals/chiikawa.js?v=1"></script>
-  <script src="evals/link-safety.js?v=1"></script>
+  <script src="evals/link-safety.js?v=2"></script>
+  <script src="evals/card-cache.js?v=1"></script>
   <script src="evals/csp.js?v=1"></script>
   <script>
     (function () {
@@ -1032,6 +1033,21 @@
       // Same assertions as tests.js, against fetched copies of the real
       // files. Needs HTTP; shows a neutral SKIP row on file:// where fetch
       // is blocked. Summary is re-rendered once these land.
+      // ---- Live-card cache: the real page with seeded copies (browser only) ----
+      // evals/card-cache.js (live) opens index.html with every card's copy seeded:
+      // fresh copies paint every card by load and send none of their API requests;
+      // 2-hour-old ones still paint, with presence shown offline. The visitor's own
+      // copies are put back afterwards. Frames are cross-origin over file://.
+      function liveCardCacheChecks() {
+        if (location.protocol === 'file:') {
+          row(true, 'cache live: frames are cross-origin over file://, serve over HTTP to run these (skipped)');
+          return Promise.resolve();
+        }
+        return KazuCardCacheChecks.live(L, document, ok, eq, 10000).catch(function (e) {
+          row(false, 'cache live checks failed to run', String(e && e.message || e));
+        });
+      }
+
       // ---- Meadow footer: live checks (browser only) ----
       // Loads the real page in frames and reads what the browser actually resolves: the
       // day / dusk / night colours, the window glow, the sunset warmth, Christmas, the
@@ -1264,8 +1280,8 @@
         // Live hero eval: on phones and small tablets the name covers the share
         // of the hero evals/hero-fill.js models (which holds its TITLE_EM to the
         // real font), clear of the picture, its pumpkins and the quote, with no
-        // sideways scroll; a 320 character quote opens in full; desktop keeps
-        // its masthead sizes. The quote is swapped in and put back after.
+        // sideways scroll; a 320 character quote opens in full; one size rule
+        // from phone to desktop. The quote is swapped in and put back after.
         var LONG_QUOTE = 'Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. And the only way to do great work is to love what you do. If you have not found it yet, keep looking, and do not settle. As with all matters of the heart, you will know when you find it.';
         function heroLayoutCheck(f, width, tag) {
           var d = f.contentDocument, w = f.contentWindow, name = 'hero live (' + width + 'px' + (tag ? ', ' + tag : '') + '): ';
@@ -1279,13 +1295,14 @@
           var tx = rt.getBoundingClientRect(), qx = rq.getBoundingClientRect(), hr = hero.getBoundingClientRect(), ring = d.querySelector('.pfp-ring').getBoundingClientRect();
           var pumpkins = d.querySelector('.halloween-pumpkins'), pr = w.getComputedStyle(pumpkins).display === 'none' ? null : pumpkins.getBoundingClientRect();
           var px = parseFloat(w.getComputedStyle(t).fontSize), fill = tx.width / hero.clientWidth, qpx = w.getComputedStyle(qt).fontSize, apx = w.getComputedStyle(qa).fontSize;
-          if (width <= 768) {
-            var model = KazuHeroFillChecks.em(px) * px / hero.clientWidth;
-            ok(name + 'the name covers 70-86% of the hero (60% from 600px), as the hero-fill model says', fill >= (width <= 600 ? 0.7 : 0.6) && fill <= 0.86 && Math.abs(fill - model) < 0.03, fill.toFixed(3) + ' measured, ' + model.toFixed(3) + ' modelled, ' + px + 'px');
-          } else {
-            ok(name + 'desktop keeps the masthead name (80px at most) and the 16px / 12px quote', px <= 80 && qpx === '16px' && apx === '12px', px + 'px / ' + qpx + ' / ' + apx);
-          }
-          if (width > 560 && width <= 768) ok(name + 'the quote is 22.1px and its author 16.25px, where the phone sizes top out', qpx === '22.1px' && apx === '16.25px', qpx + ' / ' + apx);
+          // the one name rule, clamp(40px, min(16.5vw, 16vh), 112px), at this frame's size
+          var probe = d.createElement('div'); probe.style.cssText = 'position:absolute;width:100vw;height:100vh;visibility:hidden';
+          d.body.appendChild(probe); var pv = probe.getBoundingClientRect(); probe.remove();
+          var want = Math.min(112, Math.max(40, Math.min(0.165 * pv.width, 0.16 * pv.height))), model = KazuHeroFillChecks.em(px) * px / hero.clientWidth;
+          ok(name + 'the name is its one rule\'s size (' + want.toFixed(1) + 'px here) and covers the share the hero-fill model says (70%+ to 600px, 60%+ to 768px, 86% at most)',
+            Math.abs(px - want) < 0.1 && fill >= (width <= 600 ? 0.7 : width <= 768 ? 0.6 : 0) && fill <= 0.86 && Math.abs(fill - model) < 0.03,
+            px + 'px, ' + fill.toFixed(3) + ' measured, ' + model.toFixed(3) + ' modelled');
+          if (width >= 416) ok(name + 'the quote is 22.1px and its author 16.25px, the size it holds from 416px to the widest desktop', qpx === '22.1px' && apx === '16.25px', qpx + ' / ' + apx);
           ok(name + 'the name sits inside the hero, below the picture and its pumpkins, above the quote, and the page does not scroll sideways',
             tx.left >= hr.left - 0.5 && tx.right <= hr.right + 0.5 && tx.top >= ring.bottom && (!pr || tx.top >= pr.bottom) && qx.top >= tx.bottom && d.documentElement.scrollWidth <= d.documentElement.clientWidth,
             'name ' + Math.round(tx.left) + '..' + Math.round(tx.right) + ' x ' + Math.round(tx.top) + '..' + Math.round(tx.bottom) + ' / hero ' + Math.round(hr.left) + '..' + Math.round(hr.right) + ' / ring ' + Math.round(ring.bottom) + (pr ? ' / pumpkins ' + Math.round(pr.bottom) : '') + ' / quote ' + Math.round(qx.top) + ' / page ' + d.documentElement.scrollWidth + ' vs ' + d.documentElement.clientWidth);
@@ -1301,6 +1318,45 @@
           return { glow: parseFloat(q('.mf-glow').opacity), pane: parseFloat(q('rect.mf-glow').opacity), pool: parseFloat(q('g.mf-glow').opacity), smoke: parseFloat(q('.mf-smoke').opacity), roof: rgbOf(q('.mf-c-roof').fill), glass: rgbOf(q('.mf-c-glass').fill), far: rgbOf(q('.mf-c-far').fill), wall: rgbOf(q('.mf-c-wall').fill) };
         }
         var frames = [];
+        // Fluid sizing, live (evals/fluid-layout.js): one frame resized through
+        // phone, tablet and desktop widths (both sides of every layout switch)
+        // and measured at each. No text or picture may shrink as the window
+        // widens or jump faster than it, no grid may leave an orphan row,
+        // nothing may spill or scroll sideways, the stat values must fit their
+        // cards, and readable floors hold. The pop-ups get the same sweep.
+        var FLUID_WIDTHS = [320, 360, 390, 430, 480, 560, 561, 600, 679, 680, 759, 760, 768, 769, 900, 1024, 1109, 1110, 1280, 1440];
+        var FLUID_POPUP_WIDTHS = [320, 390, 600, 900, 1280];
+        function fluidSweep(query, tag) {
+          return frame(query, 1200).then(function (f) {
+            frames.push(f);
+            var d = f.contentDocument, w = f.contentWindow, R = KazuFluidLayout.ROLES;
+            d.getAnimations().forEach(function (a) { try { a.finish(); } catch (e) { /* an infinite loop (petals, a loading dot) cannot finish */ } });
+            Array.prototype.forEach.call(d.querySelectorAll('.scroll-reveal'), function (el) { el.style.transition = 'none'; el.classList.add('is-visible'); });
+            Array.prototype.forEach.call(d.querySelectorAll('.card, .footer'), function (el) { el.style.contentVisibility = 'visible'; });
+            var page = FLUID_WIDTHS.map(function (wd) { f.style.width = wd + 'px'; d.body.offsetWidth; return KazuFluidLayout.measure(w, R); });
+            var pop = FLUID_POPUP_WIDTHS.map(function (wd) {
+              f.style.width = wd + 'px'; d.body.offsetWidth;
+              var snap = null;
+              ['time', 'weather', 'age', 'bday'].forEach(function (k) {
+                d.querySelector('.stat-card[data-modal="' + k + '"]').click();
+                finishFlights(d);
+                var s = KazuFluidLayout.measure(w, R, true);
+                if (!snap) snap = s;
+                else Object.keys(s.text).forEach(function (r) { if (s.text[r] != null) snap.text[r] = s.text[r]; });
+                closeSnowyModal(d);
+                finishFlights(d);
+              });
+              return snap;
+            });
+            var probs = KazuFluidLayout.analyse(page), popProbs = KazuFluidLayout.analyse(pop);
+            var seen = Object.keys(page[0].text).filter(function (r) { return page.some(function (s) { return s.text[r] != null; }); }).length;
+            var popSeen = Object.keys(pop[0].text).filter(function (r) { return pop.some(function (s) { return s.text[r] != null; }); }).length;
+            ok('fluid live (' + tag + ', 320-1440px): nothing shrinks as the window widens or jumps, no orphan rows, nothing spills or scrolls sideways, stat values fit, readable floors (' + seen + ' text roles)',
+              probs.length === 0 && seen >= 25, probs.slice(0, 6).join(' | ') + (probs.length > 6 ? ' | +' + (probs.length - 6) + ' more' : ''));
+            ok('fluid live (' + tag + '): the pop-ups\' text keeps one size rule across widths too (' + popSeen + ' text roles)',
+              popProbs.length === 0 && popSeen >= 15, popProbs.slice(0, 6).join(' | '));
+          });
+        }
         function done() { frames.forEach(function (f) { if (f.parentNode) f.parentNode.removeChild(f); }); }
         return frame('weather=none&time=12:00&season=none', 1200).then(function (f) {
           frames.push(f);
@@ -1461,27 +1517,6 @@
           });
           ok('pop-up text (phone): sizes grow with the screen (a 375px page reads 375/320 of the 320px size)', typeBad.length === 0 && vw > 320, typeBad.join(' | ') + ' / 100vw ' + vw);
           ok('pop-up text (phone): the bigger text never runs out of its box sideways', overflowBad.length === 0, overflowBad.join(' || '));
-          // Page text: every growing rule the frame actually loaded, measured on
-          // the first element it styles that is on the page.
-          var grow = [], measured = 0, pageBad = [];
-          Array.prototype.forEach.call(d.styleSheets, function (sh) {
-            var rs; try { rs = sh.cssRules; } catch (e) { return; }
-            Array.prototype.forEach.call(rs, function (mr) {
-              if (!mr.media || mr.media.mediaText !== '(max-width: 560px)') return;
-              Array.prototype.forEach.call(mr.cssRules, function (r) {
-                var m = r.style && /^clamp\(([\d.]+)px, ([\d.]+)vw, ([\d.]+)px\)$/.exec(r.style.fontSize);
-                if (m && /^body /.test(r.selectorText)) grow.push({ sel: r.selectorText, base: +m[1], max: +m[3] });
-              });
-            });
-          });
-          grow.forEach(function (g) {
-            var el = Array.prototype.filter.call(d.querySelectorAll(g.sel), function (e) { return e.getClientRects().length; })[0];
-            if (!el) return;
-            measured++;
-            var got = parseFloat(w.getComputedStyle(el).fontSize), exp = Math.min(g.max, g.base * vw / 320);
-            if (Math.abs(got - exp) > .1) pageBad.push(g.sel + ' ' + got + 'px, want ' + exp.toFixed(2));
-          });
-          ok('page text (phone): every growing size the page loaded is width / 320 of its 320px size (measured on the page)', grow.length >= 25 && measured >= 20 && !pageBad.length, grow.length + ' rules, ' + measured + ' measured / ' + pageBad.slice(0, 4).join(' | '));
           // nothing runs out sideways: no page scroll, and no text box wider
           // than itself unless it is meant to clip with an ellipsis
           var spill = [];
@@ -1495,6 +1530,8 @@
           d.getAnimations().forEach(function (a) { a.cancel(); });
           d.body.classList.add('low-power');
           ok('Christmas live (phone): low-power keeps the pine cards and the static frost', w.getComputedStyle(d.body).getPropertyValue('--card-bg').trim() === 'rgba(16,52,36,.95)' && w.getComputedStyle(d.querySelector('.stat-card')).borderImageSource.indexOf('url(') === 0);
+          return fluidSweep('weather=none&time=12:00&season=none', 'plain').then(function () { return fluidSweep('weather=none&time=12:00&season=halloween', 'Halloween'); });
+        }).then(function () {
           done();
         }).catch(function (e) {
           done();
@@ -1505,10 +1542,11 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=96', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=92', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=97', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=93', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); })
+        fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('AGENTS.md', { cache: 'no-store' }).then(function (r) { return r.text(); })
       ]).then(function (src) {
         // CRLF checkouts (Windows autocrlf) must not break the multi-line matches below.
         var htmlSrc = src[0], cssSrc = src[1].replace(/\r\n/g, '\n'), scriptSrc = src[2].replace(/\r\n/g, '\n'), swSrc = src[3], fxSrc = src[4].replace(/\r\n/g, '\n');
@@ -1518,11 +1556,25 @@
         KazuSiteControlChecks.run(KazuSiteConfig, scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), swSrc.replace(/\r\n/g, '\n'), ok, eq);
         KazuChristmasChecks.run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
         KazuModalMotionChecks.run(L, scriptSrc, cssSrc, ok, eq);
-        KazuPhoneTypeChecks.run(cssSrc, ok);
+        KazuFluidLayout.run(cssSrc, ok);
+        (function () { // analyse() verdicts on made-up snapshots (same as tests.js)
+          var A = KazuFluidLayout.analyse;
+          function snap(w, text, extra) { var s = { w: w, vw: w, text: text, card: {}, boxes: {}, grids: {}, spill: [], fit: [], scrollX: false }; Object.keys(extra || {}).forEach(function (k) { s[k] = extra[k]; }); return s; }
+          ok('fluid analyse: a size that grows with the window and then holds is fine', A([snap(320, { '.a': 12 }), snap(390, { '.a': 14.6 }), snap(560, { '.a': 15.6 }), snap(1440, { '.a': 15.6 })]).length === 0);
+          ok('fluid analyse: the old name drop at 769px is a shrink', A([snap(560, { '.title': 112 }), snap(769, { '.title': 56.9 })]).some(function (p) { return /\.title shrinks/.test(p); }));
+          ok('fluid analyse: the old stat value leap at 561px is a jump', A([snap(560, { '.stat-value': 25 }), snap(561, { '.stat-value': 42 })]).some(function (p) { return /jumps from 25px at 560 to 42px at 561/.test(p); }));
+          ok('fluid analyse: growing exactly with the window (vw sizes) is not a jump', A([snap(320, { '.b': 52.8 }), snap(390, { '.b': 64.35 })]).length === 0);
+          ok('fluid analyse: under 12px from 390px wide is too small, 10px at 320px is not', A([snap(320, { '.c': 10 }), snap(390, { '.c': 11 })]).join() === '.c is 11px at 390 (under 12px)');
+          ok('fluid analyse: pictures follow the same rules', A([snap(560, {}, { boxes: { '.pfp': 154 } }), snap(561, {}, { boxes: { '.pfp': 181 } })]).some(function (p) { return /\.pfp jumps/.test(p); }));
+          ok('fluid analyse: an orphaned last row is reported, a centred or full one is not', A([snap(800, {}, { grids: { '.g': { rows: [3, 1], verdict: 'orphan' } } })]).length === 1 && A([snap(800, {}, { grids: { '.g': { rows: [4, 3], verdict: 'balanced' } } })]).length === 0);
+          ok('fluid analyse: sideways scroll, spilled text and card text outside its card are each reported', A([snap(720, {}, { scrollX: true, spill: ['x'], fit: ['y'] })]).length === 3);
+          ok('fluid analyse: a role missing at one width (a card still loading) is skipped, not a failure', A([snap(390, { '.d': 14 }), snap(600, { '.d': null }), snap(900, { '.d': 15 })]).length === 0);
+        })();
         KazuHeroFillChecks.run(cssSrc, ok);
         KazuI18nChecks.run(KazuI18n, htmlSrc, scriptSrc, cssSrc, swSrc, L.stripEmoji, ok, eq);
         KazuChiikawaChecks.run(L, htmlSrc, scriptSrc, cssSrc, swSrc, ok, eq);
         KazuLinkSafetyChecks.run(L, scriptSrc, ok, eq);
+        KazuCardCacheChecks.run(L, scriptSrc, ok, eq, { docs: src[5].replace(/\r\n/g, '\n'), html: htmlSrc.replace(/\r\n/g, '\n') });
         ok('stat cards align stacks from the top despite the extra weather row', /\.stat-card \{[^}]*justify-content: flex-start;/.test(cssSrc));
         ok('birthday card reserves the same border space as the glass cards', /\.stat-card--bday \{[^}]*border: 1px solid transparent;/.test(cssSrc));
         ok('viz markup lives in the music card', htmlSrc.indexOf('Songs that SLAP') !== -1 && htmlSrc.indexOf('class="music-viz" aria-hidden="true"') !== -1);
@@ -1554,7 +1606,7 @@
         ].forEach(function (spec) { ok('PC spec present: ' + spec.replace(/<[^>]+>/g, ''), htmlSrc.indexOf(spec) !== -1); });
         ok('PC specs use the asymmetric 7/5 bento', cssSrc.indexOf('grid-template-columns: repeat(12,minmax(0,1fr));') !== -1 && cssSrc.indexOf('.pc-spec-card--graphics {\n  grid-column: span 7;') !== -1 && cssSrc.indexOf('.pc-spec-card--platform { grid-column: span 5; }') !== -1);
         ok('PC specs collapse to one column on compact screens', cssSrc.indexOf('@media (max-width: 860px)') !== -1 && cssSrc.indexOf('.pc-spec-card { grid-column: 1 / -1; }') !== -1);
-        ok('PC type scales with its card width', cssSrc.indexOf('container-type: inline-size;') !== -1 && cssSrc.indexOf('font-size: clamp(22px,6.5cqi,28px);') !== -1 && !/\.pc-spec-feature-name \{[^}]*max-width/.test(cssSrc));
+        ok('PC type scales with its card width', cssSrc.indexOf('container-type: inline-size;') !== -1 && cssSrc.indexOf('font-size: clamp(17px, 6.5cqi, 28px);') !== -1 && !/\.pc-spec-feature-name \{[^}]*max-width/.test(cssSrc));
         ok('PC lists fill the shared card height', cssSrc.indexOf('.pc-spec-list, .pc-storage-list { margin: 0; flex: 1; }') !== -1 && cssSrc.indexOf('align-content: space-between;') !== -1);
         ok('stat grid uses 2-column bento on compact screens', cssSrc.indexOf('@media (max-width: 560px)') !== -1 && cssSrc.indexOf('grid-template-columns: repeat(2, minmax(0, 1fr));') !== -1);
         ok('custom scrollbar hidden on compact screens', cssSrc.indexOf('@media (max-width: 768px)') !== -1 && cssSrc.indexOf('.cscroll { display: none !important; }') !== -1);
@@ -2169,7 +2221,7 @@
         // ---- Music card left zone fills the card height ----
         ok('left zone wrapped in .music-side', htmlSrc.indexOf('<div class="music-side">') !== -1);
         ok('.music-side spreads cover + info', cssFlat.indexOf('.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }') !== -1);
-        ok('cover enlarged to fill the zone', cssFlat.indexOf('width: 152px; height: 152px;') !== -1);
+        ok('cover enlarged to fill the zone', cssFlat.indexOf('width: clamp(110px, 34.375vw, 152px); height: clamp(110px, 34.375vw, 152px);') !== -1);
 
         // ---- Dev settings panel (secret code: kazudev) ----
         // Static wiring: the code word + matcher in the keydown listener, the
@@ -2226,7 +2278,7 @@
         // balloons drifting behind the content, and a hat that sits ON the avatar.
         ok('birthday repaints the hero title', cssFlat.indexOf('body.season-birthday .title {') !== -1);
         ok('birthday repaints the bday card in party pink', cssFlat.indexOf('body.season-birthday .stat-card--bday {') !== -1);
-        ok('party hat centred on the avatar top', cssFlat.indexOf('.party-hat {') !== -1 && cssFlat.indexOf('left: 50%; margin-left: -30px;') !== -1);
+        ok('party hat centred on the avatar top', cssFlat.indexOf('.party-hat {') !== -1 && cssFlat.indexOf('left: 50%; margin-left: -15.71%;') !== -1);
         ok('hat pom not clipped (taller viewBox)', htmlSrc.indexOf('class="party-hat" viewBox="0 -4 100 124"') !== -1);
         ok('balloon physics wired into applySeasons', scriptSrc.indexOf('setBalloons(s.birthday)') !== -1);
         ok('balloon canvas styled behind the content', cssFlat.indexOf('#balloon-canvas {') !== -1 && cssFlat.indexOf('z-index: 0') !== -1);
@@ -2244,7 +2296,7 @@
           s.className = fail === 0 ? 'pass' : 'fail';
         });
       }).then(function () {
-        return liveMeadowChecks().then(function () {
+        return liveMeadowChecks().then(liveCardCacheChecks).then(function () {
           s.textContent = fail === 0 ? ('ALL ' + pass + ' PASSED ') : (pass + ' passed, ' + fail + ' FAILED ');
           s.className = fail === 0 ? 'pass' : 'fail';
         });

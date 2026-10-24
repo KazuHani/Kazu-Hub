@@ -42,8 +42,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=96`,
-  `lib.js?v=44`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=92` (version
+- `index.html` — the whole page. Loads `style.css?v=97`,
+  `lib.js?v=45`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=93` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
@@ -122,20 +122,41 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   composed strings, the DOM translator against fake nodes, and `#boot-lang`
   against `pickLang`. Shared by `tests.js` and `tests.html`; also runs alone
   (`node evals/i18n.js`).
-- `evals/phone-type.js` — gate assertions for phone text that grows with the
-  screen, page and pop-ups (see "Phone text" below). Shared by `tests.js` and
-  `tests.html` (which measures every rule in a phone frame); also runs alone
-  (`node evals/phone-type.js`).
-- `evals/hero-fill.js` — gate assertions for the name and quote filling the
-  width on phones and small tablets (see "Hero on phones" below). Shared by
-  `tests.js` and `tests.html` (which measures the hero in page frames); also
-  runs alone (`node evals/hero-fill.js`).
+- `evals/fluid-layout.js` — gate assertions for the sizing contract (see
+  "Fluid sizing" below): no width media query sets a text or picture size,
+  every font-size has an allowed shape with its exact slope, readable floors,
+  the stat / "Right now" / socials grid switches. Also exports the in-page
+  `measure()` and the pure `analyse()` that judge a real layout across widths
+  (`tests.js` pins `analyse()` on made-up snapshots). Shared by `tests.js`,
+  `tests.html` (which sweeps a live frame from 320px to 1440px, page and
+  pop-ups) and `evals/layout-sweep.js`; also runs alone
+  (`node evals/fluid-layout.js`).
+- `evals/hero-fill.js` — gate assertions for the name and quote: one rule
+  each from phone to desktop, filling the width on phones and small tablets
+  (see "Hero" below). Shared by `tests.js` and `tests.html` (which measures
+  the hero in page frames); also runs alone (`node evals/hero-fill.js`).
+- `evals/layout-sweep.js` — periodic eval (real Chrome, plain Node >= 22, no
+  dependencies; real web fonts unless `--fonts stub`): every live card filled
+  from fixtures, the window resized every 8px from 280px to 1920px (mouse) and
+  to 1366px (touch), in English and Japanese, plain and Halloween, the
+  pop-ups every 80px; fails on anything `fluid-layout.js` `analyse()` reports.
+  Prints a table of key sizes at familiar widths. Usage is in its header.
+- `evals/chrome-harness.js` — the real-browser plumbing both periodic evals
+  share: static server, API fixtures and routing, Chrome launcher, the pinned
+  clock and fake Lanyard socket, and the page opener.
 - `evals/link-safety.js` — gate assertions for links from outside the site
   (see "API links" below): a hostile corpus (`javascript:`, `data:`, http
   downgrades, lookalike hosts, credentials, odd ports) through every lib.js
   builder that makes a link, plus a pin on every href sink in `script.js`.
   Shared by `tests.js` and `tests.html`; also runs alone
   (`node evals/link-safety.js`).
+- `evals/card-cache.js` — gate assertions for the live-card cache (see
+  "Live-card cache" below): the envelope reader, the poll scheduler maths and
+  the copy parsers in lib.js; the real scheduler sliced out of `script.js` and
+  run against a fake clock; the loader / renderer / poller wiring; and that
+  every `kazu-*` localStorage key is listed in this file. `tests.html` adds a
+  live check that opens the page with seeded copies. Shared by `tests.js` and
+  `tests.html`; also runs alone (`node evals/card-cache.js`).
 - `evals/csp.js` — gate assertions for the Content-Security-Policy (see
   "Content-Security-Policy" below): hashes every inline script the way the
   browser does and fails, naming the script and its new hash, when one drifts;
@@ -147,9 +168,9 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   plain Node >= 22, no dependencies, no network): idle CPU per process, style
   recalcs and layouts per second, scroll, hover and pop-up frame pacing and
   load (FCP / LCP / TBT / bytes), on desktop / tablet / phone profiles with every
-  API mocked. See "Performance
-  rules". Usage is in its header; its pure statistics helpers are exercised by
-  `tests.js`.
+  API mocked (server, fixtures and launcher from `evals/chrome-harness.js`).
+  See "Performance rules". Usage is in its header; its pure statistics
+  helpers are exercised by `tests.js`.
 - `404.html`, `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
   plumbing. `assets/` holds images/icons.
 - `.github/workflows/test.yml` — the gate CI (see Testing).
@@ -157,6 +178,10 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   on desktop, tablet and phone, software GPU). Never runs on push or PR, so it
   cannot block a deploy; a failure means something started costing real CPU at
   rest (see "Performance rules").
+- `.github/workflows/layout.yml` — the weekly / manual layout sweep
+  (`evals/layout-sweep.js`). Never runs on push or PR either; a failure means
+  something jumps, shrinks, spills or orphans at some width (see "Fluid
+  sizing").
 
 ## Run locally
 
@@ -338,8 +363,10 @@ records the requested season. Static SVG bats and profile pumpkins show with
 the effective palette, and the meadow becomes an autumn field with three
 jack-o'-lanterns. Their faces, halos and pools use the cottage's existing
 `--m-lit` switch. All artwork remains static on phones and low-power devices.
-On phones (`max-width: 480px`) the bats are `min(340px, 100%)` wide: a fixed
-340px spilled a 320px screen 10px sideways.
+The bats are `min(560px, 100%)` wide at every width (a fixed 340px phone size
+spilled a 320px screen 10px sideways), and the pumpkins are sized and placed
+from the picture's ring in `%` (94px at the 191px desktop ring, 76px at a
+320px phone's 134px ring), so they keep their place on it as it scales.
 
 ## Christmas (25 December)
 
@@ -373,9 +400,10 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   the first frame), seeded per pop-up (101 + its index in `MODALS`), and
   size-watched while open; `closeModal` calls `frostModal(null)` and the snow
   rides the panel back onto the card. On phones (`max-width: 560px`) the
-  overlay starts 23px down and the panel's `dvh` cap shrinks to match, because
-  a real phone's `vh` is taller than its `dvh` and a tall pop-up otherwise
-  sits 10px from the top with its snow cut off.
+  overlay starts 13px further down than its fluid padding (`--ov-pad`, 10px on
+  a 320px phone) and the panel's `dvh` cap shrinks to match, because a real
+  phone's `vh` is taller than its `dvh` and a tall pop-up otherwise sits at
+  the padding with its snow cut off.
 - **Snow in flight.** The pop-up is clipped to a true-size box in flight (see
   "Pop-up motion" below), and a border-image under a clip-path would be cut
   off, so it cannot wear its own snow while flying. `flyModal` calls `frostFly`: the panel's own frost
@@ -489,7 +517,7 @@ shape only matched the card at the two ends.
   the page 15px and moving the card under the pop-up as it took off.
   `html { scrollbar-gutter: stable }` keeps the gutter; no effect with
   `html.has-cscroll` (no native bar) or overlay scrollbars.
-- **Phone text:** see "Phone text" below.
+- **Pop-up text:** one fluid rule per size, like the page (see "Fluid sizing").
 - **Cost** (`node evals/perf.js --scenarios modal --date 2026-12-25T12:00:00Z`,
   vs the scale FLIP): desktop 41 to 36 missed frames, phone 3 to 3.
 - **Tests.** `evals/modal-motion.js` (shared by `tests.js` and `tests.html`,
@@ -500,67 +528,105 @@ shape only matched the card at the two ends.
   (`shapeSweep`): round corners, exact card and panel ends, shadow box on the
   clipped box.
 
-## Phone text
+## Fluid sizing
 
-On phones (`max-width: 560px`) text grows with the screen. Every fixed size B
-becomes `clamp(B, B/3.2 vw, 1.3B)`: B (the old phone size) at 320px and below,
-B x width / 320 above that (17% bigger at 375px), capped at 30% from 416px.
-Sizes already written in `vw` (stat values, headlines) already grew and are
-left alone; the name and the quote also follow "Hero on phones" below.
+Every text size and picture size has one rule from the smallest phone to the
+widest desktop. Nothing jumps at a breakpoint, nothing gets smaller as the
+window gets wider, and a large phone, a tablet and a desktop read the same
+sizes. (Before, phones grew their text to 1.3x and then dropped back to the
+smaller desktop sizes at 561px; the name fell from 112px to 57px at 769px; the
+stat values leapt from 25px to 42px at 561px and overflowed their cards from
+720px to 1090px; "Right now" sat 3 + 1 on every desktop and the socials 5 + 2.
+The real-Chrome sweep counted 1158 problems on that build, 0 now.)
 
-- **Two generated blocks at the end of `style.css`.** "Page text": one
-  `body <selector>` rule for every fixed px font-size in the main phone block
-  (before its modal rules). "Pop-up text": one `.modal-overlay .modal-panel
-  <class>` rule for every text class the pop-ups render, which outranks the
-  per-pop-up phone overrides (age, countdown). Both come after everything they
-  override. Changing a base size in the main phone block means changing its
-  rule too; `evals/phone-type.js` re-derives the list and fails otherwise.
-- **Columns that hold growing text grow with it.** The PC storage size column
-  is `clamp(72px, 22.5vw, 93.6px)`: "240 GB" at 20px is 65px in Fredoka but
-  69px in the fallback font shown until Fredoka loads, which already spilled
-  the old fixed 68px column.
+- **The formula.** A size that differs between a phone and a desktop is
+  `clamp(B, B/3.2 vw, P)`: B on a 320px screen, `B x width / 320` above it,
+  held at P (never below B) from `320 x P / B`, which is about 470px at most.
+  P is the larger of the old desktop size and the old phone cap (1.3B), so
+  phones keep what they had and tablets and desktops got the bigger phone
+  sizes (desktop text is 10-30% larger than it was: section titles 28.6px,
+  card names 23.4px, body copy 15.6-19.5px, the quote 22.1px). Small labels
+  that were a fixed 11px everywhere are `clamp(11px, 3.4375vw, 13px)`.
+  Paddings, gaps and radii use the same form, so cards keep their proportions.
+- **Width media queries change layout only.** Columns, stacking, a border
+  moving from the left to the top: never a `font-size`, and never a width or
+  height for the pictures (`.pfp`, avatars, covers, social marks, the
+  back-to-top button). The one reviewed exception is card-sized
+  (`.pc-spec-list--build dd`, see below). The ≤560px block holds only the
+  pop-up's `dvh` cap, the toast, the dev panel and touch press feedback.
+- **Text sized to its own card** uses container units: the stat values
+  (`clamp(18px, 17cqi, 36px)`, `.stat-card` is a size container) and the PC
+  specs (`cqi` inside `.pc-spec-card`). 17cqi leaves room for the widest clock
+  string ("00:00:00 am": 5.48em in Fredoka, 5.73em in the fallback font). Card
+  text follows its card, so it can change where the card's width changes (the
+  PC bento at 860px); it must always fit the card.
+- **Grids never leave an orphan.** Stats: 2 x 2, then four across from
+  1110px, where the four-up card already holds the 36px cap even with a 17px
+  desktop scrollbar (so the value does not shrink when the grid splits).
+  "Right now": one column, 2 x 2 from 680px. Socials: flex rows of equal
+  tiles, two across with the odd last tile full width, then four with the
+  last three centred from 760px ("MyAnimeList" is 113px at 19.5px, 121px in
+  the fallback font; a four-up tile has 127px inside at 760px). Stories:
+  `minmax(min(100%, 300px), 1fr)`, one or two across.
+- **Decorations scale with the picture.** The Halloween pumpkins and the
+  birthday hat are sized and placed in `%` of the picture's ring.
+- **Pop-ups fit short screens.** The pop-up text holds its full size on
+  desktops too, so the weather pop-up (globe, five-day strip, two buttons)
+  would scroll 55px in a 1280 x 600 window. Its panel and body are flex
+  columns (`.modal-panel:has(.globe-frame)`, no script change) and the globe
+  shrinks to 140px before anything scrolls. Every pop-up now fits without
+  scrolling from 1440 x 900 down to a 320 x 568 phone, in English and
+  Japanese (it used to scroll on every phone 667px tall or shorter).
+- **Readable floors.** 10px at 320px, 12px from 390px wide, for every text on
+  the page (only the owner-only kazudev panel is smaller).
 - **`100vw`** excludes a classic scrollbar, because the gutter is reserved
   (`scrollbar-gutter: stable`, see "Pop-up motion"). Phones have overlay
   scrollbars, so there it is the screen width.
-- **Tests.** `evals/phone-type.js`: every rule keeps the formula, the page
-  block covers exactly the main block's fixed sizes with the same bases, the
-  pop-up block covers every pop-up text class, the order, the storage column.
-  Its sources are normalised to LF (a Windows checkout has CRLF files).
-  `tests.html` reads every growing rule the phone frame actually loaded,
-  measures it on the page against `100vw`, and checks that no text spills
-  sideways (page and pop-ups) and the page never scrolls sideways.
+- **Never** wrap the page in a size container: `container-type` gives layout
+  containment, and the fixed back-to-top button inside `.container` would be
+  positioned against it instead of the screen.
+- **Tests.** `evals/fluid-layout.js` (gate): no size in a width media query,
+  every font-size's shape and exact slope, the floors, the grid switches and
+  the stat-value cap model at 1110px. Its `measure()` / `analyse()` judge a
+  real layout: `tests.html` sweeps a live frame through 20 widths from 320px
+  to 1440px (both sides of every switch, plain and Halloween) and the four
+  pop-ups at five widths; `tests.js` pins `analyse()` on made-up snapshots.
+  `node evals/layout-sweep.js` (periodic, `.github/workflows/layout.yml`)
+  does the same in real Chrome with every card filled: every 8px from 280px
+  to 1920px, mouse and touch, English and Japanese, plus a table of the key
+  sizes and the pop-up fit at eight screen sizes. Changing a size means changing its one rule; adding a text class
+  worth tracking means adding it to `TEXT` (or `CARD_TEXT`) in
+  `evals/fluid-layout.js`.
 
-## Hero on phones
+## Hero
 
-Up to 768px (phones, foldables, small tablets) the name and the quote fill the
-width. One block in `style.css` ("Hero on phones and small tablets"), placed
-before the main phone block:
+The name and the quote fill the width on phones, foldables and small tablets
+and hold their full size from there to the widest desktop.
 
-- **The name** is `clamp(40px, min(16.5vw, 16vh), 112px)`, the only size rule
-  it has on narrow screens (the main phone block sets none). "Kazu Hani" then
-  covers about 80% of the hero on a phone, 74% at 590px and 65% at 768px.
-  Fraunces' optical sizing narrows the letters as they grow, so the share falls
-  off on wider screens. `16vh` only binds on a screen wider than it is tall: a
-  small phone held sideways (667 x 375) gets 60px instead of 110px. Desktop
-  (769px and up) keeps `clamp(42px,7.4vw,80px)`.
-- **The quote** is 17px / 12.5px (text / author) in the main phone block,
-  grown by the "Page text" rules to 22.1px / 16.25px from 416px. From 561px to
-  768px the hero block holds them at 22.1px / 16.25px, so nothing jumps at
-  560px. The phone quote box has 6px side padding, so long quotes use the width.
-- **The quote box** opens to `max-height: 420px` (200px on desktop). A 320
-  character quote is 352px tall at 430px, the tallest case measured.
-- **Tests.** `evals/hero-fill.js`: the rule layout and order, the quote sizes
-  against the phone bases, the box height, and a fill model. `TITLE_EM` (the
-  name's width per px of font size, measured in Chrome) plus the container
-  padding gives the name's share of the hero at 15 widths from 280px to 768px.
-  It must be 70-86% up to 600px and at least 60% up to 768px, and the name's
-  box must fit in a 5em fallback font. Held sideways at 667 x 375, the name may
-  take at most a fifth of the screen's height. `tests.html` (`heroLayoutCheck`) loads
-  the page at 320px (Halloween), 390px, 390px (Halloween), 590px and 1200px.
-  It measures the real share against the model (within 3 points), checks the
-  name is clear of the picture, the pumpkins and the quote, checks there is no
-  sideways scroll, and checks that a 320 character quote is not cut off.
-  Desktop keeps its sizes. If the title font is re-cut, re-measure `TITLE_EM`.
+- **The name** is `clamp(40px, min(16.5vw, 16vh), 112px)`, its only size rule.
+  "Kazu Hani" covers about 80% of the hero on a phone, 74% at 590px and 65% at
+  768px (Fraunces' optical sizing narrows the letters as they grow), and the
+  112px cap holds from 679px: 48% of the hero at 1024px, 44% at 1440px.
+  `16vh` only binds on a screen wider than it is tall: a small phone held
+  sideways (667 x 375) gets 60px instead of 110px, a 1280 x 600 laptop 96px.
+- **The quote** is `clamp(17px, 5.3125vw, 22.1px)` and its author
+  `clamp(12.5px, 3.9063vw, 16.25px)`: 22.1px / 16.25px from 416px up. The box's
+  side padding opens from 6px at 320px to 26px at 600px, so long quotes use a
+  phone's width.
+- **The quote box** opens to `max-height: 420px`. A 320 character quote is
+  352px tall at 430px, the tallest case measured.
+- **Tests.** `evals/hero-fill.js`: one rule each, the title padding, and a fill
+  model. `TITLE_EM` (the name's width per px of font size, measured in Chrome)
+  plus the container padding (read from `style.css`) gives the name's share of
+  the hero at 21 widths from 280px to 1920px: 70-86% up to 600px, 60%+ up to
+  768px, never over 86%, never smaller at a wider width. The name's box must
+  fit in a 5em fallback font, and a short screen (667 x 375, 1280 x 600) gives
+  it at most a fifth of its height. `tests.html` (`heroLayoutCheck`) loads the
+  page at 320px (Halloween), 390px, 390px (Halloween), 590px and 1200px: the
+  rule's size at that frame, the real share against the model (within 3
+  points), the name clear of the picture, the pumpkins and the quote, no
+  sideways scroll, and a 320 character quote not cut off. If the title font
+  is re-cut, re-measure `TITLE_EM`.
 
 ## Conventions and gotchas
 
@@ -579,6 +645,9 @@ These are load-bearing; read before editing.
   loadingEl)` — never raw `classList` toggles — so the content fades/rises in
   and the card's height glides to fit. Both paths must stay free for
   low-power (`LOW_POWER`) and reduced-motion devices (instant swap).
+  Live-card renderers call `cardReveal`, which is `popReveal` for a live
+  answer and an instant swap for the boot paint from localStorage (see
+  "Live-card cache").
   Any new always-on animated layer (infinite CSS loops, canvas rAF) must
   register with `fxWatch(el)` so it pauses off-screen via `.fx-paused`.
 - **First paint = live tint (no night-black flash).** `script.js` runs at the
@@ -753,9 +822,100 @@ These are load-bearing; read before editing.
 - **Service worker.** `sw.js` must never serve stale content while online:
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
-- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-discord-cache`,
+- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-dev-curve`,
+  `kazu-new-year-celebrated`, `kazu-discord-cache`, `kazu-steam-cache`,
   `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
-  `kazu-site-config`, `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`. Don't collide.
+  `kazu-weather-cache`, `kazu-quote-cache`, `kazu-site-config`,
+  `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`. Don't collide
+  (`evals/card-cache.js` fails when `script.js` uses a key missing here).
+
+## Live-card cache (repeat visits)
+
+Every live section keeps its last good answer in localStorage and paints it on
+the next visit in the boot task, so a reload opens on content instead of
+"Connecting to..." rows, and the API is only asked again once that copy is
+older than the card's own poll interval. Before this, every card waited for
+its boot rung (0.7 s to 8.5 s, x1.6 on light hardware) plus its request, and
+the proxied cards hit the rate-limited CORS proxy on every reload. Measured on
+the real page (copies 2 s old): every card and the quote filled 58 ms into
+the load and zero API requests in 10 s, against 10 requests and Steam / MAL /
+Letterboxd still empty after 10 s on a cold visit.
+
+| Section | Key | Refetch after | Account id in the copy |
+| --- | --- | --- | --- |
+| Weather | `kazu-weather-cache` | 10 min | none |
+| Discord | `kazu-discord-cache` | 20 s (the socket still connects) | Discord user id |
+| Steam | `kazu-steam-cache` | 5 min | vanity name |
+| MyAnimeList | `kazu-mal-cache` + `kazu-mal-manga-cache` | 10 min (the older copy decides) | MAL user |
+| Letterboxd | `kazu-lb-cache` | 30 min | Letterboxd user |
+| Playlist | `kazu-ytm-cache` | 30 min | playlist id |
+| Quote | `kazu-quote-cache` | 15 min | none |
+
+- **Envelope.** `{ at, id, ...payload }`, written only by `cardCacheWrite`
+  after a live answer, never by a renderer (a render from the copy would
+  re-stamp it as fresh forever; `renderDiscord` used to do exactly that).
+  `KazuLib.cardCacheMeta` reads it: a copy of another account is never
+  painted; a copy without an id (written before ids existed) is painted but
+  never stands in for a fetch.
+- **The hold (`#boot-cards`).** The browser paints the page before
+  `script.js` (end of `<body>`) runs, on every device (first paint 236 ms vs
+  boot paint 311 ms on desktop, 892 vs 1771 ms on the throttled phone), so a
+  boot paint alone made the cards jump from loading-row height to full height
+  after they were on screen: CLS 0.32 on a phone. When any Right-now copy
+  exists, the inline `#boot-cards` head script adds a `<style
+  id="boot-cards-hold">` that hides `.right-now-grid > .card`;
+  `paintCardCaches` removes it in the same task as the paint (in a `finally`,
+  so a failed paint or a missing lib.js still lifts it), and an 8 s timer is
+  the failsafe, like `sky-pending`. Hidden elements never count as a layout
+  shift. Full boot ladder (16.5 s, perf.js phone / tablet / desktop), CLS
+  cold -> repeat: 0.057 -> 0.059, 0.043 -> 0.040, 0.024 -> 0.028, with total
+  shift halved on phone and tablet; the shift left is the quote box opening,
+  which a cold visit has too (at 15 s instead of 1 s). Its key list must match
+  the four Right-now cache keys (`evals/card-cache.js` checks).
+- **Cost.** The paint itself is ~3 ms on desktop and ~20-30 ms on the 4x
+  throttled phone. The first tick's `applySeasons` -> `updateSkyBody` reads
+  layout, which now lays the painted cards out inside the boot task instead of
+  in later frames: total layout over the load is unchanged (601 -> 610 ms in a
+  trace) but that one task grows ~120 ms on the throttled phone, so phone TBT
+  in the 4.5 s load window goes ~190 -> ~300 ms while desktop TBT drops 40%
+  (625 -> 377 ms). Idle budgets are met on a repeat visit.
+- **Scheduling.** Each `POLLERS` entry with a `paint` draws its copy in
+  `paintCardCaches` (the load task, just before polling starts) and the
+  copy's stamp becomes `last`. `KazuLib.pollDelay` then decides: fresh data
+  waits out the rest of its interval; stale data refetches on the card's boot
+  rung (never inside the load task); after the first run, stale is due at
+  once. The same rule runs when a hidden tab comes back, so a resumed card is
+  due on its real due time, not a whole interval later. The renderers'
+  signatures leave the DOM alone when the refetch matches the copy.
+- **Presence.** A stored Discord presence and Steam status/game are painted as
+  they were for `KazuLib.PRESENCE_KEEP_MS` (10 min); an older copy paints the
+  identity only, shown offline, until the live answer lands. A failed refetch
+  keeps the card (stale beats an error card) but redraws it from the copy
+  under the same window, so a card never says "playing" forever while Lanyard
+  or the proxy is down.
+- **Weather** is fetched inside the load task, so its copy is painted only
+  while fresh and only if its first forecast day is today's UK date (the strip
+  labels row one "Today"). The boot paint does not build particles: the idle
+  slot that builds the atmosphere picks the mode from the painted weather.
+  The **quote** is also painted only while fresh: a stale one is certain to be
+  swapped for a different random quote at its rung, resizing the hero.
+- **Sanitising.** Every copy goes through a lib.js parser before it is drawn:
+  links are rebuilt from ids (`steamStoreUrl`) or checked with `safeLink`,
+  images must be https, Steam's hours line is recomputed from numbers, the
+  Spotify track id must be letters and digits (`evals/link-safety.js` sweeps
+  both).
+- **Adding a live card:** a lib.js `*CacheParse`, a `paint*Cache(ms, now)` that
+  returns the copy's stamp (or 0), `paint:` on its poller, `cardCacheWrite`
+  after the live answer, `cardReveal` in the renderer, its key in
+  `SITE_CACHES` if it has an account id, its key in the list above, and (for a
+  Right-now card) its key in `#boot-cards` followed by `node evals/csp.js --fix`.
+- **Measuring a repeat visit.** `evals/perf.js` starts every run on a fresh
+  profile, so it only ever measures cold visits. Seed copies with `--pre`
+  (it runs before any page script): take the ones a full cold visit stores
+  (`--eval` a Promise that waits ~12 s, then returns the `kazu-*-cache`
+  entries) and re-stamp each `at` to `Date.now() - 2000` in the page's own
+  clock. Hand-written fixtures that differ from the mocked APIs add a false
+  shift when the live answer replaces them.
 
 ## Content-Security-Policy
 
