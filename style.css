@@ -26,12 +26,13 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
 /* ============ TEXT SCALE (automatic) ============
    Every font size on the page is calculated from the screen width. One number,
    --font-unit, follows the window (14px on a phone, 16px on a desktop); the
-   five sizes below are fixed ratios of it, so the hierarchy is the same on
+   six sizes below are fixed ratios of it, so the hierarchy is the same on
    every display and only the overall size changes:
      small  .875 x unit  labels, handles, artists, secondary lines  (12.3px .. 14px)
      body   1 x unit     running text, list rows, pill values       (14px .. 16px)
      lead   1.2 x unit   card headers, names, titles in a list      (16.8px .. 19.2px)
-     title  1.6 x unit   section headings, stat numbers, big names  (22.4px .. 25.6px)
+     title  1.6 x unit   section headings, playlist and story titles (22.4px .. 25.6px)
+     display 1.75 x unit the stat tile numbers (time, temperature, age) (24.5px .. 28px)
      name   own clamp    the hero name "Kazu Hani"                 (46px .. 84px)
    To make the whole site bigger or smaller, change --font-unit; to move one
    role, change its ratio. evals/font-scale.js fails if anything gets too small
@@ -43,6 +44,7 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
   --font-size-body: var(--font-unit);
   --font-size-lead: calc(var(--font-unit) * 1.2);
   --font-size-title: calc(var(--font-unit) * 1.6);
+  --font-size-display: calc(var(--font-unit) * 1.75);
   --font-size-name: clamp(44px, 24px + 6vw, 84px);
 }
 
@@ -55,8 +57,6 @@ body * {
    (e.g. the small year inside a lead film title). */
 .section-title,
 .section-title *,
-.stat-value,
-.stat-value *,
 .music-playlist-name,
 .music-playlist-name *,
 .story-title,
@@ -68,18 +68,23 @@ body * {
   font-size: var(--font-size-title) !important;
 }
 
+.stat-value,
+.stat-value * {
+  font-size: var(--font-size-display) !important;
+}
+
 .card-head-title,
 .card-head-title *,
 .presence-name,
 .presence-name *,
-.mal-title,
-.mal-title *,
 .lb-title,
 .lb-title *,
 .social-name,
 .social-name *,
 .pc-spec-card-title,
 .pc-spec-card-title *,
+.stat-loading-text,
+.stat-loading-text *,
 .steam-fallback-title,
 .steam-fallback-title *,
 .quote-text,
@@ -107,10 +112,14 @@ body * {
 .music-track-name *,
 .story-desc,
 .story-desc *,
+.stat-label,
+.stat-label *,
+.stat-faint,
+.stat-faint *,
 .stat-sub,
 .stat-sub *,
-.stat-loading-text,
-.stat-loading-text *,
+.mal-title,
+.mal-title *,
 .lb-stars,
 .lb-stars *,
 .social-mark--text,
@@ -118,10 +127,6 @@ body * {
   font-size: var(--font-size-body) !important;
 }
 
-.stat-label,
-.stat-label *,
-.stat-faint,
-.stat-faint *,
 .retry-btn,
 .retry-btn *,
 .pill-link,
@@ -819,7 +824,7 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 .mal-row:active { transform: translateY(0) scale(.98); }
 .mal-cover { width: 44px; height: 62px; border-radius: 8px; object-fit: cover; flex: none; background: rgba(143,176,255,.18); }
 .mal-info { min-width: 0; flex: 1; }
-.mal-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(14px, 4.375vw, 18.2px); color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mal-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(14px, 4.375vw, 18.2px); color: #fff; line-height: 1.2; white-space: normal; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
 .mal-progress { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
 .mal-bar { flex: 1; height: 5px; border-radius: 999px; background: rgba(255,255,255,.2); overflow: hidden; }
 .mal-bar span { display: block; height: 100%; border-radius: 999px; background: #8fb0ff; }

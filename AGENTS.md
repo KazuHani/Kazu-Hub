@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=104`,
+- `index.html` — the whole page. Loads `style.css?v=105`,
   `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=95` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
@@ -153,8 +153,9 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   runs alone (`node evals/asset-versions.js`).
 - `evals/font-scale.js` — gate assertions for the "TEXT SCALE" block at the top
   of `style.css`: every font size is calculated from the screen width. One
-  `--font-unit` (a `clamp()` of the window width) and five tiers made from it
-  (`--font-size-small` .875x, `body` 1x, `lead` 1.2x, `title` 1.6x, and the hero
+  `--font-unit` (a `clamp()` of the window width) and six tiers made from it
+  (`--font-size-small` .875x, `body` 1x, `lead` 1.2x, `title` 1.6x, `display`
+  1.75x for the stat tile numbers, and the hero
   name's own clamp), applied by role with `!important`. The gate resolves them
   at 320..2560px and fails if small text drops under 12px or body under 14px,
   anything passes its desktop cap, a size shrinks as the window grows,

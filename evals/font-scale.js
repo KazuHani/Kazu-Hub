@@ -1,7 +1,7 @@
 /* ============================================================================
    Font-scale gates: style.css "TEXT SCALE" calculates every font size from the
    screen width. One number, --font-unit, is a clamp() of the window width; the
-   sizes small, body, lead and title are fixed ratios of it, and the hero name
+   sizes small, body, lead, title and display are fixed ratios of it, and the hero name
    (--font-size-name) is its own clamp(). This gate resolves them at phone,
    tablet and desktop widths and fails if text gets too small on a phone or too
    large on a desktop. Shared by tests.js and tests.html; run standalone:
@@ -9,11 +9,11 @@
    ----------------------------------------------------------------------------
    What is pinned:
      - --font-unit and --font-size-name are clamp(<px>, <px> + <vw>, <px>), and
-       the four ratio tiers are calc(var(--font-unit) * <ratio>);
+       the five ratio tiers are calc(var(--font-unit) * <ratio>);
      - at 320px and up, small text is at least 12px and body text at least 14px;
        at 2560px, small <= 15px, body <= 17px, lead <= 20.5px, title <= 28px,
        name <= 90px;
-     - nothing shrinks as the window grows, and name > title > lead > body >
+     - nothing shrinks as the window grows, and name > display > title > lead > body >
        small at every width, so the hierarchy survives every display;
      - the rules use the tiers (body * is body, and the title, lead and small
        roles have rules), the hero name's rule comes last, and no text role
@@ -25,10 +25,10 @@
   'use strict';
 
   var WIDTHS = [320, 375, 430, 768, 1024, 1440, 1920, 2560];
-  var ORDER = ['small', 'body', 'lead', 'title', 'name'];
+  var ORDER = ['small', 'body', 'lead', 'title', 'display', 'name'];
   var CLAMP = /^clamp\(\s*([\d.]+)px\s*,\s*([\d.]+)px\s*\+\s*([\d.]+)vw\s*,\s*([\d.]+)px\s*\)$/;
   // [min at any width >= 320, max at 2560]
-  var LIMITS = { small: [12, 15], body: [14, 17], lead: [16, 20.5], title: [22, 28], name: [44, 90] };
+  var LIMITS = { small: [12, 15], body: [14, 17], lead: [16, 20.5], title: [22, 28], display: [24, 30], name: [44, 90] };
 
   function clampOf(v) {
     var c = CLAMP.exec((v || '').trim());
@@ -44,12 +44,12 @@
   function sizes(css) {
     var unit = clampOf(decl(css, '--font-unit')), name = clampOf(decl(css, '--font-size-name'));
     var ratio = {};
-    ['small', 'body', 'lead', 'title'].forEach(function (k) {
+    ['small', 'body', 'lead', 'title', 'display'].forEach(function (k) {
       var v = decl(css, '--font-size-' + k), m;
       if (k === 'body') ratio[k] = v === 'var(--font-unit)' ? 1 : null;
       else ratio[k] = (m = /^calc\(var\(--font-unit\) \* ([\d.]+)\)$/.exec(v || '')) ? +m[1] : null;
     });
-    if (!unit || !name || ORDER.slice(0, 4).some(function (k) { return ratio[k] === null; })) return null;
+    if (!unit || !name || ORDER.slice(0, 5).some(function (k) { return ratio[k] === null; })) return null;
     return {
       unit: unit, ratio: ratio,
       at: function (k, w) { return k === 'name' ? unitAt(name, w) : unitAt(unit, w) * ratio[k]; }
@@ -77,20 +77,20 @@
       for (var i = 1; i < ORDER.length; i++) if (!(S.at(ORDER[i], w) > S.at(ORDER[i - 1], w))) order.push(ORDER[i] + '<=' + ORDER[i - 1] + '@' + w);
     });
     ok('font scale: each size only grows with the window', shrink.length === 0, shrink.join(' | '));
-    ok('font scale: name > title > lead > body > small at every width', order.length === 0, order.join(' | '));
+    ok('font scale: name > display > title > lead > body > small at every width', order.length === 0, order.join(' | '));
 
     // Which tier a selector's rule sets.
     var tierOf = {};
-    css.replace(/([^{}]+)\{\s*font-size: var\(--font-size-(small|body|lead|title|name)\) !important;\s*\}/g, function (_, sels, t) {
+    css.replace(/([^{}]+)\{\s*font-size: var\(--font-size-(small|body|lead|title|display|name)\) !important;\s*\}/g, function (_, sels, t) {
       sels.split(',').forEach(function (s) { s = s.trim().replace(/^\/\*[\s\S]*?\*\/\s*/, ''); if (s && !/ \*$/.test(s)) tierOf[s] = t; });
       return '';
     });
     ok('font scale: body text is the body tier', /body,\nbody \* \{\s*font-size: var\(--font-size-body\) !important;/.test(css));
     var want = {
-      '.section-title': 'title', '.stat-value': 'title', '.music-playlist-name': 'title', '.story-title': 'title', '.modal-title': 'title',
+      '.section-title': 'title', '.stat-value': 'display', '.music-playlist-name': 'title', '.story-title': 'title', '.modal-title': 'title',
       '.card-head-title': 'lead', '.presence-name': 'lead', '.mal-title': 'lead', '.lb-title': 'lead', '.social-name': 'lead',
       '.music-track-name': 'body', '.story-desc': 'body',
-      '.stat-label': 'small', '.social-handle': 'small', '.music-track-artist': 'small', '.pill-link': 'small', '.mal-eps': 'small',
+      '.stat-label': 'body', '.stat-sub': 'body', '.mal-title': 'body', '.social-handle': 'small', '.music-track-artist': 'small', '.pill-link': 'small', '.mal-eps': 'small',
       '.title': 'name'
     };
     var wrong = Object.keys(want).filter(function (s) { return tierOf[s] !== want[s]; }).map(function (s) { return s + ': ' + tierOf[s] + ' (want ' + want[s] + ')'; });
