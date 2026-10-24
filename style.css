@@ -69,7 +69,9 @@ body * {
 }
 
 .stat-value,
-.stat-value * {
+.stat-value *,
+.to-top,
+.to-top * {
   font-size: var(--font-size-display) !important;
 }
 
@@ -1226,7 +1228,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    feedback. */
 .to-top {
   position: fixed; right: clamp(14px, 4.375vw, 28px); bottom: max(clamp(16px, 5vw, 20px), env(safe-area-inset-bottom, 16px)); z-index: 50;
-  width: clamp(44px, 13.75vw, 52px); height: clamp(44px, 13.75vw, 52px);
+  width: clamp(60px, 17vw, 68px); height: clamp(60px, 17vw, 68px);
   border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: clamp(18px, 5.625vw, 23px); line-height: 1;
   box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
