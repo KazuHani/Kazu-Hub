@@ -1204,6 +1204,9 @@ ok('scroll-reveal section present in the stylesheet', cssFlat.includes('========
 // never answer for them, and the service worker ignores cross-origin
 // requests entirely (no second cache layer in front of the APIs).
 const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
+// Every place naming a versioned asset agrees; both runners load the same gates (evals/asset-versions.js).
+require('./evals/asset-versions.js').run({ html: htmlSrc, sw: swSrc, testsHtml: fs.readFileSync(__dirname + '/tests.html', 'utf8'), testsJs: fs.readFileSync(__filename, 'utf8'),
+  script: scriptSrc, docs: fs.readFileSync(__dirname + '/AGENTS.md', 'utf8'), exists: (f) => fs.existsSync(__dirname + '/' + f) }, ok);
 ok('discord REST bypasses the HTTP cache', scriptSrc.includes("'https://api.lanyard.rest/v1/users/' + DISCORD_ID") && scriptSrc.includes("fetchT(url, { cache: 'no-store' })"));
 ok('discord REST falls back through the CORS proxy when lanyard is unreachable', scriptSrc.includes('const r2 = await proxyFetch(url);'));
 ok('discord card falls back to cache on failure', scriptSrc.includes('const cached = discordCacheRead(Date.now());') && scriptSrc.includes("DISCORD_CACHE_KEY = 'kazu-discord-cache'"));

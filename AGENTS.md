@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=99`,
+- `index.html` — the whole page. Loads `style.css?v=100`,
   `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=95` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
@@ -142,6 +142,15 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   every cloud stays inside its canvas at every window size. Shared by
   `tests.js` and `tests.html` (which also checks the gradients the browser
   resolves in a page frame); also runs alone (`node evals/sky-edges.js`).
+- `evals/asset-versions.js` — gate assertions that every place naming a
+  versioned asset agrees with `index.html` (the `sw.js` PRECACHE, the
+  `tests.html` script tags and fetches, the "Loads ..." line above;
+  `weather-fx.js` follows `WEATHER_FX_SRC`) and that `tests.html` loads every
+  `evals/` module `tests.js` runs (`adblock-filters.js` and `perf.js` are
+  Node-only). Added after the PR #15 merge (85259ac) left all of those out of
+  step with nothing failing. Shared by `tests.js` (which also checks every
+  script and stylesheet the two pages load exists) and `tests.html`; also
+  runs alone (`node evals/asset-versions.js`).
 - `evals/sky-seam.js` — periodic eval (real Chrome, plain Node >= 22, no
   dependencies): screenshots the sky alone near sunset, scrolled a fifth of
   a screen, at desktop, short-window and phone sizes, decodes the PNG and
@@ -656,7 +665,8 @@ These are load-bearing; read before editing.
   `style.css`, `script.js`, `lib.js` or `site-config.js`: bump the `?v=` in `index.html` (and
   in `tests.html` for `lib.js`, `site-config.js` and the fetched sources), keep the matching entries in `sw.js`'s
   `PRECACHE` list in sync, and bump `CACHE` in `sw.js` if `sw.js` itself
-  changes.
+  changes. `evals/asset-versions.js` fails the gate when any of them (or the
+  "Loads ..." line in "Code layout") disagrees with `index.html`.
 - **Staged boot & populate animation.** Startup work runs in priority order,
   not all at once: first API fetches ride the `firstDelay` ladder in the
   `POLLERS` array (stretch gaps via `bootGap`), heavy layers wait for
