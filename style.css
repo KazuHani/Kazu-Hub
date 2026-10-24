@@ -24,48 +24,149 @@ html { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
 body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
 
 /* ============ TEXT SCALE (automatic) ============
-   Every font size on the page comes from three tiers. Each is a clamp() that
-   grows with the window width, so phones, tablets and desktops each get a size
-   that suits them with no breakpoints:
-     --font-size-small  everything that is not a header or the name
-                        ~14px on a 375px phone, ~15.5px on a tablet, 17px max
-     --font-size-big    headers, card titles, display names, stat numbers
-                        ~22px on a phone, ~26px on a tablet, 34px max
-     --font-size-name   the hero name "Kazu Hani"
-                        ~46px on a phone, ~70px on a tablet, 84px max
-   Tune a tier by editing its clamp(min, preferred, max); evals/font-scale.js
-   fails if a tier gets too small on a phone or too large on a desktop.
-   !important is deliberate: it beats the per-component sizes further down. */
+   Every font size on the page is calculated from the screen width. One number,
+   --font-unit, follows the window (14px on a phone, 16px on a desktop); the
+   five sizes below are fixed ratios of it, so the hierarchy is the same on
+   every display and only the overall size changes:
+     small  .875 x unit  labels, handles, artists, secondary lines  (12.3px .. 14px)
+     body   1 x unit     running text, list rows, pill values       (14px .. 16px)
+     lead   1.2 x unit   card headers, names, titles in a list      (16.8px .. 19.2px)
+     title  1.6 x unit   section headings, stat numbers, big names  (22.4px .. 25.6px)
+     name   own clamp    the hero name "Kazu Hani"                 (46px .. 84px)
+   To make the whole site bigger or smaller, change --font-unit; to move one
+   role, change its ratio. evals/font-scale.js fails if anything gets too small
+   on a phone or too large on a desktop. !important is deliberate: it beats the
+   per-component sizes further down. */
 :root {
-  --font-size-small: clamp(14px, 12.6px + .36vw, 17px);
-  --font-size-big: clamp(22px, 18px + 1vw, 34px);
+  --font-unit: clamp(14px, 13px + .25vw, 16px);
+  --font-size-small: calc(var(--font-unit) * .875);
+  --font-size-body: var(--font-unit);
+  --font-size-lead: calc(var(--font-unit) * 1.2);
+  --font-size-title: calc(var(--font-unit) * 1.6);
   --font-size-name: clamp(44px, 24px + 6vw, 84px);
 }
 
 body,
 body * {
-  font-size: var(--font-size-small) !important;
+  font-size: var(--font-size-body) !important;
 }
 
-h1, h1 *,
-h2, h2 *,
-h3, h3 *,
-h4, h4 *,
-h5, h5 *,
-h6, h6 *,
-.section-title, .section-title *,
-.stat-value, .stat-value *,
-.card-head-title, .card-head-title *,
-.presence-name, .presence-name *,
-.modal-title, .modal-title *,
-.story-title, .story-title *,
-.music-playlist-name, .music-playlist-name *,
-.social-name, .social-name *,
-.mal-title, .mal-title *,
-.lb-title, .lb-title *,
-.steam-fallback-title, .steam-fallback-title *,
-.pc-spec-feature-name, .pc-spec-feature-name * {
-  font-size: var(--font-size-big) !important;
+/* Order matters: a later tier wins over an earlier one on nested text
+   (e.g. the small year inside a lead film title). */
+.section-title,
+.section-title *,
+.stat-value,
+.stat-value *,
+.music-playlist-name,
+.music-playlist-name *,
+.story-title,
+.story-title *,
+.modal-title,
+.modal-title *,
+.pc-spec-feature-name,
+.pc-spec-feature-name * {
+  font-size: var(--font-size-title) !important;
+}
+
+.card-head-title,
+.card-head-title *,
+.presence-name,
+.presence-name *,
+.mal-title,
+.mal-title *,
+.lb-title,
+.lb-title *,
+.social-name,
+.social-name *,
+.pc-spec-card-title,
+.pc-spec-card-title *,
+.steam-fallback-title,
+.steam-fallback-title *,
+.quote-text,
+.quote-text *,
+.pc-spec-entry dd,
+.pc-spec-entry dd * {
+  font-size: var(--font-size-lead) !important;
+}
+
+.info-pill-value,
+.info-pill-value *,
+.spotify-song,
+.spotify-song *,
+.idle-banner,
+.idle-banner *,
+.steam-game-name,
+.steam-game-name *,
+.recent-game-name,
+.recent-game-name *,
+.music-playlist-sub,
+.music-playlist-sub *,
+.music-track-num,
+.music-track-num *,
+.music-track-name,
+.music-track-name *,
+.story-desc,
+.story-desc *,
+.stat-sub,
+.stat-sub *,
+.stat-loading-text,
+.stat-loading-text *,
+.lb-stars,
+.lb-stars *,
+.social-mark--text,
+.social-mark--text * {
+  font-size: var(--font-size-body) !important;
+}
+
+.stat-label,
+.stat-label *,
+.stat-faint,
+.stat-faint *,
+.retry-btn,
+.retry-btn *,
+.pill-link,
+.pill-link *,
+.discord-username,
+.discord-username *,
+.info-pill-label,
+.info-pill-label *,
+.presence-status,
+.presence-status *,
+.recent-games-label,
+.recent-games-label *,
+.recent-game-hours,
+.recent-game-hours *,
+.steam-fallback-text,
+.steam-fallback-text *,
+.mal-eps,
+.mal-eps *,
+.mal-section-label,
+.mal-section-label *,
+.lb-label,
+.lb-label *,
+.lb-year,
+.lb-year *,
+.lb-watched,
+.lb-watched *,
+.social-handle,
+.social-handle *,
+.pc-spec-maker,
+.pc-spec-maker *,
+.pc-spec-entry dt,
+.pc-spec-entry dt *,
+.music-playlist-label,
+.music-playlist-label *,
+.music-recent-label,
+.music-recent-label *,
+.music-track-artist,
+.music-track-artist *,
+.story-cta,
+.story-cta *,
+.meadow-credit,
+.meadow-credit *,
+.quote-author,
+.quote-author * {
+  font-size: var(--font-size-small) !important;
 }
 
 .title, .title * {

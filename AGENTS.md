@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=103`,
+- `index.html` — the whole page. Loads `style.css?v=104`,
   `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=95` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
@@ -152,14 +152,16 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   script and stylesheet the two pages load exists) and `tests.html`; also
   runs alone (`node evals/asset-versions.js`).
 - `evals/font-scale.js` — gate assertions for the "TEXT SCALE" block at the top
-  of `style.css`: every font size comes from three fluid tiers
-  (`--font-size-small` body text, `--font-size-big` headers, display names and
-  stat numbers, `--font-size-name` the hero name), each a `clamp(min, base +
-  vw, max)` applied with `!important`. The gate resolves them at 320..2560px
-  and fails if small text drops under 14px on a phone, anything passes its
-  desktop cap, a tier shrinks as the window grows, or name > big > small stops
-  holding. Shared by `tests.js` and `tests.html`; also runs alone
-  (`node evals/font-scale.js`, which prints the sizes per width).
+  of `style.css`: every font size is calculated from the screen width. One
+  `--font-unit` (a `clamp()` of the window width) and five tiers made from it
+  (`--font-size-small` .875x, `body` 1x, `lead` 1.2x, `title` 1.6x, and the hero
+  name's own clamp), applied by role with `!important`. The gate resolves them
+  at 320..2560px and fails if small text drops under 12px or body under 14px,
+  anything passes its desktop cap, a size shrinks as the window grows,
+  name > title > lead > body > small stops holding, or a role (page heading,
+  card header, row, secondary line) lands in the wrong tier. Shared by
+  `tests.js` and `tests.html`; also runs alone (`node evals/font-scale.js`,
+  which prints the sizes per width).
 - `evals/sky-seam.js` — periodic eval (real Chrome, plain Node >= 22, no
   dependencies): screenshots the sky alone near sunset, scrolled a fifth of
   a screen, at desktop, short-window and phone sizes, decodes the PNG and
