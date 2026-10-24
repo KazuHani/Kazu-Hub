@@ -25,22 +25,22 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
 
 /* ============ TEXT SCALE (automatic) ============
    Every font size on the page is calculated from the screen width. One number,
-   --font-unit, follows the window (14px on a phone, 16px on a desktop) and,
+   --font-unit, follows the window (16px on a phone, 16.5px on a desktop) and,
    inside a card, the card's width (up to 19px); the
    six sizes below are fixed ratios of it, so the hierarchy is the same on
    every display and only the overall size changes:
-     small  .875 x unit  labels, handles, artists, secondary lines  (12.3px .. 14px)
-     body   1 x unit     running text, list rows, pill values       (14px .. 16px)
-     lead   1.2 x unit   card headers, names, titles in a list      (16.8px .. 19.2px)
-     title  1.6 x unit   section headings, playlist and story titles (22.4px .. 25.6px)
-     display 1.75 x unit the stat tile numbers (time, temperature, age) (24.5px .. 28px)
+     small  .875 x unit  labels, handles, artists, secondary lines  (14px .. 14.4px)
+     body   1 x unit     running text, list rows, pill values       (16px .. 16.5px)
+     lead   1.2 x unit   card headers, names, titles in a list      (19.2px .. 19.8px)
+     title  1.6 x unit   section headings, playlist and story titles (25.6px .. 26.4px)
+     display 1.75 x unit the stat tile numbers (time, temperature, age) (28px .. 28.9px)
      name   own clamp    the hero name "Kazu Hani"                 (46px .. 84px)
    To make the whole site bigger or smaller, change --font-unit; to move one
    role, change its ratio. evals/font-scale.js fails if anything gets too small
    on a phone or too large on a desktop. !important is deliberate: it beats the
    per-component sizes further down. */
 :root {
-  --font-unit: clamp(14px, 13px + .25vw, 16px);
+  --font-unit: clamp(16px, 15.5px + .05vw, 16.5px);
   --font-size-name: clamp(44px, 24px + 6vw, 84px);
 }
 
@@ -51,7 +51,7 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
 .card,
 .pc-spec-card {
   container-type: inline-size;
-  --font-unit: clamp(14px, max(3.6cqi, 13px + .25vw), 19px);
+  --font-unit: clamp(16px, max(3.6cqi, 15.5px + .05vw), 19px);
   --font-size-feature: clamp(22px, 7cqi, 42px);
   --font-size-mark: clamp(40px, 15cqi, 80px);
 }
@@ -65,6 +65,12 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
   --font-size-lead: calc(var(--font-unit) * 1.2);
   --font-size-title: calc(var(--font-unit) * 1.6);
   --font-size-display: calc(var(--font-unit) * 1.75);
+}
+
+/* The stat numbers never grow past what the tile can hold on one line
+   ("06:34:09 pm" is the longest), so a bigger phone unit cannot overflow. */
+.stat-card {
+  --font-size-display: min(calc(var(--font-unit) * 1.75), 17.5cqi);
 }
 
 body,
@@ -687,8 +693,8 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
    clock steady. */
 .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 2.5vw, 16px); margin-top: clamp(20px, 6.25vw, 34px); }
 @media (min-width: 1110px) { .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.stat-card { border-radius: clamp(18px, 5.625vw, 22px); padding: clamp(12px, 3.75vw, 18px) clamp(8px, 2.5vw, 14px); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
-.stat-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.stat-card { border-radius: clamp(18px, 5.625vw, 22px); padding: clamp(12px, 3.75vw, 18px) clamp(8px, 2.5vw, 14px) calc(clamp(12px, 3.75vw, 18px) + 8px); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+.stat-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
 .stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(16px, 6.6vw, 36px); line-height: 1.08; margin-top: clamp(4px, 1.25vw, 6px); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stat-sub { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: var(--ink-soft); margin-top: clamp(3px, .9375vw, 4px); }
 .stat-faint { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: var(--ink-faint); margin-top: 2px; }
