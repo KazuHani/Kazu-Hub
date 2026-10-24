@@ -43,7 +43,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 ## Code layout
 
 - `index.html` — the whole page. Loads `style.css?v=97`,
-  `lib.js?v=45`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=93` (version
+  `lib.js?v=44`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=92` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
@@ -591,51 +591,57 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
 - **`100vw`** excludes a classic scrollbar, because the gutter is reserved
   (`scrollbar-gutter: stable`, see "Pop-up motion"). Phones have overlay
   scrollbars, so there it is the screen width.
-- **Never** wrap the page in a size container: `container-type` gives layout
-  containment, and the fixed back-to-top button inside `.container` would be
-  positioned against it instead of the screen.
-- **Tests.** `evals/fluid-layout.js` (gate): no size in a width media query,
-  every font-size's shape and exact slope, the floors, the grid switches and
-  the stat-value fit model at every width. Its `measure()` / `analyse()` judge a
-  real layout: `tests.html` sweeps a live frame through 20 widths from 320px
-  to 1440px (both sides of every switch, plain and Halloween) and the four
-  pop-ups at five widths; `tests.js` pins `analyse()` on made-up snapshots.
-  `node evals/layout-sweep.js` (periodic, `.github/workflows/layout.yml`)
-  does the same in real Chrome with every card filled: every 8px from 280px
-  to 1920px, mouse and touch, English and Japanese, plus a table of the key
-  sizes and the pop-up fit at eight screen sizes. Changing a size means changing its one rule; adding a text class
-  worth tracking means adding it to `TEXT` (or `CARD_TEXT`) in
-  `evals/fluid-layout.js`.
+- **Tests.** `evals/phone-type.js`: every rule keeps the formula, the page
+  block covers exactly the main block's fixed sizes with the same bases, the
+  pop-up block covers every pop-up text class, the order, the storage column.
+  Its sources are normalised to LF (a Windows checkout has CRLF files).
+  `tests.html` reads every growing rule the phone frame actually loaded,
+  measures it on the page against `100vw`, and checks that no text spills
+  sideways (page and pop-ups) and the page never scrolls sideways.
 
-## Hero
+## Hero on phones
 
-The name and the quote fill the width on phones, foldables and small tablets
-and hold their full size from there to the widest desktop.
+Up to 768px (phones, foldables, small tablets) the name and the quote fill the
+width. One block in `style.css` ("Hero on phones and small tablets"), placed
+before the main phone block:
 
-- **The name** is `clamp(40px, min(16.5vw, 16vh), 112px)`, its only size rule.
-  "Kazu Hani" covers about 80% of the hero on a phone, 74% at 590px and 65% at
-  768px (Fraunces' optical sizing narrows the letters as they grow), and the
-  112px cap holds from 679px: 48% of the hero at 1024px, 44% at 1440px.
-  `16vh` only binds on a screen wider than it is tall: a small phone held
-  sideways (667 x 375) gets 60px instead of 110px, a 1280 x 600 laptop 96px.
-- **The quote** is `clamp(17px, 5.3125vw, 22.1px)` and its author
-  `clamp(12.5px, 3.9063vw, 16.25px)`: 22.1px / 16.25px from 416px up. The box's
-  side padding opens from 6px at 320px to 26px at 600px, so long quotes use a
-  phone's width.
-- **The quote box** opens to `max-height: 420px`. A 320 character quote is
-  352px tall at 430px, the tallest case measured.
-- **Tests.** `evals/hero-fill.js`: one rule each, the title padding, and a fill
-  model. `TITLE_EM` (the name's width per px of font size, measured in Chrome)
-  plus the container padding (read from `style.css`) gives the name's share of
-  the hero at 21 widths from 280px to 1920px: 70-86% up to 600px, 60%+ up to
-  768px, never over 86%, never smaller at a wider width. The name's box must
-  fit in a 5em fallback font, and a short screen (667 x 375, 1280 x 600) gives
-  it at most a fifth of its height. `tests.html` (`heroLayoutCheck`) loads the
-  page at 320px (Halloween), 390px, 390px (Halloween), 590px and 1200px: the
-  rule's size at that frame, the real share against the model (within 3
-  points), the name clear of the picture, the pumpkins and the quote, no
-  sideways scroll, and a 320 character quote not cut off. If the title font
-  is re-cut, re-measure `TITLE_EM`.
+- **The name** is `clamp(40px, min(16.5vw, 16vh), 112px)`, the only size rule
+  it has on narrow screens (the main phone block sets none). "Kazu Hani" then
+  covers about 80% of the hero on a phone, 74% at 590px and 65% at 768px.
+  Fraunces' optical sizing narrows the letters as they grow, so the share falls
+  off on wider screens. `16vh` only binds on a screen wider than it is tall: a
+  small phone held sideways (667 x 375) gets 60px instead of 110px. Desktop
+  (769px and up) keeps `clamp(42px,7.4vw,80px)`.
+- **The quote** is 17px / 12.5px (text / author) in the main phone block,
+  grown by the "Page text" rules to 22.1px / 16.25px from 416px. From 561px to
+  768px the hero block holds them at 22.1px / 16.25px, so nothing jumps at
+  560px. The phone quote box has 6px side padding, so long quotes use the width.
+- **The picture and the stat boxes** keep the name's proportions. In the main
+  phone block `.pfp` is `clamp(124px, min(44vw, 34vh), 181px)` (181px is the
+  desktop picture, reached at 411px; it was 132px at 412px under a 68px name)
+  and `.stat-value` is `clamp(19px, 6.4vw, 34px)` (it was 21px at 412px). That
+  is about 2.7x and .39x the name's size at every phone width. 6.4vw is the
+  most the widest time string (5.4em in Fredoka 600) allows in a half-width box
+  at 320px, so all four values share one size and stay on one line. The 360px
+  block no longer pins `.stat-value` to 18px.
+- **The quote box** opens to `max-height: 420px` (200px on desktop). A 320
+  character quote is 352px tall at 430px, the tallest case measured.
+- **Tests.** `evals/hero-fill.js`: the rule layout and order, the quote sizes
+  against the phone bases, the box height, and a fill model. `TITLE_EM` (the
+  name's width per px of font size, measured in Chrome) plus the container
+  padding gives the name's share of the hero at 15 widths from 280px to 768px.
+  It must be 70-86% up to 600px and at least 60% up to 768px, and the name's
+  box must fit in a 5em fallback font. Held sideways at 667 x 375, the name may
+  take at most a fifth of the screen's height. `tests.html` (`heroLayoutCheck`) loads
+  the page at 320px (Halloween), 390px, 390px (Halloween), 590px and 1200px.
+  It measures the real share against the model (within 3 points), checks the
+  name is clear of the picture, the pumpkins and the quote, checks there is no
+  sideways scroll, and checks that a 320 character quote is not cut off.
+  Desktop keeps its sizes. If the title font is re-cut, re-measure `TITLE_EM`.
+  The same file pins the picture at 1.9-2.9x the name and a value at .33-.45x
+  it, the widest time string (`VALUE_EM`) fitting its box, and a value staying
+  1.3x the line under it, at every phone width; `heroLayoutCheck` measures the
+  real picture and values too. If the value font changes, re-measure `VALUE_EM`.
 
 ## Conventions and gotchas
 

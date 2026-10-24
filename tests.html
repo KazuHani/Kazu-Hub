@@ -28,9 +28,9 @@
   <script src="evals/emoji-free.js?v=1"></script>
   <script src="evals/perf-guards.js?v=5"></script>
   <script src="evals/site-control.js?v=1"></script>
-  <script src="evals/christmas.js?v=7"></script>
-  <script src="evals/modal-motion.js?v=5"></script>
-  <script src="evals/fluid-layout.js?v=2"></script>
+  <script src="evals/christmas.js?v=6"></script>
+  <script src="evals/modal-motion.js?v=4"></script>
+  <script src="evals/phone-type.js?v=4"></script>
   <script src="evals/hero-fill.js?v=2"></script>
   <script src="i18n.js?v=3"></script>
   <script src="evals/i18n.js?v=3"></script>
@@ -1295,14 +1295,20 @@
           var tx = rt.getBoundingClientRect(), qx = rq.getBoundingClientRect(), hr = hero.getBoundingClientRect(), ring = d.querySelector('.pfp-ring').getBoundingClientRect();
           var pumpkins = d.querySelector('.halloween-pumpkins'), pr = w.getComputedStyle(pumpkins).display === 'none' ? null : pumpkins.getBoundingClientRect();
           var px = parseFloat(w.getComputedStyle(t).fontSize), fill = tx.width / hero.clientWidth, qpx = w.getComputedStyle(qt).fontSize, apx = w.getComputedStyle(qa).fontSize;
-          // the one name rule, clamp(40px, min(16.5vw, 16vh), 112px), at this frame's size
-          var probe = d.createElement('div'); probe.style.cssText = 'position:absolute;width:100vw;height:100vh;visibility:hidden';
-          d.body.appendChild(probe); var pv = probe.getBoundingClientRect(); probe.remove();
-          var want = Math.min(112, Math.max(40, Math.min(0.165 * pv.width, 0.16 * pv.height))), model = KazuHeroFillChecks.em(px) * px / hero.clientWidth;
-          ok(name + 'the name is its one rule\'s size (' + want.toFixed(1) + 'px here) and covers the share the hero-fill model says (70%+ to 600px, 60%+ to 768px, 86% at most)',
-            Math.abs(px - want) < 0.1 && fill >= (width <= 600 ? 0.7 : width <= 768 ? 0.6 : 0) && fill <= 0.86 && Math.abs(fill - model) < 0.03,
-            px + 'px, ' + fill.toFixed(3) + ' measured, ' + model.toFixed(3) + ' modelled');
-          if (width >= 416) ok(name + 'the quote is 22.1px and its author 16.25px, the size it holds from 416px to the widest desktop', qpx === '22.1px' && apx === '16.25px', qpx + ' / ' + apx);
+          if (width <= 768) {
+            var model = KazuHeroFillChecks.em(px) * px / hero.clientWidth;
+            ok(name + 'the name covers 70-86% of the hero (60% from 600px), as the hero-fill model says', fill >= (width <= 600 ? 0.7 : 0.6) && fill <= 0.86 && Math.abs(fill - model) < 0.03, fill.toFixed(3) + ' measured, ' + model.toFixed(3) + ' modelled, ' + px + 'px');
+          } else {
+            ok(name + 'desktop keeps the masthead name (80px at most) and the 16px / 12px quote', px <= 80 && qpx === '16px' && apx === '12px', px + 'px / ' + qpx + ' / ' + apx);
+          }
+          if (width <= 560) {
+            var pf = d.querySelector('.pfp').getBoundingClientRect().width, vals = Array.prototype.slice.call(d.querySelectorAll('.stat-value')).filter(function (e) { return e.offsetWidth > 0; });
+            var vpx = parseFloat(w.getComputedStyle(vals[0]).fontSize), same = vals.every(function (e) { return w.getComputedStyle(e).fontSize === w.getComputedStyle(vals[0]).fontSize; });
+            var spill = vals.filter(function (e) { var c = e.closest('.stat-card'), cs = w.getComputedStyle(c); return e.scrollWidth > c.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + 0.5; });
+            ok(name + 'the picture is 1.9-2.9x the name and a stat value .33-.45x it, as the hero-fill gate pins', pf / px >= 1.9 && pf / px <= 2.9 && vpx / px >= 0.33 && vpx / px <= 0.45, 'picture ' + pf + ' / value ' + vpx + ' / name ' + px);
+            ok(name + 'all four stat values share one size and none spills its box', vals.length >= 3 && same && !spill.length, vals.length + ' values, same ' + same + ', spilling ' + spill.length);
+          }
+          if (width > 560 && width <= 768) ok(name + 'the quote is 22.1px and its author 16.25px, where the phone sizes top out', qpx === '22.1px' && apx === '16.25px', qpx + ' / ' + apx);
           ok(name + 'the name sits inside the hero, below the picture and its pumpkins, above the quote, and the page does not scroll sideways',
             tx.left >= hr.left - 0.5 && tx.right <= hr.right + 0.5 && tx.top >= ring.bottom && (!pr || tx.top >= pr.bottom) && qx.top >= tx.bottom && d.documentElement.scrollWidth <= d.documentElement.clientWidth,
             'name ' + Math.round(tx.left) + '..' + Math.round(tx.right) + ' x ' + Math.round(tx.top) + '..' + Math.round(tx.bottom) + ' / hero ' + Math.round(hr.left) + '..' + Math.round(hr.right) + ' / ring ' + Math.round(ring.bottom) + (pr ? ' / pumpkins ' + Math.round(pr.bottom) : '') + ' / quote ' + Math.round(qx.top) + ' / page ' + d.documentElement.scrollWidth + ' vs ' + d.documentElement.clientWidth);
@@ -1543,7 +1549,7 @@
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('style.css?v=97', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('script.js?v=93', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('script.js?v=92', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=4', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('AGENTS.md', { cache: 'no-store' }).then(function (r) { return r.text(); })
