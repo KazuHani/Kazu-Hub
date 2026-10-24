@@ -596,7 +596,7 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
   positioned against it instead of the screen.
 - **Tests.** `evals/fluid-layout.js` (gate): no size in a width media query,
   every font-size's shape and exact slope, the floors, the grid switches and
-  the stat-value cap model at 1110px. Its `measure()` / `analyse()` judge a
+  the stat-value fit model at every width. Its `measure()` / `analyse()` judge a
   real layout: `tests.html` sweeps a live frame through 20 widths from 320px
   to 1440px (both sides of every switch, plain and Halloween) and the four
   pop-ups at five widths; `tests.js` pins `analyse()` on made-up snapshots.

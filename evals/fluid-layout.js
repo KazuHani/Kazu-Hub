@@ -12,20 +12,28 @@
        ~470px. Phones from ~470px, tablets and desktops all get P. Width media
        queries change layout (columns, stacking), never a text size or a
        picture size.
-     - Text sized to its own card (container units: the stat values and the PC
-       specs) follows the card instead, and must fit it.
+     - The stat values are clamp(16px, 6.6vw, 36px): every padding around a
+       stat card grows with the window, so 6.6vw is 16.5% of the card. They
+       must not be container units (the clock would restyle the card's
+       contents every second at rest).
+     - Text sized to its own card (container units: the PC specs) follows the
+       card instead, and must fit it.
      - The name: clamp(40px, min(16.5vw, 16vh), 112px), see evals/hero-fill.js.
    What is pinned here, without a browser:
      - No font-size inside a width media query (except the reviewed card-sized
        rules in MEDIA_FONT_OK), and no width or height there for the pictures
        in BOXES.
-     - Every font-size is a plain size, the fluid form with its exact slope
-       (continuous at 320px, never shrinking), the title's rule, or a card
-       clamp on a card-sized selector.
+     - Every font-size is a plain size, the fluid form with the vw part
+       taking over at 320px or below (continuous, never shrinking, never
+       growing faster than the window), the title's rule, or a card clamp on
+       a card-sized selector.
      - Readable floors: a fluid size is at least 10px at 320px and 12px from
        390px; a fixed size on the page is at least 12px (DEV_SMALL_OK aside).
-     - The stat grid is two columns, then four from STAT_FOUR_UP, where the
-       four-up value is already at its cap (no jump when the grid splits).
+     - The stat grid is two columns, then four from STAT_FOUR_UP; a model of
+       the card from the rules shows the widest clock string fits at every
+       width from 280px to 1920px and the value never shrinks (so not when
+       the grid splits), and the cards are not size containers.
+     - The weather pop-up's globe shrinks before the pop-up scrolls.
      - The "Right now" grid is one column, then two (never 3 + 1), and the
        socials are 2-up (last tile full width), then a centred 4 + 3.
    What the live sweep (measure + analyse) checks in real layout, at every
