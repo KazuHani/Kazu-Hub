@@ -63,7 +63,7 @@
   // The first font-size (or width) clamp(lo, vw, hi) or clamp(lo, min(vw, vh), hi)
   // in a selector's rule, as { lo, vw, vh, hi } (vh is null when there is none).
   function clampOf(text, sel) {
-    var m = new RegExp('\\n  ' + sel.replace(/[.]/g, '\\.') + ' \\{[^}]*?(?:font-size|width): clamp\\(([\\d.]+)px, (?:min\\()?([\\d.]+)vw(?:, ([\\d.]+)vh\\))?, ([\\d.]+)px\\)').exec(text);
+    var m = new RegExp('\\n  ' + sel.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&') + ' \\{[^}]*?(?:font-size|width): clamp\\(([\\d.]+)px, (?:min\\()?([\\d.]+)vw(?:, ([\\d.]+)vh\\))?, ([\\d.]+)px\\)').exec(text);
     return m ? { lo: +m[1], vw: +m[2], vh: m[3] ? +m[3] : null, hi: +m[4] } : null;
   }
   function px(c, w, h) {
