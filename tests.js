@@ -1205,8 +1205,8 @@ ok('scroll-reveal section present in the stylesheet', cssFlat.includes('========
 // requests entirely (no second cache layer in front of the APIs).
 const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
 // Every place naming a versioned asset agrees; both runners load the same gates (evals/asset-versions.js).
-// Per-section font sizes (style.css GLOBAL FONT SIZES): knobs, pairs, tags and rules agree.
-require('./evals/font-sections.js').run(cssSrc, htmlSrc, ok);
+// Fluid text scale (style.css TEXT SCALE): sizes stay readable on phones and sane on desktops.
+require('./evals/font-scale.js').run(cssSrc, ok);
 require('./evals/asset-versions.js').run({ html: htmlSrc, sw: swSrc, testsHtml: fs.readFileSync(__dirname + '/tests.html', 'utf8'), testsJs: fs.readFileSync(__filename, 'utf8'),
   script: scriptSrc, docs: fs.readFileSync(__dirname + '/AGENTS.md', 'utf8'), exists: (f) => fs.existsSync(__dirname + '/' + f) }, ok);
 ok('discord REST bypasses the HTTP cache', scriptSrc.includes("'https://api.lanyard.rest/v1/users/' + DISCORD_ID") && scriptSrc.includes("fetchT(url, { cache: 'no-store' })"));

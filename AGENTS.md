@@ -42,7 +42,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=102`,
+- `index.html` — the whole page. Loads `style.css?v=103`,
   `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=95` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
@@ -151,17 +151,15 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   step with nothing failing. Shared by `tests.js` (which also checks every
   script and stylesheet the two pages load exists) and `tests.html`; also
   runs alone (`node evals/asset-versions.js`).
-- `evals/font-sections.js` — gate assertions for the "GLOBAL FONT SIZES" block
-  at the top of `style.css`: two global knobs (`--font-size-big` for headers and
-  names, `--font-size-small` for everything else) and a `--<section>-big` /
-  `--<section>-small` pair per section (hero, stats, right-now, discord, steam,
-  anime, letterboxd, socials, pc, music, stories, footer, modal) that defaults
-  to the global knob. Sections are tagged `data-section="<name>"` in
-  `index.html`; the hero, the socials grid and the footer are hooked by class
-  because `tests.js` matches those three opening tags verbatim. The gate pins
-  the pairs, the tags, that every section heading is tagged, and that a rule
-  only reads its own section's variable. Shared by `tests.js` and
-  `tests.html`; also runs alone (`node evals/font-sections.js`).
+- `evals/font-scale.js` — gate assertions for the "TEXT SCALE" block at the top
+  of `style.css`: every font size comes from three fluid tiers
+  (`--font-size-small` body text, `--font-size-big` headers, display names and
+  stat numbers, `--font-size-name` the hero name), each a `clamp(min, base +
+  vw, max)` applied with `!important`. The gate resolves them at 320..2560px
+  and fails if small text drops under 14px on a phone, anything passes its
+  desktop cap, a tier shrinks as the window grows, or name > big > small stops
+  holding. Shared by `tests.js` and `tests.html`; also runs alone
+  (`node evals/font-scale.js`, which prints the sizes per width).
 - `evals/sky-seam.js` — periodic eval (real Chrome, plain Node >= 22, no
   dependencies): screenshots the sky alone near sunset, scrolled a fifth of
   a screen, at desktop, short-window and phone sizes, decodes the PNG and
