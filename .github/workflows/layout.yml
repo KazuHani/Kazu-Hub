@@ -1,0 +1,35 @@
+name: layout eval
+
+# Periodic, not a gate: it loads the page in real headless Chrome with every API
+# mocked and the real web fonts, resizes the window every 8px from 280px to
+# 1920px (mouse) and to 1366px (touch), in English and Japanese, and fails if
+# any text or picture jumps or shrinks as the window widens, a grid leaves an
+# orphan row, text spills or the page scrolls sideways (evals/layout-sweep.js,
+# "Fluid sizing" in AGENTS.md). It never runs on push or pull_request, so it
+# cannot block a deploy; run it by hand from the Actions tab (workflow_dispatch)
+# or wait for the weekly schedule.
+on:
+  schedule:
+    - cron: '41 3 * * 1'
+  workflow_dispatch:
+
+jobs:
+  layout-sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: sweep every width, mouse and touch, English and Japanese
+        run: node evals/layout-sweep.js --out layout-sweep.json
+
+      - name: keep the snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-sweep
+          path: layout-sweep.json
+          if-no-files-found: ignore

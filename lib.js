@@ -869,12 +869,107 @@
     return out;
   }
 
-  // ---- Discord presence (localStorage fallback when Lanyard is down) --------
-  // Reads the stored Discord presence snapshot (written after every successful
-  // fetch or WebSocket update). When Lanyard is unreachable or blocked, the
-  // card renders the last good profile instead of an error state. Forces
-  // status to offline so stale presence is never represented as active.
-  function discordCacheParse(raw) {
+  // ---- Live-card cache: paint the last copy at once, refetch only when due ----
+  // Every live card keeps its last good answer in localStorage, stamped
+  // { at, id, ...payload }: `at` is when it was fetched (Date.now()) and `id`
+  // the account the card shows (Discord user id, Steam vanity, MAL user,
+  // Letterboxd user, playlist id). On load script.js paints that copy in its
+  // boot task, then asks the API again only once the copy is older than
+  // the card's own poll interval (pollDelay). A reload inside the interval
+  // costs no request at all, and a reload after it never shows anything older
+  // than a tab left open would have.
+  //
+  // cardCacheMeta reads the envelope only; each card's *CacheParse reads and
+  // sanitises the payload. `id` null means the card has no account (weather,
+  // the quote). Returns:
+  //   { paint: false, at: 0 }  nothing usable, or a copy of ANOTHER account
+  //                            (the control panel changed the id since);
+  //   { paint: true, at: 0 }   usable but unowned (written before copies named
+  //                            their account) or unstamped: paint it, but it
+  //                            never stands in for a fetch;
+  //   { paint: true, at: ms }  paint it; fresh while younger than the interval.
+  function cardCacheMeta(raw, id) {
+    var p = null;
+    if (typeof raw === 'string' && raw) { try { p = JSON.parse(raw); } catch (e) { p = null; } }
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return { paint: false, at: 0 };
+    var named = typeof p.id === 'string';
+    var owned = id == null || (named && p.id === String(id));
+    if (!owned && named) return { paint: false, at: 0 };
+    var at = (typeof p.at === 'number' && isFinite(p.at) && p.at > 0) ? p.at : 0;
+    return { paint: true, at: owned ? at : 0 };
+  }
+
+  // Is data fetched at `at` still inside its poll interval? A stamp in the
+  // future (the clock moved back since) never counts as fresh.
+  function cardCacheFresh(at, ms, now) {
+    var age = now - at;
+    return at > 0 && ms > 0 && age >= 0 && age < ms;
+  }
+
+  // How long a poller waits before its next run when polling (re)starts: on
+  // page load, and when a hidden tab comes back.
+  //   last        when its data was last fetched, this visit or the stored
+  //               copy's stamp (0 = never)
+  //   ms          its poll interval
+  //   firstDelay  its rung on the staged-boot ladder (0 = none)
+  //   ran         has it run yet in this page visit?
+  // Fresh data waits out the rest of its interval. Anything older is due now,
+  // except that a card's first run of the visit still waits for its rung, so
+  // the boot never piles every fetch into one task.
+  function pollDelay(last, ms, firstDelay, ran, now) {
+    if (cardCacheFresh(last, ms, now)) return ms - (now - last);
+    return ran ? 0 : (firstDelay > 0 ? firstDelay : 0);
+  }
+
+  // A stored status (Discord presence, Steam's online state and game) is
+  // painted as it was for this long. A reload a few minutes later almost
+  // always finds the same presence, so the card comes up exactly as it was
+  // left; past this the copy is more likely wrong than right, and it is shown
+  // offline with no activity until the live answer lands (about a second).
+  var PRESENCE_KEEP_MS = 10 * 60 * 1000;
+  function presenceKept(payload, now) {
+    return typeof now === 'number' && !!payload && typeof payload.at === 'number' &&
+      now - payload.at >= 0 && now - payload.at < PRESENCE_KEEP_MS;
+  }
+
+  // A stored string the card prints, or '' (wrong type, or long enough to be junk).
+  function cacheText(v, max) {
+    return (typeof v === 'string' && v.length <= (max || 300)) ? v : '';
+  }
+  // A stored image address: https only, or ''. Images are never links, but a
+  // copy in localStorage is still checked like one.
+  function cacheImage(v) {
+    return (typeof v === 'string' && v.length <= 2048 && /^https:\/\/[^\s"'<>]+$/.test(v)) ? v : '';
+  }
+  function cacheTime(v) {
+    return (typeof v === 'number' && isFinite(v) && v > 0) ? v : null;
+  }
+
+  // ---- Discord presence (localStorage copy) ---------------------------------
+  // Reads the stored Lanyard payload (written after every live REST answer or
+  // WebSocket update). Without `now`, or once the copy is older than
+  // PRESENCE_KEEP_MS, only the identity survives and the status is forced to
+  // offline, so stale presence is never represented as active: that is the
+  // copy the card falls back to while Lanyard is unreachable. With `now` and a
+  // copy inside the window, the presence comes back too (status, platform,
+  // game, custom status, Spotify), each field type-checked: the Spotify track
+  // id is spliced into a link, so it must be plain letters and digits.
+  var DISCORD_STATUSES = { online: 1, idle: 1, dnd: 1, offline: 1 };
+  function discordActivityCopy(a) {
+    if (!a || (a.type !== 0 && a.type !== 4)) return null;
+    var out = { type: a.type };
+    ['name', 'details', 'state'].forEach(function (k) { var v = cacheText(a[k]); if (v) out[k] = v; });
+    var start = cacheTime(a.timestamps && a.timestamps.start);
+    if (start) out.timestamps = { start: start };
+    if (a.assets && typeof a.assets === 'object') {
+      var assets = {};
+      ['large_image', 'small_image'].forEach(function (k) { var v = cacheText(a.assets[k], 1024); if (v && !/[\s"'<>]/.test(v)) assets[k] = v; });
+      if (assets.large_image || assets.small_image) out.assets = assets;
+    }
+    if (typeof a.application_id === 'string' && /^\d{1,25}$/.test(a.application_id)) out.application_id = a.application_id;
+    return out;
+  }
+  function discordCacheParse(raw, now) {
     if (typeof raw !== 'string' || !raw) return null;
     var payload;
     try { payload = JSON.parse(raw); } catch (e) { return null; }
@@ -882,7 +977,7 @@
     var u = data && data.discord_user;
     if (!u || typeof u !== 'object') return null;
     if (typeof u.username !== 'string' || !u.username) return null;
-    return {
+    var out = {
       discord_user: {
         id: typeof u.id === 'string' ? u.id : String(u.id || ''),
         username: u.username,
@@ -892,6 +987,122 @@
       discord_status: 'offline',
       activities: [],
     };
+    if (!presenceKept(payload, now)) return out;
+    out.discord_status = DISCORD_STATUSES[data.discord_status] ? data.discord_status : 'offline';
+    ['active_on_discord_mobile', 'active_on_discord_desktop', 'active_on_discord_web'].forEach(function (k) {
+      if (data[k] === true) out[k] = true;
+    });
+    out.activities = (Array.isArray(data.activities) ? data.activities : [])
+      .slice(0, 10).map(discordActivityCopy).filter(Boolean);
+    var sp = data.spotify;
+    var song = sp && typeof sp === 'object' ? cacheText(sp.song) : '';
+    if (data.listening_to_spotify === true && song) {
+      var ts = sp.timestamps || {};
+      var start = cacheTime(ts.start), end = cacheTime(ts.end);
+      out.listening_to_spotify = true;
+      out.spotify = {
+        song: song,
+        artist: cacheText(sp.artist),
+        album_art_url: cacheImage(sp.album_art_url),
+        track_id: (typeof sp.track_id === 'string' && /^[A-Za-z0-9]{1,64}$/.test(sp.track_id)) ? sp.track_id : null,
+        timestamps: (start && end && end > start) ? { start: start, end: end } : null,
+      };
+    }
+    return out;
+  }
+
+  // ---- Steam profile (localStorage copy) ------------------------------------
+  // The Steam card's last good profile in the shape script.js builds from the
+  // profile XML: { avatar, state, game: { name, url } | null, recent: [{ name,
+  // logo, url, hoursPlayed, hoursOnRecord }] }. Store links are rebuilt from
+  // the app id (steamStoreUrl: a fixed host plus digits), images must be https,
+  // and the hours line is recomputed from numbers at render, so nothing stored
+  // reaches the page as markup or as a foreign link. Status and the current
+  // game follow PRESENCE_KEEP_MS like Discord's. Same contract as
+  // malCacheParse otherwise: the sanitised profile, or null.
+  var STEAM_STATES = { 'in-game': 1, online: 1, away: 1, offline: 1 };
+  function steamCacheParse(raw, now) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    var d = payload && payload.data;
+    if (!d || typeof d !== 'object') return null;
+    var avatar = cacheImage(d.avatar);
+    if (!avatar || !Array.isArray(d.recent)) return null;
+    var recent = [];
+    for (var i = 0; i < d.recent.length && i < 3; i++) {
+      var g = d.recent[i];
+      var name = g && cacheText(g.name, 200);
+      if (!name) return null;
+      recent.push({
+        name: name,
+        logo: cacheImage(g.logo),
+        url: steamStoreUrl(g.url) || '',
+        hoursPlayed: (typeof g.hoursPlayed === 'number' && g.hoursPlayed >= 0) ? g.hoursPlayed : 0,
+        hoursOnRecord: (typeof g.hoursOnRecord === 'number' && g.hoursOnRecord >= 0) ? g.hoursOnRecord : 0,
+      });
+    }
+    var live = presenceKept(payload, now);
+    var gameName = live && d.game ? cacheText(d.game.name, 200) : '';
+    return {
+      avatar: avatar,
+      state: live && STEAM_STATES[d.state] ? d.state : 'offline',
+      game: gameName ? { name: gameName, url: steamStoreUrl(d.game.url) || '' } : null,
+      recent: recent,
+    };
+  }
+
+  // ---- Weather (localStorage copy) ------------------------------------------
+  // The Open-Meteo answer the weather card was drawn from, numbers only. The
+  // forecast's first row is labelled "Today" (forecastRows), so a copy whose
+  // first day is not today's UK date is refused outright: past midnight it
+  // would put yesterday's forecast under today's name. Returns { current,
+  // daily } in Open-Meteo's own field names, or null.
+  var WEATHER_DAILY_KEYS = ['weather_code', 'temperature_2m_max', 'temperature_2m_min', 'precipitation_probability_max'];
+  function weatherCacheParse(raw, todayIso) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    var d = payload && payload.data;
+    var c = d && d.current;
+    if (!c || typeof c !== 'object') return null;
+    var num = function (v) { return typeof v === 'number' && isFinite(v); };
+    if (!num(c.weather_code) || !num(c.temperature_2m) || !num(c.wind_speed_10m) || (c.is_day !== 0 && c.is_day !== 1)) return null;
+    var current = {
+      weather_code: c.weather_code, temperature_2m: c.temperature_2m, wind_speed_10m: c.wind_speed_10m, is_day: c.is_day,
+      cloud_cover: num(c.cloud_cover) ? c.cloud_cover : null,
+      wind_direction_10m: num(c.wind_direction_10m) ? c.wind_direction_10m : null,
+    };
+    var dl = d.daily;
+    var time = dl && Array.isArray(dl.time) ? dl.time : null;
+    if (!time || !time.length || time.length > 16) return null;
+    for (var i = 0; i < time.length; i++) if (typeof time[i] !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(time[i])) return null;
+    if (typeof todayIso === 'string' && time[0] !== todayIso) return null;
+    var daily = { time: time.slice() };
+    WEATHER_DAILY_KEYS.forEach(function (k) {
+      daily[k] = time.map(function (_, j) { var v = Array.isArray(dl[k]) ? dl[k][j] : null; return num(v) ? v : null; });
+    });
+    return { current: current, daily: daily };
+  }
+
+  // Today's date on the UK clock as 'YYYY-MM-DD' (Open-Meteo's daily.time is
+  // asked for in Europe/London, so this is the day its first row is).
+  function ukDateIso(date) {
+    var w = ukWallParts(date);
+    return w.year + '-' + pad(w.month + 1) + '-' + pad(w.day);
+  }
+
+  // ---- Quote (localStorage copy) --------------------------------------------
+  // The last quote zenquotes dealt: { q, a } with the text required. Printed
+  // through textContent, so the checks only keep junk out.
+  function quoteCacheParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    var q = payload && payload.quote;
+    var text = q && cacheText(q.q, 1000).trim();
+    if (!text) return null;
+    return { q: text, a: cacheText(q.a, 200).trim() || 'Unknown' };
   }
 
   // Reads the localStorage fallback copy of the MAL card (written after every
@@ -1852,7 +2063,15 @@
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,
     steamHoursText: steamHoursText,
+    cardCacheMeta: cardCacheMeta,
+    cardCacheFresh: cardCacheFresh,
+    pollDelay: pollDelay,
+    PRESENCE_KEEP_MS: PRESENCE_KEEP_MS,
     discordCacheParse: discordCacheParse,
+    steamCacheParse: steamCacheParse,
+    weatherCacheParse: weatherCacheParse,
+    ukDateIso: ukDateIso,
+    quoteCacheParse: quoteCacheParse,
     malRow: malRow,
     malListRow: malListRow,
     malCacheParse: malCacheParse,

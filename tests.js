@@ -1021,7 +1021,7 @@ eq('PC specs use four grouped glass cards', htmlSrc.split('class="card pc-spec-c
 ].forEach((spec) => ok('PC spec present: ' + spec.replace(/<[^>]+>/g, ''), htmlSrc.includes(spec)));
 ok('PC specs use the asymmetric 7/5 bento', cssSrc.includes('grid-template-columns: repeat(12,minmax(0,1fr));') && cssSrc.includes('.pc-spec-card--graphics {\n  grid-column: span 7;') && cssSrc.includes('.pc-spec-card--platform { grid-column: span 5; }'));
 ok('PC specs collapse to one column on compact screens', cssSrc.includes('@media (max-width: 860px)') && cssSrc.includes('.pc-spec-card { grid-column: 1 / -1; }'));
-ok('PC type scales with its card width', cssSrc.includes('container-type: inline-size;') && cssSrc.includes('font-size: clamp(22px,6.5cqi,28px);') && !/\.pc-spec-feature-name \{[^}]*max-width/.test(cssSrc));
+ok('PC type scales with its card width', cssSrc.includes('container-type: inline-size;') && cssSrc.includes('font-size: clamp(17px, 6.5cqi, 28px);') && !/\.pc-spec-feature-name \{[^}]*max-width/.test(cssSrc));
 ok('PC lists fill the shared card height', cssSrc.includes('.pc-spec-list, .pc-storage-list { margin: 0; flex: 1; }') && cssSrc.includes('align-content: space-between;'));
 ok('stat grid uses 2-column bento on compact screens', cssSrc.includes('@media (max-width: 560px)') && cssSrc.includes('grid-template-columns: repeat(2, minmax(0, 1fr));'));
 ok('custom scrollbar hidden on compact screens', cssSrc.includes('@media (max-width: 768px)') && cssSrc.includes('.cscroll { display: none !important; }'));
@@ -1038,11 +1038,32 @@ require('./evals/perf-guards.js').run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
 require('./evals/site-control.js').run(require('./site-config.js'), scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), fs.readFileSync(__dirname + '/sw.js', 'utf8').replace(/\r\n/g, '\n'), ok, eq);
 require('./evals/christmas.js').run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
 require('./evals/modal-motion.js').run(L, scriptSrc, cssSrc, ok, eq);
-require('./evals/phone-type.js').run(cssSrc, ok);
+const FLUID = require('./evals/fluid-layout.js');
+FLUID.run(cssSrc, ok);
 require('./evals/hero-fill.js').run(cssSrc, ok);
+// analyse() is what tests.html and evals/layout-sweep.js judge real layouts
+// with, so its verdicts are pinned on made-up snapshots: one of each problem.
+(function () {
+  const snap = (w, text, extra) => Object.assign({ w: w, vw: w, text: text, card: {}, boxes: {}, grids: {}, spill: [], fit: [], scrollX: false }, extra || {});
+  const fluid = [snap(320, { '.a': 12 }), snap(390, { '.a': 14.6 }), snap(560, { '.a': 15.6 }), snap(561, { '.a': 15.6 }), snap(1440, { '.a': 15.6 })];
+  eq('fluid analyse: a size that grows with the window and then holds is fine', FLUID.analyse(fluid), []);
+  const old = [snap(560, { '.title': 112 }), snap(769, { '.title': 56.9 })];
+  ok('fluid analyse: the old name drop at 769px is a shrink', FLUID.analyse(old).some((p) => /\.title shrinks from 112px at 560 to 56.9px at 769/.test(p)), FLUID.analyse(old));
+  const jump = [snap(560, { '.stat-value': 25 }), snap(561, { '.stat-value': 42 })];
+  ok('fluid analyse: the old stat value leap at 561px is a jump (it grew 68% for 0.2% more window)', FLUID.analyse(jump).some((p) => /jumps from 25px at 560 to 42px at 561/.test(p)), FLUID.analyse(jump));
+  ok('fluid analyse: growing exactly with the window (vw sizes) is not a jump', FLUID.analyse([snap(320, { '.b': 52.8 }), snap(390, { '.b': 64.35 })]).length === 0);
+  ok('fluid analyse: under 12px from 390px wide is too small, 10px at 320px is not', FLUID.analyse([snap(320, { '.c': 10 }), snap(390, { '.c': 11 })]).join() === '.c is 11px at 390 (under 12px)', FLUID.analyse([snap(320, { '.c': 10 }), snap(390, { '.c': 11 })]));
+  ok('fluid analyse: pictures follow the same rules', FLUID.analyse([snap(560, {}, { boxes: { '.pfp': 154 } }), snap(561, {}, { boxes: { '.pfp': 181 } })]).some((p) => /\.pfp jumps/.test(p)));
+  const grids = (v) => [snap(800, {}, { grids: { '.g': { rows: [3, 1], verdict: v } } })];
+  ok('fluid analyse: an orphaned last row is reported, a centred or full one is not', FLUID.analyse(grids('orphan')).length === 1 && FLUID.analyse(grids('balanced')).length === 0);
+  const bad = FLUID.analyse([snap(720, {}, { scrollX: true, spill: ['stat-value 219>184'], fit: ['.stat-value "09:01:37 am" 219px in 184px'] })]);
+  ok('fluid analyse: sideways scroll, spilled text and card text outside its card are each reported', bad.length === 3, bad);
+  ok('fluid analyse: a role missing at one width (a card still loading) is skipped, not a failure', FLUID.analyse([snap(390, { '.d': 14 }), snap(600, { '.d': null }), snap(900, { '.d': 15 })]).length === 0);
+})();
 require('./evals/i18n.js').run(require('./i18n.js'), htmlSrc, scriptSrc, cssSrc, fs.readFileSync(__dirname + '/sw.js', 'utf8'), L.stripEmoji, ok, eq);
 require('./evals/chiikawa.js').run(L, htmlSrc, scriptSrc, cssSrc, fs.readFileSync(__dirname + '/sw.js', 'utf8'), ok, eq);
 require('./evals/link-safety.js').run(L, scriptSrc, ok, eq);
+require('./evals/card-cache.js').run(L, scriptSrc, ok, eq, { docs: fs.readFileSync(__dirname + '/AGENTS.md', 'utf8').replace(/\r\n/g, '\n'), html: htmlSrc.replace(/\r\n/g, '\n') });
 
 // ---- Content-Security-Policy (index.html) ----
 const CSP = require('./evals/csp.js');
@@ -1185,7 +1206,7 @@ ok('scroll-reveal section present in the stylesheet', cssFlat.includes('========
 const swSrc = fs.readFileSync(__dirname + '/sw.js', 'utf8');
 ok('discord REST bypasses the HTTP cache', scriptSrc.includes("'https://api.lanyard.rest/v1/users/' + DISCORD_ID") && scriptSrc.includes("fetchT(url, { cache: 'no-store' })"));
 ok('discord REST falls back through the CORS proxy when lanyard is unreachable', scriptSrc.includes('const r2 = await proxyFetch(url);'));
-ok('discord card falls back to cache on failure', scriptSrc.includes('discordCacheRead') && scriptSrc.includes("DISCORD_CACHE_KEY = 'kazu-discord-cache'"));
+ok('discord card falls back to cache on failure', scriptSrc.includes('const cached = discordCacheRead(Date.now());') && scriptSrc.includes("DISCORD_CACHE_KEY = 'kazu-discord-cache'"));
 ok('discord retry re-arms websocket', scriptSrc.includes('restartLanyard') && scriptSrc.includes('discordRetryBtn'));
 ok('steam fetches bypass the HTTP cache', scriptSrc.includes('const r = await proxyFetch(STEAM_URL);') && scriptSrc.includes("fetchT(STEAM_URL, { cache: 'no-store' })"));
 ok('jikan anime + manga bypass the HTTP cache', scriptSrc.includes("'/animelist?status=watching', { cache: 'no-store' }") && scriptSrc.includes("'/mangalist?status=reading', { cache: 'no-store' }"));
@@ -1204,7 +1225,7 @@ ok('service worker never intercepts the live APIs', swSrc.includes('if (url.orig
 // ---- Music card left zone fills the card height ----
 ok('left zone wrapped in .music-side', htmlSrc.includes('<div class="music-side">'));
 ok('.music-side spreads cover + info', cssFlat.includes('.music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }'));
-ok('cover enlarged to fill the zone', cssFlat.includes('width: 152px; height: 152px;'));
+ok('cover enlarged to fill the zone', cssFlat.includes('width: clamp(110px, 34.375vw, 152px); height: clamp(110px, 34.375vw, 152px);'));
 
 // ---- Dev settings panel (secret code: kazudev) ----
 // Static wiring: the code word + matcher in the keydown listener, the
@@ -1261,7 +1282,7 @@ ok('browser-chrome colour matches the new palette', scriptSrc.includes("'#071f16
 // balloons drifting behind the content, and a hat that sits ON the avatar.
 ok('birthday repaints the hero title', cssFlat.includes('body.season-birthday .title {'));
 ok('birthday repaints the bday card in party pink', cssFlat.includes('body.season-birthday .stat-card--bday {'));
-ok('party hat centred on the avatar top', cssFlat.includes('.party-hat {') && cssFlat.includes('left: 50%; margin-left: -30px;'));
+ok('party hat centred on the avatar top', cssFlat.includes('.party-hat {') && cssFlat.includes('left: 50%; margin-left: -15.71%;'));
 ok('hat pom not clipped (taller viewBox)', htmlSrc.includes('class="party-hat" viewBox="0 -4 100 124"'));
 ok('balloon physics wired into applySeasons', scriptSrc.includes('setBalloons(s.birthday)'));
 ok('balloon canvas styled behind the content', cssFlat.includes('#balloon-canvas {') && cssFlat.includes('z-index: 0'));
@@ -1831,7 +1852,7 @@ ok('glint shadow defaults onto .card, bday re-pinned solid', cssFlat.includes('.
 // The LB base rule must sit BEFORE the liquid-glass section or it overrides
 // the translucent fill/glint/frost on source order — the bug that left the
 // Letterboxd card solid.
-const lbBase = cssFlat.indexOf('.lb-card { border-radius: 24px;');
+const lbBase = cssFlat.indexOf('.lb-card { border-radius: clamp(20px, 6.25vw, 24px);');
 ok('lb base rule sits before the glass section', lbBase > -1 && lbBase < cssFlat.indexOf('LIQUID GLASS'));
 // Story cards are first-class .card citizens now.
 ok('story cards carry the .card class', htmlSrc.split('class="card story-card"').length - 1 === 2);

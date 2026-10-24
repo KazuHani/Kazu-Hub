@@ -52,7 +52,7 @@
   // Every href sink in script.js, as "<kind> <literal prefix>{<expression>}".
   // Each entry says why its value cannot carry a hostile link.
   var REVIEWED = [
-    ['markup {escapeHtml(g.url)}', 'Steam recent games: steamStoreUrl, a fixed host plus a numeric app id'],
+    ['markup {escapeHtml(g.url)}', 'Steam recent games: steamStoreUrl, a fixed host plus a numeric app id (steamCacheParse rebuilds it the same way)'],
     ['markup {escapeHtml(x.url)}', 'MAL anime rows: malRow / malListRow / malCacheParse (safeLink or numeric id)'],
     ['markup {escapeHtml(x.url)}', 'MAL manga rows: malMangaRow / malMangaListRow / malMangaCacheParse'],
     ['markup {escapeHtml(entry.link)}', 'Letterboxd: parseLetterboxdRss / letterboxdCacheParse (safeLink)'],
@@ -60,8 +60,8 @@
     ['markup https://music.youtube.com/watch?v={t.id}', 'YouTube playlist: 11-char id checked in parseYouTubePlaylistRss; list id checked by site-config playlistId'],
     ['markup {url}', 'liquid-glass feImage href: a canvas data:image/png URL the page draws itself'],
     ['markup {url}', 'liquid-glass feImage xlink:href: the same canvas URL'],
-    ["attr {'https://open.spotify.com/track/' + dc.spotify.track_id}", 'Lanyard Spotify: fixed host, the id can only change the path'],
-    ['attr {gameUrl}', 'Steam current game: steamStoreUrl, a fixed host plus a numeric app id'],
+    ["attr {'https://open.spotify.com/track/' + dc.spotify.track_id}", 'Lanyard Spotify: fixed host, the id can only change the path (discordCacheParse keeps letters and digits only)'],
+    ['attr {gameUrl}', 'Steam current game: steamStoreUrl, a fixed host plus a numeric app id (steamCacheParse rebuilds it the same way)'],
     ['attr {s.url}', 'custom social tiles: site-config httpsUrl (https, no credentials)'],
     ['attr {n.linkUrl}', 'notice link: site-config httpsUrl, then controlUrlOk'],
     ['prop {url}', 'globe link: nullschoolUrl from fixed coordinates'],
@@ -114,6 +114,23 @@
       ok('link-safety: malMangaListRow hostile id ' + i + ' stays on MAL', landsOn(listManga.url, MAL) || listManga.url === 'https://myanimelist.net', listManga.url);
       var steam = L.steamStoreUrl(v);
       ok('link-safety: steamStoreUrl hostile value ' + i + ' stays on the store', steam === null || /^https:\/\/store\.steampowered\.com\/app\/\d{1,9}$/.test(steam), steam);
+    });
+
+    // The Steam card's stored copy: both of its links are rebuilt from the
+    // app id, never taken as stored.
+    var onStore = function (u) { return u === '' || /^https:\/\/store\.steampowered\.com\/app\/\d{1,9}$/.test(u); };
+    hostileFor('store.steampowered.com').forEach(function (v, i) {
+      var raw = JSON.stringify({ at: 1, data: { avatar: 'https://avatars.steamstatic.com/a.jpg', state: 'online', game: { name: 'G', url: v }, recent: [{ name: 'G', url: v }] } });
+      var c = L.steamCacheParse(raw, 2);
+      ok('link-safety: steamCacheParse hostile link ' + i + ' stays on the store', !!c && onStore(c.game.url) && onStore(c.recent[0].url), c && [c.game.url, c.recent[0].url]);
+    });
+
+    // The Discord copy's Spotify track id is spliced into an open.spotify.com
+    // path, so it must be plain letters and digits or nothing.
+    hostileFor('open.spotify.com').concat(['../../x', 'abc?x=1', 'abc#x', 'abc/def', ' abc']).forEach(function (v, i) {
+      var raw = JSON.stringify({ at: 1, data: { discord_user: { username: 'k' }, listening_to_spotify: true, spotify: { song: 'S', track_id: v } } });
+      var sp = L.discordCacheParse(raw, 2).spotify;
+      ok('link-safety: discordCacheParse hostile track id ' + i + ' dropped', !!sp && sp.track_id === null, sp && sp.track_id);
     });
 
     hostileFor('letterboxd.com').forEach(function (v, i) {

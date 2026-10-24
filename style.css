@@ -230,7 +230,7 @@ html.sky-pending .sky-body { opacity: 0; }
 }
 .sakura-branch { position: absolute; display: block; height: auto; }
 .sakura-branch--a {
-  top: 0; right: 0; width: clamp(270px, 30vw, 440px);
+  top: 0; right: 0; width: clamp(180px, max(min(50vw, 270px), 30vw), 440px);
   transform-origin: 100% 0;
   /* No idle sway: the branches sit still so foreground animations never appear to move the background. */
 }
@@ -272,12 +272,11 @@ html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }
    pink branches would clash, so they sit the season out. The scene itself stays:
    the sun and moon live in it and must still cross the Christmas sky. */
 body.season-christmas .sakura-branch { display: none; }
-/* Phones: no left branch (no horizontal room), smaller corner branch, and no
+/* Phones: no left branch (no horizontal room), and no
    sky body — it just reads as a smudge behind the hero avatar. Custom scrollbar
    is hidden on touch / compact screens so native inertial scrolling prevails. */
 @media (max-width: 768px) {
   .sakura-branch--b { display: none; }
-  .sakura-branch--a { width: clamp(180px, 50vw, 260px); }
   .sky-body { display: none; }
   .cscroll { display: none !important; }
 }
@@ -288,15 +287,28 @@ body.season-christmas .sakura-branch { display: none; }
   .sakura-scene, .sakura-branch--a, .sakura-branch--b { animation: none; }
 }
 
+/* ---- Fluid sizing ----
+   One rule per size, from the smallest phone to the widest desktop: every
+   size that differs between a phone and a desktop is clamp(B, B/3.2 vw, P).
+   B is its size on a 320px screen, it grows with the window (B * width / 320)
+   and holds at P from 320 * P / B (about 470px at most), so a large phone, a
+   tablet and a desktop all read the same size, and nothing gets smaller as
+   the window gets wider. Width media queries below only change layout
+   (columns, stacking); they never set a text or picture size. Text sized to
+   its own card (the stat values, the PC specs) uses container units instead.
+   evals/fluid-layout.js pins the formula, the floors (10px at 320px, 12px
+   from 390px) and the grids; tests.html and evals/layout-sweep.js measure the
+   real page across widths. */
 .container {
   position: relative; z-index: 1; max-width: 1120px; margin: 0 auto;
-  padding: clamp(28px,5vw,64px) clamp(18px,4vw,40px) 64px;
-  padding-left: max(clamp(18px,4vw,40px), env(safe-area-inset-left));
-  padding-right: max(clamp(18px,4vw,40px), env(safe-area-inset-right));
+  padding: clamp(20px, 5vw, 64px) clamp(12px, 3.75vw, 40px) 64px;
+  padding-left: max(clamp(12px, 3.75vw, 40px), env(safe-area-inset-left));
+  padding-right: max(clamp(12px, 3.75vw, 40px), env(safe-area-inset-right));
+  padding-bottom: max(clamp(48px, 15vw, 64px), env(safe-area-inset-bottom));
 }
 
 /* ---- Hero ---- */
-.hero { position: relative; text-align: center; padding: 8px 0; display: flex; flex-direction: column; align-items: center; }
+.hero { position: relative; text-align: center; padding: clamp(2px, .625vw, 8px) 0 clamp(6px, 1.875vw, 8px); display: flex; flex-direction: column; align-items: center; }
 .pfp-ring {
   position: relative;            /* anchors .party-hat and the pride ::before halo */
   margin-bottom: 8px; padding: 5px; border-radius: 50%;
@@ -304,7 +316,7 @@ body.season-christmas .sakura-branch { display: none; }
 }
 .pfp {
   position: relative; z-index: 1; /* above .chiikawa-peek, which hides behind it */
-  display: block; width: 181px; height: 181px; border-radius: 50%;
+  display: block; width: clamp(124px, 38.75vw, 181px); height: clamp(124px, 38.75vw, 181px); border-radius: 50%;
   background: var(--card-bg); object-fit: cover;
 }
 /* ---- Chiikawa peek (Japanese mode) ----
@@ -342,16 +354,21 @@ html[lang="ja"] .chiikawa-peek.is-still { opacity: 1; transform: translate(-50%,
    read "generated"). Fraunces at optical size with a quiet vertical ink
    sheen — from full ink into a whisper of the theme accent — keeps the colour
    tied to the palette without shouting. Seasonal themes still repaint it
-   below. Size pulled down from billboard to masthead scale. The padding
-   gives the italic cap-height ascenders and the final letter's exit stroke
-   room: with background-clip:text any glyph pixel outside the element's box
-   loses its gradient and turns invisible, which used to clip the dot and
-   tail of the final "i". */
+   below. The padding gives the italic cap-height ascenders and the final
+   letter's exit stroke room: with background-clip:text any glyph pixel
+   outside the element's box loses its gradient and turns invisible, which
+   used to clip the dot and tail of the final "i".
+   Size: one rule at every width. It fills the width on a phone (about 80% of
+   the hero), and Fraunces' optical sizing narrows the letters as they grow,
+   so the share settles near 74% at 590px and 65% at 768px; from 679px the
+   112px cap holds it, tablets and desktops alike. 16vh keeps a short screen
+   (a phone held sideways, a laptop) from spending too much height on it.
+   evals/hero-fill.js pins it. */
 .title {
-  position: relative; margin: 20px 0 6px; padding: .06em .14em;
+  position: relative; margin: clamp(12px, 3.75vw, 20px) 0 clamp(4px, 1.25vw, 6px); padding: .06em .14em;
   font-family: 'Fraunces', 'Fredoka', serif; font-weight: 560; font-style: italic;
   font-optical-sizing: auto;
-  font-size: clamp(42px,7.4vw,80px); line-height: 1.04; letter-spacing: -.015em;
+  font-size: clamp(40px, min(16.5vw, 16vh), 112px); line-height: 1.04; letter-spacing: -.015em;
   color: var(--ink); /* fallback for browsers without color-mix/clip */
   background: linear-gradient(178deg, var(--ink) 55%, color-mix(in srgb, var(--ink) 62%, var(--accent)) 125%);
   -webkit-background-clip: text; background-clip: text;
@@ -360,45 +377,31 @@ html[lang="ja"] .chiikawa-peek.is-still { opacity: 1; transform: translate(-50%,
 }
 
 /* ---- Quote box ---- */
+/* The side padding opens from 6px on a 320px phone to 26px by 600px, so a long
+   quote uses a phone's width. The open box is 420px tall at most: a 320
+   character quote is 352px tall at 430px, the tallest case measured. */
 .quote-box {
   display: block; width: 100%; max-width: 560px; margin: 0 auto;
-  padding: 0 26px; font-family: inherit;
+  padding: 0 clamp(6px, calc(7.1429vw - 16.857px), 26px); font-family: inherit;
   border: none; background: none; cursor: pointer;
   max-height: 0; opacity: 0; overflow: hidden;
   transition: max-height .5s ease, opacity .45s ease, padding .5s ease, margin .5s ease;
 }
 .quote-box.visible {
-  max-height: 200px; opacity: 1; padding: 18px 26px; margin: 4px auto 0;
+  max-height: 420px; opacity: 1; padding: clamp(12px, 3.75vw, 18px) clamp(6px, calc(7.1429vw - 16.857px), 26px);
+  margin: clamp(2px, .625vw, 4px) auto 0;
 }
 @media (prefers-reduced-motion: reduce) { .quote-box { transition: none; } }
 .quote-text {
-  font-style: italic; font-weight: 600; font-size: 16px; line-height: 1.45; color: var(--ink);
+  font-style: italic; font-weight: 600; font-size: clamp(17px, 5.3125vw, 22.1px); line-height: 1.42; color: var(--ink);
 }
 .quote-text::before { content: '”'; } .quote-text::after { content: '”'; }
 /* Japanese quote: upright (an oblique kana is a synthetic slant) in 「」. */
 html[lang="ja"] .quote-text { font-style: normal; }
 html[lang="ja"] .quote-text::before { content: '「'; } html[lang="ja"] .quote-text::after { content: '」'; }
 .quote-author {
-  margin-top: 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em;
+  margin-top: clamp(6px, 1.875vw, 8px); font-size: clamp(12.5px, 3.9063vw, 16.25px); font-weight: 800; letter-spacing: .06em;
   text-transform: uppercase; color: var(--accent);
-}
-
-/* ---- Hero on phones and small tablets ----
-   Up to 768px the name and the quote fill the width instead of sitting at
-   masthead scale in a band of empty space. The name runs to about 80% of the
-   hero on a phone; Fraunces' optical sizing narrows the letters as they grow,
-   so it settles near 74% at 590px and 65% at 768px, where the 112px cap holds
-   it. 16vh keeps a small phone held sideways (667 x 375) from spending a third
-   of its height on the name; upright screens are always tall enough that 16vw
-   decides. The quote sits at the 30% cap of its phone bases (17px / 12.5px in the
-   main phone block, grown by "Page text" below), so its size runs on unbroken
-   from 560px to 561px. The quote box opens taller for a long zenquotes line
-   at that size. evals/hero-fill.js pins all of it. */
-@media (max-width: 768px) {
-  .title { font-size: clamp(40px, min(16.5vw, 16vh), 112px); }
-  .quote-text { font-size: 22.1px; }
-  .quote-author { font-size: 16.25px; }
-  .quote-box.visible { max-height: 420px; }
 }
 
 /* ---- Language switch (i18n.js) ----
@@ -467,17 +470,29 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 
 /* ---- Stat strip ---- */
 /* Align text stacks at the top so the extra weather row cannot shift its
-   label and value above the other cards. Values fill the narrowest tile,
-   with tabular-nums keeping the clock steady. */
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(210px,1fr)); gap: 16px; margin-top: 34px; }
-.stat-card { border-radius: 22px; padding: 18px 14px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
-.stat-label { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
-.stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(30px, 8vw, 42px); line-height: 1.05; margin-top: 6px; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.stat-sub { font-size: 14px; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
-.stat-faint { font-size: 12.5px; font-weight: 700; color: var(--ink-faint); margin-top: 2px; }
-.stat-loading-text { font-size: 15px; font-weight: 700; color: var(--ink-faint); }
+   label and value above the other cards. Two columns (a 2 x 2 bento), four
+   across from 1110px: never three and an orphan. The value fills its card:
+   every padding and gap around a card grows in step with the window up to
+   560px, so a card's inner width there is 40% of it (a little less below
+   320px, where the paddings stop shrinking), and 6.6vw is 16.5% of that
+   inner width (the widest clock string, "00:00:00 am", is 5.48em in Fredoka
+   and 5.73em in the fallback font, so it fits down to 280px). From 546px the
+   36px cap holds; 1110px is where a four-up card is wide enough to keep
+   it, even with a 17px desktop scrollbar taking its share, so the value does
+   not shrink when the grid splits. (Not container units: a size container
+   re-runs style for its contents every time the clock re-lays out its card,
+   about two extra style passes a second at rest.) tabular-nums keeps the
+   clock steady. */
+.stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 2.5vw, 16px); margin-top: clamp(20px, 6.25vw, 34px); }
+@media (min-width: 1110px) { .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.stat-card { border-radius: clamp(18px, 5.625vw, 22px); padding: clamp(12px, 3.75vw, 18px) clamp(8px, 2.5vw, 14px); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+.stat-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.stat-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(16px, 6.6vw, 36px); line-height: 1.08; margin-top: clamp(4px, 1.25vw, 6px); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat-sub { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: var(--ink-soft); margin-top: clamp(3px, .9375vw, 4px); }
+.stat-faint { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: var(--ink-faint); margin-top: 2px; }
+.stat-loading-text { font-size: clamp(13px, 4.0625vw, 16.9px); font-weight: 700; color: var(--ink-faint); }
 .stat-card--bday {
-  background: linear-gradient(150deg,#0ea5e9,#7c5cff); border-radius: 22px; padding: 18px 14px;
+  background: linear-gradient(150deg,#0ea5e9,#7c5cff);
   box-shadow: 0 16px 34px rgba(80,110,230,.3); color: #fff; backdrop-filter: none; border: 1px solid transparent;
 }
 .stat-label--onbrand { color: rgba(255,255,255,.85); }
@@ -485,16 +500,19 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 .stat-card--bday .stat-value { color: #fff; }
 
 .section-title {
-  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 26px; margin: 46px 0 16px;
-  color: var(--ink); display: flex; align-items: center; gap: 10px;
+  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(22px, 6.875vw, 28.6px); margin: clamp(32px, 10vw, 46px) 0 clamp(12px, 3.75vw, 16px);
+  color: var(--ink); display: flex; align-items: center; gap: clamp(8px, 2.5vw, 10px);
 }
 
 /* ---- Right now ---- */
-.right-now-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
-.discord-card, .steam-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; }
+/* Four cards: one column, then a 2 x 2 from 680px (each card 300px+ wide).
+   Never three across, which left the fourth card alone on its row. */
+.right-now-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(12px, 3.75vw, 18px); }
+@media (min-width: 680px) { .right-now-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.discord-card, .steam-card { border-radius: clamp(20px, 6.25vw, 24px); padding: clamp(16px, 5vw, 22px) clamp(14px, 4.375vw, 22px); position: relative; overflow: hidden; }
 .discord-card { background: linear-gradient(150deg,#1e2147 0%,#404ee0 60%,#1e2147 100%); box-shadow: 0 16px 38px rgba(40,40,110,.32); backdrop-filter: none; border: none; }
 .steam-card { background: linear-gradient(150deg,#1b2838 0%,#2a475e 60%,#1b2838 100%); box-shadow: 0 16px 38px rgba(20,40,70,.32); backdrop-filter: none; border: none; }
-.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; position: relative; }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: clamp(12px, 3.75vw, 16px); position: relative; }
 .card-head-title { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
 .pill-link {
   position: relative; overflow: hidden; font-size: 12px; font-weight: 800; text-decoration: none;
@@ -516,26 +534,26 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 
 .presence-row { display: flex; align-items: center; gap: 14px; }
 .avatar-wrap { position: relative; flex: none; }
-.avatar-img { width: 64px; height: 64px; border-radius: 18px; object-fit: cover; box-shadow: 0 6px 16px rgba(40,90,160,.22); background: #dceefb; }
-.status-dot { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 50%; border: 3px solid #fff; }
+.avatar-img { width: clamp(52px, 16.25vw, 64px); height: clamp(52px, 16.25vw, 64px); border-radius: clamp(15px, 4.6875vw, 18px); object-fit: cover; box-shadow: 0 6px 16px rgba(40,90,160,.22); background: #dceefb; }
+.status-dot { position: absolute; right: -4px; bottom: -4px; width: clamp(16px, 5vw, 18px); height: clamp(16px, 5vw, 18px); border-radius: 50%; border: 3px solid #fff; }
 .presence-text { min-width: 0; }
-.presence-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px; color: var(--ink); line-height: 1.1; }
-.presence-status { font-size: 13px; font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+.presence-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(18px, 5.625vw, 23.4px); color: var(--ink); line-height: 1.1; }
+.presence-status { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
 
-.info-pill { margin-top: 16px; display: flex; gap: 12px; align-items: center; border-radius: 16px; padding: 13px 15px; }
+.info-pill { margin-top: clamp(12px, 3.75vw, 16px); display: flex; gap: clamp(10px, 3.125vw, 12px); align-items: center; border-radius: clamp(14px, 4.375vw, 16px); padding: clamp(10px, 3.125vw, 13px) clamp(12px, 3.75vw, 15px); }
 .info-pill--game { background: linear-gradient(135deg,rgba(124,92,255,.12),rgba(14,165,233,.12)); border: 1px solid rgba(124,92,255,.25); }
 .info-pill--spotify { margin-top: 12px; background: rgba(30,215,96,.1); border: 1px solid rgba(30,215,96,.28); }
-.info-pill--steam-game { background: rgba(102,192,244,.1); border: 1px solid rgba(102,192,244,.28); margin-bottom: 14px; gap: 12px; padding: 12px 14px; }
+.info-pill--steam-game { background: rgba(102,192,244,.1); border: 1px solid rgba(102,192,244,.28); margin-bottom: 14px; padding: clamp(10px, 3.125vw, 12px) clamp(12px, 3.75vw, 14px); }
 .info-pill-emoji:empty { display: none; }
-.info-pill-emoji { font-size: 26px; flex: none; }
-.info-pill-icon { width: 30px; height: 30px; border-radius: 8px; flex: none; object-fit: cover; }
+.info-pill-emoji { font-size: clamp(22px, 6.875vw, 28.6px); flex: none; }
+.info-pill-icon { width: clamp(26px, 8.125vw, 30px); height: clamp(26px, 8.125vw, 30px); border-radius: 8px; flex: none; object-fit: cover; }
 .info-pill--steam-game .info-pill-emoji { font-size: 24px; }
-.info-pill-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.info-pill-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: var(--ink); line-height: 1.15; }
-.steam-game-name { color: #fff; font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.info-pill-sub { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
-.spotify-art { width: 42px; height: 42px; border-radius: 9px; flex: none; object-fit: cover; background: #cfeede; }
-.spotify-song { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.info-pill-label { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.info-pill-value { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(15px, 4.6875vw, 19.5px); color: var(--ink); line-height: 1.15; }
+.steam-game-name { color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.info-pill-sub { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
+.spotify-art { border-radius: 9px; flex: none; object-fit: cover; background: #cfeede; }
+.spotify-song { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(14.5px, 4.5313vw, 18.85px); color: var(--ink); line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .idle-banner { margin-top: 16px; font-size: 14px; font-weight: 700; color: var(--ink-faint); background: rgba(170,200,225,.16); border-radius: 14px; padding: 13px 15px; text-align: center; }
 
@@ -553,8 +571,7 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 .retry-btn:active { transform: translateY(0) scale(.97); }
 @media (prefers-reduced-motion: reduce) { .retry-btn { transition: none; } .retry-btn:hover, .retry-btn:active { transform: none; } }
 
-.steam-avatar { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; box-shadow: 0 6px 18px rgba(0,0,0,.45); flex: none; }
-.steam-card .presence-name { font-size: 20px; }
+.steam-avatar { width: clamp(52px, 16.25vw, 64px); height: clamp(52px, 16.25vw, 64px); border-radius: 14px; object-fit: cover; box-shadow: 0 6px 18px rgba(0,0,0,.45); flex: none; }
 .steam-card .presence-status { color: #9fc0d8; }
 
 .discord-card .card-head-title, .discord-card .presence-name { color: #fff !important; }
@@ -584,7 +601,7 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 /* Spotify mini-player progress bar */
 .info-pill .presence-text { flex: 1; min-width: 0; }
 .info-pill--spotify { align-items: flex-start; }
-.spotify-art { width: 46px; height: 46px; }
+.spotify-art { width: clamp(38px, 11.875vw, 46px); height: clamp(38px, 11.875vw, 46px); }
 .spotify-progress { margin-top: 9px; }
 .spotify-bar { height: 5px; border-radius: 999px; background: rgba(255,255,255,.2); overflow: hidden; }
 /* The fill is always full width and slides in from the left (translateX -100% =
@@ -594,12 +611,12 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
    even a compositor-only transform transition keeps the GPU producing a frame
    per vsync for as long as a song plays (see SPOTIFY_BAR_MS). */
 .spotify-bar-fill { display: block; height: 100%; width: 100%; border-radius: 999px; background: #1db954; transform: translateX(-100%); }
-.spotify-times { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; font-weight: 700; color: #b9c0f7; font-variant-numeric: tabular-nums; }
+.spotify-times { display: flex; justify-content: space-between; margin-top: 5px; font-size: clamp(11px, 3.4375vw, 13px); font-weight: 700; color: #b9c0f7; font-variant-numeric: tabular-nums; }
 
 /* ---- Toast (copy-to-clipboard confirmation) ---- */
 .toast {
   position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 24px); z-index: 90;
-  max-width: min(90vw, 440px); padding: 13px 22px; border-radius: 999px;
+  max-width: min(90vw, 440px); padding: clamp(10px, 3.125vw, 13px) clamp(16px, 5vw, 22px); border-radius: 999px;
   background: var(--card-bg); backdrop-filter: var(--card-blur); border: var(--card-bd);
   box-shadow: 0 14px 34px rgba(3,10,24,.3); color: var(--ink);
   font-size: 14px; font-weight: 700; text-align: center; white-space: nowrap;
@@ -610,39 +627,39 @@ html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: 
 @media (prefers-reduced-motion: reduce) { .toast { transition: opacity .3s ease; transform: translate(-50%, 0); } }
 
 .recent-games { position: relative; border-top: 1px solid rgba(102,192,244,.16); padding-top: 14px; }
-.recent-games-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #9fc0d8; margin-bottom: 10px; }
+.recent-games-label { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #9fc0d8; margin-bottom: 10px; }
 .recent-game-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(102,192,244,.08); }
 .recent-game-logo { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex: none; background: rgba(102,192,244,.14); }
-.recent-game-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.recent-game-hours { font-size: 12px; font-weight: 700; color: #9fc0d8; margin-top: 1px; }
+.recent-game-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(14px, 4.375vw, 18.2px); color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-game-hours { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: #9fc0d8; margin-top: 1px; }
 
 .steam-fallback { padding: 4px 0 8px; }
 .steam-fallback-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 22px; color: #fff; margin-bottom: 6px; }
 .steam-fallback-text { font-size: 13px; font-weight: 600; color: #9fc0d8; line-height: 1.5; }
 
 /* ---- MyAnimeList (currently watching, via Jikan) ---- */
-.mal-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; background: linear-gradient(150deg,#16213e 0%,#2e51a2 60%,#16213e 100%); box-shadow: 0 16px 38px rgba(20,40,100,.32); backdrop-filter: none; border: none; }
+.mal-card { border-radius: clamp(20px, 6.25vw, 24px); padding: clamp(16px, 5vw, 22px) clamp(14px, 4.375vw, 22px); position: relative; overflow: hidden; background: linear-gradient(150deg,#16213e 0%,#2e51a2 60%,#16213e 100%); box-shadow: 0 16px 38px rgba(20,40,100,.32); backdrop-filter: none; border: none; }
 
 /* ---- Letterboxd (latest film watched) ---- */
 /* Base rule sits with the other card bases, BEFORE the liquid-glass section,
    so the glass overrides win on source order (and this stays the fallback
    where color-mix is unsupported). It used to live after the glass section,
    which silently cancelled the LB card's glass. */
-.lb-card { border-radius: 24px; padding: 22px; position: relative; overflow: hidden; background: linear-gradient(150deg,#14181c 0%,#2c343c 60%,#14181c 100%); box-shadow: 0 16px 38px rgba(10,16,24,.4); backdrop-filter: none; border: none; }
+.lb-card { border-radius: clamp(20px, 6.25vw, 24px); padding: clamp(16px, 5vw, 22px) clamp(14px, 4.375vw, 22px); position: relative; overflow: hidden; background: linear-gradient(150deg,#14181c 0%,#2c343c 60%,#14181c 100%); box-shadow: 0 16px 38px rgba(10,16,24,.4); backdrop-filter: none; border: none; }
 .mal-card .loading-row { color: #c7d4f7; }
 .mal-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
 .mal-card .idle-banner { background: rgba(255,255,255,.12); color: #c7d4f7; }
 
-.mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: 10px 12px; margin-top: 10px; text-decoration: none; transition: transform .25s ease, background .25s ease; }
+.mal-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22); border-radius: 14px; padding: clamp(8px, 2.5vw, 10px) clamp(6px, 1.875vw, 12px); margin-top: 10px; text-decoration: none; transition: transform .25s ease, background .25s ease; }
 .mal-row:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
 .mal-row:active { transform: translateY(0) scale(.98); }
 .mal-cover { width: 44px; height: 62px; border-radius: 8px; object-fit: cover; flex: none; background: rgba(143,176,255,.18); }
 .mal-info { min-width: 0; flex: 1; }
-.mal-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mal-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(14px, 4.375vw, 18.2px); color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mal-progress { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
 .mal-bar { flex: 1; height: 5px; border-radius: 999px; background: rgba(255,255,255,.2); overflow: hidden; }
 .mal-bar span { display: block; height: 100%; border-radius: 999px; background: #8fb0ff; }
-.mal-eps { font-size: 11px; font-weight: 700; color: #c7d4f7; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mal-eps { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 700; color: #c7d4f7; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .mal-progress .mal-eps:only-child { margin-left: 0; }
 @media (prefers-reduced-motion: reduce) { .mal-row { transition: none; } .mal-row:hover, .mal-row:active { transform: none; } }
 
@@ -673,7 +690,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   display: grid; grid-template-columns: repeat(12,minmax(0,1fr)); gap: 18px;
 }
 .pc-spec-card {
-  min-width: 0; border-radius: 24px; padding: clamp(22px,3vw,30px);
+  min-width: 0; border-radius: clamp(20px, 6.25vw, 24px); padding: clamp(16px, 5vw, 30px) clamp(14px, 4.375vw, 30px);
   container-type: inline-size; display: flex; flex-direction: column;
 }
 .pc-spec-card--graphics {
@@ -698,8 +715,8 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
     color-mix(in srgb, var(--card-bg) 58%, transparent);
 }
 .pc-spec-card-title {
-  margin: 0 0 20px; font-family: 'Fredoka', sans-serif; font-weight: 600;
-  font-size: 20px; line-height: 1.2; color: var(--accent);
+  margin: 0 0 clamp(10px, 3.125vw, 20px); font-family: 'Fredoka', sans-serif; font-weight: 600;
+  font-size: clamp(14px, 4.375vw, 20px); line-height: 1.2; color: var(--accent);
 }
 .pc-spec-feature-copy { min-width: 0; align-self: stretch; display: flex; flex-direction: column; }
 .pc-spec-feature-copy .pc-spec-card-title { margin-bottom: auto; padding-bottom: 20px; }
@@ -708,7 +725,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 }
 .pc-spec-feature-name {
   margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 500;
-  font-size: clamp(32px,8cqi,46px); line-height: 1.06; color: var(--ink);
+  font-size: clamp(22px, 8cqi, 46px); line-height: 1.06; color: var(--ink);
 }
 .pc-spec-feature-name strong { display: block; color: var(--accent); font-weight: 700; }
 .pc-gpu-mark {
@@ -717,34 +734,34 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   display: flex; flex-direction: column; align-items: flex-end; color: var(--ink); text-align: right;
 }
 .pc-gpu-mark span {
-  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  font-size: clamp(10px, 3.125vw, 13px); font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
   color: var(--ink-soft); white-space: nowrap;
 }
 .pc-gpu-mark strong {
   font-family: 'Fredoka', sans-serif; font-weight: 700;
-  font-size: clamp(60px,18cqi,100px); line-height: .9; letter-spacing: -.04em;
+  font-size: clamp(44px, 18cqi, 100px); line-height: .9; letter-spacing: -.04em;
 }
 .pc-spec-list, .pc-storage-list { margin: 0; flex: 1; }
-.pc-spec-list { display: grid; gap: 18px; align-content: space-between; }
+.pc-spec-list { display: grid; gap: clamp(12px, 3.75vw, 18px); align-content: space-between; }
 .pc-spec-list--build { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; }
 .pc-spec-entry dt {
-  margin-bottom: 6px; font-size: 14px; font-weight: 800; color: var(--ink-faint);
+  margin-bottom: clamp(2px, .625vw, 6px); font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; color: var(--ink-faint);
 }
 .pc-spec-entry dd {
   margin: 0; font-family: 'Fredoka', sans-serif; font-weight: 600;
-  font-size: clamp(22px,6.5cqi,28px); line-height: 1.25; color: var(--ink);
+  font-size: clamp(17px, 6.5cqi, 28px); line-height: 1.25; color: var(--ink);
 }
-.pc-spec-list--build dd { font-size: clamp(20px,5cqi,28px); }
-.pc-storage-list { display: grid; gap: 18px; align-content: space-between; }
+.pc-spec-list--build dd { font-size: clamp(17px, 5cqi, 28px); }
+.pc-storage-list { display: grid; gap: clamp(12px, 3.75vw, 18px); align-content: space-between; }
 .pc-storage-entry {
-  display: grid; grid-template-columns: 90px minmax(0,1fr); align-items: baseline; gap: 16px;
+  display: grid; grid-template-columns: clamp(72px, 22.5vw, 100.8px) minmax(0,1fr); align-items: baseline; gap: clamp(10px, 3.125vw, 16px);
 }
 .pc-storage-entry dt {
-  font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 28px;
+  font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: clamp(20px, 6.25vw, 28px);
   line-height: 1; color: var(--accent); white-space: nowrap;
 }
 .pc-storage-entry dd {
-  margin: 0; font-weight: 700; font-size: clamp(17px,4.8cqi,19px); line-height: 1.35; color: var(--ink);
+  margin: 0; font-weight: 700; font-size: clamp(13px, 4.8cqi, 19px); line-height: 1.35; color: var(--ink);
 }
 @media (max-width: 860px) {
   .pc-spec-card { grid-column: 1 / -1; }
@@ -753,19 +770,20 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 @media (max-width: 600px) {
   .pc-spec-card--graphics { grid-template-columns: minmax(0,1fr); align-items: start; }
   .pc-gpu-mark {
-    min-width: 0; padding: 18px 0 0; border-left: 0;
+    min-width: 0; padding: clamp(12px, 3.75vw, 18px) 0 0; border-left: 0;
     border-top: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
     align-items: flex-start; text-align: left;
   }
-  .pc-gpu-mark strong { font-size: 62px; }
+  /* One column: each entry gets the card's full width, so it takes the same
+     card-sized type as the other lists (reviewed in evals/fluid-layout.js). */
   .pc-spec-list--build { grid-template-columns: minmax(0,1fr); }
-  .pc-spec-list--build dd { font-size: clamp(22px,6.5cqi,28px); }
+  .pc-spec-list--build dd { font-size: clamp(17px, 6.5cqi, 28px); }
 }
 
 /* ---- Music / YouTube Music playlist ---- */
 .music-grid { display: grid; grid-template-columns: minmax(0,1fr); }
 .music-card {
-  position: relative; border-radius: 24px; padding: 22px; overflow: hidden;
+  position: relative; border-radius: clamp(20px, 6.25vw, 24px); padding: clamp(16px, 5vw, 22px) clamp(14px, 4.375vw, 22px); overflow: hidden;
   isolation: isolate;
   border: none;
   /* Liquid-glass base: frosted backdrop + translucent red-tinted fill so the
@@ -798,27 +816,27 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    height so no dead space sits under the text. */
 .music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }
 .music-cover-wrap {
-  position: relative; width: 152px; height: 152px; border-radius: 18px; flex: none; overflow: hidden;
+  position: relative; width: clamp(110px, 34.375vw, 152px); height: clamp(110px, 34.375vw, 152px); border-radius: clamp(16px, 5vw, 18px); flex: none; overflow: hidden;
   text-decoration: none; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(150deg,#ff1a1a,#7c1d2b);
   box-shadow: 0 10px 24px rgba(255,0,0,.22);
 }
 .music-cover { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block; }
 .music-body { min-width: 0; }
-.music-playlist-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ff4d4d; }
-.music-playlist-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(22px,4vw,28px); color: var(--ink); line-height: 1.08; margin-top: 4px; }
-.music-playlist-sub { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
+.music-playlist-label { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ff4d4d; }
+.music-playlist-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(20px, 6.25vw, 28px); color: var(--ink); line-height: 1.08; margin-top: 4px; }
+.music-playlist-sub { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
 .music-recent { margin-top: 16px; border-top: 1px solid rgba(255,90,90,.18); padding-top: 12px; }
 /* Featured tracks: fills the card's empty right side on wide screens,
    split off by a hairline. Stacks below the playlist info on mobile. */
 .music-featured { flex: 1.1; min-width: 0; border-left: 1px solid rgba(255,90,90,.18); padding-left: 20px; }
-.music-recent-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
-.music-track-row { display: flex; align-items: center; gap: 13px; padding: 8px 0; border-bottom: 1px solid rgba(140,170,200,.1); }
+.music-recent-label { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
+.music-track-row { display: flex; align-items: center; gap: clamp(10px, 3.125vw, 13px); padding: clamp(8px, 2.5vw, 9px) 4px; border-bottom: 1px solid rgba(140,170,200,.1); }
 .music-track-row:last-child { border-bottom: none; }
 .music-track-text { min-width: 0; flex: 1; }
-.music-track-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px; color: #ff4d4d; width: 16px; text-align: center; flex: none; }
-.music-track-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.music-track-artist { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
+.music-track-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(13.5px, 4.2188vw, 17.55px); color: #ff4d4d; width: 1.1em; text-align: center; flex: none; }
+.music-track-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(14.5px, 4.5313vw, 18.85px); color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music-track-artist { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
 
 /* ---- Music card hover: expand/bounce + equalizer (desktop only) ---- */
 /* The whole effect is gated behind @media (hover: hover) and (pointer: fine)
@@ -869,7 +887,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 }
 @media (max-width: 560px) {
   .music-card-inner { flex-direction: column; align-items: center; text-align: center; }
-  .music-cover-wrap { width: 120px; height: 120px; }
   .music-body { width: 100%; }
   .music-recent { text-align: left; }
   .music-viz { justify-content: center; }
@@ -891,13 +908,19 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    hover are inherited. Deliberately NOT .card members: there is no backdrop
    to refract through a solid tile, so the glass layer and its displacement
    maps skip them entirely. */
-.socials-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 16px; }
+/* Seven tiles in centred rows of equal tiles: two across (the odd last tile
+   takes the whole row), then four across with the last three centred under
+   them from SOCIALS_FOUR_UP (evals/fluid-layout.js), where the longest name,
+   "MyAnimeList", still fits a tile. Never a lone tile at the left of a row. */
+.socials-grid { --cols: 2; --gap: clamp(8px, 2.5vw, 16px); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap); }
+@media (min-width: 760px) { .socials-grid { --cols: 4; } }
+@media (max-width: 759px) { .social-card:last-child:nth-child(odd) { flex-basis: 100%; } }
 .social-card {
   --brand-a: #7c5cff; /* fallback centre stop (violet) */
   --brand-b: #4a34b8; /* fallback edge stop */
-  position: relative; z-index: 1;
+  position: relative; z-index: 1; flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); min-width: 0;
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  padding: 26px 16px 20px; border-radius: 22px; overflow: hidden;
+  padding: clamp(18px, 5.625vw, 26px) clamp(10px, 3.125vw, 16px) clamp(14px, 4.375vw, 20px); border-radius: clamp(18px, 5.625vw, 22px); overflow: hidden;
   text-decoration: none; color: #fff;
   background: radial-gradient(125% 135% at 50% 28%, var(--brand-a) 0%, var(--brand-b) 82%);
   box-shadow:
@@ -969,19 +992,19 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    checks the live lists; tests.js pins the known offenders). */
 .social-mark, .social-name, .social-handle { position: relative; z-index: 1; }
 .social-mark {
-  width: 48px; height: 48px; margin-bottom: 12px;
+  width: clamp(36px, 11.25vw, 48px); height: clamp(36px, 11.25vw, 48px); margin-bottom: clamp(8px, 2.5vw, 12px);
   display: flex; align-items: center; justify-content: center;
   transition: transform .28s cubic-bezier(.34,1.3,.5,1);
 }
-.social-mark svg { width: 40px; height: 40px; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.28)); transition: filter .28s ease; }
+.social-mark svg { width: clamp(30px, 9.375vw, 40px); height: clamp(30px, 9.375vw, 40px); display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.28)); transition: filter .28s ease; }
 /* No tilt: the mark lifts straight up with the tile and grows a touch, its
    shadow softening as if it floated a little off the face. */
 .social-card:hover .social-mark { transform: translateY(-2px) scale(1.07); }
 .social-card:hover .social-mark svg { filter: drop-shadow(0 5px 9px rgba(0,0,0,.38)); }
 .social-mark--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; color: #fff; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
 .social-mark--dots span { width: 24px; height: 24px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
-.social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
-.social-handle { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.74); transition: color .22s ease; }
+.social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(15px, 4.6875vw, 19.5px); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.social-handle { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: rgba(255,255,255,.74); transition: color .22s ease; }
 .social-card:hover .social-handle { color: #fff; }
 .social-card:focus { outline: none; }
 .social-card:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
@@ -1008,15 +1031,15 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 }
 
 /* ---- Stories ---- */
-.stories-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); gap: 18px; }
+.stories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: clamp(12px, 3.75vw, 18px); }
 .story-link { text-decoration: none; color: inherit; display: block; }
-.story-card { position: relative; border-radius: 24px; padding: 26px; overflow: hidden; height: 100%; transition: transform .2s ease, box-shadow .2s ease; }
+.story-card { position: relative; border-radius: clamp(20px, 6.25vw, 24px); padding: clamp(20px, 6.25vw, 26px) clamp(16px, 5vw, 26px); overflow: hidden; height: 100%; transition: transform .2s ease, box-shadow .2s ease; }
 .story-link:hover .story-card { transform: translateY(-4px); }
-.story-title { position: relative; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 30px; color: #fff; line-height: 1.05; margin: 16px 0 8px; }
-.story-desc { position: relative; font-size: 14px; font-weight: 600; color: rgba(255,255,255,.85); line-height: 1.55; max-width: 300px; }
+.story-title { position: relative; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(22px, 6.875vw, 30px); color: #fff; line-height: 1.05; margin: clamp(10px, 3.125vw, 16px) 0 clamp(6px, 1.875vw, 8px); }
+.story-desc { position: relative; font-size: clamp(13.5px, 4.2188vw, 17.55px); font-weight: 600; color: rgba(255,255,255,.85); line-height: 1.55; max-width: 24em; }
 .story-cta {
-  position: relative; display: inline-flex; align-items: center; gap: 7px; margin-top: 18px;
-  background: #fff; font-weight: 800; font-size: 13px; padding: 9px 16px; border-radius: 999px;
+  position: relative; display: inline-flex; align-items: center; gap: 7px; margin-top: clamp(14px, 4.375vw, 18px);
+  background: #fff; font-weight: 800; font-size: clamp(12.5px, 3.9063vw, 16.25px); padding: clamp(8px, 2.5vw, 9px) clamp(14px, 4.375vw, 16px); border-radius: 999px;
   transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, gap .25s ease;
 }
 .story-link:hover .story-cta { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.28); gap: 11px; }
@@ -1027,14 +1050,16 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    so the transition can actually run; .to-top.hidden overrides the generic
    .hidden{display:none!important} rule (two classes beats one at equal
    !important weight) and drives the hidden state with opacity/transform/
-   pointer-events instead. right: 28px (not 20px) because the custom page
-   scrollbar (.cscroll) ends flush at 20px from the screen edge (4px offset
-   + 16px wide) — 28px leaves an 8px gap instead of touching it. No hover
-   state by design; only :active gives press feedback. */
+   pointer-events instead. right reaches 28px (not 20px) from 640px because
+   the custom page scrollbar (.cscroll, wider than 768px only) ends flush at
+   20px from the screen edge (4px offset + 16px wide): 28px leaves an 8px gap
+   instead of touching it. No hover state by design; only :active gives press
+   feedback. */
 .to-top {
-  position: fixed; right: 28px; bottom: 20px; z-index: 50; width: 52px; height: 52px;
+  position: fixed; right: clamp(14px, 4.375vw, 28px); bottom: max(clamp(16px, 5vw, 20px), env(safe-area-inset-bottom, 16px)); z-index: 50;
+  width: clamp(44px, 13.75vw, 52px); height: clamp(44px, 13.75vw, 52px);
   border-radius: 50%; border: none; cursor: pointer;
-  background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: 23px; line-height: 1;
+  background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: clamp(18px, 5.625vw, 23px); line-height: 1;
   box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
   opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
   transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.6,.55,1);
@@ -1046,13 +1071,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   transform: translateY(14px) scale(.85);
   pointer-events: none;
 }
-@media (max-width: 480px) {
-  .to-top {
-    width: 44px; height: 44px; font-size: 18px; right: 14px;
-    bottom: max(16px, env(safe-area-inset-bottom, 16px));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .to-top { transition: none; }
 }
@@ -1409,7 +1427,7 @@ body.season-christmas .mf-christmas { display: block; }
 /* ---- Birthday: party hat (revealed on body.season-birthday) ---- */
 .party-hat {
   position: absolute; display: none;
-  width: 74px; height: auto; top: -68px; left: 50%; margin-left: -30px;
+  width: 38.74%; height: auto; top: -35.6%; left: 50%; margin-left: -15.71%; /* 74px, -68px, -30px on the 191px desktop ring */
   transform: rotate(14deg); transform-origin: bottom center;
   z-index: 3; pointer-events: none;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
@@ -1599,16 +1617,16 @@ html.season-halloween .music-viz span { background: linear-gradient(180deg, #ffe
 html.season-halloween .music-card.scroll-reveal.is-visible:hover { box-shadow: 0 22px 46px rgba(149,84,51,.3), var(--glint); }
 .halloween-decor { position: absolute; display: none; pointer-events: none; }
 html.season-halloween .halloween-decor { display: block; }
-.halloween-bats { width: min(560px, 100%); height: auto; top: 26px; left: 50%; transform: translateX(-50%); fill: var(--hw-bat); }
-.halloween-pumpkins { width: 94px; height: auto; bottom: -12px; right: -35px; z-index: 3; filter: drop-shadow(0 4px 7px rgba(26,13,28,.3)); }
+/* The bats span the hero up to 560px. The pumpkins are sized and placed from
+   the picture's ring, so they keep their place on it at every size: 94px
+   tucked 35px out at the 191px desktop ring, 76px and 22px at the 134px
+   ring of a 320px phone, a straight line between. */
+.halloween-bats { width: min(560px, 100%); height: auto; top: 30px; left: 50%; transform: translateX(-50%); fill: var(--hw-bat); }
+.halloween-pumpkins { width: calc(31.6% + 33.7px); height: auto; bottom: calc(-3.51% - 5.3px); right: calc(-22.8% + 8.5px); z-index: 3; filter: drop-shadow(0 4px 7px rgba(26,13,28,.3)); }
 .hw-pumpkin { fill: var(--hw-pumpkin); }
 .hw-rib { fill: none; stroke: var(--hw-rib); stroke-width: 1.3; }
 .hw-face { fill: var(--hw-face); }
 .hw-stem { fill: var(--hw-stem); }
-@media (max-width: 480px) {
-  .halloween-bats { width: min(340px, 100%); top: 34px; } /* a fixed 340px spilled a 320px screen sideways */
-  .halloween-pumpkins { width: 76px; right: -22px; bottom: -10px; }
-}
 
 /* ---- Christmas: frozen cards ----
    Every card and social tile freezes over: snow lying along its top edge,
@@ -1647,11 +1665,11 @@ body.season-christmas .stories-grid { row-gap: 30px; }
 .frost-flight > div > div { position: absolute; left: 0; top: 0; transform-origin: 0 0; background-repeat: no-repeat; }
 /* The open pop-up wears the snow too (script.js frostModal). Desktop always
    leaves at least 20px above it (13px of snow); a phone lets a tall pop-up
-   run to 10px from the top, which would cut the snow off, so it starts 23px
-   down instead. */
+   run to the overlay's padding (--ov-pad, 10px on a 320px phone), which would
+   cut the snow off, so it starts 13px further down instead. */
 @media (max-width: 560px) {
-  body.season-christmas .modal-overlay { padding-top: 23px; }
-  body.season-christmas .modal-panel { max-height: min(90vh, calc(100dvh - 33px)); }
+  body.season-christmas .modal-overlay { padding-top: calc(var(--ov-pad) + 13px); }
+  body.season-christmas .modal-panel { max-height: min(90vh, calc(100dvh - 2 * var(--ov-pad) - 13px)); }
 }
 
 /* ---- Christmas: string lights along the top of the page ----
@@ -2015,7 +2033,8 @@ body.modal-open { overflow: hidden; }
    that was clicked to its resting place and back again (FLIP, Web Animations). */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: center; padding: 20px;
+  display: flex; align-items: center; justify-content: center;
+  --ov-pad: clamp(10px, 3.125vw, 20px); padding: var(--ov-pad);
 }
 .modal-overlay::before {
   content: ''; position: absolute; inset: 0; pointer-events: none;
@@ -2037,7 +2056,7 @@ body.modal-open { overflow: hidden; }
 
 .modal-panel {
   position: relative; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
-  border-radius: 26px; padding: 26px 24px 28px; color: var(--ink);
+  border-radius: clamp(20px, 6.25vw, 26px); padding: clamp(20px, 6.25vw, 26px) clamp(14px, 4.375vw, 24px) clamp(22px, 6.875vw, 28px); color: var(--ink);
   background:
     linear-gradient(150deg, rgba(14,165,233,.18), rgba(124,92,255,.18)),
     var(--card-bg);
@@ -2056,41 +2075,41 @@ body.modal-open { overflow: hidden; }
 .modal-panel:focus { outline: none; }
 
 .modal-close {
-  position: absolute; top: 14px; right: 14px; width: 38px; height: 38px;
+  position: absolute; top: clamp(10px, 3.125vw, 14px); right: clamp(10px, 3.125vw, 14px); width: clamp(36px, 11.25vw, 38px); height: clamp(36px, 11.25vw, 38px);
   border: none; cursor: pointer; border-radius: 50%;
   background: rgba(140,170,210,.18); color: var(--ink);
-  font-size: 24px; line-height: 1; display: flex; align-items: center; justify-content: center;
+  font-size: clamp(22px, 6.875vw, 24px); line-height: 1; display: flex; align-items: center; justify-content: center;
   transition: background .2s ease, transform .2s ease;
 }
 .modal-close:hover { background: rgba(140,170,210,.34); transform: rotate(90deg) scale(1.06); }
 
 .modal-title {
-  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 23px;
-  margin: 2px 44px 18px 2px; color: var(--ink);
+  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(20px, 6.25vw, 26px);
+  margin: 2px clamp(34px, 10.625vw, 44px) clamp(14px, 4.375vw, 18px) 2px; color: var(--ink);
   display: flex; align-items: center; gap: 9px;
 }
-.modal-body { font-size: 15px; }
-.modal-lead { font-size: 14px; font-weight: 600; color: var(--ink-soft); line-height: 1.5; margin-bottom: 10px; }
-.modal-lead-src { font-size: 12px; color: var(--ink-faint); }
-.modal-credit { font-size: 12px; font-weight: 600; color: var(--ink-faint); margin-top: 10px; }
+.modal-body { font-size: clamp(15px, 4.6875vw, 19.5px); }
+.modal-lead { font-size: clamp(14px, 4.375vw, 18.2px); font-weight: 600; color: var(--ink-soft); line-height: 1.5; margin-bottom: 10px; }
+.modal-lead-src { font-size: clamp(12px, 3.75vw, 15.6px); color: var(--ink-faint); }
+.modal-credit { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 600; color: var(--ink-faint); margin-top: 10px; }
 .modal-credit--center { text-align: center; }
 
 .modal-note {
   margin-top: 12px; background: rgba(140,170,210,.12); border-radius: 16px;
-  padding: 12px 16px; font-size: 14px; font-weight: 600; color: var(--ink-soft); line-height: 1.5;
+  padding: 12px 16px; font-size: clamp(14px, 4.375vw, 18.2px); font-weight: 600; color: var(--ink-soft); line-height: 1.5;
 }
 .modal-note--center { text-align: center; color: var(--ink); }
 .modal-note strong { color: var(--ink); font-weight: 800; }
 .modal-note-hr { height: 1px; background: rgba(140,170,210,.22); margin: 10px 0; }
 .modal-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .modal-row-sub { color: var(--ink-faint); font-weight: 700; }
-.modal-row.modal-row-sub { margin-top: 6px; font-size: 13px; }
+.modal-row.modal-row-sub { margin-top: 6px; font-size: clamp(13px, 4.0625vw, 16.9px); }
 
 .modal-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 .modal-actions--center { justify-content: center; }
 .modal-btn {
   display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none;
-  text-decoration: none; font-family: inherit; font-size: 14px; font-weight: 800;
+  text-decoration: none; font-family: inherit; font-size: clamp(14px, 4.375vw, 18.2px); font-weight: 800;
   padding: 11px 18px; border-radius: 999px; color: #fff;
   background: linear-gradient(150deg,#0ea5e9,#7c5cff);
   box-shadow: 0 8px 20px rgba(80,110,230,.35);
@@ -2104,9 +2123,9 @@ body.modal-open { overflow: hidden; }
 /* Time modal */
 .tz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .tz-cell { background: rgba(140,170,210,.12); border-radius: 16px; padding: 13px 16px; }
-.tz-label { font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
-.tz-time { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 28px; line-height: 1.05; margin-top: 6px; font-variant-numeric: tabular-nums; }
-.tz-meta { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
+.tz-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+.tz-time { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(28px, 8.75vw, 36.4px); line-height: 1.05; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.tz-meta { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
 
 /* Weather globe — clamp keeps the whole pop-up scroll-free on laptop-height screens */
 .globe-frame {
@@ -2115,89 +2134,77 @@ body.modal-open { overflow: hidden; }
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
 }
 .globe-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+/* On a short screen the weather pop-up gives up globe height (down to 140px)
+   before it scrolls, so the forecast and the buttons stay in view: the panel
+   and its body are flex columns, and the globe is the only item that shrinks
+   (the text keeps its content height). A 1280 x 600 window used to scroll
+   55px once the pop-up text took its full size; a 375 x 667 phone 63px. */
+.modal-panel:has(.globe-frame) { display: flex; flex-direction: column; }
+.modal-panel:has(.globe-frame) .modal-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.modal-panel:has(.globe-frame) .globe-frame { flex: 0 1 auto; min-height: 140px; }
 
 /* 5-day forecast strip (weather modal) */
-.forecast-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+.forecast-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(6px, 1.875vw, 8px); margin-top: 12px; }
 .forecast-day {
-  background: rgba(140,170,210,.12); border-radius: 14px; padding: 9px 6px;
+  background: rgba(140,170,210,.12); border-radius: 14px; padding: clamp(8px, 2.5vw, 9px) clamp(3px, .9375vw, 6px);
   text-align: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
 }
-.forecast-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-.forecast-condition { font-size: 12px; line-height: 1.35; min-height: 2.7em; margin: 8px 0; }
-.forecast-emoji { font-size: 24px; line-height: 1.2; margin-top: 5px; }
-.forecast-temps { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.forecast-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.forecast-condition { font-size: clamp(12px, 3.75vw, 15.6px); line-height: 1.35; min-height: 2.7em; margin: 8px 0; }
+.forecast-emoji { font-size: clamp(20px, 6.25vw, 24px); line-height: 1.2; margin-top: 5px; }
+.forecast-temps { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(13px, 4.0625vw, 16.9px); margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
 .forecast-min { color: var(--ink-soft); font-weight: 500; }
-.forecast-precip { font-size: 11px; font-weight: 700; color: #7db8f0; margin-top: 3px; font-variant-numeric: tabular-nums; }
-.forecast-empty { grid-column: 1 / -1; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-soft); padding: 10px 0; }
-@media (max-width: 520px) {
-  .forecast-strip { gap: 6px; }
-  .forecast-day { padding: 8px 4px; }
-  .forecast-emoji { font-size: 20px; }
-  .forecast-temps { font-size: 13px; }
-}
+.forecast-precip { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: #7db8f0; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.forecast-empty { grid-column: 1 / -1; text-align: center; font-size: clamp(13px, 4.0625vw, 16.9px); font-weight: 700; color: var(--ink-soft); padding: 10px 0; }
 
 /* Age modal */
-.age-head { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(21px,5vw,28px); color: var(--ink); margin-bottom: 12px; }
-.age-head .age-sub { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 16px; color: var(--ink-soft); }
+.age-head { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(21px, 6.5625vw, 28px); color: var(--ink); margin-bottom: clamp(8px, 2.5vw, 12px); }
+.age-head .age-sub { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: clamp(14px, 4.375vw, 18.2px); color: var(--ink-soft); }
 /* minmax(min(200px,100%),1fr): the heartbeats count is 12 chars at 23px (~160px),
    so 4-across 118px tiles clipped it against the panel edge. 200px minimum wraps
    the row to 2x2 in the 512px modal and 1-up on phones. */
-.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px,100%),1fr)); gap: 10px; }
-.stat-tile { background: rgba(140,170,210,.12); border-radius: 16px; padding: 12px 16px; }
-.stat-tile-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 23px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
-.stat-tile-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 6px; }
-.sign-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; background: rgba(140,170,210,.12); border-radius: 16px; padding: 12px 16px; }
+.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px,100%),1fr)); gap: clamp(8px, 2.5vw, 10px); }
+.stat-tile { background: rgba(140,170,210,.12); border-radius: clamp(13px, 4.0625vw, 16px); padding: clamp(9px, 2.8125vw, 12px) clamp(11px, 3.4375vw, 16px); }
+.stat-tile-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(18px, 5.625vw, 23.4px); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+.stat-tile-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: var(--ink-soft); margin-top: clamp(4px, 1.25vw, 6px); }
+.sign-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; background: rgba(140,170,210,.12); border-radius: clamp(13px, 4.0625vw, 16px); padding: clamp(9px, 2.8125vw, 12px) clamp(12px, 3.75vw, 16px); }
 .sign-glyph { font-size: 34px; line-height: 1; flex: none; }
-.sign-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px; color: var(--ink); line-height: 1.1; }
+.sign-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(17px, 5.3125vw, 22.1px); color: var(--ink); line-height: 1.1; }
 /* Fun units (age modal): playful equivalents from ageBreakdown — replaced the
    old life-in-weeks canvas so the pop-up fits without scrolling. */
-.fun-wrap { margin-top: 14px; }
-.fun-title { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-.fun-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px,100%),1fr)); gap: 10px; margin-top: 9px; }
-.fun-cell { display: flex; align-items: center; gap: 12px; background: rgba(140,170,210,.12); border-radius: 14px; padding: 10px 14px; }
-.fun-emoji { font-size: 26px; line-height: 1; flex: none; }
-.fun-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 18px; line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
-.fun-label { font-size: 11px; font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
+.fun-wrap { margin-top: clamp(10px, 3.125vw, 14px); }
+.fun-title { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.fun-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px,100%),1fr)); gap: clamp(8px, 2.5vw, 10px); margin-top: clamp(6px, 1.875vw, 9px); }
+.fun-cell { display: flex; align-items: center; gap: clamp(8px, 2.5vw, 12px); background: rgba(140,170,210,.12); border-radius: clamp(12px, 3.75vw, 14px); padding: clamp(8px, 2.5vw, 10px) clamp(10px, 3.125vw, 14px); }
+.fun-emoji { font-size: clamp(22px, 6.875vw, 26px); line-height: 1; flex: none; }
+.fun-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(16px, 5vw, 20.8px); line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
+.fun-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
 
 /* Age modal layout: wider panel, tiles always 2-up, milestone + star sign side
    by side and fun units 4-up on desktop; everything stays 2-up and compact on
-   phones so the whole pop-up fits one screen with no inner scroll. */
-.modal-panel--age { max-width: 680px; }
+   phones so the whole pop-up fits one screen with no inner scroll. Its padding
+   and notes start tighter than the other pop-ups' (the most content). */
+.modal-panel--age { max-width: 680px; padding: clamp(16px, 5vw, 26px) clamp(12px, 3.75vw, 24px) clamp(16px, 5vw, 28px); }
+.modal-panel--age .modal-title { margin-bottom: clamp(8px, 2.5vw, 18px); }
+.modal-panel--age .modal-note { padding: clamp(9px, 2.8125vw, 12px) clamp(12px, 3.75vw, 16px); border-radius: clamp(13px, 4.0625vw, 16px); line-height: 1.4; }
+.modal-panel--age .modal-row.modal-row-sub { margin-top: clamp(3px, .9375vw, 6px); }
 .modal-panel--age .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .modal-panel--age .fun-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.age-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.age-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 2.5vw, 10px); margin-top: clamp(8px, 2.5vw, 10px); }
 .age-meta .modal-note, .age-meta .sign-row { margin-top: 0; }
 .age-meta .sign-row { align-items: center; }
 @media (max-width: 640px) {
   .modal-panel--age .fun-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .age-meta { grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
-  .modal-panel--age { padding: 16px 12px 16px; }
-  .modal-panel--age .modal-title { margin-bottom: 8px; }
-  .modal-panel--age .age-head { font-size: clamp(18px, 5.6vw, 22px); margin-bottom: 8px; }
-  .modal-panel--age .age-head .age-sub { font-size: 14px; }
-  .modal-panel--age .stat-tiles { gap: 8px; }
-  .modal-panel--age .stat-tile { padding: 9px 11px; border-radius: 13px; }
-  .modal-panel--age .stat-tile-num { font-size: clamp(15px, 4.9vw, 19px); }
-  .modal-panel--age .stat-tile-label { font-size: 11px; margin-top: 4px; }
-  .modal-panel--age .modal-note { padding: 9px 12px; border-radius: 13px; font-size: 13px; line-height: 1.35; }
-  .modal-panel--age .modal-row.modal-row-sub { margin-top: 3px; font-size: 12px; }
-  .modal-panel--age .sign-row { padding: 9px 12px; border-radius: 13px; }
-  .modal-panel--age .sign-name { font-size: 17px; }
-  .modal-panel--age .fun-wrap { margin-top: 10px; }
-  .modal-panel--age .fun-grid { margin-top: 6px; gap: 8px; }
-  .modal-panel--age .fun-cell { padding: 8px 11px; border-radius: 13px; }
-  .modal-panel--age .fun-num { font-size: 16px; }
-  .modal-panel--age .fun-label { font-size: 11px; }
+  .age-meta { grid-template-columns: 1fr; }
 }
 
 /* Birthday countdown */
-.countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
-.cd-cell { background: rgba(140,170,210,.14); border-radius: 16px; padding: 12px 6px; text-align: center; }
-.cd-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(24px,7vw,32px); line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.cd-label { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-soft); margin-top: 6px; }
+.countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(6px, 1.875vw, 10px); margin-top: 12px; }
+.cd-cell { background: rgba(140,170,210,.14); border-radius: clamp(12px, 3.75vw, 16px); padding: clamp(8px, 2.5vw, 12px) clamp(3px, .9375vw, 6px); text-align: center; }
+.cd-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(26px, 8.125vw, 33.8px); line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cd-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-top: 6px; }
 
 @media (max-width: 520px) {
-  .modal-panel { padding: 22px 16px 24px; border-radius: 22px; }
   .tz-grid { grid-template-columns: 1fr; }
   .modal-actions { flex-direction: column; }
   .modal-btn { justify-content: center; }
@@ -2310,7 +2317,7 @@ body.modal-open { overflow: hidden; }
 .lb-card .loading-row { color: #b8c4cf; }
 .lb-card .idle-banner { background: rgba(255,255,255,.12); color: #b8c4cf; }
 .lb-entry {
-  display: flex; align-items: center; gap: 14px; text-decoration: none;
+  display: flex; align-items: center; gap: clamp(12px, 3.75vw, 14px); text-decoration: none;
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
   border-radius: 14px; padding: 12px 14px;
   transition: transform .25s ease, background .25s ease;
@@ -2318,7 +2325,7 @@ body.modal-open { overflow: hidden; }
 .lb-entry:hover { transform: translateY(-2px); background: rgba(255,255,255,.17); }
 .lb-entry:active { transform: translateY(0) scale(.98); }
 .lb-poster {
-  width: 52px; height: 74px; border-radius: 8px; object-fit: cover; flex: none;
+  width: clamp(48px, 15vw, 52px); height: auto; aspect-ratio: 52 / 74; border-radius: clamp(7px, 2.1875vw, 8px); object-fit: cover; flex: none;
   background: rgba(255,128,0,.15); box-shadow: 0 4px 12px rgba(0,0,0,.35);
 }
 .lb-poster--empty {
@@ -2326,16 +2333,16 @@ body.modal-open { overflow: hidden; }
 }
 .lb-info { min-width: 0; flex: 1; }
 .lb-label {
-  font-size: 11px; font-weight: 800; letter-spacing: .08em;
+  font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em;
   text-transform: uppercase; color: #00e054;
 }
 .lb-title {
-  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px;
+  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(15.5px, 4.8438vw, 20.15px);
   color: #fff; line-height: 1.2; margin-top: 3px;
 }
-.lb-year { color: #b8c4cf; font-weight: 500; font-size: 14px; }
+.lb-year { color: #b8c4cf; font-weight: 500; font-size: .82em; }
 .lb-stars { color: #ff8000; font-size: 15px; letter-spacing: .08em; margin-top: 3px; }
-.lb-watched { font-size: 12px; font-weight: 700; color: #b8c4cf; margin-top: 3px; }
+.lb-watched { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: #b8c4cf; margin-top: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .lb-entry { transition: none; }
   .lb-entry:hover, .lb-entry:active { transform: none; }
@@ -2343,7 +2350,7 @@ body.modal-open { overflow: hidden; }
 
 /* ---- MAL card: "also reading" section label ---- */
 .mal-section-label {
-  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
   color: #c7d4f7; margin-top: 16px; padding-top: 12px;
   border-top: 1px solid rgba(255,255,255,.14);
 }
@@ -2546,7 +2553,10 @@ body.low-power .scroll-reveal {
   transition: none !important;
 }
 
-/* ============ SMARTPHONE & MOBILE RESPONSIVE OPTIMIZATIONS (<= 560px) ============ */
+/* ============ PHONES (<= 560px): layout only ============ */
+/* Every size is fluid ("Fluid sizing" at the top of this file), so a phone
+   needs no size overrides; this block only covers what a narrow touch
+   screen does differently. */
 @media (max-width: 560px) {
   .container {
     padding-top: clamp(20px, 4vh, 36px);
@@ -2723,8 +2733,6 @@ body.low-power .scroll-reveal {
   .toast {
     width: min(calc(100vw - 24px), 380px);
     bottom: max(16px, env(safe-area-inset-bottom, 16px));
-    padding: 10px 16px;
-    font-size: 13px;
   }
   .dev-panel {
     left: 10px;
