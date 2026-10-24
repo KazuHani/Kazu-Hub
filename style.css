@@ -24,37 +24,164 @@ html { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
 body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
 
 /* ============ GLOBAL FONT SIZES ============
-   Two knobs for every font size on the site:
-   - --font-size-big: headers and names (h1-h6, the hero name, section/card/modal
-     titles, Discord/Steam display names, playlist and story titles)
-   - --font-size-small: everything else (body copy, labels, pills, buttons, stats)
-   !important is deliberate: it beats the per-component and media-query sizes
-   further down, so changing the two values below resizes the whole page. */
+   --font-size-big   headers and names
+   --font-size-small everything else
+   Each section below has its own pair that defaults to the global one, so
+   change a global value to resize the whole page, or override one section's
+   pair (e.g. --discord-big: 24px;) to resize just that section. Sections are
+   tagged in index.html with data-section="<name>" (the hero, the socials grid
+   and the footer are hooked by their classes instead, because tests match
+   those three tags verbatim); the "-big" text of each is listed in the rules
+   further down. !important is deliberate: it beats the
+   per-component and media-query sizes later in this file. */
 :root {
   --font-size-big: 32px;
   --font-size-small: 14px;
+
+  /* hero: name and quote */
+  --hero-big: var(--font-size-big);
+  --hero-small: var(--font-size-small);
+  /* stats: the four stat tiles */
+  --stats-big: var(--font-size-big);
+  --stats-small: var(--font-size-small);
+  /* right-now: the "Right now" heading only */
+  --right-now-big: var(--font-size-big);
+  --right-now-small: var(--font-size-small);
+  /* discord: Discord card */
+  --discord-big: var(--font-size-big);
+  --discord-small: var(--font-size-small);
+  /* steam: Steam card */
+  --steam-big: var(--font-size-big);
+  --steam-small: var(--font-size-small);
+  /* anime: MyAnimeList card */
+  --anime-big: var(--font-size-big);
+  --anime-small: var(--font-size-small);
+  /* letterboxd: Letterboxd card */
+  --letterboxd-big: var(--font-size-big);
+  --letterboxd-small: var(--font-size-small);
+  /* socials: "Socials" heading and tiles */
+  --socials-big: var(--font-size-big);
+  --socials-small: var(--font-size-small);
+  /* pc: "My PC" heading and spec cards */
+  --pc-big: var(--font-size-big);
+  --pc-small: var(--font-size-small);
+  /* music: "My playlist" heading and card */
+  --music-big: var(--font-size-big);
+  --music-small: var(--font-size-small);
+  /* stories: "What I'm writing" heading and cards */
+  --stories-big: var(--font-size-big);
+  --stories-small: var(--font-size-small);
+  /* footer: meadow footer credit */
+  --footer-big: var(--font-size-big);
+  --footer-small: var(--font-size-small);
+  /* modal: pop-up opened from a stat tile */
+  --modal-big: var(--font-size-big);
+  --modal-small: var(--font-size-small);
 }
 
+/* Fallback for anything outside a tagged section */
 body,
-body * {
-  font-size: var(--font-size-small) !important;
-}
+body * { font-size: var(--font-size-small) !important; }
 
-h1, h1 *,
-h2, h2 *,
-h3, h3 *,
-h4, h4 *,
-h5, h5 *,
-h6, h6 *,
-.title, .title *,
-.section-title, .section-title *,
-.card-head-title, .card-head-title *,
-.presence-name, .presence-name *,
-.modal-title, .modal-title *,
-.story-title, .story-title *,
-.music-playlist-name, .music-playlist-name * {
-  font-size: var(--font-size-big) !important;
-}
+/* ---- hero: name and quote ---- */
+.hero,
+.hero * { font-size: var(--hero-small) !important; }
+.hero .title,
+.hero .title * { font-size: var(--hero-big) !important; }
+
+/* ---- stats: the four stat tiles ---- */
+[data-section="stats"],
+[data-section="stats"] * { font-size: var(--stats-small) !important; }
+[data-section="stats"] .stat-value,
+[data-section="stats"] .stat-value * { font-size: var(--stats-big) !important; }
+
+/* ---- right-now: the "Right now" heading only ---- */
+[data-section="right-now"],
+[data-section="right-now"] * { font-size: var(--right-now-small) !important; }
+h2[data-section="right-now"],
+h2[data-section="right-now"] * { font-size: var(--right-now-big) !important; }
+
+/* ---- discord: Discord card ---- */
+[data-section="discord"],
+[data-section="discord"] * { font-size: var(--discord-small) !important; }
+[data-section="discord"] .card-head-title,
+[data-section="discord"] .card-head-title *,
+[data-section="discord"] .presence-name,
+[data-section="discord"] .presence-name * { font-size: var(--discord-big) !important; }
+
+/* ---- steam: Steam card ---- */
+[data-section="steam"],
+[data-section="steam"] * { font-size: var(--steam-small) !important; }
+[data-section="steam"] .card-head-title,
+[data-section="steam"] .card-head-title *,
+[data-section="steam"] .presence-name,
+[data-section="steam"] .presence-name *,
+[data-section="steam"] .steam-fallback-title,
+[data-section="steam"] .steam-fallback-title * { font-size: var(--steam-big) !important; }
+
+/* ---- anime: MyAnimeList card ---- */
+[data-section="anime"],
+[data-section="anime"] * { font-size: var(--anime-small) !important; }
+[data-section="anime"] .card-head-title,
+[data-section="anime"] .card-head-title *,
+[data-section="anime"] .mal-title,
+[data-section="anime"] .mal-title * { font-size: var(--anime-big) !important; }
+
+/* ---- letterboxd: Letterboxd card ---- */
+[data-section="letterboxd"],
+[data-section="letterboxd"] * { font-size: var(--letterboxd-small) !important; }
+[data-section="letterboxd"] .card-head-title,
+[data-section="letterboxd"] .card-head-title *,
+[data-section="letterboxd"] .lb-title,
+[data-section="letterboxd"] .lb-title * { font-size: var(--letterboxd-big) !important; }
+
+/* ---- socials: "Socials" heading and tiles ---- */
+[data-section="socials"],
+[data-section="socials"] *,
+.socials-grid,
+.socials-grid * { font-size: var(--socials-small) !important; }
+h2[data-section="socials"],
+h2[data-section="socials"] *,
+.socials-grid .social-name,
+.socials-grid .social-name * { font-size: var(--socials-big) !important; }
+
+/* ---- pc: "My PC" heading and spec cards ---- */
+[data-section="pc"],
+[data-section="pc"] * { font-size: var(--pc-small) !important; }
+h2[data-section="pc"],
+h2[data-section="pc"] *,
+[data-section="pc"] .pc-spec-card-title,
+[data-section="pc"] .pc-spec-card-title *,
+[data-section="pc"] .pc-spec-feature-name,
+[data-section="pc"] .pc-spec-feature-name * { font-size: var(--pc-big) !important; }
+
+/* ---- music: "My playlist" heading and card ---- */
+[data-section="music"],
+[data-section="music"] * { font-size: var(--music-small) !important; }
+h2[data-section="music"],
+h2[data-section="music"] *,
+[data-section="music"] .card-head-title,
+[data-section="music"] .card-head-title *,
+[data-section="music"] .music-playlist-name,
+[data-section="music"] .music-playlist-name * { font-size: var(--music-big) !important; }
+
+/* ---- stories: "What I'm writing" heading and cards ---- */
+[data-section="stories"],
+[data-section="stories"] * { font-size: var(--stories-small) !important; }
+h2[data-section="stories"],
+h2[data-section="stories"] *,
+[data-section="stories"] .story-title,
+[data-section="stories"] .story-title * { font-size: var(--stories-big) !important; }
+
+/* ---- footer: meadow footer credit ---- */
+.meadow,
+.meadow * { font-size: var(--footer-small) !important; }
+
+/* ---- modal: pop-up opened from a stat tile ---- */
+[data-section="modal"],
+[data-section="modal"] * { font-size: var(--modal-small) !important; }
+[data-section="modal"] .modal-title,
+[data-section="modal"] .modal-title * { font-size: var(--modal-big) !important; }
 
 body {
   position: relative;

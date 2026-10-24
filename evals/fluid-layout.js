@@ -143,12 +143,14 @@
     ok('fluid: the old per-breakpoint phone text blocks are gone', String(css).indexOf('text on phones grows with the screen ----') === -1);
 
     // ---- every font-size has an allowed shape ----
-    var bad = [], floors = [], fluidCount = 0;
+    var bad = [], floors = [], fluidCount = 0, varCount = 0;
     rules.forEach(function (r) {
       r.decls.forEach(function (d) {
         if (d[0] !== 'font-size') return;
         var v = d[1].replace(/ ?!important$/, ''), m;
         if (/^[\d.]+(em|%)$/.test(v) || v === 'inherit') return;
+        // the global font-size block: sizes come from the big/small knobs and their per-section pairs
+        if (/^var\(--[a-z-]+-(big|small)\)$/.test(v)) { varCount++; return; }
         if ((m = /^([\d.]+)px$/.exec(v))) {
           if (+m[1] < 12 && !DEV_SMALL_OK.test(r.sel)) floors.push(r.sel + ' ' + v);
           return;
