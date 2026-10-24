@@ -47,6 +47,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
+  `#boot-cards` hold (see "Live-card cache" below), the
   `#boot-handlers` script and the `#boot-lang` script (see "Language switch"
   below) in the `<head>`.
 - `lib.js` (~1400 lines) — **pure, DOM-free helpers**, exposed as the global
@@ -554,11 +555,19 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
   back-to-top button). The one reviewed exception is card-sized
   (`.pc-spec-list--build dd`, see below). The ≤560px block holds only the
   pop-up's `dvh` cap, the toast, the dev panel and touch press feedback.
-- **Text sized to its own card** uses container units: the stat values
-  (`clamp(18px, 17cqi, 36px)`, `.stat-card` is a size container) and the PC
-  specs (`cqi` inside `.pc-spec-card`). 17cqi leaves room for the widest clock
-  string ("00:00:00 am": 5.48em in Fredoka, 5.73em in the fallback font). Card
-  text follows its card, so it can change where the card's width changes (the
+- **The stat values fill their cards without container units.** Every
+  padding and gap around a stat card grows in step with the window up to
+  560px, so a card's inner width is 40% of the window there, and the value is
+  `clamp(16px, 6.6vw, 36px)`: 16.5% of the card, room for the widest clock
+  string ("00:00:00 am": 5.48em in Fredoka, 5.73em in the fallback font)
+  down to 280px. The gate models the card from the rules at every width, with
+  and without a desktop scrollbar. The cards must NOT be size containers: a
+  container re-runs style for its contents whenever its layout runs, and the
+  clock re-lays out its card every second (+2 style recalcs a second at rest,
+  over the `perf.js` idle budget; tried and measured).
+- **Text sized to its own card** uses container units: the PC specs (`cqi`
+  inside `.pc-spec-card`, which is below the fold and never changes at rest).
+  It follows its card, so it can change where the card's width changes (the
   PC bento at 860px); it must always fit the card.
 - **Grids never leave an orphan.** Stats: 2 x 2, then four across from
   1110px, where the four-up card already holds the 36px cap even with a 17px
@@ -929,7 +938,7 @@ a future bug lets one into the page.
 
 - **Editing an inline script changes its hash**, and the browser then refuses to run
   it. Run `node evals/csp.js --fix` after any edit to `#boot-control`, `#boot-tint`,
-  `#boot-handlers`, `#boot-lang`, `#boot-power` or `#sw-register`; the gate tests fail,
+  `#boot-cards`, `#boot-handlers`, `#boot-lang`, `#boot-power` or `#sw-register`; the gate tests fail,
   naming the script and the hash it needs, until you do. A new inline script needs an
   `id` and the same `--fix`. JSON-LD is a data block and needs no hash.
 - **No inline event handlers.** `onload=`/`onerror=` attributes are blocked (allowing
