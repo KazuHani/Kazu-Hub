@@ -2906,5 +2906,11 @@ body:not(#rd) {
     .title { align-self: start; text-align: center; }
     .quote-box, .quote-box.visible { margin-left: auto; margin-right: auto; text-align: center; }
     .quote-box.visible { margin-top: 0; }
+    /* the picture, name and quote use the width a phone gives them */
+    --font-size-name: min(20vw, 104px);
+    .pfp { width: min(42vw, 200px); height: min(42vw, 200px); }
+    .quote-box, .quote-box.visible { max-width: none; }
+    .quote-text, .quote-text * { font-size: clamp(18px, 5vw, 26px) !important; }
+    .quote-author { font-size: clamp(14px, 3.6vw, 16px) !important; }
   }
 }

@@ -1230,11 +1230,11 @@
           // the one name rule, clamp(52px, 8vw, 104px), at this frame's size (style.css REDESIGN)
           var probe = d.createElement('div'); probe.style.cssText = 'position:absolute;width:100vw;height:100vh;visibility:hidden';
           d.body.appendChild(probe); var pv = probe.getBoundingClientRect(); probe.remove();
-          var want = Math.min(104, Math.max(52, 0.08 * pv.width));
+          var phone = pv.width <= 600, want = phone ? Math.min(104, 0.2 * pv.width) : Math.min(104, Math.max(52, 0.08 * pv.width));
           ok(name + 'the name follows its one size rule (' + want.toFixed(1) + 'px here), Fraunces italic, and fits the hero on one line',
             Math.abs(px - want) < 0.1 && /Fraunces/.test(w.getComputedStyle(t).fontFamily) && w.getComputedStyle(t).fontStyle === 'italic' && tx.height < px * 1.5 && fill <= 1,
             px + 'px, ' + fill.toFixed(3) + ' of the hero, ' + Math.round(tx.height) + 'px tall');
-          ok(name + 'the quote is 22px and its author 15px, upright Fraunces, at every width', qpx === '22px' && apx === '15px' && /Fraunces/.test(w.getComputedStyle(qt).fontFamily) && w.getComputedStyle(qt).fontStyle === 'normal', qpx + ' / ' + apx);
+          ok(name + 'the quote and its author are 22px / 15px (smaller than the name, 18-26px / 14-16px on a phone), upright Fraunces', Math.abs(parseFloat(qpx) - (phone ? Math.min(26, Math.max(18, 0.05 * pv.width)) : 22)) < 0.1 && Math.abs(parseFloat(apx) - (phone ? Math.min(16, Math.max(14, 0.036 * pv.width)) : 15)) < 0.1 && /Fraunces/.test(w.getComputedStyle(qt).fontFamily) && w.getComputedStyle(qt).fontStyle === 'normal', qpx + ' / ' + apx);
           // wide: the picture is left of the name; narrow (600px and under): above it
           var beside = hr.width > 600 + 32 && w.getComputedStyle(hero).gridTemplateColumns.split(' ').length === 2;
           ok(name + 'the name sits inside the hero, ' + (beside ? 'right of the picture' : 'below the picture') + ', above the quote, and the page does not scroll sideways',
@@ -1269,8 +1269,8 @@
             var page = FLUID_WIDTHS.map(function (wd) { f.style.width = wd + 'px'; d.body.offsetWidth; return KazuFluidLayout.measure(w, R); });
             // The redesign sizes a stat value to its tile (min(30px, 15.5cqi)) and lists the seven socials two
             // across on a phone, and the PC specs run in two balanced CSS columns (the grid analyser reads those as rows):
-            // a value that follows its tile, a last odd row and a column split are the design, not defects.
-            var designed = function (p) { return !/^\.stat-value (jumps|shrinks)|^\.socials-grid leaves an orphan|^\.pc-specs-grid leaves an orphan/.test(p); };
+            // a value that follows its tile, a last odd row and a column split, and the hero text and picture growing on a phone then settling at the side-by-side layout above 600px are the design, not defects.
+            var designed = function (p) { return !/^\.stat-value (jumps|shrinks)|^\.socials-grid leaves an orphan|^\.pc-specs-grid leaves an orphan|^\.(title|pfp|quote-text|quote-author) shrinks/.test(p); };
             var probs = KazuFluidLayout.analyse(page).filter(designed);
             var seen = Object.keys(page[0].text).filter(function (r) { return page.some(function (s) { return s.text[r] != null; }); }).length;
             ok('fluid live (' + tag + ', 320-1440px): nothing shrinks as the window widens or jumps, no orphan rows, nothing spills or scrolls sideways, stat values fit, readable floors (' + seen + ' text roles)',
@@ -1411,7 +1411,7 @@
 
       Promise.all([
         fetch('index.html', { cache: 'no-store' }).then(function (r) { return r.text(); }),
-        fetch('style.css?v=116', { cache: 'no-store' }).then(function (r) { return r.text(); }),
+        fetch('style.css?v=118', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('script.js?v=98', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('sw.js', { cache: 'no-store' }).then(function (r) { return r.text(); }),
         fetch('weather-fx.js?v=5', { cache: 'no-store' }).then(function (r) { return r.text(); }),
