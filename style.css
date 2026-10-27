@@ -2234,6 +2234,10 @@ body.low-power .populated-in { animation: none; }
 }
 
 /* ---- MAL card: "also reading" section label ---- */
+.mal-review-meta { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: #b8c4cf; margin-top: 3px; }
+.mal-review-text { font-size: clamp(11.5px, 3.5938vw, 14.95px); line-height: 1.45; color: #dfe6ec; margin-top: 6px; overflow-wrap: anywhere; }
+.mal-review-text::before { content: "\201C"; }
+.mal-review-text::after { content: "\201D"; }
 .mal-section-label {
   font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
   color: #c7d4f7; margin-top: 16px; padding-top: 12px;
@@ -2753,6 +2757,9 @@ body:not(#rd) {
   .lb-review { padding-left: 16px; }
   .lb-review-label { margin-bottom: 2px; color: var(--muted) !important; font-weight: 400; letter-spacing: 0; text-transform: none; }
   .lb-review-text { margin-top: 0; color: var(--ink) !important; }
+  .mal-review-meta { margin-top: 2px; color: var(--muted) !important; font-weight: 400; }
+  .mal-review-text { margin-top: 6px; color: var(--ink) !important; }
+  #malReviewSection { margin-bottom: 4px; }
 
   /* ---- Socials: a hairline list, name over handle ---- */
   .socials-grid {

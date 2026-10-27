@@ -2260,7 +2260,70 @@
     }
   }
 
-  function loadMalAll() { loadMal(); loadMalManga(); }
+  // ---- Latest finished anime with your review (top of the MAL card) ----
+  // Jikan's reviews endpoint is CORS-clean and carries the review text. The
+  // finish date comes from MAL's completed list (load.json, through the proxy)
+  // and is optional: without it the review date is shown as "Reviewed".
+  // Shown only while the review is recent (MAL_REVIEW_DAYS). No cache: a failed
+  // fetch simply leaves the section hidden.
+  const MAL_REVIEW_DAYS = 90;
+  let lastMalReviewSig = '';
+  function malDateLabel(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    if (!m) return '';
+    return (+m[3]) + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1] + ' ' + m[1];
+  }
+  function renderMalReview(x) {
+    const box = $('malReviewSection');
+    const list = $('malReviewList');
+    if (!box || !list) return;
+    const age = x && x.date ? Date.now() - Date.parse(x.date + 'T00:00:00Z') : NaN;
+    if (!x || !(age < MAL_REVIEW_DAYS * 86400000)) {
+      lastMalReviewSig = '';
+      list.innerHTML = '';
+      box.classList.add('hidden');
+      return;
+    }
+    const sig = JSON.stringify(x);
+    if (sig !== lastMalReviewSig) {
+      lastMalReviewSig = sig;
+      list.innerHTML =
+        '<a class="mal-row mal-review" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+          (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
+          '<div class="mal-info">' +
+            '<div class="mal-title">' + escapeHtml(x.title) + '</div>' +
+            '<div class="mal-review-meta">' + (x.score ? x.score + '/10 · ' : '') + (x.finished ? 'Finished ' : 'Reviewed ') + escapeHtml(malDateLabel(x.date)) + '</div>' +
+            '<div class="mal-review-text">' + escapeHtml(x.text) + '</div>' +
+          '</div>' +
+        '</a>';
+    }
+    box.classList.remove('hidden');
+  }
+
+  async function loadMalReview() {
+    if (!siteIntegrationOn('mal') || !KazuLib || !KazuLib.malReviewRow) return;
+    try {
+      if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
+      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/reviews', { cache: 'no-store' });
+      if (!r.ok) throw new Error('bad status ' + r.status);
+      const j = await r.json();
+      const row = ((j && j.data) || []).map(KazuLib.malReviewRow).filter(Boolean)[0] || null;
+      if (row) {
+        try {
+          const r2 = await proxyFetch('https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=2');
+          if (r2.ok) {
+            const fd = KazuLib.malFinishDate(await r2.json(), row.id);
+            if (fd) { row.date = fd; row.finished = true; }
+          }
+        } catch (e) { /* the review date stands in */ }
+      }
+      renderMalReview(row);
+    } catch (e) {
+      hostRest.fail('jikan', Date.now());
+    }
+  }
+
+  function loadMalAll() { loadMal(); loadMalManga(); loadMalReview(); }
 
   // One poller fetches both lists, so the card counts as fresh only while
   // BOTH copies are: the older stamp decides. The anime rows are the card

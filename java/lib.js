@@ -1103,6 +1103,48 @@
     };
   }
 
+  // ---- Latest finished anime with your review --------------------------------
+  // One entry of Jikan's /users/{user}/reviews (anime only, spoilers skipped),
+  // shaped for the top of the MAL card. `date` is the review date as a
+  // 'YYYY-MM-DD' string; script.js swaps in the finish date when MAL's list has it.
+  function malReviewRow(item) {
+    if (!item || item.type !== 'anime' || item.is_spoiler) return null;
+    var entry = item.entry || {};
+    var url = safeLink(entry.url, MAL_HOSTS);
+    var id = malIdFromUrl(url);
+    var title = typeof entry.title === 'string' ? entry.title.trim() : '';
+    var text = typeof item.review === 'string' ? item.review.replace(/\s+/g, ' ').trim() : '';
+    if (!url || !id || !title || !text) return null;
+    var img = '';
+    var jpg = entry.images && entry.images.jpg;
+    if (jpg && typeof jpg.image_url === 'string' && /^https:\/\/cdn\.myanimelist\.net\//.test(jpg.image_url)) img = jpg.image_url;
+    var score = (typeof item.score === 'number' && item.score >= 1 && item.score <= 10) ? Math.round(item.score) : null;
+    var d = /^(\d{4}-\d{2}-\d{2})/.exec(String(item.date || ''));
+    return {
+      id: id, url: url, title: title, img: img, score: score,
+      text: text.length > 320 ? text.slice(0, 317).replace(/\s+\S*$/, '') + '...' : text,
+      date: d ? d[1] : ''
+    };
+  }
+
+  // The finish date of one anime from MAL's completed list (load.json, status 2):
+  // finish_date_string is "mm-dd-yy". Returns 'YYYY-MM-DD' or '' (not found, no
+  // date, or unreadable).
+  function malFinishDate(list, id) {
+    if (!Array.isArray(list)) return '';
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      if (!e || e.anime_id !== id) continue;
+      var m = /^(\d{2})-(\d{2})-(\d{2})$/.exec(String(e.finish_date_string || ''));
+      if (!m) return '';
+      var mon = +m[1], day = +m[2];
+      if (mon > 12 && day <= 12) { mon = +m[2]; day = +m[1]; }
+      if (mon < 1 || mon > 12 || day < 1 || day > 31) return '';
+      return (2000 + +m[3]) + '-' + pad(mon) + '-' + pad(day);
+    }
+    return '';
+  }
+
   // ---- ListenBrainz (music card recent tracks) ------------------------------
   // Shapes one GET /1/user/{user}/listens entry into a flat row. Tolerant of
   // missing metadata; returns null when there's no track name. `url` prefers
@@ -1732,6 +1774,8 @@
     malMangaListRow: malMangaListRow,
     malMangaCacheParse: malMangaCacheParse,
     malIdFromUrl: malIdFromUrl,
+    malReviewRow: malReviewRow,
+    malFinishDate: malFinishDate,
     anilistTitlesQuery: anilistTitlesQuery,
     anilistTitlesParse: anilistTitlesParse,
     malJaCacheParse: malJaCacheParse,
