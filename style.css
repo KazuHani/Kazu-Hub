@@ -2225,6 +2225,8 @@ body.low-power .populated-in { animation: none; }
 .lb-review-head { display: flex; align-items: baseline; gap: 10px; }
 .lb-review-head .lb-stars { margin-top: 0; }
 .lb-review-label { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #00e054; }
+.lb-review-text::before { content: "C"; }
+.lb-review-text::after { content: "D"; }
 .lb-review-text { font-size: clamp(11.5px, 3.5938vw, 14.95px); line-height: 1.45; color: #dfe6ec; margin-top: 3px; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   .lb-entry { transition: none; }
