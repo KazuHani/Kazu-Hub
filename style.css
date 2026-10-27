@@ -2523,7 +2523,7 @@ body:not(#rd) {
   .discord-bg-icon, .steam-bg-icon, .mal-bg-icon, .lb-bg-icon,
   .music-cover-wrap, .music-playlist-label, .music-viz,
   .card-head-title svg, .card-head-title img,
-  .social-mark, .pc-gpu-mark, .mal-cover, .lb-poster { display: none !important; }
+  .social-mark, .pc-gpu-mark, .lb-poster { display: none !important; }
 
   a { color: inherit; text-underline-offset: 3px; }
   a:hover { color: var(--accent); }
@@ -2722,8 +2722,9 @@ body:not(#rd) {
   .steam-fallback-text { color: var(--muted); font-weight: 400; }
 
   .mal-row, a.mal-row {
-    display: block; margin-top: 20px; padding: 0; background: none; border: 0; border-radius: 0; transform: none;
+    display: flex; align-items: flex-start; gap: 16px; margin-top: 20px; padding: 0; background: none; border: 0; border-radius: 0; transform: none;
   }
+  .mal-cover { display: block; flex: none; width: 56px; height: 80px; border-radius: 6px; object-fit: cover; background: var(--track); }
   #malList > .mal-row:first-child { margin-top: 0; }
   .mal-row:hover { background: none; transform: none; }
   .mal-row:hover .mal-title { color: var(--accent) !important; }
