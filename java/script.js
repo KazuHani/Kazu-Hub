@@ -3753,7 +3753,7 @@
     // six-way pile-up. bootGap stretches the ladder on light hardware.
     // Intervals and payloads are unchanged — this only orders the boot.
     { fn: loadMusicRecent, ms: 2 * 60 * 1000, last: 0, firstDelay: bootGap(7200) },
-    { fn: loadQuote, ms: 15 * 60 * 1000, last: 0, firstDelay: bootGap(8500), paint: paintQuoteCache },
+    { fn: loadQuote, ms: 15 * 60 * 1000, last: 0, firstDelay: bootGap(150), paint: paintQuoteCache },
   ];
   let timers = [];
 
