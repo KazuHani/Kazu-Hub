@@ -13,9 +13,9 @@ manager, no dependencies.** There is no `package.json`, `pyproject.toml`, or
 any other manifest — do not add one. The only tooling is Node (used solely to
 re-hash the inline scripts, `tools/csp-hashes.js`) and a static file server for local preview.
 
-The look is the flat editorial redesign (see "Redesign" below): the time-of-day
-sky, sakura, weather and seasonal scenery described next still run but are
-hidden by it. The page shows: live stat cards (UK time, Aberystwyth weather, age, birthday
+The look is the flat editorial redesign (see "Redesign" below). The sky,
+sakura, weather canvas, seasonal themes, meadow footer and dev panel were
+deleted on 2026-10-27. The page shows: live stat cards (UK time, Aberystwyth weather, age, birthday
 countdown); a "right now" section with live Discord
 presence (Lanyard, WebSocket + REST fallback), Steam status, MyAnimeList
 watching/reading (Jikan, falling back to MAL list endpoints through
@@ -24,41 +24,23 @@ proxy); a YouTube Music playlist card whose "From the playlist" rows update
 themselves from the playlist's Atom feed (`feeds/videos.xml`, via the same
 proxy, newest additions first), plus an optional ListenBrainz "recently played" strip (its markup is currently absent, and the page does not even fetch while it is);
 socials; and in-progress stories. It is installable as a PWA-lite (manifest +
-`sw.js` offline shell), a single time-of-day-reactive palette (a soft
-slate blue that lightens towards midday and dims towards sunset/night,
-driven by `KazuLib.skyTint` on the UK clock — there is no theme toggle),
-a weather-reactive cherry-blossom atmosphere (petals
-detach from the branches and drift down-wind; the layer is anchored to the
-top of the page, so it scrolls away with the hero), a "moonlit sakura"
-scenery layer (SVG branches from the page edges plus a sun-by-day /
-moon-by-night sky body arcing left→right on the UK clock), and custom scrollbars. The blossom branches and the
-falling petals only appear during Japan's cherry-blossom season (20 March to
-10 May, on the UK date; see "Cherry-blossom season" below); the sun and
-moon stay all year. On desktop only, the live UK weather is also drawn behind
-the page as rain, snow, wind streaks and clouds that combine when the
-weather does (see "Live weather layers" below); mobile never gets it. Each
-evening a static orange-to-violet sunset gradient sits behind the sky (see
-"Sunset sky" below); it shows on every device.
+`sw.js` offline shell) and custom scrollbars.
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=131`,
-  `java/lib.js?v=49`, `java/site-config.js?v=1`, `java/i18n.js?v=6`, `java/script.js?v=107` (version
+- `index.html` — the whole page. Loads `style.css?v=134`,
+  `java/lib.js?v=51`, `java/site-config.js?v=2`, `java/i18n.js?v=6`, `java/script.js?v=109` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
-  the `#boot-tint` first-paint script (see "First paint" below), the
-  `#boot-cards` hold (see "Live-card cache" below), the
+  the `#boot-cards` hold (see "Live-card cache" below), the
   `#boot-handlers` script and the `#boot-lang` script (see "Language switch"
   below) in the `<head>`.
 - `java/lib.js` (~1700 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
   Europe/London wall-clock frame, UK DST maths, the birthday countdown, HTML
-  escaping, Steam/MAL data shaping, dev-code matching, scrollbar thumb
-  geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
-  The arc (`skyArcPoint`) is one sine that runs on past the horizon points
-  until both ends are off-screen (`SKY_ARC_OVERSHOOT`, x = -8.08% .. 108.08%),
-  so the body slides in and out through the page edges and the sun<->moon
+  escaping, Steam/MAL data shaping, scrollbar thumb
+  geometry and the low-power verdict.
   hand-overs happen off-screen. `java/script.js` keeps an inline fallback copy of
   `skyArcPoint`; keep the two in step.
 - `java/site-config.js` — the contract for the control panel's settings (`KazuSiteConfig`):
@@ -68,27 +50,16 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   versioned `?v=1`, precached. It is **byte-identical to `shared/site-config.js` in
   the control panel project**: edit it there and copy it here, never the other way.
   See "Control panel" below.
-- `java/script.js` (~4100 lines) — all DOM behaviour: stat cards,
-  particles/atmosphere, themes and seasons, live API integrations (Lanyard,
+- `java/script.js` — all DOM behaviour: stat cards, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,
-  ZenQuotes), custom scrollbars,
-  the `kazudev` dev panel. It consumes `KazuLib` but keeps inline fallbacks
+  ZenQuotes), custom scrollbars. It consumes `KazuLib` but keeps inline fallbacks
   for the lib helpers it needs, so the page still works if `java/lib.js` fails to
   load. User-facing IDs (`DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`, `LB_USER`,
   `LISTENBRAINZ_USER`) are constants near the top of each section.
-- `java/weather-fx.js` — the live weather layers (rain, snow, wind, clouds) on one
-  background canvas, **desktop only and loaded on demand**: never a static
-  `<script>` tag and never precached, `java/script.js` injects it after
-  `KazuLib.weatherFxAllowed` says yes (see "Live weather layers" below).
-  Pure, DOM-free core (weather -> layers, quality governor, seeded particle
-  physics, colours) exposed as `KazuWeatherFx`, plus a thin DOM shell at the
-  bottom. Versioned by the `WEATHER_FX_SRC` constant in `java/script.js`.
-- `style.css` (~2500 lines) — all styling, including seasonal and
-  weather-atmosphere variants and the sakura scenery layer.
+- `style.css` — all styling; the REDESIGN block at the end is the look that ships.
 - `sw.js` — service worker. Network-first for navigations, cache-first for
   same-origin versioned assets, cross-origin requests (live APIs, fonts)
   untouched. Precache list mirrors the `?v=` URLs from `index.html`.
-  (`java/weather-fx.js` is deliberately absent: phones would download it on install.)
 - `java/i18n.js` — the English / Japanese switch (`KazuI18n`). Pure, DOM-free
   translation core (phrase table + rules for text `java/script.js` composes) plus
   a thin DOM shell that only runs while Japanese is on. Loaded after
@@ -111,37 +82,15 @@ python -m http.server 8000
 
 Preview/dev affordances built into the page:
 
-- `?season=sakura` (or `blossom`, or `all`) forces the cherry-blossom branches
-  and petals on any date. The `?season=` param wins over the dev panel. It is
-  only ever forced ON: a param that doesn't name it leaves the blossoms on the
-  calendar. Sakura is the only season left (the birthday, Christmas, pride and
-  Halloween themes were removed on 2026-10-27).
-- `?atmosphere=rain|blossom|blossom-heavy|aurora|none` forces the particle mode.
-  `blossom` / `blossom-heavy` also bring the branches back out of season, so
-  the preview looks like the real in-season page. It previews the OLDER
-  atmosphere: on desktop it also keeps the live weather layers off.
-- `?time=HH:MM` (UK wall time, e.g. `?time=18:20`) moves the whole sky to that
-  time: sun/moon position, the time-of-day tint, the sunset gradient, and the
-  cloud colours. The on-page clock stays real. Handy for previewing sunset:
-  today's is ~18:20, and it varies by season (`KazuLib.sunTimesUK`).
-- `?weather=rain,wind,clouds,snow,storm,all,none` (comma-combinable, each with
-  an optional strength, e.g. `rain:1,clouds:0.4`) forces the desktop weather
-  layers on any real weather; `none` forces a clear sky. Still desktop-only:
-  a phone or a window under 769px shows nothing. Widen the window and it
-  starts without a reload.
 - `?fireworks=1` previews the 20-second New Year fireworks on
   any date, once per page load. It doesn't change the real celebration latch.
-- Typing `kazudev` anywhere on the page opens a dev settings panel with
-  the Sakura season's Auto/On/Off override
-  persisted to localStorage. Typing it again or Esc closes it.
 
 ## Verification
 
 There is no automated test suite, eval suite or CI: they were removed on 2026-10-27
 because none of it is needed to run the site. To check a change, serve the
 folder (see "Run locally"), load the page, read the console and exercise what you
-changed. The preview parameters above (`?time=`, `?season=`, `?weather=`,
-`?atmosphere=`, `?fireworks=`) force dates, skies and seasons.
+changed. `?fireworks=1` forces the New Year show.
 
 One script still matters: after editing an inline `<script>` in `index.html`, run
 `node tools/csp-hashes.js --fix` (see "Content-Security-Policy"), or the browser
@@ -164,32 +113,20 @@ observers or the boot path.
   transition, even compositor-only, even a 5px progress bar, makes the
   compositor and GPU process produce a frame on every vsync (144 a second on a
   fast display): about 0.19 CPU cores each, measured on a bare test page. The
-  seasonal loops (petals, rain drops, aurora)
-  are allowed because they ARE the feature and run only in season; any other
-  new infinite loop needs a reason. A seasonal loop must sit on the in-season
-  rule, never the base rule: an invisible infinite animation still costs a
-  frame per vsync (the removed Pride halo ran all year at opacity 0, ~0.3 cores).
+  new infinite loop needs a reason, and must never sit on a base rule while
+  invisible: an invisible infinite animation still costs a frame per vsync
+  (the removed Pride halo ran all year at opacity 0, ~0.3 cores).
   Where a loop can afford a lower frame rate it can be stepped: `steps(n)` is
-  only valid on a LINEAR animation; on an eased one (the aurora ribbons, the
-  petals' sway) it would flatten the easing, so those stay smooth. For a small,
+  only valid on a LINEAR animation; on an eased one it would flatten the
+  easing, so those stay smooth. For a small,
   long-lived indicator
   prefer discrete steps: the Spotify bar steps four times a second off a timer
   that exists only while a song plays and the tab is visible, and
   `.spotify-bar-fill` is a `transform`, never a width.
 - **Never transition an inherited custom property** (or anything else that
-  restyles the whole document per frame). The sky tint was a 90 s transition on
+  restyles the whole document per frame). The old sky tint was a 90 s transition on
   `--bg-h/s/l/glow`, retargeted every minute, so one was always running: every
-  frame restyled ~1,000 nodes and repainted the gradient behind every frosted card. A
-  throttled phone missed 200 of 201 scroll frames; now 1 of 1,171.
-- **Sky tint cadence.** `stepSky` (called from the 1 Hz `tick`, so it pauses
-  with a hidden tab and owns no timer) writes the tint every `TINT_STEP_MS`
-  (10 s) and moves the sun/moon every `BODY_STEP_MS` (60 s). It waits for the
-  page to be at rest (`SKY_QUIET_MS` after the last scroll, no
-  card height glide), writes nothing when the tint is unchanged (deep night),
-  and feeds fractional UK minutes (`skyClock`) so each step lands on the exact
-  point of the day's curve. One step moves the canvas colour by under a quarter
-  of one 8-bit level at the fastest hour of the year (true across the year
-  for both palettes), which is why it reads as the old glide.
+  frame restyled ~1,000 nodes. A throttled phone missed 200 of 201 scroll frames.
 - **No page-wide DOM sweeps from observers.** A `MutationObserver` callback
   receives records: queue only what they name. The custom-scrollbar host scan
   used to visit every element after every mutation, and the clock's text swap
@@ -226,7 +163,7 @@ observers or the boot path.
   pointer and a small screen as two weak signals, and every phone has both, so
   every phone runs in low-power mode: no particles, no backdrop blur, no glass
   refraction, no entrance or scroll-reveal motion, no wheel-lerp. What phones
-  keep: the sky tint and sunset, hover and
+  keep: hover and
   press feedback. Tablets and narrow desktop windows get the full effects with
   the mobile layout. (`particleCount`'s phone density tier is therefore dead
   code.) Changing that is a product decision, not an optimisation. (The
@@ -241,7 +178,7 @@ silent 20-second fireworks show. The first
 minute allows a page opened/resumed just after midnight to join in; later
 visits don't trigger a delayed celebration. The `kazu-new-year-celebrated`
 **sessionStorage** key prevents repeats on reload within a tab, with an
-in-memory fallback when storage is blocked. Sky-time/season previews never
+in-memory fallback when storage is blocked. Previews never
 trigger it; `?fireworks=1` is a separate preview.
 
 Reduced-motion and low-power devices skip the show. The
@@ -274,7 +211,7 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
   height for the pictures (`.pfp`, avatars, covers, social marks, the
   back-to-top button). The one reviewed exception is card-sized
   (`.pc-spec-list--build dd`, see below). The ≤560px block holds only the
-  toast, the dev panel and touch press feedback.
+  toast and touch press feedback.
 - **The stat values fill their cards without container units.** Every
   padding and gap around a stat card grows in step with the window up to
   560px, so a card's inner width is 40% of the window there, and the value is
@@ -297,7 +234,7 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
   the fallback font; a four-up tile has 127px inside at 760px). Stories:
   `minmax(min(100%, 300px), 1fr)`, one or two across.
 - **Readable floors.** 10px at 320px, 12px from 390px wide, for every text on
-  the page (only the owner-only kazudev panel is smaller).
+  the page.
 - **`100vw`** excludes a classic scrollbar, because the gutter is reserved
   (`scrollbar-gutter: stable`). Phones have overlay
   scrollbars, so there it is the screen width.
@@ -318,21 +255,19 @@ upright for the quote and the story titles), Noto Sans JP for Japanese,
 hairline rules instead of glass cards, one accent. It is the LAST block of
 `style.css` ("REDESIGN"), written with CSS nesting inside `body:not(#rd)` /
 `html:not(#rd)`. The `:not(#rd)` adds an id's worth of specificity, which is
-how the layer beats the legacy rules above it (seasonal palettes, per-card
+how the layer beats the legacy rules above it (the base palette, per-card
 glass) without `!important`; `!important` appears only where the markup has
 inline colours (card titles, pills, story cards) use it. A browser without CSS nesting keeps the legacy look.
 
-- **Do not delete the legacy rules above the block.** The seasonal code
-  still runs and relies on them. To change how the
+- **Do not delete the legacy rules above the block.** The page still
+  relies on them. To change how the
   page looks, edit the REDESIGN block; to change a rule's meaning, edit it there
   and let it win by specificity. Every top-level rule in the block must carry
   the `:not(#rd)` prefix (a loose rule would not win by specificity).
-- **Retired from view, not from the code:** the sunset sky, sakura scene and
-  petals and the weather canvas are `display: none` in that block. Their
-  scripts still run (hidden). Remove the `display: none` and the legacy rule
-  shows again. (The theme decorations, the meadow illustration, the cover
-  images and the brand marks on the social tiles were deleted outright on
-  2026-10-27.)
+- **Deleted, not hidden (2026-10-27):** the sunset sky, sakura scene, petals,
+  weather canvas, sky tint, seasonal themes, meadow illustration, cover
+  images, brand marks and the `kazudev` dev panel are gone from the code, so
+  there is no `display: none` to remove to bring them back (use git history).
 - **Header and anchors:** `.site-header` holds the wordmark, the section nav
   (`#now #socials #writing #playlist #pc`, which are the `h2.section-title` ids,
   in page order) and the language switch. The sections run Now, Socials,
@@ -388,114 +323,6 @@ These are load-bearing; read before editing.
   "Live-card cache").
   Any new always-on animated layer (infinite CSS loops, canvas rAF) must
   register with `fxWatch(el)` so it pauses off-screen via `.fx-paused`.
-- **First paint = live tint (no night-black flash).** `java/script.js` runs at the
-  end of `<body>`, so anything it writes lands AFTER the first paint. The
-  inline `<script id="boot-tint">` in `<head>` therefore writes the
-  time-of-day palette itself before the first paint: `--bg-h/s/l/glow` on
-  `<html>`, the `#boot-canvas` `<style>` colour, and the `theme-color` meta.
-  It is a compact copy of `KazuLib.skyTint` + `hslToHex` + the UK-clock read
-  (done by BST arithmetic, not `Intl`: the first `Intl` object in a page pays
-  ICU's one-off start-up, ~25 ms on a fast phone and ~100 ms on a mid one, and
-  this script blocks first paint; its clock must agree with `KazuLib.ukWallParts`
-  on every clock-change minute);
-  if you change the tint maths in `java/lib.js` you MUST change the boot script to
-  match, by hand (nothing compares the two any more). It also raises `html.sky-pending`, which hides `.sky-body`
-  until `updateSkyBody`'s first snap places it (`java/script.js` lifts the class;
-  an 8s timeout is the failsafe). Any new state that `java/script.js` sets on
-  load and that changes the look of the first screen belongs in the same
-  boot script or it will flash.
-- **Cherry-blossom season.** The branches (`.sakura-branch`) and the petal
-  modes (`blossom`, `blossom-heavy`) only exist from 20 March to 10 May
-  inclusive (first blooms in Kyushu/Tokyo to the last Hokkaido petals),
-  judged on the UK date. Rain and aurora are weather and unaffected; the
-  sun/moon share the `.sakura-scene` layer, so hide branches, never the
-  layer. The window is `SAKURA_FIRST` / `SAKURA_LAST` in `java/lib.js`
-  (`sakuraInBloom`) and the matching numbers in the `#boot-tint` script
-  (`md < 220 || md > 410`); keep them in step by hand.
-  `html.no-sakura` is set by the boot script before first paint and kept in
-  sync by `applySeasons` (dev overrides, page left open across the edges);
-  `setAtmosphere` gates the petal modes on the same flag and re-runs when it
-  flips. Sakura is a fourth dev-panel season (`seasonDevApply` keys). Snowy
-  weather out of season shows a clear sky, not petals.
-- **Sunset sky.** `<div class="sunset-sky">` (first child of `<body>`, so the
-  sun, moon and branches paint over it) is an orange evening gradient whose
-  strength is `--sunset` and whose palette mix is `--sunset-late`, both from
-  `KazuLib.sunsetGlow` (evening only, no sunrise version): it eases in 110
-  minutes before the day's sunset, is full from sunset for 12 minutes, and is
-  gone 85 minutes later; the palette crossfades from golden orange to
-  rose/violet from 10 minutes before to 40 after. `java/script.js` writes the two
-  variables on every 10-second tint step (in `applySkyTint`, see "Sky tint
-  cadence" below), and the inline `#boot-tint`
-  script carries a compact copy so a page opened at dusk starts with the
-  sunset in place; keep the two in step. It is
-  static CSS (no transition, no animation; the value steps under 0.5% per
-  step), so it shows on phones and in low-power mode too.
-  Changing the timing means editing `sunsetGlow` AND the matching numbers in
-  the boot script. The gradient stops live in `style.css` (`.sunset-sky`).
-- **Sky edges (no line at the fold).** The sunset, the scenery and the cloud
-  canvas are anchored to the top of the page, so whatever one of them still
-  paints where its box ends shows as a hard horizontal line the moment you
-  scroll. Each layer must fade out on its own:
-  - `.sunset-sky` is 128vh tall, and every vertical radius, centre and stop
-    in its gradients is in vh (never %), so the first screen paints the same
-    whatever the box height and the glow (about 30% strong at 100vh) fades
-    out below the fold. Before 24 Oct 2026 it was a 100vh box and cut the
-    sunset off right across the "Right now" cards. If you move a stop or the
-    glow, keep its transparent end above 128vh or grow the box.
-  - `.sakura-scene` is `overflow: clip visible` (behind `@supports`; older
-    browsers keep `overflow: hidden`): clipped sideways for the sun and moon
-    sliding out through the page edges, free downwards so the horizon glow,
-    the low sun's halo and the branches fade out on short windows.
-  - Clouds never sit lower than one sprite height above the bottom of their
-    one-viewport canvas (`createScene` in `java/weather-fx.js`; windows under
-    570px tall used to cut them).
-- **Live weather layers (desktop only).** `java/weather-fx.js` draws rain, snow,
-  wind streaks and clouds from the UK weather `java/script.js` already fetches
-  (Open-Meteo now also asks for `cloud_cover` and `wind_direction_10m`).
-  Layers combine only when the weather says so: rain and snow come from one
-  weather code so they never overlap, precipitation implies cloud, cloud
-  needs >= 25% cover, wind starts at 32 km/h (20 mph) and full strength is
-  80 km/h; a westerly blows left to right. All of that lives in
-  `KazuWeatherFx.layersFor`; change the rules there.
-  - *Not for mobile.* Three independent guards: (1) `KazuLib.weatherFxAllowed`
-    refuses coarse pointers, no-hover devices, a mobile UA, a window <= 768px,
-    reduced motion, save-data and `lowPower`, and `java/script.js` never even
-    requests the file for those visitors; (2) the CSS media query + `body.low-power`
-    rule hide `.weather-fx` regardless; (3) media-query `change` listeners
-    stop the layers live if the window narrows. Phones keep the older DOM
-    rain drops / snow petals exactly as before. On desktop the canvas owns
-    rain and snow, so `setAtmosphere` turns its `rain` and `blossom-heavy`
-    modes into `none` there (`weatherFxOwnsPrecip`), and hands them back if the
-    file fails to load.
-  - *Performance budget.* One fixed canvas at half resolution behind the
-    content, ~570 canvas calls per frame worst case, 30 fps (12 fps clouds-only, halved while scrolling), paused
-    behind modals and in hidden tabs, nothing mounted at all when the sky is
-    clear. A frame-time governor steps density down (1 -> .6 -> .35 -> .18)
-    when the average rAF interval exceeds 28 ms, then switches the effect off
-    for the session. Measured at maximum load on a 144 Hz desktop: 6.94 ms per
-    frame with it running vs 6.96 ms without, 0.2 ms per drawn frame.
-  - *Nothing pops.* Each layer's intensity eases at 0.4/s, and on top of that
-    every raindrop, flake and cloud has its own fade factor (`stepFades`;
-    drops/flakes 0.8 s, clouds 2 s): a particle that becomes active ramps in,
-    one that is retired (a layer easing out, the governor stepping down)
-    keeps moving while it ramps out. Rain and snow stay batched by drawing in
-    2 depth x 3 fade-alpha buckets. Wind speed eases (12 km/h per second),
-    a reversed wind swings round through vertical (0.6/s), wind streaks keep
-    the direction they were born with, the frame rate follows what is
-    visible, cloud sprites are built before the fade starts, and a resize
-    keeps the fade state. Measured in a real
-    browser: painted alpha ramps 0 -> full over ~4 s with no step above 4% of
-    the final value.
-  - *Clouds scroll with the page.* They draw to their own canvas
-    (`.weather-fx--clouds`, `position: absolute`, viewport-tall at the top like
-    the sky scenery) so they stay put and scroll away with the hero, natively
-    smooth; rain, snow and wind stay on the fixed canvas. Because that canvas
-    ends at the fold, `createScene` never places a cloud lower than one
-    sprite height above its bottom (see "Sky edges").
-  - The canvas is inserted between `.sakura-scene` and `.atmosphere`, so
-    clouds pass in front of the sun/moon and rain falls in front of the
-    branches while petals stay on top. New always-on visuals in this layer
-    must keep the same rules: no timers, batched paths, a bounded op count per frame.
 - **Social tiles are solid brand tiles.** `.social-card` is deliberately NOT
   a `.card` member (no glass/refraction — nothing to refract through). The
   design hangs off two custom properties: each network gets a
@@ -539,8 +366,7 @@ These are load-bearing; read before editing.
 - **Service worker.** `sw.js` must never serve stale content while online:
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
-- **localStorage keys in use:** `kazu-dev-seasons`, `kazu-dev-curve`,
-  `kazu-new-year-celebrated`, `kazu-discord-cache`, `kazu-steam-cache`,
+- **localStorage keys in use:** `kazu-new-year-celebrated`, `kazu-discord-cache`, `kazu-steam-cache`,
   `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
   `kazu-weather-cache`, `kazu-quote-cache`, `kazu-site-config`,
   `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`. Don't collide
@@ -583,14 +409,14 @@ Letterboxd still empty after 10 s on a cold visit.
   id="boot-cards-hold">` that hides `.right-now-grid > .card`;
   `paintCardCaches` removes it in the same task as the paint (in a `finally`,
   so a failed paint or a missing lib.js still lifts it), and an 8 s timer is
-  the failsafe, like `sky-pending`. Hidden elements never count as a layout
+  the failsafe. Hidden elements never count as a layout
   shift. Full boot ladder (16.5 s, phone / tablet / desktop), CLS
   cold -> repeat: 0.057 -> 0.059, 0.043 -> 0.040, 0.024 -> 0.028, with total
   shift halved on phone and tablet; the shift left is the quote box opening,
   which a cold visit has too (at 15 s instead of 1 s). Its key list must match
   the four Right-now cache keys.
 - **Cost.** The paint itself is ~3 ms on desktop and ~20-30 ms on the 4x
-  throttled phone. The first tick's `applySeasons` -> `updateSkyBody` reads
+  throttled phone. The first tick reads
   layout, which now lays the painted cards out inside the boot task instead of
   in later frames: total layout over the load is unchanged (601 -> 610 ms in a
   trace) but that one task grows ~120 ms on the throttled phone, so phone TBT
@@ -612,9 +438,7 @@ Letterboxd still empty after 10 s on a cold visit.
   or the proxy is down.
 - **Weather** is fetched inside the load task, so its copy is painted only
   while fresh and only if its first forecast day is today's UK date (the strip
-  labels row one "Today"). The boot paint does not build particles: the idle
-  slot that builds the atmosphere picks the mode from the painted weather.
-  The **quote** is also painted only while fresh: a stale one is certain to be
+  labels row one "Today").   The **quote** is also painted only while fresh: a stale one is certain to be
   swapped for a different random quote at its rung, resizing the hero.
 - **Sanitising.** Every copy goes through a lib.js parser before it is drawn:
   links are rebuilt from ids (`steamStoreUrl`) or checked with `safeLink`,
@@ -636,7 +460,7 @@ styles) is restricted. It is the second layer behind escaping and `safeLink` (se
 a future bug lets one into the page.
 
 - **Editing an inline script changes its hash**, and the browser then refuses to run
-  it. Run `node tools/csp-hashes.js --fix` after any edit to `#boot-control`, `#boot-tint`,
+  it. Run `node tools/csp-hashes.js --fix` after any edit to `#boot-control`,
   `#boot-cards`, `#boot-handlers`, `#boot-lang`, `#boot-power` or `#sw-register`; without
   `--fix` the tool only checks and names the scripts whose hash is missing. A new inline
   script needs an `id` and the same `--fix`. JSON-LD is a data block and needs no hash.
@@ -691,7 +515,7 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
   this origin are ever fetched.
 - **Precedence: a managed section overrides the HTML.** A section the panel manages
   is present in the settings (socials, stories, pc, playlist, integrations, titles,
-  sections, seasons, effects, footer, notice). For those, the live page shows the
+  sections, seasons, effects, footer, notice; `seasons` and `effects` no longer change anything on the page). For those, the live page shows the
   settings and ignores what `index.html` says, **so editing the HTML for a managed
   section will not change the live site.** Sections the panel does not manage are
   untouched and `index.html` stays their source. Ask the owner before assuming the
@@ -712,8 +536,7 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
   links only after `KazuSiteConfig` has checked them, colors as validated hex. Any failure
   (offline, bad data, newer schema, blocked storage) leaves the page as it is. The last
   good copy is cached in `localStorage` (`kazu-site-config`) so a repeat visit applies it
-  before the first paint, and the inline `#boot-tint` script reads its season overrides
-  from the same cache.
+  before the first paint.
 - **Undo.** Every edit the hook makes is recorded (`ovText`, `ovAttr`, `ovClass`,
   `ovStyle`, `ovChildren`) and reverted before a newer copy is applied, so handing a
   section back to the HTML restores it exactly.
@@ -805,5 +628,5 @@ language and the default**; Japanese is a layer that `java/i18n.js` puts on top,
 User-facing text and metadata contain no emojis. `KazuLib.stripEmoji` removes
 emoji sequences from live text and labels via the targeted DOM observer in
 `java/script.js`, with a matching inline fallback. Discord custom emoji images are
-not rendered. Blossom particles use CSS petal shapes, forecasts use condition
+not rendered. Forecasts use condition
 text, and the Konami dragon uses the existing profile image. Keep new UI copy emoji-free.

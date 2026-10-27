@@ -40,7 +40,6 @@
   const siteSection = (key) => (SiteConfig && SiteConfig.isManaged(siteCfg, key) ? siteCfg[key] : null);
   const siteIntegration = (name) => { const i = siteSection('integrations'); return i && i[name] ? i[name] : null; };
   const siteIntegrationOn = (name) => { const i = siteIntegration(name); return !i || i.enabled !== false; };
-  const siteEffectOff = (name) => { const e = siteSection('effects'); return !!e && e[name] === false; };
   const siteSectionOff = (name) => { const s = siteSection('sections'); return !!s && s[name] === false; };
   // The last quoted value on each declaration below is the page's own default.
   function siteId(name, field, fallback) {
@@ -53,14 +52,6 @@
     const s = siteSection(section);
     return (s && s[field]) || fallback;
   }
-  function siteSeasonOverrides() {
-    const s = siteSection('seasons');
-    const out = {};
-    if (s) Object.keys(s).forEach((k) => { if (s[k] === 'on' || s[k] === 'off') out[k] = s[k]; });
-    return out;
-  }
-  let siteSeasons = siteSeasonOverrides();
-
   let DISCORD_ID = siteId('discord', 'userId', '346360416827473921');
   let STEAM_VANITY = siteId('steam', 'vanity', 'Kazu-Hani');
 
@@ -124,100 +115,8 @@
     return 'played';
   };
 
-  // ---------- Seasons ----------
-  // Force the cherry-blossom season on any date: ?season=sakura (or blossom, or all).
-  // A param that doesn't name it leaves the blossoms following the calendar.
-  const SEASON_OVERRIDE = (() => {
-    try {
-      const p = new URLSearchParams(location.search).get('season');
-      if (!p) return null;
-      const set = p.toLowerCase().split(',').map((s) => s.trim());
-      return set.includes('all') || set.includes('sakura') || set.includes('blossom') ? { sakura: true } : {};
-    } catch (e) { return null; }
-  })();
-
-  // Preview the weather-reactive atmosphere on demand:
-  // ?atmosphere=rain|blossom|blossom-heavy|aurora|none
-  const ATMOSPHERE_OVERRIDE = (() => {
-    try {
-      const p = new URLSearchParams(location.search).get('atmosphere');
-      if (!p) return null;
-      const v = p.toLowerCase().trim();
-      if (v === 'off') return 'none';
-      return ['rain', 'blossom', 'blossom-heavy', 'aurora', 'none'].includes(v) ? v : null;
-    } catch (e) { return null; }
-  })();
-
-  // ---------- Dev settings (secret code: kazudev) ----------
-  // Typing the code opens a floating panel with per-season Auto/On/Off
-  // overrides plus the responsive sky-curve switch. Overrides persist in
-  // localStorage across reloads. Matching and parsing live in lib.js;
-  // the local copies keep the panel working if lib.js fails.
-  const devCodeMatch = (KazuLib && KazuLib.devCodeMatch) || function (recent) {
-    const CODE = 'kazudev';
-    if (!recent || recent.length < CODE.length) return false;
-    const off = recent.length - CODE.length;
-    for (let i = 0; i < CODE.length; i++) {
-      const k = recent[off + i];
-      if (typeof k !== 'string' || k.toLowerCase() !== CODE.charAt(i)) return false;
-    }
-    return true;
-  };
-  const seasonDevApply = (KazuLib && KazuLib.seasonDevApply) || function (state, overrides) {
-    const s = state || {};
-    const out = { sakura: !!s.sakura };
-    overrides = overrides || {};
-    ['sakura'].forEach((k) => {
-      if (overrides[k] === 'on') out[k] = true;
-      else if (overrides[k] === 'off') out[k] = false;
-    });
-    return out;
-  };
-  const seasonDevParse = (KazuLib && KazuLib.seasonDevParse) || function (raw) {
-    if (typeof raw !== 'string' || !raw) return null;
-    let p;
-    try { p = JSON.parse(raw); } catch (e) { return null; }
-    if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
-    const out = {};
-    ['sakura'].forEach((k) => {
-      if (p[k] === 'on' || p[k] === 'off') out[k] = p[k];
-    });
-    return out;
-  };
-  const devModeParse = (KazuLib && KazuLib.devModeParse) || function (raw) {
-    return raw === 'on' || raw === 'off' || raw === 'auto' ? raw : 'auto';
-  };
-
-  const DEV_KEY = 'kazu-dev-seasons';
-  let devSeasons = {}; // season: 'on'|'off' — 'auto' is the absence of a key
-  try { devSeasons = seasonDevParse(localStorage.getItem(DEV_KEY)) || {}; } catch (e) {}
-  const DEV_CURVE_KEY = 'kazu-dev-curve';
-  let devCurveMode = 'auto';
-  try { devCurveMode = devModeParse(localStorage.getItem(DEV_CURVE_KEY)); } catch (e) {}
-
-  function saveDevSeasons() {
-    try {
-      if (Object.keys(devSeasons).length) localStorage.setItem(DEV_KEY, JSON.stringify(devSeasons));
-      else localStorage.removeItem(DEV_KEY); // all-auto: leave no trace
-    } catch (e) {}
-  }
-
-  function saveDevCurve() {
-    try {
-      if (devCurveMode === 'auto') localStorage.removeItem(DEV_CURVE_KEY);
-      else localStorage.setItem(DEV_CURVE_KEY, devCurveMode);
-    } catch (e) {}
-  }
-
-  // Cherry-blossom season: 20 Mar - 10 May, when Japan's cherry trees flower
-  // (lib.js sakuraInBloom; the local copy keeps the page working without lib.js).
-  const sakuraInBloom = (KazuLib && KazuLib.sakuraInBloom) || function (month, day) {
-    const key = +month * 100 + +day;
-    return key >= 220 && key <= 410;
-  };
-
-  // One cached UK formatter also covers a missing lib.js: the blossom window
-  // must never start/end on the visitor's local date. Shared by the season key and sky.
+  // One cached UK formatter also covers a missing lib.js: the New Year
+  // fireworks must follow the UK clock, not the visitor's.
   const fmtSeasonUK = new Intl.DateTimeFormat('en-GB', {
     timeZone: TIMEZONE, year: 'numeric', month: 'numeric', day: 'numeric',
     hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false,
@@ -227,17 +126,6 @@
     const o = {};
     fmtSeasonUK.formatToParts(now).forEach((p) => { o[p.type] = +p.value; });
     return { year: o.year, month: o.month - 1, day: o.day, hours: o.hour % 24, minutes: o.minute, seconds: o.second || 0 };
-  }
-
-  function seasonState(now) {
-    // The blossom season follows the UK wall clock (the window matches the boot script).
-    const w = seasonUKParts(now);
-    // An explicit ?atmosphere=blossom preview brings the branches with it, so
-    // the preview looks like the real in-season page.
-    const sakura = sakuraInBloom(w.month, w.day) || ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy';
-    // The ?season= param beats even the dev panel (and only names sakura to force it on).
-    if (SEASON_OVERRIDE) return Object.assign({ sakura }, SEASON_OVERRIDE);
-    return seasonDevApply({ sakura }, Object.assign({}, siteSeasons, devSeasons)); // control panel overrides, then this browser's dev panel on top
   }
 
   // ---------- Clock / age / birthday ----------
@@ -298,9 +186,7 @@
     set('liveBday', c.bdayText);
     set('liveBdaySub', c.bdaySub);
     updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
-    applySeasons(); // re-evaluate every second so a page left open crosses midnight correctly
     checkNewYear(); // uses the real UK clock, independently of seasonal/sky previews
-    stepSky(); // sky tint every 10s, sun/moon every minute, never mid-scroll
   }
 
   // ---------- Fetch timeout wrapper ----------
@@ -419,18 +305,11 @@
     weatherCurrent = {
       code: w.weather_code, isDay: w.is_day === 1,
       tempC: w.temperature_2m, windKmh: w.wind_speed_10m,
-      cloudCover: w.cloud_cover, windDir: w.wind_direction_10m, // feed the desktop weather layers
     };
     const info = weatherInfo(w.weather_code, w.is_day === 1);
     $('liveTemp').textContent = Math.round(w.temperature_2m) + '°C';
     $('liveWeatherDesc').textContent = info.d;
     $('liveWind').textContent = 'Wind ' + Math.round(w.wind_speed_10m * 0.621371) + ' mph';
-    // The boot paint leaves the sky to the idle slot that builds the particles
-    // (bottom of this file): no petal or rain build inside the load task.
-    if (!paintingFromCache) {
-      if (!ATMOSPHERE_OVERRIDE) setAtmosphere(atmosphereMode(w.weather_code, w.is_day === 1));
-      syncWeatherFx(); // desktop only: rain / snow / wind / clouds for this weather
-    }
     cardReveal($('weatherLoaded'), $('weatherLoading'));
     $('weatherError').classList.add('hidden');
     weatherDone = true;
@@ -464,59 +343,19 @@
     }
   }
 
-  // ---------- Weather-reactive atmosphere ----------
-  // Ambient particles follow the live weather: rain streaks when it's
-  // raining, a heavier petal shower when it's actually snowing, and the
-  // cherry-blossom default otherwise (the petal modes only run during the
-  // blossom season, see setAtmosphere). The mode mapping lives in lib.js
-  // (KazuLib.atmosphereMode); the local copy keeps the
-  // page working if lib.js fails to load.
-  const atmosphereMode = (KazuLib && KazuLib.atmosphereMode) || function (code) {
-    const c = +code;
-    if (isNaN(c)) return 'blossom';
-    if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
-    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'blossom-heavy';
-    if ((c === 0 || c === 1) && arguments[1] === false) return 'aurora';
-    return 'blossom';
-  };
-
-  const atmosphereEl = document.querySelector('.atmosphere');
-  const pageEl = document.querySelector('.page');
-  let atmosphereCurrent = null;
-  // What the weather (or a preview param) asked for, before the blossom-season
-  // gate below: applySeasons re-runs setAtmosphere with it when the season flips.
-  let atmosphereWanted = null;
-  // Is it cherry-blossom season right now? Kept current by applySeasons;
-  // the initial value is the same clock rule so a first build can never race it.
-  let sakuraLive = seasonState(new Date()).sakura;
-  let atmosphereHeight = window.innerHeight;
-  let atmosphereBoundsFrame = 0;
-
   const SNOW_COLORS = ['#bfe3ff', '#a9d6ff', '#cde8ff', '#b9deff']; // Konami dragon burst only
-  const randRange = (min, max) => min + Math.random() * (max - min);
 
-  // Particle density follows the hardware (see KazuLib.particleCount): every
-  // petal/drop animates under the glass cards and keeps their backdrop-filter
-  // busy, so phones get a lighter drift. Flags are stable for a session.
+  // Hardware flags, stable for a session. They feed the low-power verdict below.
   const PARTICLE_FLAGS = {
     coarsePointer: !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches),
     smallScreen: Math.min(window.innerWidth, window.innerHeight) < 500,
     lowConcurrency: !!(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4),
     saveData: !!(navigator.connection && navigator.connection.saveData),
-    // Two extra signals that only feed the low-power verdict below;
-    // particleCount keeps its original four.
     lowMemory: !!(navigator.deviceMemory && navigator.deviceMemory <= 4),
     reducedMotion: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches),
   };
-  // particleCount() clamps to a minimum of 8 (it's sized for petals/drops);
-  // the one-off canvas bursts (fireworks) scale smaller counts off
-  // the same hardware flags directly.
   const lightDevice = PARTICLE_FLAGS.coarsePointer || PARTICLE_FLAGS.smallScreen ||
     PARTICLE_FLAGS.lowConcurrency || PARTICLE_FLAGS.saveData;
-  const particleCount = (KazuLib && KazuLib.particleCount) || function (n, o) {
-    const light = o && (o.coarsePointer || o.smallScreen || o.lowConcurrency || o.saveData);
-    return Math.min(64, Math.max(8, light ? Math.round(n * 0.6) : n));
-  };
   // Same for the low-power verdict (see lib.js).
   const lowPowerMode = (KazuLib && KazuLib.lowPowerMode) || function (o) {
     o = o || {};
@@ -690,637 +529,6 @@
     });
     kids.forEach((el) => ro.observe(el));
   })();
-
-  const petalFallDuration = (KazuLib && KazuLib.petalFallDuration) || function (pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
-    const view = +viewportHeight;
-    const base = +baseSeconds;
-    if (!isFinite(view) || view <= 0 || !isFinite(base) || base <= 0) return 0;
-    const page = !isFinite(+pageHeight) || +pageHeight < view ? view : +pageHeight;
-    const spawn = isFinite(+spawnY) ? +spawnY : 0;
-    const pad = isFinite(+exitPad) && +exitPad >= 0 ? +exitPad : 0;
-    const reference = view * 1.12;
-    return Math.round(base * Math.max(reference, page - spawn + pad) / reference * 100) / 100;
-  };
-
-  // Blossom mode owns a page-height runway. A ResizeObserver follows the
-  // natural .page height as live cards and responsive layouts settle, and the
-  // single CSS custom property resizes the layer so petals stay unclipped.
-  // Falling petals are NEVER retimed or re-pointed — each petal's runway is
-  // frozen onto it at spawn (--fall-y), so a right-now card loading in can no
-  // longer shift a single blossom mid-flight. When the page has grown a lot
-  // since the cohort was built, maybeReseedPetals() fades in a fresh,
-  // correctly-sized cohort instead. Rain and aurora intentionally retain
-  // their original one-viewport layer.
-  function measureAtmosphereHeight() {
-    if (!pageEl) return Math.max(window.innerHeight, document.documentElement.scrollHeight);
-    const r = pageEl.getBoundingClientRect();
-    return Math.max(window.innerHeight, Math.ceil(r.bottom + window.scrollY));
-  }
-
-  // One gentle cohort re-seed: the old petals dim out via WAAPI (which
-  // overrides the keyframe-driven opacity) and the replacements all detach
-  // from their spawn points with the natural fade-in — nothing teleports and
-  // nothing pops into existence mid-sky. Throttled, so the boot burst of live
-  // loads settles in one or two re-seeds rather than a shimmer.
-  let petalRunwayHeight = 0;   // page height the live cohort was sized for
-  let lastPetalReseed = 0;
-  function maybeReseedPetals() {
-    const mode = atmosphereCurrent;
-    if (mode !== 'blossom' && mode !== 'blossom-heavy') return;
-    if (!petalRunwayHeight || atmosphereHeight < petalRunwayHeight * 1.2 + 120) return;
-    const now = Date.now();
-    if (now - lastPetalReseed < 8000) return;
-    lastPetalReseed = now;
-    const heavy = mode === 'blossom-heavy';
-    if (!REDUCED_MOTION) {
-      atmosphereEl.querySelectorAll('.petal').forEach((p) => {
-        if (p.animate) p.animate([{ opacity: 0 }], { duration: 450, fill: 'forwards' });
-      });
-    }
-    setTimeout(() => {
-      if (atmosphereCurrent !== mode) return; // the weather flipped modes mid-fade
-      atmosphereEl.innerHTML = '';
-      atmosphereEl.appendChild(buildPetals(particleCount(heavy ? 48 : 30, PARTICLE_FLAGS), heavy ? 12 : 13, heavy ? 26 : 24, !heavy, true));
-      atmosphereEl.querySelectorAll('.petal').forEach(fxWatch);
-    }, REDUCED_MOTION ? 0 : 480);
-  }
-
-  function syncAtmosphereBounds() {
-    atmosphereBoundsFrame = 0;
-    if (!atmosphereEl) return;
-    atmosphereHeight = measureAtmosphereHeight();
-    atmosphereEl.style.setProperty('--atmosphere-height', atmosphereHeight + 'px');
-    maybeReseedPetals();
-  }
-
-  function scheduleAtmosphereBounds() {
-    if (atmosphereBoundsFrame) return;
-    atmosphereBoundsFrame = requestAnimationFrame(syncAtmosphereBounds);
-  }
-
-  if (atmosphereEl) {
-    syncAtmosphereBounds();
-    window.addEventListener('resize', scheduleAtmosphereBounds, { passive: true });
-    window.addEventListener('load', scheduleAtmosphereBounds, { once: true });
-    if ('ResizeObserver' in window && pageEl) new ResizeObserver(scheduleAtmosphereBounds).observe(pageEl);
-  }
-
-  // Petal physics: fallY carries each petal down a steady wind-drifted path
-  // (--dx = total sideways travel across the fall, AWAY from its branch), a
-  // tight flutter wobbles on top and a slow tumble rocks it (keyframes in
-  // style.css). Blossom mode spawns petals
-  // AT the branches: the anchors below are blossom positions in each SVG's
-  // viewBox, projected through the branch's live on-screen rect, so a petal
-  // starts exactly where a drawn blossom sits at any viewport width. It
-  // fades in on the spot (fallY), then drifts down and AWAY from its edge,
-  // so the shower visibly comes out of the trees. blossom-heavy stays a
-  // plain top-down shower, and with no branch on screen (narrow phones
-  // aside, e.g. mid-scroll rebuilds) blossom mode falls back to the top edge.
-  const BRANCH_A = document.querySelector('.sakura-branch--a');
-  const BRANCH_B = document.querySelector('.sakura-branch--b');
-  const ANCHORS_A = [[150, 214], [176, 184], [206, 154], [238, 128], [282, 102], [326, 66], [386, 30], [292, 146], [300, 224], [152, 146]];
-  const ANCHORS_B = [[214, 78], [160, 44], [124, 214], [92, 150], [28, 232], [60, 196], [148, 102]];
-
-  // Blossom anchors as page-layer spawn points: x remains a width percentage;
-  // y is a pixel offset inside the document-height atmosphere. Measuring both
-  // against the layer rect keeps the detachment point exact at any scroll.
-  function branchSpawnPoints() {
-    const pts = [];
-    if (!atmosphereEl) return null;
-    const layer = atmosphereEl.getBoundingClientRect();
-    if (!layer.width) return null;
-    const add = (el, anchors, boxW, boxH, dir) => {
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      if (!r.width || r.bottom < 0 || r.top > window.innerHeight) return;
-      anchors.forEach(a => pts.push({
-        x: (r.left + a[0] / boxW * r.width - layer.left) / layer.width * 100,
-        y: r.top + a[1] / boxH * r.height - layer.top,
-        dx: dir,
-      }));
-    };
-    add(BRANCH_A, ANCHORS_A, 460, 340, -1);
-    add(BRANCH_B, ANCHORS_B, 300, 280, 1);
-    return pts.length ? pts : null;
-  }
-
-  // Depth pass: each petal draws a 0..1 depth (0 = far away, 1 = close);
-  // size, sharpness, brightness and fall speed all follow it, so the drift
-  // reads as a layered shower instead of a flat curtain of emoji. Opacity
-  // travels via --po so fallY can fade fresh petals in as they detach.
-  function buildPetals(count, sizeMin, sizeMax, fromBranches, allFresh) {
-    const frag = document.createDocumentFragment();
-    const spawns = fromBranches ? branchSpawnPoints() : null;
-    for (let i = 0; i < count; i++) {
-      const s = document.createElement('span');
-      s.className = 'petal';
-
-      const depth = Math.random();
-      let spawnY;
-      if (spawns) {
-        const a = spawns[(Math.random() * spawns.length) | 0];
-        s.style.left = (a.x + randRange(-1.5, 1.5)).toFixed(1) + '%';
-        spawnY = a.y + randRange(-12, 12);
-        s.style.top = spawnY.toFixed(1) + 'px';
-        s.style.setProperty('--y0', '0vh'); // detach exactly on the blossom
-        s.style.setProperty('--dx', (a.dx * randRange(8, 18)).toFixed(1) + 'vw');
-      } else {
-        const layer = atmosphereEl.getBoundingClientRect();
-        spawnY = -layer.top - window.innerHeight * 0.05;
-        s.style.left = randRange(0, 100).toFixed(1) + '%';
-        s.style.top = spawnY.toFixed(1) + 'px';
-        s.style.setProperty('--dx', (randRange(5, 14) * (Math.random() < 0.5 ? -1 : 1)).toFixed(1) + 'vw');
-      }
-      const size = sizeMin + (sizeMax - sizeMin) * (0.35 + depth * 0.65);
-      const exitPad = Math.max(48, size * 2);
-      s.style.fontSize = size.toFixed(0) + 'px';
-      s.style.setProperty('--spawn-y', spawnY.toFixed(1) + 'px');
-      s.style.setProperty('--exit-pad', exitPad.toFixed(1) + 'px');
-      s.style.setProperty('--po', (0.42 + depth * 0.43).toFixed(2));
-      s.style.filter = 'blur(' + (2.6 - depth * 1.8).toFixed(1) + 'px)';
-      // Scale the original one-viewport timing to the remaining page distance
-      // so terminal velocity stays familiar. A fresh cohort still detaches at
-      // the branches; the rest starts phase-seeded along the long runway so
-      // the lower sections are populated from first paint.
-      const baseFall = randRange(12, 20 + (1 - depth) * 6);
-      const fall = petalFallDuration(atmosphereHeight, spawnY, window.innerHeight, baseFall, exitPad);
-      const swayDuration = randRange(2.2, 3.8);
-      const rockDuration = randRange(3.5, 6);
-      // Freeze the runway length onto the petal (--fall-y): the shared
-      // keyframes read THIS instead of the mutable --atmosphere-height, so a
-      // growing document can never move a falling petal.
-      s.style.setProperty('--fall-y', (atmosphereHeight - spawnY + exitPad).toFixed(1) + 'px');
-      // allFresh re-seeds (grown page): every petal detaches with the natural
-      // fade-in — no phase-seeded cohort popping into existence mid-sky.
-      const freshAtBranch = allFresh || (fromBranches && i < Math.max(6, Math.round(count * 0.35)));
-      const fallDelay = freshAtBranch ? randRange(0, 7) : -randRange(0, fall);
-      s.style.animationDuration = fall.toFixed(2) + 's, ' + swayDuration.toFixed(1) + 's, ' + rockDuration.toFixed(1) + 's';
-      s.style.animationDelay = fallDelay.toFixed(2) + 's, ' + (-randRange(0, 4)).toFixed(1) + 's, ' + (-randRange(0, 5)).toFixed(1) + 's';
-      frag.appendChild(s);
-    }
-    petalRunwayHeight = atmosphereHeight; // remember what this cohort was sized for
-    return frag;
-  }
-
-  function buildDrops(count) {
-    const frag = document.createDocumentFragment();
-    for (let i = 0; i < count; i++) {
-      const d = document.createElement('span');
-      d.className = 'drop';
-      d.style.left = randRange(0, 100).toFixed(1) + '%';
-      d.style.top = '-15%';
-      d.style.opacity = randRange(0.35, 0.7).toFixed(2);
-      d.style.animationDuration = randRange(0.7, 1.4).toFixed(2) + 's';
-      d.style.animationDelay = randRange(0, 2).toFixed(2) + 's';
-      frag.appendChild(d);
-    }
-    return frag;
-  }
-
-  // Rebuilds .atmosphere for the given mode (no-op when the mode hasn't
-  // changed). The hardcoded petals in index.html are the no-JS fallback;
-  // the first call replaces them.
-  function setAtmosphere(mode) {
-    if (!atmosphereEl) return;
-    atmosphereWanted = mode;
-    // Petals are cherry blossoms: outside the bloom window (see lib.js
-    // sakuraInBloom) the sky stays clear instead. Rain and aurora are weather,
-    // not blossom, so they are untouched; an explicit ?atmosphere= preview wins.
-    if (!sakuraLive && !ATMOSPHERE_OVERRIDE && (mode === 'blossom' || mode === 'blossom-heavy')) mode = 'none';
-    // Desktop visitors get real rain and snow from the weather-fx canvas (see
-    // "Weather FX" below), so the older DOM rain drops and snow-petal shower
-    // stand down there; phones and low-power devices keep them untouched.
-    if ((mode === 'rain' || mode === 'blossom-heavy') && weatherFxOwnsPrecip()) mode = 'none';
-    // The control panel can switch the particle sky off site-wide; a ?atmosphere= preview still wins.
-    if (siteEffectOff('particles') && !ATMOSPHERE_OVERRIDE) mode = 'none';
-    if (mode === atmosphereCurrent) return;
-    // Low-power devices get a still sky — an explicit ?atmosphere= preview
-    // param still wins (it's a deliberate look, not the weather's idea).
-    if (LOW_POWER && !ATMOSPHERE_OVERRIDE) mode = 'none';
-    atmosphereCurrent = mode;
-    // The static fallback petals in index.html are hidden out of season until
-    // this first build has replaced them (style.css: .atmosphere:not([data-built])).
-    atmosphereEl.dataset.built = '1';
-    atmosphereEl.innerHTML = '';
-    const pagePetals = mode === 'blossom' || mode === 'blossom-heavy';
-    atmosphereEl.classList.toggle('atmosphere--page', pagePetals);
-    if (pagePetals) syncAtmosphereBounds();
-    if (mode === 'none') return;
-    if (mode === 'rain') { atmosphereEl.appendChild(buildDrops(particleCount(46, PARTICLE_FLAGS))); atmosphereEl.querySelectorAll('.drop').forEach(fxWatch); return; }
-    if (mode === 'blossom-heavy') { atmosphereEl.appendChild(buildPetals(particleCount(48, PARTICLE_FLAGS), 12, 26, false)); atmosphereEl.querySelectorAll('.petal').forEach(fxWatch); return; }
-    if (mode === 'aurora') {
-      // Clear night sky: two drifting light ribbons over a static starfield.
-      // Pure CSS animation, no per-frame JS (see style.css).
-      const a = document.createElement('div');
-      a.className = 'aurora';
-      a.innerHTML = '<div class="aurora-stars"></div>' +
-        '<div class="aurora-ribbon aurora-ribbon--a"></div>' +
-        '<div class="aurora-ribbon aurora-ribbon--b"></div>';
-      atmosphereEl.appendChild(a);
-      return;
-    }
-    // cherry-blossom default: petals detach from the sakura branches
-    atmosphereEl.appendChild(buildPetals(particleCount(30, PARTICLE_FLAGS), 13, 24, true));
-    atmosphereEl.querySelectorAll('.petal').forEach(fxWatch);
-  }
-
-  // ---------- Weather FX (desktop only): rain / snow / wind / clouds ----------
-  // The live UK weather (weatherCurrent, from the Open-Meteo fetch above) is
-  // drawn on a single background canvas by weather-fx.js, which combines
-  // layers only when the weather says so (cloudy + raining plays both).
-  // Not for mobile: KazuLib.weatherFxAllowed refuses phones and tablets
-  // (coarse pointer, no hover, mobile UA, or a mobile-width window), reduced
-  // motion, save-data and low-power devices, and for those visitors the file
-  // is never even requested. It is injected on an idle slice for everyone else
-  // so it can't compete with the staged boot. If the window is resized down to
-  // mobile width (or a media query flips), the layers stop and the older
-  // atmosphere takes back over.
-  // Preview: ?weather=rain,wind,clouds,snow,storm,all,none (each optionally
-  // :0..1, e.g. rain:1) forces layers on any weather; still desktop-only.
-  const WEATHER_FX_SRC = 'java/weather-fx.js?v=6';
-  const WEATHER_FX_RAW = (() => {
-    try { return new URLSearchParams(location.search).get('weather') || ''; } catch (e) { return ''; }
-  })();
-  const weatherFxMQ = window.matchMedia
-    ? ['(pointer: coarse)', '(hover: none)', '(max-width: 768px)', '(prefers-reduced-motion: reduce)'].map((q) => window.matchMedia(q))
-    : [];
-  let weatherFxState = 'idle'; // idle | loading | ready | failed
-  let weatherFxOwned = null;   // last value of weatherFxOwnsPrecip(), to re-run the atmosphere when it flips
-  let skyFxLight = null;       // { daylight, dusk } from the latest sky tint, for cloud colours
-
-  function weatherFxAllowedNow() {
-    if (!(KazuLib && KazuLib.weatherFxAllowed) || weatherFxMQ.length < 4) return false;
-    if (siteEffectOff('weather')) return false; // switched off from the control panel
-    return KazuLib.weatherFxAllowed({
-      coarsePointer: weatherFxMQ[0].matches,
-      hoverNone: weatherFxMQ[1].matches,
-      narrow: weatherFxMQ[2].matches,
-      reducedMotion: weatherFxMQ[3].matches,
-      uaMobile: /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent || '') || !!(navigator.userAgentData && navigator.userAgentData.mobile),
-      saveData: PARTICLE_FLAGS.saveData,
-      lowPower: LOW_POWER,
-    });
-  }
-  // Is the weather-fx canvas (rather than the older rain drops / snow petals)
-  // responsible for precipitation right now? An explicit ?atmosphere= preview
-  // keeps the old system, and so does a failed download.
-  function weatherFxOwnsPrecip() {
-    return weatherFxState !== 'failed' && !(ATMOSPHERE_OVERRIDE && !WEATHER_FX_RAW) && weatherFxAllowedNow();
-  }
-
-  function feedWeatherFx() {
-    const fx = window.KazuWeatherFx;
-    if (!fx) return;
-    if (skyFxLight) fx.setSky(skyFxLight);
-    fx.update(
-      weatherCurrent
-        ? { code: weatherCurrent.code, cloudCover: weatherCurrent.cloudCover, windKmh: weatherCurrent.windKmh, windDir: weatherCurrent.windDir }
-        : null,
-      WEATHER_FX_RAW ? fx.forcedParse(WEATHER_FX_RAW) : null
-    );
-  }
-
-  function syncWeatherFx() {
-    const owns = weatherFxOwnsPrecip();
-    if (owns !== weatherFxOwned) { // hand precipitation between the two systems
-      weatherFxOwned = owns;
-      if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);
-    }
-    if (!weatherFxAllowedNow()) { // mobile / low power / reduced motion: make sure it is off
-      if (window.KazuWeatherFx) window.KazuWeatherFx.stop();
-      return;
-    }
-    if (weatherFxState === 'failed') return;
-    if (ATMOSPHERE_OVERRIDE && !WEATHER_FX_RAW) return; // previewing the older atmosphere
-    if (!weatherCurrent && !WEATHER_FX_RAW) return; // nothing to draw until the weather is known
-    if (window.KazuWeatherFx) { weatherFxState = 'ready'; feedWeatherFx(); return; }
-    if (weatherFxState === 'loading') return;           // feedWeatherFx runs from onload
-    weatherFxState = 'loading';
-    scheduleIdle(() => {
-      const s = document.createElement('script');
-      s.src = WEATHER_FX_SRC;
-      s.async = true;
-      s.onload = () => { weatherFxState = 'ready'; syncWeatherFx(); };
-      s.onerror = () => { weatherFxState = 'failed'; syncWeatherFx(); };
-      document.head.appendChild(s);
-    }, 2000);
-  }
-  weatherFxMQ.forEach((mq) => {
-    if (mq.addEventListener) mq.addEventListener('change', syncWeatherFx);
-    else if (mq.addListener) mq.addListener(syncWeatherFx);
-  });
-
-  // ---------- Sky body (sun/moon arc on UK time) ----------
-  // The scenery layer's sun (by day) or moon (by night) rides an arc from
-  // the left edge of the page to the right, timed to the Europe/London wall
-  // clock with approximate Aberystwyth sunrise/sunset. The maths lives in
-  // lib.js (KazuLib.skyBodyState); the local copy keeps the sky
-  // working if lib.js fails to load. Cheap by construction: one style write
-  // a minute, with a CSS transition gliding each step.
-  const skySceneEl = document.querySelector('.sakura-scene');
-  const skyProfileEl = document.querySelector('.pfp');
-  const skyBodyEl = document.querySelector('.sky-body');
-  const skyGlowEl = document.querySelector('.sky-glow');
-  const skyCurveGuideEl = document.querySelector('.sky-curve-guide');
-  const skyCurveGuidePaths = skyCurveGuideEl
-    ? skyCurveGuideEl.querySelectorAll('.sky-curve-guide__glow, .sky-curve-guide__line')
-    : [];
-  const skyArcPoint = (KazuLib && KazuLib.skyArcPoint) || function (progress, crestY) {
-    let p = +progress;
-    if (isNaN(p)) return null;
-    p = Math.min(1, Math.max(0, p));
-    let crest = crestY == null ? 19 : +crestY;
-    if (isNaN(crest)) crest = 19;
-    crest = Math.min(52, Math.max(0, crest));
-    // Same overshoot as lib.js: the arc runs on past the horizon points so
-    // both ends are off-screen (0.16 = SKY_ARC_OVERSHOOT).
-    const q = -0.16 + p * (1 + 2 * 0.16);
-    const alt = Math.sin(Math.PI * q);
-    return {
-      x: +(6 + q * 88).toFixed(2),
-      y: +(52 - alt * (52 - crest)).toFixed(2),
-      alt: +alt.toFixed(3),
-    };
-  };
-  const skyBodyState = (KazuLib && KazuLib.skyBodyState) || function (ukMinutes, dayOfYear, crestY) {
-    const t0 = +ukMinutes;
-    if (isNaN(t0)) return null;
-    const t = ((t0 % 1440) + 1440) % 1440;
-    let d = Math.round(+dayOfYear);
-    if (isNaN(d) || d < 1 || d > 366) d = 172;
-    const w = 2 * Math.PI * (d - 172) / 365;
-    const rise = Math.round(397.5 - 97.5 * Math.cos(w));
-    const set = Math.round(1125 + 165 * Math.cos(w));
-    const dayLen = set - rise;
-    const isSun = t >= rise && t < set;
-    // Same clock-anchored piecewise progress as lib.js: crest (p = 0.5, behind
-    // the profile picture) at exactly 12:00 for the sun and 00:00 for the moon.
-    let p;
-    if (isSun) {
-      p = t < 720 ? 0.5 * (t - rise) / (720 - rise)
-                  : 0.5 + 0.5 * (t - 720) / (set - 720);
-    } else {
-      const u = (((t - set) % 1440) + 1440) % 1440; // 0 at sunset, climbing through the night
-      const uMid = 1440 - set;                      // midnight's offset into the night
-      p = u < uMid ? 0.5 * u / uMid
-                  : 0.5 + 0.5 * (u - uMid) / (1440 - dayLen - uMid);
-    }
-    const point = skyArcPoint(p, crestY);
-    return { body: isSun ? 'sun' : 'moon', x: point.x, y: point.y, alt: point.alt, low: point.alt < 0.28 };
-  };
-
-  // Same clock-driven palette as KazuLib.skyTint / KazuLib.hslToHex; these
-  // local copies keep the background breathing if lib.js fails to load.
-  const skyTint = (KazuLib && KazuLib.skyTint) || function (ukMinutes, dayOfYear) {
-    let t = +ukMinutes;
-    if (isNaN(t)) return null;
-    t = ((t % 1440) + 1440) % 1440;
-    let d = Math.round(+dayOfYear);
-    if (isNaN(d) || d < 1 || d > 366) d = 172;
-    const w = 2 * Math.PI * (d - 172) / 365;
-    const rise = Math.round(397.5 - 97.5 * Math.cos(w));
-    const set = Math.round(1125 + 165 * Math.cos(w));
-    let day = 0;
-    if (t > rise && t < set) day = Math.sin(Math.PI * (t - rise) / (set - rise));
-    const bell = (c) => {
-      let dist = Math.abs(t - c);
-      dist = Math.min(dist, 1440 - dist);
-      return Math.exp(-(dist * dist) / 7200); // 2 * 60^2
-    };
-    const dusk = Math.max(bell(rise), bell(set));
-    // Sun's day-arc progress clamped to the horizons, for the dusk glow anchor.
-    let sunP;
-    if (t <= rise) sunP = 0;
-    else if (t >= set) sunP = 1;
-    else sunP = t < 720 ? 0.5 * (t - rise) / (720 - rise)
-                        : 0.5 + 0.5 * (t - 720) / (set - 720);
-    return {
-      h: +(215 + 22 * dusk).toFixed(2),
-      s: +(33 + 9 * dusk).toFixed(2),
-      l: +(36 * day).toFixed(2), // 0% AMOLED black night -> 36% gentle daylight
-      daylight: +day.toFixed(4),
-      dusk: +dusk.toFixed(4),
-      glow: +Math.max(day, dusk).toFixed(4),
-      glowX: +(6 + sunP * 88).toFixed(2),
-    };
-  };
-  const hslToHex = (KazuLib && KazuLib.hslToHex) || function (h, s, l) {
-    h = ((+h % 360) + 360) % 360;
-    s = Math.min(100, Math.max(0, +s)) / 100;
-    l = Math.min(100, Math.max(0, +l)) / 100;
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
-    const m = l - c / 2;
-    let r, g, b;
-    if (h < 60) { r = c; g = x; b = 0; }
-    else if (h < 120) { r = x; g = c; b = 0; }
-    else if (h < 180) { r = 0; g = c; b = x; }
-    else if (h < 240) { r = 0; g = x; b = c; }
-    else if (h < 300) { r = x; g = 0; b = c; }
-    else { r = c; g = 0; b = x; }
-    const hex = (v) => {
-      const n = Math.round((v + m) * 255);
-      return (n < 16 ? '0' : '') + n.toString(16);
-    };
-    return '#' + hex(r) + hex(g) + hex(b);
-  };
-
-  // The whole page's blue breathes with the UK day: the tint lands on
-  // documentElement so both <html> (overscroll canvas) and <body> (the
-  // gradient stack) track it. --bg-glow (max of the daylight and dusk bells)
-  // scales the decorative gradient layers so deep night reaches true AMOLED
-  // black.
-  //
-  // Stepped, never transitioned. These four were once registered @property
-  // values gliding over a 90s CSS transition, but every new minute retargeted
-  // the glide before the last one had finished, so from the first minute of
-  // daylight a transition was ALWAYS running. Custom properties inherit, so
-  // every frame restyled the whole document and repainted the gradient behind each
-  // frosted card. Measured: a full CPU core at idle, a main thread ~98% busy,
-  // and on a throttled phone every scroll frame missed. The tint moves under a
-  // fifth of one 8-bit colour level per TINT_STEP_MS even at the fastest hour
-  // of the year, so a fine step looks
-  // exactly like the glide at ~1/600th of the work: one restyle per step, none
-  // while the tint is not moving (deep night), none mid-scroll or mid-flight
-  // (see stepSky). Returns the tint so the sky-body pass can reuse it for
-  // the dusk glow.
-  let skyTintHex = '#000000'; // AMOLED deep-night default, matches the inline first paint
-  let skyTintKey = '';        // last written values: an unchanged tint writes nothing
-  function applySkyTint(mins, doy) {
-    const tint = skyTint(mins, doy);
-    if (!tint) return null;
-    // Sunset gradient (style.css .sunset-sky): strength + golden->rose palette
-    // mix. Without lib.js it simply keeps the value the boot script set.
-    const sunset = KazuLib && KazuLib.sunsetGlow ? KazuLib.sunsetGlow(mins, doy) : null;
-    const key = tint.h + '|' + tint.s + '|' + tint.l + '|' + tint.glow + '|' + (sunset ? sunset.glow + '|' + sunset.late : '');
-    if (key !== skyTintKey) {
-      skyTintKey = key;
-      const root = document.documentElement.style;
-      root.setProperty('--bg-h', tint.h);
-      root.setProperty('--bg-s', tint.s);
-      root.setProperty('--bg-l', tint.l);
-      root.setProperty('--bg-glow', tint.glow);
-      if (sunset) {
-        root.setProperty('--sunset', sunset.glow);
-        root.setProperty('--sunset-late', sunset.late);
-      }
-      skyTintHex = hslToHex(tint.h, tint.s, tint.l);
-      skyFxLight = { daylight: tint.daylight, dusk: tint.dusk }; // cloud colours follow the time of day
-      if (window.KazuWeatherFx) window.KazuWeatherFx.setSky(skyFxLight);
-      setThemeColor(skyTintHex);
-    }
-    return tint;
-  }
-
-  // The scenery's coordinate frame is the viewport, while the profile picture
-  // moves with the responsive hero padding. Measure its actual centre so the
-  // crest is behind the picture on every screen size, not just one desktop.
-  function skyArcPeakY() {
-    if (!skySceneEl || !skyProfileEl) return undefined;
-    const sceneRect = skySceneEl.getBoundingClientRect();
-    const profileRect = skyProfileEl.getBoundingClientRect();
-    if (!sceneRect.height || !profileRect.height) return undefined;
-    const y = ((profileRect.top + profileRect.height / 2 - sceneRect.top) / sceneRect.height) * 100;
-    return +Math.min(52, Math.max(0, y)).toFixed(2);
-  }
-
-  // The guide uses the same pure point helper as the live body. Its crest is
-  // measured from the profile picture, then redrawn when the viewport changes.
-  function renderSkyCurveGuide() {
-    if (!skyCurveGuideEl) return;
-    const steps = 64; // the curve runs past both screen edges, so ~1.3x the old 48 for the same smoothness
-    const crestY = skyArcPeakY();
-    let d = '';
-    for (let i = 0; i <= steps; i++) {
-      const point = skyArcPoint(i / steps, crestY);
-      if (!point) return;
-      d += (i ? ' L ' : 'M ') + point.x + ' ' + point.y;
-    }
-    skyCurveGuidePaths.forEach((path) => path.setAttribute('d', d));
-  }
-  let skyBodySnapped = false;
-  let skyBodyLast = ''; // 'sun' | 'moon': which body the previous update showed
-  // Dev preview: ?time=HH:MM (UK wall time) moves the whole sky — sun/moon,
-  // tint, sunset gradient — to that time; the on-page clock stays real. Ignored
-  // if lib.js failed to load. The inline boot script in index.html reads the
-  // same param so the first paint already matches.
-  const SKY_TIME_OVERRIDE = (KazuLib && KazuLib.timeOverrideParse) ? KazuLib.timeOverrideParse(location.search) : (() => {
-    const m = /[?&]time=(\d{1,2}):(\d{2})(?:[&#]|$)/.exec(location.search);
-    return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
-  })();
-  function updateSkyBody() {
-    if (!skyBodyEl) return;
-    // The sky and the October boundary share a UK wall frame, even without lib.js.
-    const { mins, doy } = skyClock(new Date());
-    skyBodyAt = skyTintAt = performance.now(); // the cadence below restarts from this write
-    const st = skyBodyState(mins, doy, skyArcPeakY());
-    if (!st) return;
-    // Sun -> moon (sunset) and moon -> sun (sunrise) swap while the body is off
-    // the right / left edge, so the hop to the other end of the arc must be a
-    // teleport: with the glide left on, a page open at that minute would
-    // watch the new body sweep across the whole sky in 1.8s.
-    const swapped = skyBodySnapped && skyBodyLast !== st.body;
-    skyBodyLast = st.body;
-    if (swapped) skyBodyEl.style.transition = 'none';
-    skyBodyEl.classList.toggle('sky-body--sun', st.body === 'sun');
-    skyBodyEl.classList.toggle('sky-body--moon', st.body === 'moon');
-    skyBodyEl.classList.toggle('sky-body--low', !!st.low);
-    if (!skyBodySnapped) {
-      // First write: no transition — the body must simply BE in position on
-      // load, not glide across the sky from the no-JS default pose. The
-      // transition is restored a frame later for the per-minute updates.
-      skyBodySnapped = true;
-      skyBodyEl.style.transition = 'none';
-      if (skyGlowEl) skyGlowEl.style.transition = 'none';
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        skyBodyEl.style.transition = '';
-        if (skyGlowEl) skyGlowEl.style.transition = '';
-        // Reveal: the body is now in place, so the boot-time hide (set by the
-        // inline #boot-tint script in index.html) lifts and it fades in.
-        document.documentElement.classList.remove('sky-pending');
-      }));
-    }
-    skyBodyEl.style.left = st.x + '%';
-    skyBodyEl.style.top = st.y + '%';
-    if (swapped) {
-      void skyBodyEl.offsetWidth; // commit the jump before the glide is switched back on
-      skyBodyEl.style.transition = '';
-    }
-    const tint = applySkyTint(mins, doy);
-    if (tint && skyGlowEl) {
-      // Faint orange horizon glow around sunrise/sunset: the x anchor comes
-      // from the sun's own day-arc progress, so the pre-dawn glow warms the
-      // LEFT horizon even while the moon is still the body on show, and the
-      // post-sunset glow lingers on the right. Opacity rides the dusk bell
-      // (60-minute sigma), so it is only ever visible near the crossings.
-      skyGlowEl.style.left = tint.glowX + '%';
-      skyGlowEl.style.opacity = (tint.dusk * 0.85).toFixed(3);
-    }
-  }
-  // Auto restores the stylesheet's responsive sky-body behaviour and keeps
-  // the debug line hidden. On forces both the sky body and its visible guide
-  // on for inspection; Off hides both everywhere.
-  function applySkyCurveMode(mode) {
-    devCurveMode = devModeParse(mode);
-    if (skyBodyEl) {
-      skyBodyEl.style.display = devCurveMode === 'on' ? 'block' :
-        (devCurveMode === 'off' ? 'none' : '');
-    }
-    if (skyCurveGuideEl) {
-      if (devCurveMode === 'on') renderSkyCurveGuide();
-      skyCurveGuideEl.style.display = devCurveMode === 'on' ? 'block' : 'none';
-    }
-  }
-  // First layout rides one frame behind parse so the rect reads don't join
-  // the load-time layout storm; the transition-less snap in updateSkyBody
-  // means the body still simply appears in place rather than gliding.
-  requestAnimationFrame(() => {
-    renderSkyCurveGuide();
-    applySkyCurveMode(devCurveMode);
-    updateSkyBody();
-  });
-
-  // The UK clock the sky runs on: FRACTIONAL minutes (seconds included), so
-  // each step lands on the exact point of the day's curve, plus the day of
-  // year. A ?time= preview pins the minutes (and so the whole sky) in place.
-  function skyClock(now) {
-    const w = seasonUKParts(now);
-    const doy = Math.round((Date.UTC(w.year, w.month, w.day) - Date.UTC(w.year, 0, 1)) / 86400000) + 1;
-    const mins = SKY_TIME_OVERRIDE !== null ? SKY_TIME_OVERRIDE : w.hours * 60 + w.minutes + (w.seconds || 0) / 60;
-    return { mins, doy };
-  }
-
-  // Sky cadence. Both sky writers ride the page's existing 1 Hz tick instead
-  // of owning timers, so they pause with a hidden tab (no wake-ups at all) and
-  // catch up on the first tick after it returns. The tint steps every 10s (see
-  // applySkyTint for why that reads as a glide), the sun/moon and horizon
-  // glow every minute (their CSS glides do the rest). A step that falls
-  // mid-scroll or mid-pop-up is simply retried on the next tick: a restyle
-  // never lands in the middle of a gesture.
-  const TINT_STEP_MS = 10000;
-  const BODY_STEP_MS = 60000;
-  const SKY_QUIET_MS = 350; // how long after the last scroll event the page counts as at rest
-  let skyTintAt = 0, skyBodyAt = 0, lastScrollAt = 0;
-  function stepSky() {
-    const now = performance.now();
-    const bodyDue = now - skyBodyAt >= BODY_STEP_MS;
-    if (!bodyDue && now - skyTintAt < TINT_STEP_MS) return;
-    if (now - lastScrollAt < SKY_QUIET_MS || window.__kazuPopAnim) return;
-    if (bodyDue) { updateSkyBody(); return; } // moves the body and refreshes the tint too
-    skyTintAt = now;
-    const c = skyClock(new Date());
-    applySkyTint(c.mins, c.doy);
-  }
-  let skyLayoutFrame = 0;
-  function scheduleSkyLayout() {
-    if (skyLayoutFrame) return;
-    skyLayoutFrame = requestAnimationFrame(() => {
-      skyLayoutFrame = 0;
-      renderSkyCurveGuide();
-      updateSkyBody();
-    });
-  }
-  window.addEventListener('resize', scheduleSkyLayout, { passive: true });
 
   // ---------- Discord (Lanyard) ----------
   const STATUS_MAP = {
@@ -2554,34 +1762,6 @@
   if (themeDarkMQ && themeDarkMQ.addEventListener) themeDarkMQ.addEventListener('change', () => setThemeColor());
   setThemeColor();
 
-  // ---------- Seasonal effects ----------
-  // The one season left is the cherry-blossom window (UK date), plus overrides,
-  // so the per-second tick skips all re-evaluation until the date flips: midnight
-  // crossover is still caught within a second, and dev-panel clicks apply
-  // instantly (they mutate devSeasons, which changes the key).
-  let lastSeasonKey = null;
-  function applySeasons() {
-    const now = new Date();
-    const w = seasonUKParts(now);
-    const key = w.year + '-' + w.month + '-' + w.day + '|' + JSON.stringify(devSeasons);
-    if (key === lastSeasonKey) return;
-    lastSeasonKey = key;
-    const s = seasonState(now);
-    // The tint is never transitioned (see applySkyTint), so a change
-    // simply lands: the new hue is written and painted in the same pass.
-    updateSkyBody(); // dev clicks and midnight refresh tint immediately
-    // Blossom season: outside it the branches are not drawn (html.no-sakura; the
-    // inline #boot-tint script set the same class before first paint, this keeps
-    // it honest for dev overrides and a page left open across 20 Mar / 10 May)
-    // and the petals stop falling (setAtmosphere re-applies its gate).
-    document.documentElement.classList.toggle('no-sakura', !s.sakura);
-    if (sakuraLive !== !!s.sakura) {
-      sakuraLive = !!s.sakura;
-      if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);
-    }
-    syncDevPanel(s); // keep the dev panel's live badges / pressed buttons current
-  }
-
   // ---------- New Year fireworks ----------
   // One finite, silent show at UK midnight, using the existing visible-tab
   // clock tick. The first minute is a grace window for late loads/resumes;
@@ -2975,9 +2155,6 @@
       reload[k]();
     });
     if (hadPlaylist || siteSection('playlist')) { lastYtmSig = ''; loadPlaylistTracks(); }
-    applySeasons();
-    syncWeatherFx();
-    if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);
   }
 
   function adoptSiteConfig(next, text, persist) {
@@ -2993,8 +2170,6 @@
     MAL_USER = siteId('mal', 'user', siteDefaults['mal.user']);
     LB_USER = siteId('letterboxd', 'user', siteDefaults['letterboxd.user']);
     YTM_PLAYLIST_ID = siteValue('playlist', 'playlistId', siteDefaults['playlist.playlistId']);
-    siteSeasons = siteSeasonOverrides();
-    lastSeasonKey = null;
     applySiteConfig();
     if (persist) { try { localStorage.setItem(SITE_CONFIG_KEY, JSON.stringify({ u: CONTROL_URL, t: text })); } catch (e) {} }
     if (siteLate) siteChanged(beforeIds, beforeOn, hadPlaylist);
@@ -3078,31 +2253,6 @@
     revealEls.forEach((el) => revealEl(el, 0));
   }
 
-  // ---------- Off-screen power save ----------
-  // Infinite CSS loops (branch sway, petal fall, rain, aurora, the hero
-  // float/shimmer) keep compositing even after their layer
-  // scrolls out of view. One IntersectionObserver tags each fx layer with
-  // .fx-paused as it leaves the viewport (100px early-wake margin on the
-  // way back), and the stylesheet freezes every animation under it until
-  // it returns. Petals/drops are watched individually too: the blossom
-  // runway is page-height, so at any scroll position half of them are
-  // off-screen. The observer does all the watching -- no scroll handlers,
-  // no timers, and low-power mode (which has no fx running anyway) skips
-  // even the observer.
-  const fxObserver = (!LOW_POWER && 'IntersectionObserver' in window)
-    ? new IntersectionObserver((entries) => {
-        entries.forEach((entry) => entry.target.classList.toggle('fx-paused', !entry.isIntersecting));
-      }, { rootMargin: '100px 0px' })
-    : null;
-
-  function fxWatch(el) { if (fxObserver && el) fxObserver.observe(el); }
-
-  fxWatch(document.querySelector('.sakura-scene'));
-  fxWatch(document.querySelector('.hero'));
-  // The 100vh modes (rain/aurora) scroll away with the hero and pause; the
-  // page-height blossom runway always intersects, so this is free there.
-  fxWatch(atmosphereEl);
-
   // ---------- Konami code easter egg ----------
   // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.
   // The sequence check lives in KazuLib.konamiMatch; the local
@@ -3151,131 +2301,7 @@
     konamiRecent.push(e.key);
     if (konamiRecent.length > 10) konamiRecent.shift();
     if (konamiMatch(konamiRecent)) { konamiRecent.length = 0; dragonFly(); }
-    // Dev panel code: only single-character keys count, so held modifiers
-    // (Shift for capitals, etc.) never pollute the rolling window.
-    if (e.key && e.key.length === 1) {
-      devRecent.push(e.key);
-      if (devRecent.length > 7) devRecent.shift(); // 'kazudev'.length
-      if (devCodeMatch(devRecent)) { devRecent.length = 0; toggleDevPanel(); }
-    }
-    if (e.key === 'Escape') closeDevPanel();
   });
-
-  // ---------- Dev settings panel (secret code: kazudev) ----------
-  // A floating panel for previewing the blossom season on any date
-  // and checking the responsive sky curve guide. Built once on first use; styles
-  // live in style.css ("DEV SETTINGS PANEL").
-  const DEV_SEASON_ROWS = [
-    ['sakura', 'Sakura'],
-  ];
-  const devRecent = [];
-  let devPanel = null;
-
-  function buildDevPanel() {
-    const el = document.createElement('div');
-    el.id = 'devPanel';
-    el.className = 'dev-panel';
-    el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', 'Developer settings');
-    el.hidden = true;
-    let html = '<div class="dev-panel-head">' +
-        '<span class="dev-panel-title">Dev settings</span>' +
-        '<button type="button" class="dev-panel-close" aria-label="Close developer settings">✕</button>' +
-      '</div>' +
-      '<div class="dev-panel-sub">Season triggers + responsive scenery preview:</div>';
-    DEV_SEASON_ROWS.forEach((row) => {
-      html += '<div class="dev-row" data-season="' + row[0] + '">' +
-          '<span class="dev-row-label">' + row[1] + ' <span class="dev-live" hidden>live</span></span>' +
-          '<span class="dev-seg" role="group" aria-label="' + row[1] + ' season override">' +
-            '<button type="button" data-mode="auto">Auto</button>' +
-            '<button type="button" data-mode="on">On</button>' +
-            '<button type="button" data-mode="off">Off</button>' +
-          '</span>' +
-        '</div>';
-    });
-    html += '<div class="dev-row" data-setting="curve">' +
-        '<span class="dev-row-label">Sky curve guide</span>' +
-        '<span class="dev-seg" role="group" aria-label="Sky curve guide mode">' +
-          '<button type="button" data-mode="auto">Auto</button>' +
-          '<button type="button" data-mode="on">On</button>' +
-          '<button type="button" data-mode="off">Off</button>' +
-        '</span>' +
-      '</div>';
-    html += '<button type="button" class="dev-reset">Reset all to auto</button>' +
-      '<div class="dev-hint">type <kbd>kazudev</kbd> to toggle · Esc to close</div>';
-    el.innerHTML = html;
-
-    el.querySelector('.dev-panel-close').addEventListener('click', closeDevPanel);
-    el.querySelector('.dev-reset').addEventListener('click', () => {
-      devSeasons = {};
-      devCurveMode = 'auto';
-      saveDevSeasons();
-      saveDevCurve();
-      applySkyCurveMode(devCurveMode);
-      applySeasons();
-      syncDevPanel(seasonState(new Date()));
-      showToast('Dev overrides cleared — back to auto');
-    });
-    el.querySelectorAll('.dev-row[data-season] .dev-seg button').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const season = btn.closest('.dev-row').dataset.season;
-        if (btn.dataset.mode === 'auto') delete devSeasons[season];
-        else devSeasons[season] = btn.dataset.mode;
-        saveDevSeasons();
-        applySeasons(); // repaint now; the per-second tick keeps it honest
-      });
-    });
-    el.querySelectorAll('.dev-row[data-setting="curve"] .dev-seg button').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        devCurveMode = devModeParse(btn.dataset.mode);
-        saveDevCurve();
-        applySkyCurveMode(devCurveMode);
-        syncDevPanel(seasonState(new Date()));
-      });
-    });
-    document.body.appendChild(el);
-    return el;
-  }
-
-  // Reflects the effective season state into the open panel: which rows are
-  // live right now, and which override (if any) is armed on each. Called by
-  // applySeasons (every second) and on open.
-  function syncDevPanel(s) {
-    if (!devPanel || devPanel.hidden) return;
-    DEV_SEASON_ROWS.forEach((row) => {
-      const key = row[0];
-      const rowEl = devPanel.querySelector('.dev-row[data-season="' + key + '"]');
-      if (!rowEl) return;
-      const live = rowEl.querySelector('.dev-live');
-      if (live) live.hidden = !s[key];
-      const mode = devSeasons[key] || 'auto';
-      rowEl.querySelectorAll('.dev-seg button').forEach((b) => {
-        const on = b.dataset.mode === mode;
-        b.classList.toggle('is-active', on);
-        b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      });
-    });
-    const curveRow = devPanel.querySelector('.dev-row[data-setting="curve"]');
-    if (curveRow) {
-      curveRow.querySelectorAll('.dev-seg button').forEach((b) => {
-        const on = b.dataset.mode === devCurveMode;
-        b.classList.toggle('is-active', on);
-        b.setAttribute('aria-pressed', on ? 'true' : 'false');
-      });
-    }
-  }
-
-  function toggleDevPanel() {
-    if (!devPanel) devPanel = buildDevPanel();
-    if (!devPanel.hidden) { closeDevPanel(); return; } // re-typing the code closes it
-    devPanel.hidden = false;
-    syncDevPanel(seasonState(new Date()));
-    showToast(' Dev settings unlocked');
-  }
-
-  function closeDevPanel() {
-    if (devPanel) devPanel.hidden = true;
-  }
 
   // ---------- Boot ----------
   // "Add me" pill + the @username line both copy my Discord username to the clipboard
@@ -3311,19 +2337,6 @@
     loadLetterboxd();
   });
 
-  // The petal/drop build waits for an idle slice: ~40 animated nodes' worth
-  // of style work has no business inside the load task (the hardcoded
-  // fallback petals in index.html cover the gap). If the weather fetch lands
-  // first and picks the real mode, this no-ops. A weather copy painted at boot
-  // (paintWeatherCache) left the sky to this slot, so it picks the mode and
-  // wakes the desktop layers from that copy.
-  scheduleIdle(() => {
-    if (atmosphereCurrent === null) {
-      setAtmosphere(ATMOSPHERE_OVERRIDE || (weatherCurrent ? atmosphereMode(weatherCurrent.code, weatherCurrent.isDay) : 'blossom'));
-    }
-    if (weatherCurrent) syncWeatherFx();
-  }, 1200);
-
   // ---------- Pause polling/ticking while the page isn't visible ----------
   // Saves battery/data when the tab is backgrounded or the phone screen is
   // locked/swiped away — covered by the Page Visibility API on both desktop
@@ -3352,8 +2365,7 @@
     { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0, firstDelay: bootGap(3300), paint: paintMalCache },
     { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(4600), paint: paintLetterboxdCache },
     { fn: loadPlaylistTracks, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(5900), paint: paintPlaylistCache },
-    // firstDelay ladder: only the clock and the weather (which also picks
-    // the atmosphere mode) fetch inside the load task now. Every other
+    // firstDelay ladder: only the clock and the weather fetch inside the load task now. Every other
     // card's FIRST fetch waits for its own rung, so the network burst, the
     // JSON parsing and the DOM rewrites land one at a time instead of as a
     // six-way pile-up. bootGap stretches the ladder on light hardware.

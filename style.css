@@ -1,23 +1,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }
-/* Time-of-day palette. There is only ONE theme now — a soft slate blue that
-   breathes with the UK day: script.js rewrites --bg-h/--bg-s/--bg-l/--bg-glow
-   from KazuLib.skyTint every 10 seconds (lighter towards midday, a faint
-   orange horizon glow around sunrise/sunset, true AMOLED black in deep
-   night). They are registered <number> properties so they carry typed
-   initial values, but they are deliberately NEVER transitioned: each step is
-   under a fifth of one 8-bit colour level, so it already reads as a glide,
-   whereas a CSS transition on an inherited custom property restyles the whole
-   document every frame (it used to cost a full CPU core at idle; see
-   applySkyTint in script.js). --bg-glow (the larger of the daylight and dusk
-   factors) scales the decorative gradient layers, so the night sky can reach
-   #000 while day and golden hour keep their depth. The fallbacks in each
-   var() are the pre-registration night values; the critical inline first
-   paint in index.html matches the deep-night result. */
-@property --bg-h { syntax: '<number>'; inherits: true; initial-value: 215; }
-@property --bg-s { syntax: '<number>'; inherits: true; initial-value: 33; }
-@property --bg-l { syntax: '<number>'; inherits: true; initial-value: 0; }
-@property --bg-glow { syntax: '<number>'; inherits: true; initial-value: 0; }
+/* The page background is a static palette now; the --bg-* tint it is built from
+   keeps its night fallbacks. */
 /* html owns the canvas colour (and the overscroll fringe); body carries the
    tinted gradient on top. */
 html { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)); }
@@ -211,14 +195,7 @@ body {
 /* ---- Theme variables ---- */
 body {
   color-scheme: dark;
-  /* One soft slate-blue palette, easy on the eyes: moderate saturation,
-     lighter towards midday, true AMOLED black in deep night. Every blue
-     below is built from the live --bg-* tint, and every decorative layer is
-     scaled by --bg-glow (the larger of the daylight/dusk factors), so the
-     sky reaches #000 only when there is genuinely no light in it. The pink
-     bloom low-left ties the sky to the blossom branches whenever there IS
-     light. Around the horizon crossings the hue warms towards indigo and
-     the .sky-glow element adds the faint orange sunrise/sunset wash. */
+  /* One soft slate-blue palette (the REDESIGN block at the end repaints it). */
   --page-bg: radial-gradient(720px 520px at 72% 8%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16 * var(--bg-glow, 1)) * 1%) / .5) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 16 * var(--bg-glow, 1)) * 1%) / 0) 60%), radial-gradient(900px 620px at 6% 88%, rgba(244,154,193,calc(.07 * var(--bg-glow, 1))) 0%, rgba(244,154,193,0) 60%), radial-gradient(1200px 700px at 80% -10%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9 * var(--bg-glow, 1)) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 9 * var(--bg-glow, 1)) * 1%) / 0) 55%), radial-gradient(1000px 600px at 0% 5%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7 * var(--bg-glow, 1)) * 1%)) 0%, hsl(calc(var(--bg-h, 215) + 12) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 7 * var(--bg-glow, 1)) * 1%) / 0) 50%), linear-gradient(170deg, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc((var(--bg-l, 9) + 5 * var(--bg-glow, 1)) * 1%)) 0%, hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg-l, 9) * 1%)) 45%, hsl(calc(var(--bg-h, 215) + 8) calc((var(--bg-s, 33) + 4) * 1%) calc((var(--bg-l, 9) + 2 * var(--bg-glow, 1)) * 1%)) 100%);
   --ink: #eaf4ff;
   --ink-soft: #9db8d4;
@@ -238,238 +215,6 @@ body {
 }
 
 .hidden { display: none !important; }
-
-/* ---- Atmosphere: cherry-blossom petals ---- */
-/* Anchored to the page (absolute, not fixed). Rain and aurora keep their
-   original one-viewport stage; blossom modes add .atmosphere--page and script
-   supplies the live document height so petals can cross the footer before
-   the clipped overflow removes them. */
-.atmosphere { position: absolute; top: 0; left: 0; right: 0; height: 100vh; overflow: hidden; pointer-events: none; z-index: 0; }
-.atmosphere.atmosphere--page { height: var(--atmosphere-height, 100vh); }
-/* Petal physics: three animations compose the drift — fallY on `transform`
-   (linear = terminal velocity), petalSway on the `translate` property and
-   petalRock on `rotate` (both ease-in-out alternate = smooth harmonic
-   motion, never a zigzag). The individual transform properties compose WITH
-   `transform`, which is what lets the three layers stack. Opacity comes
-   from --po (inline per petal) so fallY can fade petals in as they detach
-   from the branches. --spawn-y lets the transform end at the document's
-   bottom regardless of its starting branch; --exit-pad carries the full
-   glyph beyond the footer before overflow clips it. */
-.petal::before { content: ''; display: block; width: .65em; height: .9em; background: var(--sakura-petal, #f5b9d2); border-radius: 70% 20% 65% 30%; }
-.petal {
-  position: absolute; filter: blur(2px);
-  animation-name: fallY, petalSway, petalRock;
-  animation-timing-function: linear, ease-in-out, ease-in-out;
-  animation-iteration-count: infinite, infinite, infinite;
-  animation-direction: normal, alternate, alternate;
-}
-/* Rain streaks: injected by script.js when live weather says it's raining.
-   Same pattern as .petal: timing in the class, duration/delay inline per drop. */
-.drop { position: absolute; width: 1.5px; height: clamp(60px, 12vh, 110px); border-radius: 1px; background: linear-gradient(to bottom, rgba(170,210,255,0), rgba(170,210,255,.6)); animation-name: rainfall; animation-timing-function: linear; animation-iteration-count: infinite; }
-@media (prefers-reduced-motion: reduce) { .petal, .drop { animation: none; display: none; } }
-@keyframes fallY {
-  /* --y0 lets branch-spawned petals start exactly on their blossom (0vh);
-     top-spawned ones keep the default above-screen lead-in. --dx is the
-     total sideways wind drift across the whole fall (away from the branch),
-     so a petal visibly TRAVELS down and away instead of hovering in place.
-     --fall-y is the runway length frozen onto each petal at spawn (script.js):
-     reading the shared --atmosphere-height here instead made every falling
-     petal teleport whenever a live card grew the page. The calc() default
-     keeps the no-JS fallback petals working. Petals dim out over the last
-     stretch, so a cohort sized for a shorter page never pops at its loop
-     point before the gentle re-seed lands. */
-  0%   { transform: translate(0, var(--y0, -12vh)); opacity: 0; }
-  7%   { opacity: var(--po, .7); }
-  88%  { opacity: var(--po, .7); }
-  100% { transform: translate(var(--dx, 0vw), var(--fall-y, calc(var(--atmosphere-height, 100vh) - var(--spawn-y, 0px) + var(--exit-pad, 48px)))); opacity: 0; }
-}
-/* Flutter: the only oscillation — kept tight so it reads as a wobble on top
-   of the wind drift, never a shuttle back and forth. */
-@keyframes petalSway {
-  from { translate: -0.9vw 0; }
-  to   { translate: 0.9vw 0; }
-}
-@keyframes petalRock {
-  from { rotate: -14deg; }
-  to   { rotate: 16deg; }
-}
-@keyframes rainfall { 0% { transform: translateY(-15vh) rotate(9deg); } 100% { transform: translateY(115vh) rotate(9deg); } }
-@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82); } }
-
-/* ---- Sakura scenery: moon + overhanging branches ---- */
-/* Sunset sky. An absolute layer at the top of the page (it
-   scrolls away with the hero, like the scenery) painted first, so the sun,
-   moon and branches sit in front of it. Two stacked palettes crossfade on
-   --sunset-late: ::before is golden-hour orange (the sun still up), ::after
-   the rose/violet afterglow once it has gone. The whole layer's strength is
-   --sunset (0 all day and all night, easing in over the ~110 minutes before
-   sunset and out over the ~85 after; KazuLib.sunsetGlow, written by
-   script.js each minute and by the inline boot script for the first paint).
-   Each palette is a vertical sky (indigo up high, magenta, orange, gold at the
-   horizon) plus a wide glow anchored where the sun leaves the screen (right
-   edge, ~70% down: the end of the sky arc). Static gradients with an opacity
-   that steps ~1% a minute: no animation, so it costs nothing and shows on
-   every device, phones and low-power mode included.
-   The glow is still ~30% strong at the bottom of the first screen, so the
-   layer runs on past it (128vh) and every vertical size and stop is in vh,
-   not %: the first screen paints exactly as before, and below it the glow
-   fades out on its own. At 100vh the layer used to stop in a hard line as
-   soon as you scrolled. Every gradient here must be transparent before the
-   box ends. */
-.sunset-sky {
-  position: absolute; top: 0; left: 0; right: 0; height: 128vh;
-  z-index: 0; pointer-events: none; overflow: hidden;
-  opacity: var(--sunset, 0);
-}
-.sunset-sky::before, .sunset-sky::after { content: ''; position: absolute; inset: 0; }
-.sunset-sky::before {
-  opacity: calc(1 - var(--sunset-late, 0));
-  background:
-    radial-gradient(150% 76vh at 100% 60vh, rgba(255,150,45,.96) 0%, rgba(255,120,50,.7) 22%, rgba(255,92,72,.4) 46%, rgba(255,92,72,.14) 66%, rgba(255,92,72,0) 84%),
-    linear-gradient(to bottom, rgba(30,28,88,0) 0vh, rgba(84,58,128,.3) 20vh, rgba(214,96,104,.42) 40vh, rgba(255,152,60,.6) 57vh, rgba(255,196,96,.4) 69vh, rgba(255,196,96,.1) 80vh, rgba(255,196,96,0) 92vh);
-}
-.sunset-sky::after {
-  opacity: var(--sunset-late, 0);
-  background:
-    radial-gradient(150% 76vh at 100% 62vh, rgba(238,92,124,.74) 0%, rgba(196,72,144,.5) 26%, rgba(112,62,152,.3) 52%, rgba(84,62,152,.1) 70%, rgba(84,62,152,0) 86%),
-    linear-gradient(to bottom, rgba(24,22,84,0) 0vh, rgba(58,44,132,.38) 20vh, rgba(150,70,152,.42) 42vh, rgba(240,112,112,.4) 58vh, rgba(255,142,92,.26) 70vh, rgba(255,142,92,.08) 80vh, rgba(255,142,92,0) 92vh);
-}
-/* Anchored to the top of the page (absolute, not fixed): it scrolls away
-   with the hero and comes back when you scroll back up. z-index 0, same as
-   .atmosphere; it sits earlier in the DOM so petals fall in front of the
-   branches. All motion is transform-only; the moon is a static gradient so
-   it never repaints under the glass cards' backdrop-filter. Colours come
-   from the --sakura-* custom properties so seasons can restyle the SVGs. */
-.sakura-scene {
-  position: absolute; top: 0; left: 0; right: 0; height: 100vh; overflow: hidden;
-  z-index: 0; pointer-events: none;
-  --sakura-branch: #3e2a3c;
-  --sakura-branch-rim: rgba(244,180,205,.22);
-  --sakura-petal: #f4a8c4;
-  --sakura-petal-deep: #e2709c;
-  --sakura-bud: #d95f8f;
-  --sakura-stamen: #ffe9f2;
-}
-/* Clip sideways only (the sun and moon slide out through the page edges) and
-   let the horizon glow, the low sun's halo and the branches run on below the
-   first screen and fade out on their own. Clipped at 100vh they ended in a
-   hard line once you scrolled a short window. Without clip support the
-   layer keeps overflow: hidden. */
-@supports (overflow: clip) {
-  .sakura-scene { overflow: clip visible; }
-}
-/* Dev-only trajectory overlay. The SVG uses the same percentage frame as
-   skyArcPoint(), so it scales with the scenery without JS resize work. It is
-   deliberately hidden by default; kazudev's Sky curve guide turns it on. */
-.sky-curve-guide {
-  position: absolute; inset: 0; width: 100%; height: 100%; display: none;
-  overflow: visible; pointer-events: none;
-}
-.sky-curve-guide__glow {
-  fill: none; stroke: rgba(255,214,118,.20); stroke-width: 12px;
-  stroke-linecap: round;
-}
-.sky-curve-guide__line {
-  fill: none; stroke: rgba(255,239,181,.94); stroke-width: 2px;
-  stroke-linecap: round; stroke-dasharray: 7px 10px;
-  filter: drop-shadow(0 0 4px rgba(255,211,96,.9));
-}
-/* Sky body: the sun by day, the moon by night, riding an arc across the
-   scenery layer (script.js positions it from the UK clock once a minute;
-   the transition glides each step). The no-JS pose is the moon upper-right. */
-.sky-body {
-  position: absolute; left: 78%; top: 16%; transform: translate(-50%, -50%);
-  width: clamp(92px, 10vw, 148px); aspect-ratio: 1; border-radius: 50%;
-  transition: left 1.8s ease, top 1.8s ease, opacity 1.2s ease;
-}
-/* Raised by the inline #boot-tint script in <head>, lifted by script.js once
-   updateSkyBody has picked sun/moon and placed the body. Until then the
-   markup's no-JS pose (a moon, upper right) would show at any time of day and
-   then hop; instead the body fades in, already in position. Without JS the
-   class never appears, so the no-JS moon still renders. */
-html.sky-pending .sky-body { opacity: 0; }
-.sky-body--moon {
-  background: radial-gradient(circle at 38% 34%, #fffdf6 0%, #f8eed6 46%, #eedcae 74%, rgba(238,220,174,0) 78%);
-  box-shadow: 0 0 46px 22px rgba(255,240,205,.12), 0 0 130px 64px rgba(186,212,255,.07);
-  opacity: .92;
-}
-.sky-body--sun {
-  background: radial-gradient(circle at 38% 34%, #fffbe8 0%, #ffeda8 42%, #ffcf52 74%, rgba(255,207,82,0) 80%);
-  box-shadow: 0 0 60px 30px rgba(255,214,90,.32), 0 0 170px 84px rgba(255,190,60,.15);
-  opacity: .95;
-}
-/* Near either horizon (rising/setting): golden-hour sun, dimmer amber moon. */
-.sky-body--sun.sky-body--low {
-  background: radial-gradient(circle at 38% 34%, #fff3d0 0%, #ffcf7a 45%, #ff9a3d 76%, rgba(255,154,61,0) 82%);
-  box-shadow: 0 0 70px 34px rgba(255,160,60,.38), 0 0 180px 90px rgba(255,120,40,.16);
-}
-.sky-body--moon.sky-body--low { opacity: .7; }
-/* Horizon glow: a broad, faint orange wash parked where the sun crosses the
-   horizon. script.js slides its x along the horizon once a minute and fades
-   it on the dusk bell (inline opacity), so it only ever shows around sunrise
-   and sunset. Rendered before the sun/moon + branches, so it sits behind
-   them. */
-.sky-glow {
-  position: absolute; left: 78%; top: 50%; transform: translate(-50%, -50%);
-  width: clamp(340px, 52vw, 780px); aspect-ratio: 1; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,148,54,.30) 0%, rgba(255,122,44,.13) 45%, rgba(255,110,40,0) 70%);
-  opacity: 0;
-  transition: left 1.8s ease, top 1.8s ease, opacity 2.4s ease;
-}
-.sakura-branch { position: absolute; display: block; height: auto; }
-.sakura-branch--a {
-  top: 0; right: 0; width: clamp(180px, max(min(50vw, 270px), 30vw), 440px);
-  transform-origin: 100% 0;
-  /* No idle sway: the branches sit still so foreground animations never appear to move the background. */
-}
-.sakura-branch--b {
-  left: 0; top: 46%; width: clamp(190px, 21vw, 300px);
-  transform-origin: 0 80%;
-  /* No idle sway: sits still alongside the cards. */
-}
-/* Live weather layers (rain / snow / wind / clouds), drawn by weather-fx.js on
-   one fixed canvas behind the content. script.js only creates it for desktop
-   visitors, and only loads that file for them; this block is the second,
-   independent guard: on phones and tablets (coarse pointer, no hover, mobile
-   width), with reduced motion, or in low-power mode it is never displayed
-   even if something creates it. It sits after .sakura-scene in the DOM (so
-   clouds drift in front of the sun/moon and rain falls in front of the
-   branches) and before .atmosphere (petals stay on top). */
-.weather-fx {
-  position: fixed; inset: 0; width: 100vw; height: 100vh;
-  z-index: 0; pointer-events: none;
-}
-/* Clouds live on their own canvas that scrolls WITH the page (like the sky
-   scenery, viewport-tall at the top), so they stay put as you scroll instead
-   of following you; rain, snow and wind stay on the fixed canvas. */
-.weather-fx--clouds { position: absolute; inset: auto; top: 0; left: 0; right: 0; height: 100vh; }
-@media (pointer: coarse), (hover: none), (max-width: 768px), (prefers-reduced-motion: reduce) {
-  .weather-fx { display: none !important; }
-}
-body.low-power .weather-fx { display: none !important; }
-/* Cherry-blossom season only (20 Mar - 10 May, UK date; lib.js sakuraInBloom):
-   outside it the branches are not drawn. The sun/moon share this layer, so
-   only the branches go. html.no-sakura is set by the inline #boot-tint script
-   before first paint and kept in sync by script.js; the static fallback
-   petals in index.html stay hidden out of season until script.js has built
-   its own (data-built), which is also what lets an explicit ?atmosphere=
-   preview show petals out of season. */
-html.no-sakura .sakura-branch { display: none; }
-html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }
-/* Phones: no left branch (no horizontal room), and no
-   sky body — it just reads as a smudge behind the hero avatar. Custom scrollbar
-   is hidden on touch / compact screens so native inertial scrolling prevails. */
-@media (max-width: 768px) {
-  .sakura-branch--b { display: none; }
-  .sky-body { display: none; }
-  .cscroll { display: none !important; }
-}
-@media (pointer: coarse) {
-  .cscroll { display: none !important; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sakura-scene, .sakura-branch--a, .sakura-branch--b { animation: none; }
-}
 
 /* ---- Fluid sizing ----
    One rule per size, from the smallest phone to the widest desktop: every
@@ -1102,55 +847,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 body.low-power #fireworks-canvas { display: none; }
 @media (prefers-reduced-motion: reduce) { #fireworks-canvas { display: none; } }
 
-/* ============ DEV SETTINGS PANEL (secret code: kazudev) ============ */
-/* Floating season-trigger overrides; the element is built and owned by
-   script.js. Runs on the same glass tokens as the toast/modal, so it follows
-   the active theme. */
-.dev-panel {
-  position: fixed; left: 18px; bottom: 18px; z-index: 80;
-  width: min(92vw, 304px); padding: 14px 16px 12px; border-radius: 18px;
-  background: var(--card-bg); border: var(--card-bd);
-  -webkit-backdrop-filter: var(--card-blur); backdrop-filter: var(--card-blur);
-  box-shadow: 0 18px 44px rgba(3,10,24,.45); color: var(--ink);
-  font-size: 13px;
-}
-.dev-panel[hidden] { display: none; }
-.dev-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 2px; }
-.dev-panel-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; }
-.dev-panel-close {
-  width: 26px; height: 26px; border: none; cursor: pointer; border-radius: 50%;
-  background: rgba(140,170,210,.18); color: var(--ink); font-size: 13px; line-height: 1;
-  display: flex; align-items: center; justify-content: center; transition: background .2s ease;
-}
-.dev-panel-close:hover { background: rgba(140,170,210,.34); }
-.dev-panel-sub { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 10px; }
-.dev-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(140,170,210,.16); }
-.dev-row-label { font-weight: 700; white-space: nowrap; }
-.dev-live {
-  display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px;
-  background: #3ddc97; color: #06281a; font-size: 9.5px; font-weight: 800;
-  letter-spacing: .06em; text-transform: uppercase; vertical-align: 2px;
-}
-.dev-live[hidden] { display: none; }
-.dev-seg { display: flex; flex: none; border-radius: 999px; overflow: hidden; border: 1px solid rgba(140,170,210,.3); }
-.dev-seg button {
-  border: none; cursor: pointer; padding: 4px 9px; font-size: 11px; font-weight: 700;
-  background: transparent; color: var(--ink-soft); transition: background .15s ease, color .15s ease;
-}
-.dev-seg button + button { border-left: 1px solid rgba(140,170,210,.3); }
-.dev-seg button.is-active { background: var(--accent); color: #0d1b31; }
-.dev-reset {
-  margin-top: 10px; width: 100%; padding: 7px 10px; border-radius: 10px; cursor: pointer;
-  border: 1px solid rgba(140,170,210,.3); background: rgba(140,170,210,.14);
-  color: var(--ink); font-size: 12px; font-weight: 700; transition: background .2s ease;
-}
-.dev-reset:hover { background: rgba(140,170,210,.28); }
-.dev-hint { margin-top: 9px; font-size: 10.5px; font-weight: 600; color: var(--ink-faint); text-align: center; }
-.dev-hint kbd {
-  padding: 1px 5px; border-radius: 5px; border: 1px solid rgba(140,170,210,.35);
-  background: rgba(140,170,210,.14); font-family: inherit; font-size: 10px;
-}
-
 /* ============ PAGE-LOAD ENTRANCE ANIMATION ============ */
 /* A staggered "settle into place" cascade that plays on every load / refresh.
    Pure CSS (animation-fill-mode: both) so content is hidden before first paint —
@@ -1171,8 +867,6 @@ body.low-power #fireworks-canvas { display: none; }
   from { opacity: 0; transform: translateY(26px); filter: blur(12px); }
   to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
 }
-/* Ambient petal layer and scenery stay steady from first paint */
-
 /* Hero accents */
 .hero .pfp { animation: revealPop .85s ease-out .14s both; }
 /* (.title carries titleReveal in the .title rule above) */
@@ -1191,7 +885,7 @@ body.low-power #fireworks-canvas { display: none; }
 
 /* Reduced motion: skip the whole entrance — everything is simply present. */
 @media (prefers-reduced-motion: reduce) {
-  .atmosphere, .sakura-scene, .hero .pfp, .title, .stat-card {
+  .hero .pfp, .title, .stat-card {
     animation: none !important;
   }
 }
@@ -1202,7 +896,7 @@ body.low-power #fireworks-canvas { display: none; }
    an IntersectionObserver and adds .is-visible (one-shot, with a small
    per-batch stagger so grids ripple in together). Elements already on screen
    on load intersect immediately, so a refresh still waves the top of the page
-   in (the petal layer joins in with its own ambientFade, defined above).
+   in.
    Skipped entirely under prefers-reduced-motion. */
 .scroll-reveal {
   opacity: 0;
@@ -1271,14 +965,6 @@ body.low-power #fireworks-canvas { display: none; }
   .populated-in { animation: none; }
 }
 body.low-power .populated-in { animation: none; }
-
-/* ============ OFF-SCREEN POWER SAVE ============ */
-/* script.js tags fx layers with .fx-paused when they scroll out of the
-   viewport (IntersectionObserver, 100px early-wake margin). Freezing
-   animation-play-state stops the compositor work for petals, rain, aurora
-   and branch sway while nothing
-   can see them; every animation resumes mid-cycle when scrolled back. */
-.fx-paused, .fx-paused * { animation-play-state: paused !important; }
 
 /* ============ LIQUID GLASS ============ */
 /* An Apple-style "liquid glass" treatment, applied site-wide: the live-stat
@@ -1442,67 +1128,6 @@ body.low-power .populated-in { animation: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .konami-dragon, .konami-flake { display: none; }
-}
-
-/* ============ AURORA ATMOSPHERE (clear nights) ============ */
-/* Injected by script.js setAtmosphere('aurora') when Open-Meteo says the sky
-   is clear or mainly clear after dark (?atmosphere=aurora previews it). Two
-   blurred gradient ribbons drift slowly over a static starfield. All motion
-   is CSS; there is no per-frame JS. */
-.aurora { position: absolute; inset: 0; overflow: hidden; }
-.aurora-stars {
-  position: absolute; left: 0; right: 0; top: 0; height: 55%;
-  background-image:
-    radial-gradient(1.6px 1.6px at 8% 30%, rgba(255,255,255,.95), rgba(255,255,255,0) 70%),
-    radial-gradient(1.2px 1.2px at 18% 12%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
-    radial-gradient(1.8px 1.8px at 27% 44%, rgba(255,255,255,.9), rgba(255,255,255,0) 70%),
-    radial-gradient(1.1px 1.1px at 36% 20%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
-    radial-gradient(1.5px 1.5px at 47% 8%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%),
-    radial-gradient(1.2px 1.2px at 58% 36%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
-    radial-gradient(1.7px 1.7px at 67% 14%, rgba(255,255,255,.9), rgba(255,255,255,0) 70%),
-    radial-gradient(1.1px 1.1px at 76% 42%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
-    radial-gradient(1.5px 1.5px at 85% 22%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%),
-    radial-gradient(1.3px 1.3px at 93% 38%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
-    radial-gradient(1.1px 1.1px at 14% 58%, rgba(255,255,255,.65), rgba(255,255,255,0) 70%),
-    radial-gradient(1.4px 1.4px at 52% 55%, rgba(255,255,255,.7), rgba(255,255,255,0) 70%),
-    radial-gradient(1.1px 1.1px at 71% 62%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%),
-    radial-gradient(1.3px 1.3px at 89% 58%, rgba(255,255,255,.65), rgba(255,255,255,0) 70%);
-}
-.aurora-ribbon {
-  position: absolute; left: -25%; width: 150%; border-radius: 50%;
-  /* The blur that softened these bands used to force a full re-raster of two
-     ~150%-wide elements every animation frame (and kept waking the glass
-     cards' backdrop-filter). The softness is baked in instead: the gradient
-     stops fade the long edges and this mask fades the short ones, so the
-     drift animation is pure compositor transform work. */
-  pointer-events: none; will-change: transform;
-  -webkit-mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0));
-          mask: linear-gradient(to bottom, rgba(0,0,0,0), #000 35%, #000 65%, rgba(0,0,0,0));
-}
-.aurora-ribbon--a {
-  top: 3vh; height: 36vh; opacity: .55; transform: rotate(-8deg);
-  background: linear-gradient(100deg,
-    rgba(62,220,160,0) 0%, rgba(62,220,160,.55) 28%, rgba(92,198,255,.45) 52%,
-    rgba(160,92,255,.35) 74%, rgba(62,220,160,0) 100%);
-  animation: auroraDriftA 26s ease-in-out infinite alternate;
-}
-.aurora-ribbon--b {
-  top: 13vh; height: 28vh; opacity: .38; transform: rotate(-4deg);
-  background: linear-gradient(95deg,
-    rgba(92,198,255,0) 0%, rgba(92,198,255,.4) 32%, rgba(62,220,160,.5) 62%,
-    rgba(92,198,255,0) 100%);
-  animation: auroraDriftB 32s ease-in-out infinite alternate;
-}
-@keyframes auroraDriftA {
-  from { transform: rotate(-11deg) translateX(-6%) skewX(-8deg); }
-  to   { transform: rotate(-4deg)  translateX(6%)  skewX(6deg); }
-}
-@keyframes auroraDriftB {
-  from { transform: rotate(-3deg)  translateX(5%)  skewX(5deg); }
-  to   { transform: rotate(-10deg) translateX(-5%) skewX(-6deg); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .aurora-ribbon { animation: none; }
 }
 
 /* ============ LETTERBOXD CARD ============ */
@@ -1705,8 +1330,7 @@ html.glass-scrolling .toast {
      - the liquid-glass SVG refraction, particle layers, canvas bursts and the
        wheel-lerp smooth scroll are skipped in script.js (nothing to override
        here — they never get built);
-     - the remaining ambient loops (branch sway, halo spin,
-       aurora drift, equalizer, pulse dots) and all entrance motion stop. */
+     - the remaining ambient loops (pulse dots) and all entrance motion stop. */
 body.low-power { --card-blur: none; }
 body.low-power { --card-bg: rgba(40,63,98,.95); }
 body.low-power .card:not(.stat-card--bday),
@@ -1718,18 +1342,10 @@ body.low-power .steam-card,
 body.low-power .mal-card,
 body.low-power .lb-card,
 body.low-power .story-card,
-body.low-power .toast,
-body.low-power .dev-panel {
+body.low-power .toast {
   -webkit-backdrop-filter: none !important;
           backdrop-filter: none !important;
 }
-body.low-power .petal,
-body.low-power .drop { animation: none; display: none; }
-body.low-power .atmosphere,
-body.low-power .sakura-scene,
-body.low-power .sakura-branch--a,
-body.low-power .sakura-branch--b,
-body.low-power .aurora-ribbon,
 body.low-power .pfp-ring,
 body.low-power .pfp-ring::before,
 body.low-power .title,
@@ -1755,15 +1371,6 @@ body.low-power .scroll-reveal {
     width: min(calc(100vw - 24px), 380px);
     bottom: max(16px, env(safe-area-inset-bottom, 16px));
   }
-  .dev-panel {
-    left: 10px;
-    right: 10px;
-    width: auto;
-    max-width: 340px;
-    margin: 0 auto;
-    bottom: max(14px, env(safe-area-inset-bottom, 14px));
-  }
-
   /* Tactile active feedback for touch */
   .pill-link:active,
 .retry-btn:active,
@@ -1786,8 +1393,6 @@ body.low-power .scroll-reveal {
    look is decided. !important appears only where the markup carries inline
    colours (card titles, pills, story cards) or the TEXT SCALE rules at the top
    use it. A browser without CSS nesting simply keeps the rules above.
-   What it retires from view (the code behind them still runs): the sunset sky,
-   the sakura scene and petals and the weather canvas.
    Keep the tokens, the contrast and the markup this layer leans on in
    step. */
 html:not(#rd) { background: #F7F6F3; color-scheme: light; }
@@ -1831,10 +1436,6 @@ body:not(#rd) {
 
   &, & * { font-family: var(--font-text); }
   &, & p, & li, & dd, & dt, & figure { line-height: 1.5; }
-
-  /* ---- What the redesign retires from view ---- */
-  .sunset-sky, .sakura-scene, .atmosphere,
-  .weather-fx { display: none !important; }
 
   a { color: inherit; text-underline-offset: 3px; }
   a:hover { color: var(--accent); }

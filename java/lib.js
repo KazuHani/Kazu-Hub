@@ -2,8 +2,8 @@
    lib.js — pure, DOM-free helpers for Kazu Hub.
    ----------------------------------------------------------------------------
    Single source of truth for the birth config plus the deterministic
-   calculations behind the cards and the sky (UK time and DST, birthday
-   countdown, sun and sky maths, card caches, API shaping). No `document`,
+   calculations behind the cards (UK time and DST, birthday
+   countdown, card caches, API shaping). No `document`,
    no `fetch` — so it is reusable by script.js and runs under plain Node.
    Exposed as `KazuLib` on the global (window in the browser, globalThis in Node).
    ========================================================================== */
@@ -167,42 +167,8 @@
     return url;
   }
 
-  // ---- Weather-reactive atmosphere ----------------------------------------
-  // Maps an Open-Meteo weather code to the ambient particle mode:
-  //   'rain'          drizzle / rain / showers / thunderstorm
-  //   'blossom-heavy' actually snowing right now (heavier than the default)
-  //   'aurora'        clear or mainly clear AFTER DARK (northern lights + stars)
-  //   'blossom'       the cherry-blossom default for everything else
-  // isDay comes from Open-Meteo's is_day flag (true/false); when omitted the
-  // day/night split is skipped and clear skies stay on plain blossoms,
-  // matching the pre-aurora behaviour.
-  function atmosphereMode(weatherCode, isDay) {
-    var c = +weatherCode;
-    if (isNaN(c)) return 'blossom';
-    if ((c >= 51 && c <= 57) || (c >= 61 && c <= 67) || (c >= 80 && c <= 82) || c >= 95) return 'rain';
-    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'blossom-heavy';
-    if ((c === 0 || c === 1) && isDay === false) return 'aurora';
-    return 'blossom';
-  }
-
-  // Ambient particle density, scaled to the device. Every petal/drop animates
-  // UNDER the liquid-glass cards, so each one keeps waking their
-  // backdrop-filter — fine on a desktop GPU, real frame time on a phone. The
-  // feature is untouched (it still rains/drifts petals); weak devices just
-  // get a lighter drift. `o` flags: coarsePointer, smallScreen,
-  // lowConcurrency, saveData — any true flag picks the reduced count.
-  function particleCount(base, o) {
-    var n = Math.round(+base);
-    if (isNaN(n) || n <= 0) return 0;
-    o = o || {};
-    var light = !!(o.coarsePointer || o.smallScreen || o.lowConcurrency || o.saveData);
-    if (light) n = Math.round(n * 0.6);
-    return Math.min(64, Math.max(8, n));
-  }
-
-  // Whole-effect kill switch for devices that can't afford the ambient layer
-  // at all — where particleCount merely lightens the drift, this takes the
-  // petals, glass blur/refraction, wheel-lerp and entrance animations away
+  // Whole-effect kill switch for devices that can't afford the extras:
+  // glass blur/refraction, wheel-lerp and entrance animations away
   // entirely (script.js mirrors the verdict onto body.low-power, and
   // style.css does the rest). True when the visitor asked for it (save-data,
   // reduced motion) or when at least two weakness signals stack up — a weak
@@ -221,22 +187,6 @@
     return weak >= 2;
   }
 
-  // Should the live weather layers (weather-fx.js: rain, snow, wind, clouds)
-  // run for this visitor? Desktop only, and only when nothing says the page
-  // should stay quiet. Phones and tablets never get it (coarse primary
-  // pointer, no hover, a mobile UA, or a mobile-width window), nor do
-  // visitors who asked for less motion or data, nor weak hardware
-  // (lowPowerMode). Missing flags read as "not set", so a bare desktop is
-  // allowed; script.js passes every flag explicitly and never loads the
-  // file when this says no. `o` flags: coarsePointer, hoverNone, narrow,
-  // uaMobile, reducedMotion, saveData, lowPower.
-  function weatherFxAllowed(o) {
-    o = o || {};
-    if (o.coarsePointer || o.hoverNone || o.narrow || o.uaMobile) return false;
-    if (o.reducedMotion || o.saveData || o.lowPower) return false;
-    return true;
-  }
-
   // ---- Low-end devices -----------------------------------------------------
   // Gates the heavy refractive SVG displacement maps (script.js) off on
   // constrained hardware to keep the page at 60/120 FPS.
@@ -247,229 +197,6 @@
     if (o.coarsePointer && (o.smallScreen || o.lowConcurrency)) return true;
     if (o.lowMemory && o.smallScreen) return true;
     return false;
-  }
-
-  // Scales a petal's existing one-viewport fall time to the remaining page
-  // distance. This keeps the same terminal velocity on a long document while
-  // ensuring the petal crosses the footer plus a small exit pad before its
-  // animation loops back to the branch.
-  function petalFallDuration(pageHeight, spawnY, viewportHeight, baseSeconds, exitPad) {
-    var view = +viewportHeight;
-    var base = +baseSeconds;
-    if (!isFinite(view) || view <= 0 || !isFinite(base) || base <= 0) return 0;
-    var page = +pageHeight;
-    var spawn = +spawnY;
-    var pad = +exitPad;
-    if (!isFinite(page) || page < view) page = view;
-    if (!isFinite(spawn)) spawn = 0;
-    if (!isFinite(pad) || pad < 0) pad = 0;
-    var reference = view * 1.12;
-    var distance = Math.max(reference, page - spawn + pad);
-    return Math.round(base * distance / reference * 100) / 100;
-  }
-
-  // ---- Sky body (sun/moon arc) ---------------------------------------------
-  // The scenery layer's celestial body: the sun by day, the moon by night,
-  // both travelling the same arc — rising from beyond the left edge of the
-  // page, climbing to the top of the sky, setting beyond the right edge.
-  // Timed to the Europe/London wall clock (script.js feeds in ukWallParts).
-
-  // Approximate Aberystwyth sunrise/sunset in UK wall minutes from the day of
-  // year: a sinusoid between the solstices (21 Jun ≈ 05:00–21:30, 21 Dec ≈
-  // 08:15–16:00). Ambience, not an ephemeris — always within ~20 min of the
-  // real almanac times. Junk input falls back to the summer solstice.
-  function sunTimesUK(dayOfYear) {
-    var d = Math.round(+dayOfYear);
-    if (isNaN(d) || d < 1 || d > 366) d = 172;
-    var w = 2 * Math.PI * (d - 172) / 365;
-    return {
-      rise: Math.round(397.5 - 97.5 * Math.cos(w)),
-      set: Math.round(1125 + 165 * Math.cos(w)),
-    };
-  }
-
-  // A point on the sky body's 0..1 journey from sunrise to sunset. It is
-  // shared by the live sun/moon position and the dev guide so the drawn curve
-  // can never drift away from the real path.
-  // The arc is one sine that does not stop at the horizon points (x = 6% and
-  // 94%, y = 52%): it keeps sinking past them until both ends are fully
-  // off-screen, so the body slides in from beyond the left edge and out past
-  // the right edge instead of popping in and out mid-sky. The journey p in
-  // [0, 1] is stretched over that longer curve by SKY_ARC_OVERSHOOT (extra
-  // curve on each side, as a fraction of the 6%..94% span): 0.16 puts the
-  // ends at x = -8.08% / 108.08%, clear of the widest sun disc (~6% of the
-  // viewport at the narrowest width it is shown), at y ≈ 68% (the curve is
-  // already ~59% high at the screen edge itself). The crest (p = 0.5) is
-  // unchanged: dead centre, behind the profile picture.
-  // `alt` is the true height on the drawn arc: 1 at the crest, 0 at the
-  // horizon points, negative on the off-screen tails.
-  // `crestY` is optional: the page supplies the profile picture's live
-  // centre, placing the noon sun / midnight moon directly behind it.
-  var SKY_ARC_OVERSHOOT = 0.16;
-  function skyArcPoint(progress, crestY) {
-    var p = +progress;
-    if (isNaN(p)) return null;
-    p = Math.min(1, Math.max(0, p));
-    var crest = crestY == null ? 19 : +crestY;
-    if (isNaN(crest)) crest = 19;
-    crest = Math.min(52, Math.max(0, crest));
-    var q = -SKY_ARC_OVERSHOOT + p * (1 + 2 * SKY_ARC_OVERSHOOT);
-    var alt = Math.sin(Math.PI * q);
-    return {
-      x: +(6 + q * 88).toFixed(2),
-      y: +(52 - alt * (52 - crest)).toFixed(2),
-      alt: +alt.toFixed(3),
-    };
-  }
-
-  // Where the sky body sits at `ukMinutes` (minutes since UK midnight).
-  // Returns { body, x, y, alt, low }: x/y are % offsets inside the scenery
-  // layer, alt the 0..1 height along the arc (1 = top of the sky), low flags
-  // near-horizon positions for golden-hour styling. Junk time input yields
-  // null so the page keeps whatever it is already showing.
-  function skyBodyState(ukMinutes, dayOfYear, crestY) {
-    var t = +ukMinutes;
-    if (isNaN(t)) return null;
-    t = ((t % 1440) + 1440) % 1440;
-    var st = sunTimesUK(dayOfYear);
-    var dayLen = st.set - st.rise;
-    var isSun = t >= st.rise && t < st.set;
-    // Piecewise progress, re-anchored to the CLOCK: the crest (p = 0.5, dead
-    // centre behind the profile picture) is hit at exactly 12:00 by the sun
-    // and 00:00 by the moon, while sunrise/sunset still pin the horizons.
-    // (The raw midpoint of the approximate rise/set times wanders up to ~75
-    // minutes off clock noon across the year, which is what used to leave
-    // the body visibly off-centre at midday/midnight.)
-    var p;
-    if (isSun) {
-      p = t < 720 ? 0.5 * (t - st.rise) / (720 - st.rise)
-                  : 0.5 + 0.5 * (t - 720) / (st.set - 720);
-    } else {
-      var u = (((t - st.set) % 1440) + 1440) % 1440; // 0 at sunset, climbing through the night
-      var uMid = 1440 - st.set;                       // midnight's offset into the night
-      p = u < uMid ? 0.5 * u / uMid
-                   : 0.5 + 0.5 * (u - uMid) / (1440 - dayLen - uMid);
-    }
-    var point = skyArcPoint(p, crestY);
-    return {
-      body: isSun ? 'sun' : 'moon',
-      x: point.x,
-      y: point.y,
-      alt: point.alt,
-      low: point.alt < 0.28,
-    };
-  }
-
-  // Time-of-day page tint: a soft slate-blue palette that breathes with the
-  // UK day. Lightness rides the sun (0% AMOLED black in deep night, 36% soft
-  // daylight at midday), while a gaussian blush around sunrise/sunset warms
-  // the hue from blue towards indigo-violet. `glow` (max of the two factors)
-  // scales the decorative gradient layers in --page-bg so the night sky can
-  // reach TRUE black, and `glowX` tracks the sun's horizontal position (pinned
-  // to the rising horizon before dawn, the setting horizon after dusk) so
-  // script.js can park a faint orange glow where the sun crosses.
-  // script.js writes h/s/l/glow onto CSS custom properties once a minute
-  // (registered @property transitions glide each step). Junk time input
-  // yields null so the page keeps its current tint.
-  function skyTint(ukMinutes, dayOfYear) {
-    var t = +ukMinutes;
-    if (isNaN(t)) return null;
-    t = ((t % 1440) + 1440) % 1440;
-    var st = sunTimesUK(dayOfYear);
-    var day = 0;
-    if (t > st.rise && t < st.set) {
-      day = Math.sin(Math.PI * (t - st.rise) / (st.set - st.rise));
-    }
-    // 60-minute-sigma bell around each horizon crossing.
-    function bell(c) {
-      var d = Math.abs(t - c);
-      d = Math.min(d, 1440 - d);
-      return Math.exp(-(d * d) / 7200); // 2 * 60^2
-    }
-    var dusk = Math.max(bell(st.rise), bell(st.set));
-    // Sun's progress along its day arc (clock-anchored like skyBodyState),
-    // clamped to the horizons outside daylight so the pre-dawn glow sits on
-    // the rising (left) side and the post-sunset glow on the setting (right).
-    var sunP;
-    if (t <= st.rise) sunP = 0;
-    else if (t >= st.set) sunP = 1;
-    else sunP = t < 720 ? 0.5 * (t - st.rise) / (720 - st.rise)
-                        : 0.5 + 0.5 * (t - 720) / (st.set - 720);
-    return {
-      h: +(215 + 22 * dusk).toFixed(2),
-      s: +(33 + 9 * dusk).toFixed(2),
-      l: +(36 * day).toFixed(2),         // 0% AMOLED black night -> 36% gentle daylight
-      daylight: +day.toFixed(4),
-      dusk: +dusk.toFixed(4),
-      glow: +Math.max(day, dusk).toFixed(4),   // 0 at deep night -> gradient layers fade out
-      glowX: +(6 + sunP * 88).toFixed(2),      // horizon glow anchor, % across the scenery
-    };
-  }
-
-  // ---- Sunset sky --------------------------------------------------------
-  // The orange sunset gradient behind the page (style.css .sunset-sky). Only
-  // the evening: it eases in SUNSET_LEAD minutes before the day's sunset as
-  // the sun sinks towards the horizon, holds full strength from sunset for
-  // SUNSET_HOLD minutes, then fades out over SUNSET_FADE minutes of twilight.
-  // Returns { glow, late }, both 0..1:
-  //   glow  overall strength of the gradient layer
-  //   late  which palette: 0 = golden/orange (sun still up), 1 = rose/violet
-  //         afterglow (sun gone); it crossfades from 10 minutes before sunset
-  //         to 40 minutes after, so the sky warms, then deepens.
-  // script.js writes these to --sunset / --sunset-late once a minute; the
-  // inline #boot-tint script in index.html carries a compact copy so the very
-  // first paint is already right (keep the two in step). Junk time input
-  // yields null.
-  var SUNSET_LEAD = 110, SUNSET_HOLD = 12, SUNSET_FADE = 85;
-  function smoothstep01(x) {
-    x = x < 0 ? 0 : (x > 1 ? 1 : x);
-    return x * x * (3 - 2 * x);
-  }
-  function sunsetGlow(ukMinutes, dayOfYear) {
-    var t = +ukMinutes;
-    if (isNaN(t)) return null;
-    t = ((t % 1440) + 1440) % 1440;
-    var dt = t - sunTimesUK(dayOfYear).set; // minutes after sunset (negative before)
-    var glow;
-    if (dt < -SUNSET_LEAD || dt > SUNSET_HOLD + SUNSET_FADE) glow = 0;
-    else if (dt < 0) glow = smoothstep01((dt + SUNSET_LEAD) / SUNSET_LEAD);
-    else if (dt <= SUNSET_HOLD) glow = 1;
-    else glow = 1 - smoothstep01((dt - SUNSET_HOLD) / SUNSET_FADE);
-    return { glow: +glow.toFixed(3), late: +smoothstep01((dt + 10) / 50).toFixed(3) };
-  }
-
-  // Dev preview: ?time=HH:MM moves the sky (sun/moon, tint, sunset) to that UK
-  // wall-clock time; the on-page clock stays real. Returns minutes since UK
-  // midnight, or null when the query string has no valid time. The same
-  // pattern lives in the #boot-tint script (keep them in step).
-  function timeOverrideParse(search) {
-    var m = /[?&]time=(\d{1,2}):(\d{2})(?:[&#]|$)/.exec(String(search == null ? '' : search));
-    if (!m) return null;
-    var h = +m[1], mi = +m[2];
-    if (h > 23 || mi > 59) return null;
-    return h * 60 + mi;
-  }
-
-  // hsl -> '#rrggbb' for the theme-color meta (which the bg tint follows).
-  function hslToHex(h, s, l) {
-    h = ((+h % 360) + 360) % 360;
-    s = Math.min(100, Math.max(0, +s)) / 100;
-    l = Math.min(100, Math.max(0, +l)) / 100;
-    var c = (1 - Math.abs(2 * l - 1)) * s;
-    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
-    var m = l - c / 2;
-    var r, g, b;
-    if (h < 60) { r = c; g = x; b = 0; }
-    else if (h < 120) { r = x; g = c; b = 0; }
-    else if (h < 180) { r = 0; g = c; b = x; }
-    else if (h < 240) { r = 0; g = x; b = c; }
-    else if (h < 300) { r = x; g = 0; b = c; }
-    else { r = c; g = 0; b = x; }
-    function hex(v) {
-      var n = Math.round((v + m) * 255);
-      return (n < 16 ? '0' : '') + n.toString(16);
-    }
-    return '#' + hex(r) + hex(g) + hex(b);
   }
 
   // ---- Steam store links ---------------------------------------------------
@@ -1222,81 +949,6 @@
     return true;
   }
 
-  // ---- Dev settings panel (secret code + season overrides) -----------------
-  // Typing the code word anywhere on the page opens the floating dev panel
-  // (see script.js). Like konamiMatch, script.js keeps a rolling window of
-  // recent single-character keys and asks whether the window ENDS with the
-  // word; matching is case-insensitive so Caps Lock doesn't lock anyone out.
-  var DEV_CODE = 'kazudev';
-  function devCodeMatch(recentKeys) {
-    if (!recentKeys || recentKeys.length < DEV_CODE.length) return false;
-    var start = recentKeys.length - DEV_CODE.length;
-    for (var i = 0; i < DEV_CODE.length; i++) {
-      var k = recentKeys[start + i];
-      if (typeof k !== 'string' || k.toLowerCase() !== DEV_CODE.charAt(i)) return false;
-    }
-    return true;
-  }
-
-  // ---- Cherry-blossom season (sakura) ---------------------------------------
-  // The blossom branches and the falling petals belong to the time of year
-  // when Japan's cherry trees flower: first blooms in Kyushu and Tokyo around
-  // 20 March, the front reaching Tohoku in mid-April and Hokkaido in the
-  // first days of May, the last petals gone by about 10 May. (Okinawa's
-  // January/February bloom is a different tree and is left out on purpose.)
-  // Inclusive on both ends. `month` is 0-indexed like BIRTH; the page passes
-  // the UK wall date. The same two numbers live in
-  // the inline #boot-tint script in index.html (it sets html.no-sakura before
-  // first paint); keep the two in step.
-  var SAKURA_FIRST = 2 * 100 + 20; // 20 March  (month * 100 + day)
-  var SAKURA_LAST = 4 * 100 + 10;  // 10 May
-  function sakuraInBloom(month, day) {
-    var m = +month, d = +day;
-    if (isNaN(m) || isNaN(d)) return false;
-    var key = m * 100 + d;
-    return key >= SAKURA_FIRST && key <= SAKURA_LAST;
-  }
-
-  // Season-trigger overrides from the dev panel. Each season (only sakura is left) is 'auto'
-  // (follow the clock — the default, never stored), 'on' (forced live), or
-  // 'off' (forced dark). Unknown keys and values are ignored, so a
-  // hand-edited localStorage blob can never wedge the seasons.
-  var DEV_SEASON_KEYS = ['sakura'];
-  function seasonDevApply(state, overrides) {
-    var s = state || {};
-    var out = { sakura: !!s.sakura };
-    overrides = overrides || {};
-    for (var i = 0; i < DEV_SEASON_KEYS.length; i++) {
-      var k = DEV_SEASON_KEYS[i];
-      if (overrides[k] === 'on') out[k] = true;
-      else if (overrides[k] === 'off') out[k] = false;
-    }
-    return out;
-  }
-
-  // Reads the localStorage copy of the dev-panel overrides (only 'on'/'off'
-  // values are ever stored). Same contract as the other cache parsers: a
-  // sanitized object (possibly empty) for a well-formed payload, null for
-  // anything malformed.
-  function seasonDevParse(raw) {
-    if (typeof raw !== 'string' || !raw) return null;
-    var p;
-    try { p = JSON.parse(raw); } catch (e) { return null; }
-    if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
-    var out = {};
-    for (var i = 0; i < DEV_SEASON_KEYS.length; i++) {
-      var k = DEV_SEASON_KEYS[i];
-      if (p[k] === 'on' || p[k] === 'off') out[k] = p[k];
-    }
-    return out;
-  }
-
-  // Single-value mode used by non-season dev switches. Auto is the safe
-  // default for missing, malformed, or unknown localStorage values.
-  function devModeParse(raw) {
-    return raw === 'on' || raw === 'off' || raw === 'auto' ? raw : 'auto';
-  }
-
   // ---- Custom scrollbar geometry -------------------------------------------
   // Pure maths behind the JS-built page scroller (see the custom-scrollbar
   // IIFE in script.js). scrollThumbGeometry maps the document's scroll state
@@ -1385,15 +1037,8 @@
     isUkBST: isUkBST,
     birthdayCountdownParts: birthdayCountdownParts,
     openMeteoUrl: openMeteoUrl,
-    atmosphereMode: atmosphereMode,
-    particleCount: particleCount,
     lowPowerMode: lowPowerMode,
     isLowEndDevice: isLowEndDevice,
-    petalFallDuration: petalFallDuration,
-    skyArcPoint: skyArcPoint,
-    skyBodyState: skyBodyState,
-    skyTint: skyTint,
-    hslToHex: hslToHex,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,
     steamHoursText: steamHoursText,
@@ -1425,14 +1070,6 @@
     parseYouTubePlaylistRss: parseYouTubePlaylistRss,
     ytPlaylistCacheParse: ytPlaylistCacheParse,
     konamiMatch: konamiMatch,
-    devCodeMatch: devCodeMatch,
-    sakuraInBloom: sakuraInBloom,
-    sunsetGlow: sunsetGlow,
-    timeOverrideParse: timeOverrideParse,
-    weatherFxAllowed: weatherFxAllowed,
-    seasonDevApply: seasonDevApply,
-    seasonDevParse: seasonDevParse,
-    devModeParse: devModeParse,
     scrollThumbGeometry: scrollThumbGeometry,
     scrollThumbScrollY: scrollThumbScrollY,
     wheelDeltaPx: wheelDeltaPx,

@@ -12,7 +12,7 @@
 
   var SECTION_KEYS = ['quote', 'rightNow', 'socials', 'pc', 'playlist', 'stories'];
   var TITLE_KEYS = ['rightNow', 'socials', 'pc', 'playlist', 'stories'];
-  var SEASON_KEYS = ['sakura'];
+  var SEASON_KEYS = ['birthday', 'christmas', 'pride', 'sakura', 'halloween'];
   var BUILTIN_SOCIALS = ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'];
   var TONES = ['info', 'good', 'warn'];
   var MANAGED_KEYS = ['notice', 'sections', 'titles', 'seasons', 'effects', 'footer', 'integrations', 'socials', 'playlist', 'stories', 'pc'];

@@ -13,7 +13,7 @@
      onerror= attributes are not allowed; #boot-handlers holds those. Keep this
      above every <script>: a meta policy only covers what comes after it. -->
   <meta http-equiv="Content-Security-Policy"
-    content="script-src 'self' 'sha256-OME5ujRqi3Ty3yeZ56IkDPjWXQD/o/6xb7E34IQ2nik=' 'sha256-oIEouUlA85rLj3DP8s0BC4+Yc3s+f2OtDFZmwBylFm8=' 'sha256-52522rWN4AP/B7ub1DFvj/o+0dhCXSkkL+x+sRyHWig=' 'sha256-1ALHh1QYrraetCQ11DVdnUtJtL4ydmG6UFmy0FpMlUI=' 'sha256-Eh+xAfNnLZ7PxzmPxMuIdjILU9vczY5U9i5qForHtuo=' 'sha256-pDxHDRJ0sz0IgWuYM1HDPJHzwu6cVljTT5WZ5HWBQ4s=' 'sha256-ptCMkn6CQKg7QV/wenb8UprURBKit8t9TOjbvpWMtZ4='; object-src 'none'; base-uri 'self'">
+    content="script-src 'self' 'sha256-OME5ujRqi3Ty3yeZ56IkDPjWXQD/o/6xb7E34IQ2nik=' 'sha256-52522rWN4AP/B7ub1DFvj/o+0dhCXSkkL+x+sRyHWig=' 'sha256-1ALHh1QYrraetCQ11DVdnUtJtL4ydmG6UFmy0FpMlUI=' 'sha256-Eh+xAfNnLZ7PxzmPxMuIdjILU9vczY5U9i5qForHtuo=' 'sha256-pDxHDRJ0sz0IgWuYM1HDPJHzwu6cVljTT5WZ5HWBQ4s=' 'sha256-ptCMkn6CQKg7QV/wenb8UprURBKit8t9TOjbvpWMtZ4='; object-src 'none'; base-uri 'self'">
   <title>Kazu Hani</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="kazu-control" content="">
@@ -79,114 +79,13 @@
   <link rel="dns-prefetch" href="//i.scdn.co">
   <link rel="dns-prefetch" href="//avatars.steamstatic.com">
   <link rel="dns-prefetch" href="//a.ltrbxd.com">
-  <!-- Critical first paint: the stylesheets below are render-blocking, so on a
-     cold cache the page used to sit WHITE until style.css arrived. This tag
-     paints the canvas inline; #boot-tint below overwrites its colour with the
-     live time-of-day tint. #000 (AMOLED deep night, matching the --bg-*
-     initial values at the top of style.css) is only the no-JS fallback. -->
-  <style id="boot-canvas">
-    html {
-      background: #000;
-      color-scheme: dark
-    }
-  </style>
-  <!-- Boot tint: script.js sits at the end of <body>, so before this existed the
-     first paint ALWAYS used the night defaults (black canvas, black gradient,
-     black theme-color, moon in the sky) and only snapped to the real
-     time-of-day palette once script.js had downloaded and run — a visible
-     black flash on any daytime load. This runs before the first paint and
-     writes the same --bg-h/s/l/glow properties script.js writes (same maths as
-     KazuLib.skyTint / hslToHex; keep the two copies in step), then the canvas <style> above, and the theme-color meta.
-     It writes --sunset / --sunset-late too (KazuLib.sunsetGlow), so a page
-     opened at dusk starts with the sunset sky already in place, and honours
-     ?time=HH:MM for previews. It also adds html.no-sakura outside the cherry-blossom window (same
-     rule as KazuLib.sakuraInBloom; keep them in step) so the branches are never drawn out of season, and raises
-     html.sky-pending so the sun/moon element (whose pose needs
-     layout and lives in script.js) stays hidden until script.js has placed it
-     and lifts the class itself; the timeout is only a failsafe for a
-     script.js that never arrives. Wrapped in try/catch: any failure leaves
-     the plain night defaults, exactly the old behaviour.
-     The UK wall clock is worked out by ARITHMETIC (BST runs from 01:00 UTC on
-     the last Sunday of March to 01:00 UTC on the last Sunday of October: the
-     rule in KazuLib.isUkBST), deliberately not with Intl. The first Intl
-     object in a page pays ICU's one-off start-up (~25 ms on a fast phone, ~100
-     ms on a mid one), and this script blocks first paint; lib.js pays it
-     after the first paint instead. Keep this in step with
-     KazuLib.ukWallParts, including both clock-change days. -->
-  <script id="boot-tint">
-    // Blocked storage cannot prevent the tint loading.
-    (function () {
-      try {
-        var de = document.documentElement;
-        var nowD = new Date(), yr = nowD.getUTCFullYear(), nowMs = nowD.getTime();
-        var lastSun = function (m) { // 01:00 UTC on the last Sunday of month m (0-indexed)
-          var d = new Date(Date.UTC(yr, m + 1, 0));
-          d.setUTCDate(d.getUTCDate() - d.getUTCDay());
-          return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 1);
-        };
-        var wall = new Date(nowMs + (nowMs >= lastSun(2) && nowMs < lastSun(9) ? 3600000 : 0));
-        var o = { year: wall.getUTCFullYear(), month: wall.getUTCMonth() + 1, day: wall.getUTCDate(), hour: wall.getUTCHours(), minute: wall.getUTCMinutes() };
-        var t = (o.hour % 24) * 60 + o.minute;
-        // Dev preview: ?time=HH:MM moves the sky to that UK time (same pattern as
-        // KazuLib.timeOverrideParse; the on-page clock stays real).
-        var tm = /[?&]time=(\d{1,2}):(\d{2})(?:[&#]|$)/.exec(location.search);
-        if (tm && +tm[1] < 24 && +tm[2] < 60) t = +tm[1] * 60 + +tm[2];
-        // Cherry-blossom season, 20 Mar - 10 May on the UK date (same window as
-        // KazuLib.sakuraInBloom): outside it the branches are hidden from the start.
-        var md = (o.month - 1) * 100 + o.day;
-        if (md < 220 || md > 410) de.classList.add('no-sakura');
-        var doy = Math.round((Date.UTC(o.year, o.month - 1, o.day) - Date.UTC(o.year, 0, 1)) / 86400000) + 1;
-        var w = 2 * Math.PI * (doy - 172) / 365;
-        var rise = Math.round(397.5 - 97.5 * Math.cos(w));
-        var set = Math.round(1125 + 165 * Math.cos(w));
-        var day = t > rise && t < set ? Math.sin(Math.PI * (t - rise) / (set - rise)) : 0;
-        var bell = function (c) {
-          var d = Math.abs(t - c);
-          d = Math.min(d, 1440 - d);
-          return Math.exp(-(d * d) / 7200);
-        };
-        var dusk = Math.max(bell(rise), bell(set));
-        var h = +(215 + 22 * dusk).toFixed(2);
-        var s = +(33 + 9 * dusk).toFixed(2);
-        var l = +(36 * day).toFixed(2);
-        var glow = +Math.max(day, dusk).toFixed(4);
-        // Sunset sky (same maths as KazuLib.sunsetGlow): eases in 110 min before
-        // sunset, full from sunset for 12 min, gone 85 min later; `sl` crossfades
-        // the palette from golden to rose/violet around sunset.
-        var dt = t - set;
-        var ss = function (v) { v = v < 0 ? 0 : v > 1 ? 1 : v; return v * v * (3 - 2 * v); };
-        var sg = dt < -110 || dt > 97 ? 0 : dt < 0 ? ss((dt + 110) / 110) : dt <= 12 ? 1 : 1 - ss((dt - 12) / 85);
-        var c = (1 - Math.abs(2 * (l / 100) - 1)) * (s / 100);
-        var x = c * (1 - Math.abs((h / 60) % 2 - 1));
-        var m = l / 100 - c / 2;
-        var rgb = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
-        var hex = '#';
-        for (var k = 0; k < 3; k++) {
-          var n = Math.round((rgb[k] + m) * 255);
-          hex += (n < 16 ? '0' : '') + n.toString(16);
-        }
-        de.style.setProperty('--bg-h', h);
-        de.style.setProperty('--bg-s', s);
-        de.style.setProperty('--bg-l', l);
-        de.style.setProperty('--bg-glow', glow);
-        de.style.setProperty('--sunset', +sg.toFixed(3));
-        de.style.setProperty('--sunset-late', +ss((dt + 10) / 50).toFixed(3));
-        var canvas = document.getElementById('boot-canvas');
-        if (canvas) canvas.textContent = 'html{background:' + hex + ';color-scheme:dark}';
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', hex);
-        de.classList.add('sky-pending');
-        setTimeout(function () { de.classList.remove('sky-pending'); }, 8000);
-      } catch (e) { }
-    })();
-  </script>
   <!-- Repeat visits: script.js paints each Right-now card from its localStorage
      copy, but the browser paints the page before script.js (at the end of
      <body>) runs, so the cards would show their loading rows first and then
      jump to full height (measured CLS 0.32 on a throttled phone). When any card
      copy exists, the cards are held out of sight from the first paint until
      script.js has painted them (it removes this style in the same task); hidden
-     elements never count as a layout shift. 8 s failsafe, like sky-pending. -->
+     elements never count as a layout shift. 8 s failsafe. -->
   <script id="boot-cards">
     (function () {
       try {
@@ -247,7 +146,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@24,400;24,500&display=swap"
       rel="stylesheet">
   </noscript>
-  <link rel="stylesheet" href="style.css?v=133">
+  <link rel="stylesheet" href="style.css?v=134">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -322,169 +221,6 @@
       } catch (e) { }
     })();
   </script>
-
-  <!-- sunset sky: the orange evening gradient. First in the body so the sun,
-       moon and branches paint in front of it. Its strength and palette come
-       from --sunset / --sunset-late (KazuLib.sunsetGlow); it is invisible the
-       rest of the day. Decorative and static, so it shows on every device. -->
-  <div class="sunset-sky" aria-hidden="true"></div>
-
-  <!-- moonlit sakura scenery: glowing moon + branches reaching in from the
-       page edges. Purely decorative. -->
-  <div class="sakura-scene" aria-hidden="true">
-    <!-- Dev-only guide: script.js traces the exact sky-body arc here when
-         kazudev's Sky curve guide is forced on. -->
-    <svg class="sky-curve-guide" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <path class="sky-curve-guide__glow" vector-effect="non-scaling-stroke"></path>
-      <path class="sky-curve-guide__line" vector-effect="non-scaling-stroke"></path>
-    </svg>
-    <!-- Faint orange glow hugging the horizon at sunrise/sunset; script.js
-         drives its position + opacity from the skyTint dusk bell. -->
-    <div class="sky-glow"></div>
-    <div class="sky-body sky-body--moon"></div>
-    <svg class="sakura-branch sakura-branch--a" viewBox="0 0 460 340" focusable="false">
-      <defs>
-        <g id="sakura-f">
-          <g style="fill:var(--sakura-petal)">
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(72)" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(144)" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(216)" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(288)" />
-          </g>
-          <circle r="2.5" style="fill:var(--sakura-petal-deep)" />
-          <g style="fill:var(--sakura-stamen)">
-            <circle cx="0" cy="-4" r=".8" />
-            <circle cx="3.8" cy="1.2" r=".8" />
-            <circle cx="-3.8" cy="1.2" r=".8" />
-            <circle cx="2.2" cy="-2.8" r=".65" />
-            <circle cx="-2.2" cy="-2.8" r=".65" />
-          </g>
-        </g>
-        <g id="sakura-b">
-          <circle r="3.4" style="fill:var(--sakura-bud)" />
-          <path d="M-3.8,1.4 Q0,5 3.8,1.4"
-            style="stroke:var(--sakura-branch);stroke-width:1.5;fill:none;stroke-linecap:round" />
-        </g>
-      </defs>
-      <!-- wood: main limb from the top-right corner, two drooping forks -->
-      <path d="M462,-6 C420,10 366,40 326,66 C312,76 296,88 282,102"
-        style="stroke:var(--sakura-branch);stroke-width:10;fill:none;stroke-linecap:round" />
-      <path d="M462,-6 C420,10 366,40 326,66 C312,76 296,88 282,102"
-        style="stroke:var(--sakura-branch-rim);stroke-width:3;fill:none;stroke-linecap:round" />
-      <path d="M282,102 C266,116 252,124 238,128"
-        style="stroke:var(--sakura-branch);stroke-width:7;fill:none;stroke-linecap:round" />
-      <path d="M238,128 C204,146 172,182 150,214"
-        style="stroke:var(--sakura-branch);stroke-width:5.5;fill:none;stroke-linecap:round" />
-      <path d="M196,160 C182,152 168,148 152,146"
-        style="stroke:var(--sakura-branch);stroke-width:3;fill:none;stroke-linecap:round" />
-      <path d="M282,102 C300,140 306,180 300,224"
-        style="stroke:var(--sakura-branch);stroke-width:5.5;fill:none;stroke-linecap:round" />
-      <path d="M344,58 C320,48 296,44 272,46"
-        style="stroke:var(--sakura-branch);stroke-width:3.5;fill:none;stroke-linecap:round" />
-      <!-- blossom clusters -->
-      <use href="#sakura-f" transform="translate(386,30) rotate(-30) scale(1.5)" />
-      <use href="#sakura-f" transform="translate(326,66) rotate(-15) scale(1.4)" />
-      <use href="#sakura-f" transform="translate(282,102) rotate(25) scale(1.15)" opacity=".92" />
-      <use href="#sakura-f" transform="translate(238,128) rotate(-55) scale(1.3)" />
-      <use href="#sakura-f" transform="translate(272,46) rotate(40) scale(.9)" opacity=".85" />
-      <use href="#sakura-f" transform="translate(222,138) rotate(55)" opacity=".88" />
-      <use href="#sakura-f" transform="translate(206,154) rotate(-45) scale(1.25)" />
-      <use href="#sakura-f" transform="translate(176,184) rotate(30) scale(1.1)" opacity=".9" />
-      <use href="#sakura-f" transform="translate(150,214) rotate(-20) scale(1.35)" />
-      <use href="#sakura-f" transform="translate(152,146) rotate(15) scale(.95)" opacity=".85" />
-      <use href="#sakura-f" transform="translate(292,146) rotate(50) scale(1.2)" />
-      <use href="#sakura-f" transform="translate(304,186) rotate(-35) scale(1.05)" opacity=".9" />
-      <use href="#sakura-f" transform="translate(300,224) rotate(10) scale(1.3)" />
-      <!-- buds -->
-      <use href="#sakura-b" transform="translate(134,228) rotate(20)" />
-      <use href="#sakura-b" transform="translate(296,244) rotate(-15) scale(.9)" />
-      <use href="#sakura-b" transform="translate(258,44) rotate(30) scale(.85)" />
-      <use href="#sakura-b" transform="translate(168,140) rotate(-40) scale(.8)" />
-    </svg>
-    <svg class="sakura-branch sakura-branch--b" viewBox="0 0 300 280" focusable="false">
-      <defs>
-        <g id="sakura-f2">
-          <g style="fill:var(--sakura-petal)">
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(72)" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(144)" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(216)" />
-            <ellipse cx="0" cy="-6.4" rx="4.5" ry="6.6" transform="rotate(288)" />
-          </g>
-          <circle r="2.5" style="fill:var(--sakura-petal-deep)" />
-          <g style="fill:var(--sakura-stamen)">
-            <circle cx="0" cy="-4" r=".8" />
-            <circle cx="3.8" cy="1.2" r=".8" />
-            <circle cx="-3.8" cy="1.2" r=".8" />
-            <circle cx="2.2" cy="-2.8" r=".65" />
-            <circle cx="-2.2" cy="-2.8" r=".65" />
-          </g>
-        </g>
-        <g id="sakura-b2">
-          <circle r="3.4" style="fill:var(--sakura-bud)" />
-          <path d="M-3.8,1.4 Q0,5 3.8,1.4"
-            style="stroke:var(--sakura-branch);stroke-width:1.5;fill:none;stroke-linecap:round" />
-        </g>
-      </defs>
-      <!-- wood: limb from the left edge, forking up and down -->
-      <path d="M-8,262 C40,220 66,186 92,150 C104,134 118,120 136,108"
-        style="stroke:var(--sakura-branch);stroke-width:8;fill:none;stroke-linecap:round" />
-      <path d="M-8,262 C40,220 66,186 92,150 C104,134 118,120 136,108"
-        style="stroke:var(--sakura-branch-rim);stroke-width:2.5;fill:none;stroke-linecap:round" />
-      <path d="M136,108 C158,94 184,84 214,78"
-        style="stroke:var(--sakura-branch);stroke-width:5;fill:none;stroke-linecap:round" />
-      <path d="M136,108 C150,88 158,66 160,44"
-        style="stroke:var(--sakura-branch);stroke-width:4;fill:none;stroke-linecap:round" />
-      <path d="M92,150 C110,168 120,190 124,214"
-        style="stroke:var(--sakura-branch);stroke-width:4;fill:none;stroke-linecap:round" />
-      <!-- blossom clusters -->
-      <use href="#sakura-f2" transform="translate(214,78) rotate(-25) scale(1.3)" />
-      <use href="#sakura-f2" transform="translate(180,88) rotate(35) scale(1.05)" opacity=".9" />
-      <use href="#sakura-f2" transform="translate(148,102) rotate(-40) scale(1.2)" />
-      <use href="#sakura-f2" transform="translate(160,44) rotate(15) scale(1.25)" />
-      <use href="#sakura-f2" transform="translate(152,72) rotate(-55) scale(.95)" opacity=".85" />
-      <use href="#sakura-f2" transform="translate(124,214) rotate(45) scale(1.15)" />
-      <use href="#sakura-f2" transform="translate(112,182) rotate(-15)" opacity=".9" />
-      <use href="#sakura-f2" transform="translate(92,150) rotate(60) scale(1.3)" />
-      <use href="#sakura-f2" transform="translate(60,196) rotate(-30) scale(1.1)" opacity=".92" />
-      <use href="#sakura-f2" transform="translate(28,232) rotate(20) scale(1.2)" />
-      <!-- buds -->
-      <use href="#sakura-b2" transform="translate(226,72) rotate(15)" />
-      <use href="#sakura-b2" transform="translate(164,32) rotate(-20) scale(.85)" />
-      <use href="#sakura-b2" transform="translate(128,226) rotate(40) scale(.9)" />
-    </svg>
-  </div>
-
-  <!-- ambient weather-reactive particle layer (petals / rain / aurora);
-       the hardcoded petals below are the no-JS fallback, replaced on load.
-       Blossom-mode petals detach from the branches, matching script.js. -->
-  <div class="atmosphere" aria-hidden="true">
-    <span class="petal"
-      style="left:95%;top:4%;--y0:0vh;--dx:-12vw;font-size:21px;--po:.85;filter:blur(1px);--fall-y:115vh;animation-duration:15s,2.8s,4.2s;animation-delay:.5s,-.8s,-2.2s;"></span>
-    <span class="petal"
-      style="left:91%;top:9%;--y0:0vh;--dx:-9vw;font-size:13px;--po:.5;filter:blur(2.5px);--fall-y:115vh;animation-duration:21s,3.6s,3.6s;animation-delay:3s,-2.8s,-.4s;"></span>
-    <span class="petal"
-      style="left:86%;top:13%;--y0:0vh;--dx:-15vw;font-size:23px;--po:.8;filter:blur(1.1px);--fall-y:115vh;animation-duration:13s,3.2s,4.9s;animation-delay:1.5s,-1.6s,-3.1s;"></span>
-    <span class="petal"
-      style="left:82%;top:18%;--y0:0vh;--dx:-10vw;font-size:12px;--po:.48;filter:blur(2.5px);--fall-y:115vh;animation-duration:23s,3.8s,5.2s;animation-delay:5.5s,-3.4s,-1.2s;"></span>
-    <span class="petal"
-      style="left:89%;top:6%;--y0:0vh;--dx:-13vw;font-size:17px;--po:.68;filter:blur(1.8px);--fall-y:115vh;animation-duration:16s,2.4s,3.4s;animation-delay:2.5s,-.2s,-2.7s;"></span>
-    <span class="petal"
-      style="left:93%;top:15%;--y0:0vh;--dx:-16vw;font-size:15px;--po:.6;filter:blur(2.1px);--fall-y:115vh;animation-duration:18s,3.4s,4.6s;animation-delay:6.5s,-2.1s,-.9s;"></span>
-    <span class="petal"
-      style="left:80%;top:9%;--y0:0vh;--dx:-8vw;font-size:22px;--po:.78;filter:blur(1.2px);--fall-y:115vh;animation-duration:14s,3s,5.1s;animation-delay:1s,-1.1s,-4s;"></span>
-    <span class="petal"
-      style="left:84%;top:21%;--y0:0vh;--dx:-11vw;font-size:13px;--po:.52;filter:blur(2.4px);--fall-y:115vh;animation-duration:20s,3.7s,3.3s;animation-delay:4.5s,-3.9s,-1.8s;"></span>
-    <span class="petal"
-      style="left:2%;top:52%;--y0:0vh;--dx:12vw;font-size:18px;--po:.66;filter:blur(1.7px);--fall-y:115vh;animation-duration:17s,2.6s,4.4s;animation-delay:2s,-2.4s,-.6s;"></span>
-    <span class="petal"
-      style="left:6%;top:58%;--y0:0vh;--dx:9vw;font-size:15px;--po:.6;filter:blur(2px);--fall-y:115vh;animation-duration:19s,3.3s,3.8s;animation-delay:5s,-.5s,-3.6s;"></span>
-    <span class="petal"
-      style="left:11%;top:50%;--y0:0vh;--dx:15vw;font-size:20px;--po:.74;filter:blur(1.4px);--fall-y:115vh;animation-duration:14s,2.3s,4.7s;animation-delay:.8s,-1.9s,-2.9s;"></span>
-    <span class="petal"
-      style="left:8%;top:64%;--y0:0vh;--dx:10vw;font-size:14px;--po:.55;filter:blur(2.3px);--fall-y:115vh;animation-duration:21s,3.5s,5.3s;animation-delay:6s,-3.2s,-1.5s;"></span>
-  </div>
 
   <div class="page">
 
@@ -973,10 +709,6 @@
 
     </div>
 
-    <!-- MEADOW FOOTER: a grassy field with a house. One decorative SVG whose colours are
-         CSS tokens that follow the time of day, the sunset and (for the blossom) the
-         cherry-blossom season; see style.css "MEADOW FOOTER". Full-bleed, so it sits outside
-         the width-limited .container; the credit line rests on the grass. -->
     <footer class="footer scroll-reveal">
       <a class="footer-top" href="#top">Back to top</a>
     </footer>
@@ -989,10 +721,10 @@
   <svg id="glass-filters" width="0" height="0" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink"
     style="position:absolute"></svg>
 
-  <script src="java/lib.js?v=50"></script>
+  <script src="java/lib.js?v=51"></script>
   <script src="java/site-config.js?v=2"></script>
   <script src="java/i18n.js?v=6"></script>
-  <script src="java/script.js?v=108"></script>
+  <script src="java/script.js?v=109"></script>
   <script id="sw-register">
     // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
     // ever serves stale while online; the cache is only the offline fallback.
