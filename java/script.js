@@ -1591,8 +1591,8 @@
     lastDiscordFallbackAvatar = discordAvatarUrl(u);
     const avatarEl = $('discordAvatar');
     if (avatarEl) {
-      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : 'assets/profile.webp');
-      avatarEl.onerror = () => { avatarEl.src = 'assets/profile.webp'; };
+      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : 'assets/profile.webp?v=2');
+      avatarEl.onerror = () => { avatarEl.src = 'assets/profile.webp?v=2'; };
     }
     $('discordName').textContent = displayName;
 
@@ -3475,7 +3475,7 @@
     showToast('Konami! The dragon takes flight…');
     const d = document.createElement('div');
     d.className = 'konami-dragon';
-    d.innerHTML = '<img src="assets/profile.webp" width="64" height="64" alt="">';
+    d.innerHTML = '<img src="assets/profile.webp?v=2" width="64" height="64" alt="">';
     d.setAttribute('aria-hidden', 'true');
     document.body.appendChild(d);
     d.addEventListener('animationend', () => { d.remove(); konamiBusy = false; });
