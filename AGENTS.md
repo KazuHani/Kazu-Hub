@@ -97,7 +97,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   a thin DOM shell that only runs while Japanese is on. Loaded after
   `site-config.js` and before `script.js`, versioned by `?v=` (see cache busting), precached. See
   "Language switch" below.
-- `404.html`, `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
+- `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
   plumbing. `assets/` holds images/icons.
 - `tools/csp-hashes.js` — checks the SHA-256 hashes of the inline scripts against the
   Content-Security-Policy in `index.html`; `--fix` rewrites them (see "Content-Security-Policy").

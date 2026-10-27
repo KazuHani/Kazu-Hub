@@ -13,7 +13,7 @@
    ========================================================================== */
 'use strict';
 
-const CACHE = 'kazu-shell-v125';
+const CACHE = 'kazu-shell-v126';
 const PRECACHE = [
   './',
   './index.html',
@@ -63,7 +63,7 @@ self.addEventListener('fetch', (event) => {
       Promise.resolve(event.preloadResponse)
         .then((preloaded) => preloaded || fetch(req))
         .then((res) => {
-          // Other documents (404.html, a stray page) must never replace the
+          // Other documents (a stray page) must never replace the
           // offline home page. Navigations still remain network-first.
           if (res.ok && (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html'))) {
             const copy = res.clone();
