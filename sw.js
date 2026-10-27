@@ -17,7 +17,7 @@ const CACHE = 'kazu-shell-v124';
 const PRECACHE = [
   './',
   './index.html',
-  './style.css?v=114',
+  './style.css?v=115',
   './script.js?v=98',
   './lib.js?v=46',
   './site-config.js?v=1',

@@ -2716,7 +2716,7 @@ body:not(#rd) {
   a.recent-game-row { margin: 0; padding: 10px 0; border-radius: 0; }
   a.recent-game-row[href]:hover { background: none; }
   a.recent-game-row[href]:hover .recent-game-name { color: var(--accent) !important; }
-  .recent-game-logo { flex: none; width: 56px; height: 80px; border-radius: 6px; object-fit: cover; background: var(--track); }
+  .recent-game-logo { flex: none; width: 120px; height: 56px; border-radius: 6px; object-fit: cover; background: var(--track); }
   .steam-fallback { padding: 0; }
   .steam-fallback-title { color: var(--ink); font-weight: 600; margin-bottom: 4px; }
   .steam-fallback-text { color: var(--muted); font-weight: 400; }
