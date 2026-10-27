@@ -2221,7 +2221,9 @@ body.low-power .populated-in { animation: none; }
 .lb-year { color: #b8c4cf; font-weight: 500; font-size: .82em; }
 .lb-stars { color: #ff8000; font-size: 15px; letter-spacing: .08em; margin-top: 3px; }
 .lb-watched { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: #b8c4cf; margin-top: 3px; }
-.lb-review { font-size: clamp(11.5px, 3.5938vw, 14.95px); line-height: 1.45; color: #dfe6ec; margin-top: 8px; font-style: italic; overflow-wrap: anywhere; }
+.lb-review { flex: 1 1 200px; min-width: 0; align-self: flex-start; }
+.lb-review-label { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #00e054; }
+.lb-review-text { font-size: clamp(11.5px, 3.5938vw, 14.95px); line-height: 1.45; color: #dfe6ec; margin-top: 3px; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   .lb-entry { transition: none; }
   .lb-entry:hover, .lb-entry:active { transform: none; }
@@ -2734,7 +2736,7 @@ body:not(#rd) {
     color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none;
   }
 
-  .lb-entry, a.lb-entry { display: flex; align-items: flex-start; gap: 16px; padding: 0; background: none; border: 0; border-radius: 0; transform: none; }
+  .lb-entry, a.lb-entry { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 0; background: none; border: 0; border-radius: 0; transform: none; }
   .lb-entry:hover { background: none; transform: none; }
   .lb-entry:hover .lb-title { color: var(--accent); }
   .lb-poster { display: block; flex: none; width: 56px; height: 80px; aspect-ratio: auto; border-radius: 6px; object-fit: cover; box-shadow: none; background: var(--track); }
@@ -2744,7 +2746,9 @@ body:not(#rd) {
   .lb-year { color: var(--muted); font-weight: 400; font-size: 18px !important; }
   .lb-stars { margin-top: 8px; color: var(--ink) !important; letter-spacing: .12em; }
   .lb-watched { margin-top: 4px; color: var(--muted) !important; font-weight: 400; }
-  .lb-review { margin-top: 8px; color: var(--ink) !important; font-style: normal; }
+  .lb-review { padding-left: 16px; }
+  .lb-review-label { margin-bottom: 2px; color: var(--muted) !important; font-weight: 400; letter-spacing: 0; text-transform: none; }
+  .lb-review-text { margin-top: 0; color: var(--ink) !important; }
 
   /* ---- Socials: a hairline list, name over handle ---- */
   .socials-grid {

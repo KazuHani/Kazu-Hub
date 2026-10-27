@@ -2310,8 +2310,8 @@
               '<div class="lb-title">' + escapeHtml(entry.title) + (entry.year ? ' <span class="lb-year">' + entry.year + '</span>' : '') + '</div>' +
               (entry.stars ? '<div class="lb-stars">' + entry.stars + '</div>' : '') +
               (entry.watched ? '<div class="lb-watched">' + escapeHtml(entry.watched) + '</div>' : '') +
-              (entry.review ? '<div class="lb-review">' + escapeHtml(entry.review) + '</div>' : '') +
             '</div>' +
+            (entry.review ? '<div class="lb-review"><div class="lb-review-label">Review</div><div class="lb-review-text">' + escapeHtml(entry.review) + '</div></div>' : '') +
           '</a>';
       }
     }
