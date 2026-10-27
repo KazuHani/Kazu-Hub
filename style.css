@@ -36,8 +36,8 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
      display 1.75 x unit the stat tile numbers (time, temperature, age) (28px .. 28.9px)
      name   own clamp    the hero name "Kazu Hani"                 (46px .. 84px)
    To make the whole site bigger or smaller, change --font-unit; to move one
-   role, change its ratio. evals/font-scale.js fails if anything gets too small
-   on a phone or too large on a desktop. !important is deliberate: it beats the
+   role, change its ratio. Check nothing gets too small on a phone or too large
+   on a desktop. !important is deliberate: it beats the
    per-component sizes further down. */
 :root {
   --font-unit: clamp(16px, 15.5px + .05vw, 16.5px);
@@ -327,8 +327,8 @@ body {
    layer runs on past it (128vh) and every vertical size and stop is in vh,
    not %: the first screen paints exactly as before, and below it the glow
    fades out on its own. At 100vh the layer used to stop in a hard line as
-   soon as you scrolled. evals/sky-edges.js checks every gradient here is
-   transparent before the box ends. */
+   soon as you scrolled. Every gradient here must be transparent before the
+   box ends. */
 .sunset-sky {
   position: absolute; top: 0; left: 0; right: 0; height: 128vh;
   z-index: 0; pointer-events: none; overflow: hidden;
@@ -498,9 +498,7 @@ body.season-christmas .sakura-branch { display: none; }
    the window gets wider. Width media queries below only change layout
    (columns, stacking); they never set a text or picture size. Text sized to
    its own card (the stat values, the PC specs) uses container units instead.
-   evals/fluid-layout.js pins the formula, the floors (10px at 320px, 12px
-   from 390px) and the grids; tests.html and evals/layout-sweep.js measure the
-   real page across widths. */
+   The floors are 10px at 320px and 12px from 390px. */
 .container {
   position: relative; z-index: 1; max-width: 1120px; margin: 0 auto;
   padding: clamp(20px, 5vw, 64px) clamp(12px, 3.75vw, 40px) 64px;
@@ -528,7 +526,7 @@ body.season-christmas .sakura-branch { display: none; }
    A peek slides it out along its own tilt until head and cheeks clear the rim,
    wobbles, holds, and slides back. One-shot: script.js adds .is-peeking, drops
    it on animationend and re-arms a timer (KazuLib.chiikawaPeekDelay), so
-   nothing runs between visits (no infinite loop: see evals/perf-guards.js).
+   nothing runs between visits (no infinite loop).
    Sizes are percentages of the ring, so the phone picture scales with it. */
 .chiikawa-peek {
   display: none; position: absolute; z-index: 0; left: 50%; top: 50%;
@@ -564,8 +562,7 @@ html[lang="ja"] .chiikawa-peek.is-still { opacity: 1; transform: translate(-50%,
    the hero), and Fraunces' optical sizing narrows the letters as they grow,
    so the share settles near 74% at 590px and 65% at 768px; from 679px the
    112px cap holds it, tablets and desktops alike. 16vh keeps a short screen
-   (a phone held sideways, a laptop) from spending too much height on it.
-   evals/hero-fill.js pins it. */
+   (a phone held sideways, a laptop) from spending too much height on it. */
 .title {
   position: relative; margin: clamp(12px, 3.75vw, 20px) 0 clamp(4px, 1.25vw, 6px); padding: .06em .14em;
   font-family: 'Fraunces', 'Fredoka', serif; font-weight: 560; font-style: italic;
@@ -772,8 +769,6 @@ html.i18n-pending .container, html.i18n-pending .footer { visibility: hidden; }
 .discord-platform { display: flex; align-items: center; justify-content: center; flex: none; color: #c7cdfb; opacity: .85; width: 13px; height: 13px; }
 .discord-platform svg { display: block; width: 100%; height: 100%; }
 .discord-custom { display: flex; align-items: center; gap: 8px; margin-top: 13px; color: #dfe2fb; font-size: 14px; font-weight: 600; }
-.discord-custom-emoji { flex: none; font-size: 16px; line-height: 1; display: inline-flex; align-items: center; }
-.discord-custom-emoji-img { width: 18px; height: 18px; display: block; }
 .discord-custom-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: italic; }
 .info-pill-elapsed { color: #aeb6f5 !important; margin-top: 2px; font-variant-numeric: tabular-nums; }
 
@@ -954,7 +949,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
     align-items: flex-start; text-align: left;
   }
   /* One column: each entry gets the card's full width, so it takes the same
-     card-sized type as the other lists (reviewed in evals/fluid-layout.js). */
+     card-sized type as the other lists. */
   .pc-spec-list--build { grid-template-columns: minmax(0,1fr); }
   .pc-spec-list--build dd { font-size: clamp(17px, 6.5cqi, 28px); }
 }
@@ -1089,7 +1084,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    maps skip them entirely. */
 /* Seven tiles in centred rows of equal tiles: two across (the odd last tile
    takes the whole row), then four across with the last three centred under
-   them from SOCIALS_FOUR_UP (evals/fluid-layout.js), where the longest name,
+   them from SOCIALS_FOUR_UP, where the longest name,
    "MyAnimeList", still fits a tile. Never a lone tile at the left of a row. */
 .socials-grid { --cols: 2; --gap: clamp(8px, 2.5vw, 16px); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap); }
 @media (min-width: 760px) { .socials-grid { --cols: 4; } }
@@ -1167,8 +1162,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    Do NOT call it .social-badge: EasyList / Fanboy's Social Blocking list ship
    a generic `##.social-badge` hide rule, so uBlock Origin and Adblock Plus
    users saw every logo vanish (the tiles collapsed to name + handle). Keep
-   class names in this section off those lists (evals/adblock-filters.js
-   checks the live lists; tests.js pins the known offenders). */
+   class names in this section off those lists. */
 .social-mark, .social-name, .social-handle { position: relative; z-index: 1; }
 .social-mark {
   width: clamp(36px, 11.25vw, 48px); height: clamp(36px, 11.25vw, 48px); margin-bottom: clamp(8px, 2.5vw, 12px);
@@ -1240,7 +1234,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
        0 while it is light (through the whole day and the sunset itself), easing
        on once the afterglow has faded (--m-day below 0.4, i.e. from about 20
        minutes after sunset, fully on by about 55) and easing off again about an
-       hour after sunrise (tests.js pins the timing for every season). When it
+       hour after sunrise. When it
        is on, the window glass turns amber, each pane gets a bright lit centre, a
        soft halo surrounds the windows, the attic window and the door lantern, and
        warm light pools on the grass and the path. Even without colour-mix() the
@@ -1635,8 +1629,8 @@ body.season-christmas {
 }
 
 /* ---- Christmas: hero + cards follow the palette ---- */
-/* The base card rules keep their brand colours the rest of the year (and are
-   pinned by the glass-shadow gate tests); these scoped overrides repaint the
+/* The base card rules keep their brand colours the rest of the year;
+   these scoped overrides repaint the
    lot into the pine/cranberry/gold set while the season is live. */
 body.season-christmas .title {
   background: linear-gradient(100deg, #ffd166 0%, #fff3d6 45%, #ff8a8a 100%);
@@ -1715,14 +1709,12 @@ html.season-halloween .story-title,
 html.season-halloween .stat-label,
 html.season-halloween .lb-label,
 html.season-halloween .music-track-num,
-html.season-halloween .music-kicker,
 html.season-halloween .card .info-pill-label { color: var(--accent) !important; }
 html.season-halloween .card .pill-link { color: var(--accent) !important; }
 html.season-halloween .story-cta { color: #382137 !important; background: #ffd09a; }
 html.season-halloween .card .pill-link { background: rgba(255,192,120,.12) !important; }
 html.season-halloween .card .idle-banner,
 html.season-halloween .card .loading-row { color: var(--ink-soft); }
-html.season-halloween .copy-btn,
 html.season-halloween .retry-btn,
 html.season-halloween .dev-reset,
 html.season-halloween .dev-seg,
@@ -2473,8 +2465,8 @@ body.low-power .scroll-reveal {
    What it retires from view (the code behind them still runs): the sunset sky,
    the sakura scene and petals, the weather canvas, the Christmas and Halloween
    decorations, the party hat, the meadow illustration and the cover images.
-   evals/redesign.js pins the tokens, the contrast and the markup this layer
-   leans on. */
+   Keep the tokens, the contrast and the markup this layer leans on in
+   step. */
 html:not(#rd) { background: #F7F6F3; color-scheme: light; }
 @media (prefers-color-scheme: dark) { html:not(#rd) { background: #111316; color-scheme: dark; } }
 

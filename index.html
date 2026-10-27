@@ -7,8 +7,8 @@
      planted <script>, an onclick="..." attribute or a javascript: link is then
      blocked even if a future bug lets one into the page. Nothing else (APIs,
      images, fonts, frames) is restricted. Editing an inline script changes its
-     hash and the browser would block it: run `node evals/csp.js --fix` to
-     rewrite the hashes (the gate tests fail until you do). Inline onload= /
+     hash and the browser would block it: run `node tools/csp-hashes.js --fix` to
+     rewrite the hashes (`node tools/csp-hashes.js` checks them). Inline onload= /
      onerror= attributes are not allowed; #boot-handlers holds those. Keep this
      above every <script>: a meta policy only covers what comes after it. -->
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-lc9TeEi/tnOHYrHDJSOCMo409nN9FQCZr0AiqeSLBP8=' 'sha256-E1QyAoxJOutuJfXWHvQfOwgq/Yn0jf7skbj7UTvyW8o=' 'sha256-wPKSohE+njV5wVEs53E3TGOueNRiQ6Ic0i/OE/4JCaY=' 'sha256-BoxsJ+40xCQDVEkACD7h317m5SKttO4nckRBRJvIp3I=' 'sha256-VZRMXUewa6uT6JqK+o9SQSBu2+Qxij4/NyjZntP1enU=' 'sha256-mC17ZXYusW+S7CEgFzYRdu1G2EK+L5m361PPhu7mecg=' 'sha256-Qp1RT2bCCRpdcKiXL0Bwb4Y5gz3glMDRZeKqF9nIhJk='; object-src 'none'; base-uri 'self'">
@@ -87,13 +87,11 @@
      time-of-day palette once script.js had downloaded and run — a visible
      black flash on any daytime load. This runs before the first paint and
      writes the same --bg-h/s/l/glow properties script.js writes (same maths as
-     KazuLib.skyTint / hslToHex; tests.js pins the two copies together over a
-     year-wide sweep), then the canvas <style> above, and the theme-color meta.
+     KazuLib.skyTint / hslToHex; keep the two copies in step), then the canvas <style> above, and the theme-color meta.
      It writes --sunset / --sunset-late too (KazuLib.sunsetGlow), so a page
      opened at dusk starts with the sunset sky already in place, and honours
      ?time=HH:MM for previews. It also adds html.no-sakura outside the cherry-blossom window (same
-     rule as KazuLib.sakuraInBloom; the sweep in tests.js covers every day of
-     the year) so the branches are never drawn out of season, and raises
+     rule as KazuLib.sakuraInBloom; keep them in step) so the branches are never drawn out of season, and raises
      html.sky-pending so the sun/moon element (whose pose needs
      layout and lives in script.js) stays hidden until script.js has placed it
      and lifts the class itself; the timeout is only a failsafe for a
@@ -104,7 +102,7 @@
      rule in KazuLib.isUkBST), deliberately not with Intl. The first Intl
      object in a page pays ICU's one-off start-up (~25 ms on a fast phone, ~100
      ms on a mid one), and this script blocks first paint; lib.js pays it
-     after the first paint instead. tests.js sweeps this against
+     after the first paint instead. Keep this in step with
      KazuLib.ukWallParts, including both clock-change days. -->
 <script id="boot-tint">
 // Resolve Halloween before either asset arrives: UK October, saved dev
@@ -263,7 +261,7 @@ document.addEventListener('error', function (e) {
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&text=Kazu%20Hanib%C2%A0&display=swap" rel="stylesheet" media="print" data-font>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@24,400;24,500&display=swap" rel="stylesheet" media="print" data-font>
 <noscript><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&text=Kazu%20Hanib%C2%A0&display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@24,400;24,500&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="style.css?v=120">
+<link rel="stylesheet" href="style.css?v=121">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -291,7 +289,7 @@ document.addEventListener('error', function (e) {
      preferred languages put Japanese before English, gets <html lang="ja">
      and the page text hidden until i18n.js (end of <body>) has translated it, so an
      English first paint never flashes. The 3 s timeout is the failsafe if i18n.js
-     never runs. tests.js compares this choice with KazuI18n.pickLang. -->
+     never runs. Keep this choice in step with KazuI18n.pickLang. -->
 <script id="boot-lang">
 (function () {
   try {
@@ -321,7 +319,7 @@ document.addEventListener('error', function (e) {
      the profile picture, title and stat cards sat at opacity 0 behind those
      animations, so the first CONTENTFUL paint (and the LCP) waited for
      script.js to download and run. Now they are on screen at first paint.
-     tests.js sweeps all 64 flag combinations of this copy against lowPowerMode. -->
+     Keep this copy in step with KazuLib.lowPowerMode. -->
 <script id="boot-power">
 (function () {
   try {
@@ -1050,10 +1048,10 @@ document.addEventListener('error', function (e) {
 <svg id="glass-filters" width="0" height="0" aria-hidden="true"
      xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute"></svg>
 
-<script src="lib.js?v=46"></script>
+<script src="lib.js?v=47"></script>
 <script src="site-config.js?v=1"></script>
-<script src="i18n.js?v=5"></script>
-<script src="script.js?v=98"></script>
+<script src="i18n.js?v=6"></script>
+<script src="script.js?v=99"></script>
 <script id="sw-register">
   // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
   // ever serves stale while online; the cache is only the offline fallback.

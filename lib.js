@@ -1,10 +1,10 @@
 /* ============================================================================
-   lib.js — pure, DOM-free helpers for Kazu Hub's detail modals.
+   lib.js — pure, DOM-free helpers for Kazu Hub.
    ----------------------------------------------------------------------------
-   Single source of truth for the birth config plus every deterministic
-   calculation behind the four card pop-ups (timezone/DST, age, birthday
-   countdown, life-in-weeks, calendar export). No `document`, no `fetch` — so
-   it can be unit-tested in isolation (see tests.html) and reused by script.js.
+   Single source of truth for the birth config plus the deterministic
+   calculations behind the cards and the sky (UK time and DST, birthday
+   countdown, sun and sky maths, card caches, API shaping). No `document`,
+   no `fetch` — so it is reusable by script.js and runs under plain Node.
    Exposed as `KazuLib` on the global (window in the browser, globalThis in Node).
    ========================================================================== */
 (function (global) {
@@ -102,8 +102,6 @@
     return { x: Math.cos(angle) * travel, y: Math.sin(angle) * travel + 22 * t * t, alpha: age < 0 ? 0 : fade * fade };
   }
 
-  var BIRTH_WALL_MS = Date.UTC(BIRTH.year, BIRTH.month, BIRTH.day, 0, 0, 0);
-
   // ---- UK daylight saving (BST/GMT) -------------------------------------
   // UK clocks change on the last Sunday of March (forward, BST begins) and the
   // last Sunday of October (back, GMT returns). Both transitions happen at the
@@ -126,55 +124,6 @@
     date = date || new Date();
     var y = date.getUTCFullYear();
     return date >= ukTransitionInstant(y, 2) && date < ukTransitionInstant(y, 9);
-  }
-
-  // The next clock change relative to `now`, with which way the clocks move.
-  function nextUkDstTransition(now) {
-    now = now || new Date();
-    var y = now.getUTCFullYear();
-    var marchForward = ukTransitionInstant(y, 2);
-    var octoberBack = ukTransitionInstant(y, 9);
-    if (now < marchForward) return { date: marchForward, direction: 'forward', deltaHours: 1 };
-    if (now < octoberBack) return { date: octoberBack, direction: 'back', deltaHours: 1 };
-    return { date: ukTransitionInstant(y + 1, 2), direction: 'forward', deltaHours: 1 };
-  }
-
-  // ---- Age ---------------------------------------------------------------
-  function ageBreakdown(now) {
-    now = now || new Date();
-    var w = ukWallParts(now);
-
-    var years = w.year - BIRTH.year;
-    var months = w.month - BIRTH.month;
-    var days = w.day - BIRTH.day;
-    if (days < 0) {
-      months--;
-      days += new Date(Date.UTC(w.year, w.month, 0)).getUTCDate(); // days in previous month
-    }
-    if (months < 0) { years--; months += 12; }
-
-    var msAlive = ukWallMs(now) - BIRTH_WALL_MS;
-    var totalDays = Math.floor(msAlive / 86400000);
-    var totalWeeks = Math.floor(totalDays / 7);
-    var totalHours = Math.floor(msAlive / 3600000);
-    var nextMilestoneDays = (Math.floor(totalDays / 1000) + 1) * 1000;
-    var nextMilestoneOn = new Date(BIRTH_WALL_MS + nextMilestoneDays * 86400000); // wall frame: format with timeZone:'UTC'
-    var heartbeats = Math.floor((msAlive / 60000) * 72); // ~72 bpm
-    // Playful equivalents for the age pop-up — rough average rates, but
-    // deterministic: same instant, same numbers, on any machine.
-    var daysAlive = msAlive / 86400000;
-    var orbits = daysAlive / 365.2422;                  // tropical years = laps of the Sun
-
-    return {
-      years: years, months: months, days: days,
-      totalDays: totalDays, totalWeeks: totalWeeks, totalHours: totalHours,
-      nextMilestoneDays: nextMilestoneDays, nextMilestoneOn: nextMilestoneOn,
-      heartbeats: heartbeats,
-      fullMoons: Math.floor(daysAlive / 29.530589),     // mean synodic month
-      orbits: orbits,
-      asleepYears: orbits / 3,                          // ~8 h/day = a third of life
-      breaths: Math.floor((msAlive / 60000) * 16),      // ~16 breaths/min at rest
-    };
   }
 
   // ---- Birthday countdown ------------------------------------------------
@@ -201,94 +150,6 @@
       turning: age + 1, // age at the upcoming birthday (next year's, on the day itself)
       isToday: (w.month === BIRTH.month && w.day === BIRTH.day),
     };
-  }
-
-  // ---- Star sign + birth facts ------------------------------------------
-  function zodiac(monthIndex, day) {
-    var m = monthIndex + 1; // 1-based
-    var cutoffs = [20, 19, 20, 20, 21, 21, 22, 23, 23, 23, 22, 22]; // last day of the "earlier" sign per month
-    var names = ['Capricorn', 'Aquarius', 'Pisces', 'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn'];
-    var idx = (day <= cutoffs[m - 1]) ? (m - 1) : m;
-    return { name: names[idx], glyph: '' };
-  }
-
-  function birthFacts() {
-    var birth = new Date(BIRTH_WALL_MS); // wall frame: format with timeZone:'UTC'
-    var z = zodiac(BIRTH.month, BIRTH.day);
-    return {
-      starSign: z.name,
-      starGlyph: z.glyph,
-      weekday: new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'UTC' }).format(birth),
-      dateLabel: new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(birth),
-    };
-  }
-
-  // ---- Calendar export ---------------------------------------------------
-  function ymd(year, monthIndex, day) { return '' + year + pad(monthIndex + 1) + pad(day); }
-
-  // A yearly, all-day VEVENT with a one-day-before reminder. CRLF line endings
-  // per RFC 5545. Imports into Apple Calendar, Outlook, Google, etc.
-  function buildBirthdayICS(opts) {
-    opts = opts || {};
-    var summary = opts.summary || "Kazu's Birthday";
-    var year = opts.year || BIRTH.year;
-    var start = ymd(year, BIRTH.month, BIRTH.day);
-    var endDate = new Date(year, BIRTH.month, BIRTH.day + 1); // DTEND is exclusive
-    var end = ymd(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-    var uid = 'kazu-bday-' + ymd(BIRTH.year, BIRTH.month, BIRTH.day) + '@kazuhub';
-    return [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Kazu Hub//Birthday//EN',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'BEGIN:VEVENT',
-      'UID:' + uid,
-      'DTSTAMP:' + start + 'T000000Z',
-      'DTSTART;VALUE=DATE:' + start,
-      'DTEND;VALUE=DATE:' + end,
-      'RRULE:FREQ=YEARLY',
-      'SUMMARY:' + summary,
-      'TRANSP:TRANSPARENT',
-      'BEGIN:VALARM',
-      'TRIGGER:-P1D',
-      'ACTION:DISPLAY',
-      'DESCRIPTION:' + summary,
-      'END:VALARM',
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].join('\r\n');
-  }
-
-  // Pre-filled Google Calendar event-create URL (all-day, yearly recurrence).
-  function googleCalendarUrl(opts) {
-    opts = opts || {};
-    var summary = opts.summary || "Kazu's Birthday";
-    // Wall-frame date (see birthdayCountdownParts): read via UTC getters so the
-    // all-day event lands on 9 November no matter the viewer's timezone.
-    var date = opts.date || birthdayCountdownParts(new Date()).targetDate;
-    var start = ymd(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-    var endDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1));
-    var end = ymd(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate());
-    var params = [
-      'action=TEMPLATE',
-      'text=' + encodeURIComponent(summary),
-      'dates=' + start + '/' + end,
-      'recur=' + encodeURIComponent('RRULE:FREQ=YEARLY'),
-    ];
-    if (opts.details) params.push('details=' + encodeURIComponent(opts.details));
-    return 'https://calendar.google.com/calendar/render?' + params.join('&');
-  }
-
-  // ---- Weather globe -----------------------------------------------------
-  // earth.nullschool.net orthographic (3D globe) view, centred on the UK.
-  function nullschoolUrl(opts) {
-    opts = opts || {};
-    var lon = (opts.lon != null ? opts.lon : -2.5);
-    var lat = (opts.lat != null ? opts.lat : 54.5);
-    var zoom = (opts.zoom != null ? opts.zoom : 2800);
-    return 'https://earth.nullschool.net/#current/wind/surface/level/orthographic=' +
-      lon.toFixed(2) + ',' + lat.toFixed(2) + ',' + zoom;
   }
 
   // ---- Open-Meteo request URL ----------------------------------------------
@@ -376,19 +237,9 @@
     return true;
   }
 
-  // ---- Apple Liquid Glass Optical Physics ---------------------------------
-  // Mathematical models reverse-engineered from Apple's dielectric lens shader
-  // (visionOS / macOS / iOS Liquid Glass).
-  // 1. Squircle SDF (degree n = 4.0): preserves G^2 continuous curvature along
-  //    container boundaries, eliminating lighting creases and unnatural light
-  //    concentration where straight edges meet circular quarter-arcs.
-  // 2. Analytical surface normal gradient: exact directional derivative in
-  //    screen space (normalized to unit length).
-  // 3. Convex bevel heightfield profile: h(u) = sqrt(1 - (1 - u)^4) compresses
-  //    incident light inward via Snell's Law and smoothly plateaus into the flat
-  //    interior so text remains crystal clear.
-  // 4. Low-end device gating: disables heavy refractive SVG displacement maps
-  //    on constrained hardware to preserve 60/120 FPS.
+  // ---- Low-end devices -----------------------------------------------------
+  // Gates the heavy refractive SVG displacement maps (script.js) off on
+  // constrained hardware to keep the page at 60/120 FPS.
   function isLowEndDevice(o) {
     o = o || {};
     if (o.saveData || o.reducedMotion || o.reducedTransparency) return true;
@@ -396,63 +247,6 @@
     if (o.coarsePointer && (o.smallScreen || o.lowConcurrency)) return true;
     if (o.lowMemory && o.smallScreen) return true;
     return false;
-  }
-
-  function squircleSDF(nx, ny, n) {
-    n = +n || 4.0;
-    var ax = Math.abs(+nx || 0), ay = Math.abs(+ny || 0);
-    var ax2 = ax * ax, ay2 = ay * ay;
-    var sum = (ax2 * ax2) + (ay2 * ay2);
-    if (sum <= 0) return 0;
-    return Math.sqrt(Math.sqrt(sum));
-  }
-
-  function squircleGrad(nx, ny, halfW, halfH, n) {
-    n = +n || 4.0;
-    halfW = +halfW || 1;
-    halfH = +halfH || 1;
-    var x = +nx || 0, y = +ny || 0;
-    var gx = (x * x * x) / halfW;
-    var gy = (y * y * y) / halfH;
-    var len = Math.hypot ? Math.hypot(gx, gy) : Math.sqrt(gx * gx + gy * gy);
-    if (!len) return [0, 0];
-    return [gx / len, gy / len];
-  }
-
-  function liquidGlassBevel(edgeDistance, bevelRadius) {
-    var ed = +edgeDistance, br = +bevelRadius;
-    if (!isFinite(ed) || !isFinite(br) || ed <= 0 || br <= 0) return 0;
-    if (ed >= br) return 0;
-    var u = 1.0 - (ed / br);
-    if (u <= 0) return 0;
-    if (u >= 1) u = 1;
-    var om = 1.0 - u;
-    var om2 = om * om;
-    var om4 = om2 * om2;
-    return Math.sqrt(Math.max(0, 1.0 - om4));
-  }
-
-  function liquidGlassDisplacement(x, y, w, h, bevelRadius, n) {
-    w = +w || 1; h = +h || 1;
-    bevelRadius = +bevelRadius || 24;
-    n = +n || 4.0;
-    var halfX = w * 0.5, halfY = h * 0.5;
-    var minDim = Math.min(halfX, halfY);
-    var nx = ((+x || 0) - halfX) / halfX;
-    var ny = ((+y || 0) - halfY) / halfY;
-    var dist = squircleSDF(nx, ny, n);
-    var edgeDistance = (1.0 - dist) * minDim;
-    if (edgeDistance <= 0 || edgeDistance > bevelRadius) {
-      return [128, 128];
-    }
-    var dispAmount = liquidGlassBevel(edgeDistance, bevelRadius);
-    var grad = squircleGrad(nx, ny, halfX, halfY, n);
-    var dx = -grad[0] * dispAmount;
-    var dy = -grad[1] * dispAmount;
-    return [
-      Math.min(255, Math.max(0, Math.round(128 + dx * 127))),
-      Math.min(255, Math.max(0, Math.round(128 + dy * 127)))
-    ];
   }
 
   // Scales a petal's existing one-viewport fall time to the remaining page
@@ -625,8 +419,8 @@
   //         to 40 minutes after, so the sky warms, then deepens.
   // script.js writes these to --sunset / --sunset-late once a minute; the
   // inline #boot-tint script in index.html carries a compact copy so the very
-  // first paint is already right (tests.js pins the two over a year-wide
-  // sweep). Junk time input yields null.
+  // first paint is already right (keep the two in step). Junk time input
+  // yields null.
   var SUNSET_LEAD = 110, SUNSET_HOLD = 12, SUNSET_FADE = 85;
   function smoothstep01(x) {
     x = x < 0 ? 0 : (x > 1 ? 1 : x);
@@ -648,7 +442,7 @@
   // Dev preview: ?time=HH:MM moves the sky (sun/moon, tint, sunset) to that UK
   // wall-clock time; the on-page clock stays real. Returns minutes since UK
   // midnight, or null when the query string has no valid time. The same
-  // pattern lives in the #boot-tint script (tests.js checks they agree).
+  // pattern lives in the #boot-tint script (keep them in step).
   function timeOverrideParse(search) {
     var m = /[?&]time=(\d{1,2}):(\d{2})(?:[&#]|$)/.exec(String(search == null ? '' : search));
     if (!m) return null;
@@ -677,32 +471,6 @@
       return (n < 16 ? '0' : '') + n.toString(16);
     }
     return '#' + hex(r) + hex(g) + hex(b);
-  }
-
-  // ---- 5-day forecast strip ------------------------------------------------
-  // Shapes an Open-Meteo `daily` block (day-aligned to Europe/London via the
-  // request's timezone param) into rows for the weather modal's strip. The
-  // first row is labelled 'Today'. Tolerant of missing arrays and values.
-  function forecastRows(daily, limit) {
-    if (!daily || !daily.time || !daily.time.length) return [];
-    var n = Math.min(limit || 5, daily.time.length);
-    var fmtDay = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
-    var rows = [];
-    for (var i = 0; i < n; i++) {
-      var p = String(daily.time[i]).split('-'); // 'YYYY-MM-DD': split, never Date-parse (TZ traps)
-      var code = daily.weather_code ? daily.weather_code[i] : null;
-      var max = daily.temperature_2m_max ? daily.temperature_2m_max[i] : null;
-      var min = daily.temperature_2m_min ? daily.temperature_2m_min[i] : null;
-      var precip = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : null;
-      rows.push({
-        label: i === 0 ? 'Today' : fmtDay.format(new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]))),
-        code: (typeof code === 'number') ? code : null,
-        maxC: (typeof max === 'number') ? Math.round(max) : null,
-        minC: (typeof min === 'number') ? Math.round(min) : null,
-        precipPct: (typeof precip === 'number') ? Math.round(precip) : null,
-      });
-    }
-    return rows;
   }
 
   // ---- Steam store links ---------------------------------------------------
@@ -1430,7 +1198,7 @@
   // Inclusive on both ends. `month` is 0-indexed like BIRTH; the page passes
   // the UK wall date, like the birthday season. The same two numbers live in
   // the inline #boot-tint script in index.html (it sets html.no-sakura before
-  // first paint); tests.js fails if the two disagree on any day of the year.
+  // first paint); keep the two in step.
   var SAKURA_FIRST = 2 * 100 + 20; // 20 March  (month * 100 + day)
   var SAKURA_LAST = 4 * 100 + 10;  // 10 May
   function sakuraInBloom(month, day) {
@@ -1484,7 +1252,7 @@
   // Pure physics for the balloon canvas; all rendering lives in script.js.
   // The balloon body is a semi-implicit Euler particle (buoyancy + drag +
   // deterministic wind gusts); the string is a verlet rope pinned at the
-  // knot. DOM-free so the gate tests can pin the exact behaviour.
+  // knot. DOM-free.
 
   // Advances the balloon one frame. b: {x, y, vx, vy} (mutated, returned).
   // o: {dt (s), t (s since activation), buoy (px/s^2), drag (1/s), windAmp
@@ -1550,8 +1318,8 @@
   // Pure maths behind the JS-built page scroller (see the custom-scrollbar
   // IIFE in script.js). scrollThumbGeometry maps the document's scroll state
   // onto the on-screen track; scrollThumbScrollY is the inverse mapping used
-  // while dragging the thumb. Kept DOM-free so the gate tests can pin the
-  // edge cases (min thumb size, clamping, "nothing to scroll").
+  // while dragging the thumb. Kept DOM-free; edge cases are the min thumb
+  // size, clamping and "nothing to scroll".
   var SCROLL_MIN_THUMB = 28; // px: below this the thumb gets too fiddly to grab
 
   // o: { viewportH, contentH, trackH, scrollY, minThumbH? }
@@ -1634,7 +1402,7 @@
   // width changes for real. The middle slice is never drawn: frost lives at
   // the edges and corners only, so it never sits behind the middle of the text.
   // Seeded: every card gets its own snow line and frost, and a reload draws the
-  // same picture. Pure and DOM-free, gate-tested in evals/christmas-frost.js.
+  // same picture. Pure and DOM-free.
   var FROST_RISE = 13;   // px the snow stands above the card's top edge
   var FROST_SIDE = 3;    // px the snow may overhang either side
   function frostRng(seed) { // mulberry32: tiny, fast, good enough for scenery
@@ -1864,13 +1632,7 @@
       reach: reach,
       slice: [FROST_RISE + reach, FROST_SIDE + reach, reach, FROST_SIDE + reach],
       width: [FROST_RISE + reach, FROST_SIDE + reach, reach, FROST_SIDE + reach],
-      outset: [FROST_RISE, FROST_SIDE, 0, FROST_SIDE],
-      // how far in from the outside of the picture each side draws anything
-      // between its corners (t r b l): the snow and the haze band (+1px of
-      // anti-aliasing). The crystals and corner haze fade out within reach of
-      // their corner, which is where the edge slices start, so past this depth
-      // an edge slice is empty and a flying copy can leave it out
-      depth: [FROST_RISE + band + 1, FROST_SIDE + band + 1, band + 1, FROST_SIDE + band + 1]
+      outset: [FROST_RISE, FROST_SIDE, 0, FROST_SIDE]
     };
   }
 
@@ -1908,173 +1670,27 @@
     return 'url("' + uri + '") ' + f.slice.join(' ') + ' / ' + f.width.join('px ') + 'px / ' + f.outset.join('px ') + 'px stretch';
   }
 
-  // A frost picture's border-image on a box, cut into its eight drawn pieces
-  // (four corners, four edges; the middle is never drawn), so a flying copy
-  // can be moved by transform alone and stay on the compositor with the
-  // pop-up it rides. f = { w, h, slice, outset }: the size the picture was
-  // drawn for and its frostCard slice / outset (t r b l); box = { left, top,
-  // width, height } in px. Each piece is { sx, sy, sw, sh }: the part of the
-  // image (natural size, w + left/right outset by h + top/bottom outset),
-  // and { x, y, kx, ky }: where its top-left lands and how much it is stretched,
-  // i.e. transform: translate(x, y) scale(kx, ky) from origin 0 0. Corners are
-  // never stretched; edges stretch along their length only (border-image
-  // stretch). Every value is linear in the box, so a straight-line box path
-  // interpolates to the exact border-image on every frame. A box smaller than
-  // the picture's two corners gives an edge a negative stretch: the caller
-  // keeps such a picture invisible until it fits. Each corner bleeds
-  // FROST_BLEED px into the edges beside it: two layers meeting at a
-  // fractional pixel each anti-alias it and the background shows through as
-  // a hairline, so the corner covers the seam with the same image column the
-  // edge starts with.
-  var FROST_BLEED = 1;
-  function frostPieces(f, box) {
-    var t = f.slice[0], r = f.slice[1], b = f.slice[2], l = f.slice[3];
-    var iw = f.w + f.outset[1] + f.outset[3], ih = f.h + f.outset[0] + f.outset[2];
-    var ax = box.left - f.outset[3], ay = box.top - f.outset[0];
-    var aw = box.width + f.outset[1] + f.outset[3], ah = box.height + f.outset[0] + f.outset[2];
-    var mw = iw - l - r, mh = ih - t - b; // the image's edge runs
-    var dw = aw - l - r, dh = ah - t - b; // the same runs on the box
-    // edges keep only the depth that has anything drawn (f.depth, from
-    // frostCard), anchored on the outside: the rest is empty, and a flying
-    // copy would otherwise composite all of it every frame
-    var depth = f.depth || f.slice;
-    var et = Math.min(t, depth[0]), er = Math.min(r, depth[1]), eb = Math.min(b, depth[2]), el = Math.min(l, depth[3]);
-    var e = FROST_BLEED;
-    function piece(sx, sy, sw, sh, x, y, w, h) {
-      return { sx: sx, sy: sy, sw: sw, sh: sh, x: x, y: y, kx: w / sw, ky: h / sh };
-    }
-    // a corner: natural size, grown by the bleed toward its two edges
-    function corner(sx, sy, sw, sh, x, y, inX, inY) {
-      return piece(sx - (inX < 0 ? e : 0), sy - (inY < 0 ? e : 0), sw + e, sh + e, x - (inX < 0 ? e : 0), y - (inY < 0 ? e : 0), sw + e, sh + e);
-    }
-    return [
-      corner(0, 0, l, t, ax, ay, 1, 1),                                 // top-left
-      piece(l, 0, mw, et, ax + l, ay, dw, et),                          // top (the snow)
-      corner(iw - r, 0, r, t, ax + aw - r, ay, -1, 1),                  // top-right
-      piece(iw - er, t, er, mh, ax + aw - er, ay + t, er, dh),          // right
-      corner(iw - r, ih - b, r, b, ax + aw - r, ay + ah - b, -1, -1),   // bottom-right
-      piece(l, ih - eb, mw, eb, ax + l, ay + ah - eb, dw, eb),          // bottom
-      corner(0, ih - b, l, b, ax, ay + ah - b, 1, -1),                  // bottom-left
-      piece(0, t, el, mh, ax, ay + t, el, dh)                           // left
-    ];
-  }
-
-  // How each piece of a flying copy is laid out and moved (script.js
-  // frostFly), for a flight between two boxes. A piece is laid out at the
-  // larger of its two end sizes, its slice of the picture stretched to fit by
-  // background-size, and only ever scaled down from there: the compositor
-  // rasterizes an animated layer at its largest scale, so an edge laid out at
-  // the card's size and stretched 4.7x to the pop-up's was rastered at ~14x
-  // on a 3x phone (perf.js modal, phone, Christmas Day: 17 missed frames a
-  // run that way, 11 this way).
-  // Per piece: { w, h } the layout size, { bw, bh } background-size, { bx, by }
-  // background-position, and ends [at a, at b], each { x, y, kx, ky } for
-  // transform: translate(x, y) scale(kx, ky) from origin 0 0. |kx|, |ky| <= 1.
-  function frostFlightPieces(f, a, b) {
-    var iw = f.w + f.outset[1] + f.outset[3], ih = f.h + f.outset[0] + f.outset[2];
-    var pa = frostPieces(f, a), pb = frostPieces(f, b);
-    return pa.map(function (p, i) {
-      var q = pb[i];
-      var w = Math.max(Math.abs(p.sw * p.kx), Math.abs(q.sw * q.kx)), h = Math.max(Math.abs(p.sh * p.ky), Math.abs(q.sh * q.ky));
-      var fx = w / p.sw, fy = h / p.sh; // picture px to layout px
-      return {
-        w: w, h: h, bw: iw * fx, bh: ih * fy, bx: -p.sx * fx, by: -p.sy * fy,
-        ends: [{ x: p.x, y: p.y, kx: p.kx / fx, ky: p.ky / fy }, { x: q.x, y: q.y, kx: q.kx / fx, ky: q.ky / fy }]
-      };
-    });
-  }
-
-  // Pop-up motion. The panel used to fly by transform: scale(sx, sy) from the
-  // card's box, which squashes everything it paints: the corners turn into
-  // flat ellipses (on phones, where the radius was not compensated, almost
-  // square) and the shape only matches the card at the two ends. Instead the
-  // panel keeps its real size and two things move together: a translate that
-  // carries its top-left corner along the path, and a clip-path inset that
-  // trims it down to the box on that path, with true round corners going from
-  // the card's radius to the panel's. Every frame is then a real rounded box,
-  // the card at one end, the panel at the other. A scale is only used for an
-  // axis where the card is bigger than the panel (a clip cannot grow a box),
-  // and the radius is divided by it so the corners stay round.
-  // from / to: { left, top, width, height } (viewport px). r0 / r1: the card's
-  // and the panel's corner radius. Returns the [card, panel] keyframes, or null
-  // for unusable boxes.
-  function modalMorphFrames(from, to, r0, r1) {
-    var ok = function (b) { return b && isFinite(b.left) && isFinite(b.top) && b.width > 0 && b.height > 0 && isFinite(b.width) && isFinite(b.height); };
-    if (!ok(from) || !ok(to)) return null;
-    r0 = Math.max(0, +r0 || 0); r1 = Math.max(0, +r1 || 0);
-    var n = function (v) { return +(+v).toFixed(3); };
-    var sx = Math.max(1, from.width / to.width), sy = Math.max(1, from.height / to.height);
-    var right = to.width - from.width / sx, bottom = to.height - from.height / sy;
-    var rr = Math.min(r0, from.width / 2, from.height / 2);
-    return [
-      {
-        transform: 'translate(' + n(from.left - to.left) + 'px, ' + n(from.top - to.top) + 'px) scale(' + n(sx) + ', ' + n(sy) + ')',
-        clipPath: 'inset(0px ' + n(right) + 'px ' + n(bottom) + 'px 0px round ' + n(rr / sx) + 'px / ' + n(rr / sy) + 'px)'
-      },
-      {
-        transform: 'translate(0px, 0px) scale(1, 1)',
-        clipPath: 'inset(0px 0px 0px 0px round ' + n(r1) + 'px / ' + n(r1) + 'px)'
-      }
-    ];
-  }
-
-  // The outer (drop) shadows of a computed box-shadow list, inset ones
-  // dropped: the clip-path that shapes a flying pop-up also cuts its drop
-  // shadow off, so a shadow-only box carries it instead. '' when none.
-  function outerShadows(css) {
-    if (!css || css === 'none') return '';
-    var parts = [], depth = 0, start = 0;
-    for (var i = 0; i < css.length; i++) {
-      var ch = css.charAt(i);
-      if (ch === '(') depth++;
-      else if (ch === ')') depth--;
-      else if (ch === ',' && depth === 0) { parts.push(css.slice(start, i)); start = i + 1; }
-    }
-    parts.push(css.slice(start));
-    return parts.map(function (s) { return s.trim(); }).filter(function (s) { return s && !/\binset\b/.test(s); }).join(', ');
-  }
-
   global.KazuLib = {
-    modalMorphFrames: modalMorphFrames,
-    outerShadows: outerShadows,
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
     escapeHtml: escapeHtml,
     safeLink: safeLink,
-    MAL_HOSTS: MAL_HOSTS,
-    LETTERBOXD_HOSTS: LETTERBOXD_HOSTS,
-    SPOTIFY_HOSTS: SPOTIFY_HOSTS,
     stripEmoji: stripEmoji,
     ukWallParts: ukWallParts,
     newYearCelebrationYear: newYearCelebrationYear,
     fireworkSparkState: fireworkSparkState,
-    lastSundayOfMonth: lastSundayOfMonth,
-    ukTransitionInstant: ukTransitionInstant,
     isUkBST: isUkBST,
-    nextUkDstTransition: nextUkDstTransition,
-    ageBreakdown: ageBreakdown,
     birthdayCountdownParts: birthdayCountdownParts,
-    zodiac: zodiac,
-    birthFacts: birthFacts,
-    buildBirthdayICS: buildBirthdayICS,
-    googleCalendarUrl: googleCalendarUrl,
-    nullschoolUrl: nullschoolUrl,
     openMeteoUrl: openMeteoUrl,
     atmosphereMode: atmosphereMode,
     particleCount: particleCount,
     lowPowerMode: lowPowerMode,
     isLowEndDevice: isLowEndDevice,
-    squircleSDF: squircleSDF,
-    squircleGrad: squircleGrad,
-    liquidGlassBevel: liquidGlassBevel,
-    liquidGlassDisplacement: liquidGlassDisplacement,
     petalFallDuration: petalFallDuration,
-    sunTimesUK: sunTimesUK,
     skyArcPoint: skyArcPoint,
     skyBodyState: skyBodyState,
     skyTint: skyTint,
     hslToHex: hslToHex,
-    steamAppId: steamAppId,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,
     steamHoursText: steamHoursText,
@@ -2098,16 +1714,12 @@
     anilistTitlesQuery: anilistTitlesQuery,
     anilistTitlesParse: anilistTitlesParse,
     malJaCacheParse: malJaCacheParse,
-    ratingStars: ratingStars,
-    letterboxdWatchedLabel: letterboxdWatchedLabel,
     parseLetterboxdRss: parseLetterboxdRss,
     letterboxdCacheParse: letterboxdCacheParse,
     listenbrainzRow: listenbrainzRow,
     xmlText: xmlText,
-    ytArtistName: ytArtistName,
     parseYouTubePlaylistRss: parseYouTubePlaylistRss,
     ytPlaylistCacheParse: ytPlaylistCacheParse,
-    forecastRows: forecastRows,
     konamiMatch: konamiMatch,
     devCodeMatch: devCodeMatch,
     sakuraInBloom: sakuraInBloom,
@@ -2123,15 +1735,9 @@
     scrollThumbScrollY: scrollThumbScrollY,
     wheelDeltaPx: wheelDeltaPx,
     smoothScrollStep: smoothScrollStep,
-    FROST_RISE: FROST_RISE,
-    FROST_SIDE: FROST_SIDE,
-    frostReach: frostReach,
     frostCard: frostCard,
     frostBorderImage: frostBorderImage,
     chiikawaPeekMode: chiikawaPeekMode,
     chiikawaPeekDelay: chiikawaPeekDelay,
-    frostPieces: frostPieces,
-    frostFlightPieces: frostFlightPieces,
-    FROST_BLEED: FROST_BLEED,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

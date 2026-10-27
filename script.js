@@ -161,8 +161,8 @@
   // ---------- Dev settings (secret code: kazudev) ----------
   // Typing the code opens a floating panel with per-season Auto/On/Off
   // overrides plus the responsive sky-curve switch. Overrides persist in
-  // localStorage across reloads. Matching and parsing live in lib.js
-  // (gate-tested); the local copies keep the panel working if lib.js fails.
+  // localStorage across reloads. Matching and parsing live in lib.js;
+  // the local copies keep the panel working if lib.js fails.
   const devCodeMatch = (KazuLib && KazuLib.devCodeMatch) || function (recent) {
     const CODE = 'kazudev';
     if (!recent || recent.length < CODE.length) return false;
@@ -344,14 +344,10 @@
   // and api.cors.lol answers 429 after a burst), so
   // proxyFetch walks a list and rests any proxy that errors, 429s or 5xxs for
   // PROXY_REST_MS, instead of every poll of every card hammering it again.
-  // CORS_PROXY_URL is the permanent fix: deploy workers/cors-proxy (see its
-  // README), paste the worker URL here and it is tried first.
-  const CORS_PROXY_URL = '';
   const PROXIES = [
-    CORS_PROXY_URL && function (t) { return CORS_PROXY_URL + '?url=' + encodeURIComponent(t); },
     function (t) { return 'https://api.cors.lol/?url=' + encodeURIComponent(t); },
     function (t) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(t); },
-  ].filter(Boolean);
+  ];
   const PROXY_REST_MS = 5 * 60 * 1000;
   const hostRest = KazuLib && KazuLib.backoffCreate
     ? KazuLib.backoffCreate(PROXY_REST_MS)
@@ -494,7 +490,7 @@
   // raining, a heavier petal shower when it's actually snowing, and the
   // cherry-blossom default otherwise (the petal modes only run during the
   // blossom season, see setAtmosphere). The mode mapping lives in lib.js
-  // (KazuLib.atmosphereMode) so it's gate-tested; the local copy keeps the
+  // (KazuLib.atmosphereMode); the local copy keeps the
   // page working if lib.js fails to load.
   const atmosphereMode = (KazuLib && KazuLib.atmosphereMode) || function (code) {
     const c = +code;
@@ -1043,7 +1039,7 @@
   // The scenery layer's sun (by day) or moon (by night) rides an arc from
   // the left edge of the page to the right, timed to the Europe/London wall
   // clock with approximate Aberystwyth sunrise/sunset. The maths lives in
-  // lib.js (KazuLib.skyBodyState, gate-tested); the local copy keeps the sky
+  // lib.js (KazuLib.skyBodyState); the local copy keeps the sky
   // working if lib.js fails to load. Cheap by construction: one style write
   // a minute, with a CSS transition gliding each step.
   const skySceneEl = document.querySelector('.sakura-scene');
@@ -1169,7 +1165,7 @@
   // frosted card. Measured: a full CPU core at idle, a main thread ~98% busy,
   // and on a throttled phone every scroll frame missed. The tint moves under a
   // fifth of one 8-bit colour level per TINT_STEP_MS even at the fastest hour
-  // of the year (tests.js pins that over every day), so a fine step looks
+  // of the year, so a fine step looks
   // exactly like the glide at ~1/600th of the work: one restyle per step, none
   // while the tint is not moving (deep night), none mid-scroll or mid-flight
   // (see stepSky). Returns the tint so the sky-body pass can reuse it for
@@ -1950,7 +1946,7 @@
 
   // ---------- MyAnimeList (Jikan) ----------
   let MAL_USER = siteId('mal', 'user', 'Kazu_Hani');
-  // Entry-to-row extraction lives in lib.js (gate-tested); local copy keeps
+  // Entry-to-row extraction lives in lib.js; local copy keeps
   // the card working if lib.js fails to load.
   const malRow = (KazuLib && KazuLib.malRow) || function (entry) {
     const a = entry && entry.anime;
@@ -2288,7 +2284,7 @@
   // Letterboxd has no public API, but every profile publishes a diary RSS
   // feed. No Access-Control-Allow-Origin there either, so it rides the same
   // CORS proxy the Steam and MAL fallbacks use. Parsing lives in lib.js
-  // (regex-based, DOM-free, gate-tested); the last good entry is cached in
+  // (regex-based, DOM-free); the last good entry is cached in
   // localStorage exactly like the MAL rows.
   let LB_USER = siteId('letterboxd', 'user', 'KazuHani');
   const LB_CACHE_KEY = 'kazu-lb-cache';
@@ -2408,7 +2404,7 @@
   // real playlist instead of going stale: a song added in YouTube Music
   // appears here on the next poll. No CORS header on the feed, so it rides
   // the same CORS proxy as Letterboxd; parsing lives in lib.js (regex,
-  // DOM-free, gate-tested). Failure order: localStorage cache → the static
+  // DOM-free). Failure order: localStorage cache → the static
   // snapshot rows shipped in index.html.
   let YTM_PLAYLIST_ID = siteValue('playlist', 'playlistId', 'PLEWxJlvxPVrkYhMCA1IlYwDh5bg-jf39m');
   const YTM_CACHE_KEY = 'kazu-ytm-cache';
@@ -2632,7 +2628,7 @@
     if (!f) return; // not laid out yet (hidden, or still 0 wide): the ResizeObserver tries again
     el.style.setProperty('--xf', KazuLib.frostBorderImage(f));
     el.classList.add('xmas-frost');
-    frostDrawn.set(el, { w, h, reach: f.reach, slice: f.slice, outset: f.outset, depth: f.depth }); // all frostPieces needs to fly it
+    frostDrawn.set(el, { w, reach: f.reach });
   }
   function frostStale(el) {
     const d = frostDrawn.get(el);
@@ -2906,8 +2902,8 @@
 
   // ---------- Birthday balloons (canvas physics) ----------
   // Six balloons drift up behind the content while the birthday season is
-  // live. The physics core is KazuLib.balloonDriftStep / ropeStep
-  // (gate-tested): buoyant drift with deterministic wind gusts for the body,
+  // live. The physics core is KazuLib.balloonDriftStep / ropeStep:
+  // buoyant drift with deterministic wind gusts for the body,
   // a verlet rope for the string, so the trailing wiggle is real physics,
   // not a keyframe. No local fallback: if lib.js failed to load the balloons
   // sit this one out, same as the manga rows.
@@ -3423,7 +3419,7 @@
 
   // ---------- Konami code easter egg ----------
   // ↑↑↓↓←→←→BA sends the dragon flying across the screen with a snow burst.
-  // The sequence check lives in KazuLib.konamiMatch (gate-tested); the local
+  // The sequence check lives in KazuLib.konamiMatch; the local
   // copy keeps the egg alive if lib.js fails to load.
   const konamiMatch = (KazuLib && KazuLib.konamiMatch) || function (recent) {
     const CODE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -3694,7 +3690,7 @@
   ];
   let timers = [];
 
-  // Inline copy in case lib.js failed to load (gate-tested against it).
+  // Inline copy in case lib.js failed to load.
   const pollDelay = (KazuLib && KazuLib.pollDelay) || function (last, ms, firstDelay, ran, now) {
     const age = now - last;
     if (last > 0 && ms > 0 && age >= 0 && age < ms) return ms - age;
@@ -3820,7 +3816,6 @@
   // - Analytical normal gradient: exact directional rate of change
   // - Convex bevel profile h(u) = sqrt(1.0 - (1.0 - u)^4): compresses light inward via Snell's Law
   // - Vibrancy saturation boost: 1.8x
-  const SQUIRCLE_N = 4.0;
   const BEVEL_RADIUS = 24; // Bevel zone width in px
   const DEPTH = 24;        // Snell's Law refraction scale in px
   const BLUR = 0;          // Crisp refraction over background scenery
@@ -4028,14 +4023,14 @@
    (html.has-cscroll for the window, .cscroll-host for inner hosts), so touch
    devices and no-JS keep the real thing everywhere. Wheel and keyboard
    scrolling are untouched — each bar is a visual mirror plus pointer controls.
-   Geometry comes from KazuLib (lib.js, pinned by tests.js / tests.html);
+   Geometry comes from KazuLib (lib.js);
    local fallbacks keep it alive if lib.js fails.
    ========================================================================== */
 (() => {
   if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches || window.innerWidth <= 768) return;
 
   const KazuLib = window.KazuLib;
-  // Owned by lib.js (single source of truth, gate-tested); local copies below.
+  // Owned by lib.js (single source of truth); local copies below.
   const thumbGeometry = (KazuLib && KazuLib.scrollThumbGeometry) || function (o) {
     o = o || {};
     const viewportH = Math.max(0, +o.viewportH || 0);
@@ -4385,7 +4380,7 @@
    drag/steppers, the to-top button, anchor jumps — is adopted via the
    scroll listener (any scroll the loop didn't write itself is external
    input: resync and yield). Skipped entirely under prefers-reduced-motion.
-   The maths lives in lib.js (wheelDeltaPx, smoothScrollStep, gate-tested);
+   The maths lives in lib.js (wheelDeltaPx, smoothScrollStep);
    local fallbacks keep it alive if lib.js fails to load.
    ========================================================================== */
 (() => {
@@ -4394,7 +4389,7 @@
   if (document.body.classList.contains('low-power')) return;
 
   const KazuLib = window.KazuLib;
-  // Owned by lib.js (single source of truth, gate-tested); local copies below.
+  // Owned by lib.js (single source of truth); local copies below.
   const wheelDeltaPx = (KazuLib && KazuLib.wheelDeltaPx) || function (deltaY, deltaMode) {
     const d = +deltaY;
     if (isNaN(d)) return 0;

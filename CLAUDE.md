@@ -24,7 +24,7 @@ Every piece of work you do belongs to one of two spaces. Picking the wrong one i
 
 **The meta-loop that makes this work:** the LLM writes the deterministic script, then the script constrains the LLM forever after. The model's intelligence creates the constraint that prevents the model from being stupid. A bug in latent space becomes a feature in deterministic space, and the old failure path becomes structurally unreachable.
 
-Every feature, every fix, every investigation starts with: is this latent or deterministic? If the answer is "both," split it. The deterministic piece becomes a script + tests. The latent piece becomes a prompt + eval.
+Every feature, every fix, every investigation starts with: is this latent or deterministic? If the answer is "both," split it. The deterministic piece becomes a script. The latent piece becomes a prompt.
 
 ## The context window is the lever
 
@@ -32,33 +32,30 @@ The context window is your only control surface over the model. Treat it as a de
 
 ## Non-negotiable rules
 
-### Tests and evals — every time, no exceptions
+### Verification — no test suite, so look at the result
 
-- Every feature ships with a test suite AND an eval suite, in the same commit. Not the next PR.
-- Every bug fix ships with a test AND an eval that would have caught the bug. The regression test is the proof the bug is fixed. The eval is the proof the fix generalizes.
+- This repo has no automated tests, no evals and no CI. Julien had them removed on 2026-10-27 (everything in them was outside what the site needs to run). Do not add them back unless he asks.
+- Before you call a change DONE, load it in the browser preview, read the console, and exercise the thing you changed. Say what you looked at.
+- After any edit to an inline `<script>` in `index.html`, run `node tools/csp-hashes.js` (`--fix` rewrites the hashes). The browser blocks an inline script whose hash is not in the policy, and the page breaks without a visible error in the code.
 - Every failure gets skillified (the 10 steps). Same day. Same session when possible.
-- "I'll add tests later" is banned. If the tests/evals aren't in the diff, the work isn't done.
-- Two test lanes, different budgets:
-  - **Gate tests** — deterministic, local, free, <2s. Run on every commit via pre-commit hook. Never flaky.
-  - **Periodic evals** — paid (LLM calls), slower, quality-measuring. Run before ship and nightly. Allowed to be non-deterministic but must have a pass threshold.
 
 ### Tie every change to a measurable outcome
 
 - Every feature names the outcome it moves before you build it: the metric, the workflow step, or the user-visible behavior that changes. "It works" is not an outcome.
 - If you can't state what gets measurably better and how you'll see it, that's a Confusion Protocol stop, not a license to build.
-- Wire in the trace. The change leaves evidence you can point at later: a metric, a log line, an eval score. Compute that produces no measurable, traceable result is theater.
+- Wire in the trace. The change leaves evidence you can point at later: a metric, a log line, a measured before/after. Compute that produces no measurable, traceable result is theater.
 
 ### LLM access — local Claude Code, not the API
 
 - When the software we build needs to call an LLM, do NOT use an LLM API (Anthropic API, OpenAI API, any hosted inference endpoint) unless Julien explicitly instructs it. Route the call through the local Claude Code instead.
-- If no LLM service exists yet in the project, build one. Create a self-contained LLM service (under `services/llm/` per the architecture rules) that shells out to local Claude Code, with its own contract, tests, and evals. Every other service calls that contract, never an external API.
+- If no LLM service exists yet in the project, build one. Create a self-contained LLM service (under `services/llm/` per the architecture rules) that shells out to local Claude Code, with its own contract. Every other service calls that contract, never an external API.
 - Always use the best available model by default unless Julien explicitly instructs otherwise. No silent downgrades to a cheaper or smaller model for cost.
 
 ### Tech choice — vanilla by default
 
 - Simplest vanilla tech wins. No framework-of-the-month. No clever abstractions for hypothetical reuse.
 - Do not recreate what already exists. Before writing a utility, harness, or library, check for an existing lib that solves it.
-- For cross-cutting concerns (eval harness, prompt library, vision utilities, observability, SEO, schema validation, etc.) grep GitHub in parallel for top candidates. Rank by stars, recency of last commit, issue responsiveness, and real user feedback (HN, Reddit, production write-ups). Return the best option with reasoning, not a list. Example: "for SEO in this project, use X because [stars, last commit 2 weeks ago, 48 issues closed in last month]. Second choice Y. Rejected Z because [last commit 14 months ago]."
+- For cross-cutting concerns (prompt library, vision utilities, observability, SEO, schema validation, etc.) grep GitHub in parallel for top candidates. Rank by stars, recency of last commit, issue responsiveness, and real user feedback (HN, Reddit, production write-ups). Return the best option with reasoning, not a list. Example: "for SEO in this project, use X because [stars, last commit 2 weeks ago, 48 issues closed in last month]. Second choice Y. Rejected Z because [last commit 14 months ago]."
 - If two options are equally viable, name the trade-off explicitly and ask Julien. Confusion Protocol applies.
 
 ### Search before building
@@ -83,9 +80,9 @@ Failures get skillified — that rule already stands. So does repeated success. 
 
 Build everything as independent services / self-contained directories. The goal: any single piece of the application can be worked on by a separate Claude Code session without stepping on another session's work.
 
-- **One concern, one directory.** Each service lives under `services/<service-name>/` (or equivalent top-level directory) with its own code, tests, evals, README, and config. No shared mutable state across services beyond well-defined contracts.
+- **One concern, one directory.** Each service lives under `services/<service-name>/` (or equivalent top-level directory) with its own code, README, and config. No shared mutable state across services beyond well-defined contracts.
 - **Contracts at the boundary.** Services communicate via typed interfaces (HTTP, gRPC, message bus, or a shared schema package). Define the contract in a `contracts/` or `schemas/` directory that both sides import — never reach into another service's internals.
-- **Independent test + eval suites.** Each service has its own gate tests and periodic evals. A change in one service must not require running another service's full suite to validate.
+- **Independent verification.** A change in one service must be checkable without running another service.
 - **Independent deploy unit.** Each service builds and ships on its own. No monolithic release that forces every service to move in lockstep.
 - **Parallel-session safe.** Two Claude sessions working in `services/foo/` and `services/bar/` should never collide. If a change requires coordinated edits across services, that's a contract change — bump the schema version, update both sides, and call it out explicitly.
 - **Top-level only holds glue.** Root directory: orchestration scripts, shared config, contracts, docs. No business logic.
@@ -98,7 +95,7 @@ When in doubt, lean toward more services with sharper boundaries rather than few
 
 At the end of every task, report one of:
 
-- **DONE** — All steps completed. Evidence provided for every claim. Tests + evals in the diff. Skillify checklist green if a failure was promoted. Ready to merge.
+- **DONE** — All steps completed. Evidence provided for every claim. Verified by running it. Skillify checklist green if a failure was promoted. Ready to merge.
 - **DONE_WITH_CONCERNS** — Completed, but with issues Julien should know about. List each concern with severity and a proposed follow-up.
 - **BLOCKED** — Cannot proceed. State what's blocking and what was already tried.
 - **NEEDS_CONTEXT** — Missing information required to continue. State exactly what's needed.
@@ -161,4 +158,4 @@ STOP. Name the ambiguity in one sentence. Present 2-3 options with real trade-of
 - If something is broken, say so plainly.
 - End responses with the next action, not a recap of what was just done.
 
-When Julien asks for something, the answer is the finished product — not a plan. Tests included. Evals included. Docs included.
+When Julien asks for something, the answer is the finished product — not a plan. Docs included.

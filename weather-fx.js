@@ -19,15 +19,15 @@
        halved again while the page is scrolling;
      - a handful of BATCHED paths per frame (one stroke per depth bucket, not
        one per drop) and pre-rendered cloud sprites: ~600 canvas calls at the
-       very worst, gate-tested;
+       very worst;
      - nothing at all runs (no canvas, no rAF) when the weather is clear;
      - paused behind an open modal and in hidden tabs;
      - a frame-time governor: if the page can't hold ~36 fps the density steps
        down, and past the last step the effect switches itself off.
 
    Everything deterministic (weather -> layers, quality governor, particle
-   physics with a seeded RNG, colours, draw budget) is DOM-free so tests.js /
-   tests.html can pin it; only mount()/frame() at the bottom touch the DOM.
+   physics with a seeded RNG, colours, draw budget) is DOM-free; only mount()/frame() at the
+   bottom touch the DOM.
    Plain ES5-ish, attaches KazuWeatherFx to the global (browser and Node).
    ========================================================================== */
 (function (root) {
@@ -677,7 +677,7 @@
   }
 
   root.KazuWeatherFx = {
-    // pure, gate-tested
+    // pure
     layersFor: layersFor,
     forcedParse: forcedParse,
     windSignFor: windSignFor,

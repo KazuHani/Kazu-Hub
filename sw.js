@@ -13,15 +13,15 @@
    ========================================================================== */
 'use strict';
 
-const CACHE = 'kazu-shell-v124';
+const CACHE = 'kazu-shell-v125';
 const PRECACHE = [
   './',
   './index.html',
-  './style.css?v=120',
-  './script.js?v=98',
-  './lib.js?v=46',
+  './style.css?v=121',
+  './script.js?v=99',
+  './lib.js?v=47',
   './site-config.js?v=1',
-  './i18n.js?v=5',
+  './i18n.js?v=6',
   './assets/favicon.png',
   './assets/profile.webp',
   './assets/chiikawa.webp',
@@ -63,7 +63,7 @@ self.addEventListener('fetch', (event) => {
       Promise.resolve(event.preloadResponse)
         .then((preloaded) => preloaded || fetch(req))
         .then((res) => {
-          // Other documents (especially tests.html) must never replace the
+          // Other documents (404.html, a stray page) must never replace the
           // offline home page. Navigations still remain network-first.
           if (res.ok && (url.pathname.endsWith('/') || url.pathname.endsWith('/index.html'))) {
             const copy = res.clone();

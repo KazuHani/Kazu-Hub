@@ -34,8 +34,8 @@
        <head> sets <html lang> and hides the page text until this file has
        run, so a Japanese visitor never sees an English first paint.
 
-   Pure and DOM-free down to the shell, ES5 like lib.js, so tests.js runs the
-   core and the shell (against fake nodes) under plain Node.
+   Pure and DOM-free down to the shell, ES5 like lib.js, and the core runs
+   under plain Node.
    ========================================================================== */
 (function (global) {
   'use strict';
@@ -47,7 +47,7 @@
   // Keys are English as it appears on the page, whitespace collapsed and
   // curly apostrophes straightened (normKey). Japanese values are unique
   // (except the deliberate empty ones) so a reverse lookup is unambiguous;
-  // the gate tests hold both rules.
+  // keep both rules when adding a phrase.
   var PHRASES = {
     // Language switch + page chrome
     'Language': '言語',
@@ -67,10 +67,6 @@
     'years young': '歳',
     'Next birthday': '次の誕生日',
     'Today!': '今日!',
-    'Time and timezones — open details': '時刻とタイムゾーン — 詳細を開く',
-    'Weather — open the interactive UK wind globe': '天気 — イギリスの風の地球儀を開く',
-    'Age and life stats — open details': '年齢と人生の記録 — 詳細を開く',
-    'Next birthday — open countdown and add to calendar': '次の誕生日 — カウントダウンを開いてカレンダーに追加',
 
     // Weather conditions (script.js weatherInfo)
     'Clear sky': '快晴',
@@ -85,7 +81,6 @@
     'Snow showers': 'にわか雪',
     'Thunderstorm': '雷雨',
     'Cloudy': '曇り',
-    'Forecast': '予報',
 
     // Right now: section + Discord
     'Right now': 'いま',
@@ -168,82 +163,14 @@
     'A tale forged in blood and old legend — read the latest chapters on Google Docs.': '血と古き伝説から鍛えられた物語。最新章はGoogleドキュメントで読めます。',
     'Where serpent-kind and humanity collide — follow the story as it unfolds on Google Docs.': '蛇の一族と人類がぶつかり合う物語。その行方をGoogleドキュメントで追いかけよう。',
     'Read now →': '今すぐ読む →',
-
-    // Footer
-    'Kazu Hani · Arctic Dragon': 'Kazu Hani · 北極のドラゴン',
-
-    // Pop-up: time & timezones
-    'Time & timezones': '時刻とタイムゾーン',
-    'Your time': 'あなたの時間',
-    'your device': 'あなたの端末',
-    'Time difference': '時差',
-    'None — same as the UK': 'なし — イギリスと同じ',
-    'Right now:': '現在:',
-    'British Summer Time': '英国夏時間',
-    'Greenwich Mean Time': 'グリニッジ標準時',
-    'Next clock change:': '次の時刻変更:',
-    'clocks go': '時計を1時間',
-    'forward': '進めます',
-    'back': '戻します',
-    '1 hour — lose an hour, BST begins': '— 1時間短くなり、BSTが始まります',
-    '1 hour — gain an hour, GMT returns': '— 1時間長くなり、GMTに戻ります',
-
-    // Pop-up: wind globe + forecast + compare
-    'UK wind globe': 'イギリスの風の地球儀',
-    'Live surface wind over the UK — drag to spin, scroll to zoom.': 'イギリス上空の地表風をライブ表示。ドラッグで回転、スクロールでズーム。',
-    'Source: earth.nullschool.net': '出典: earth.nullschool.net',
-    'Open full UK wind map': 'イギリスの風マップを全画面で開く',
-    'Compare with your sky': 'あなたの空と比べる',
-    'Interactive 3D wind globe of the UK': 'イギリスのインタラクティブ3D風地球儀',
-    "This browser can't share your location.": 'このブラウザは位置情報を共有できません。',
-    'Asking for your sky…': 'あなたの空を確認中…',
-    "Couldn't read your sky": 'あなたの空を読み込めませんでした',
-    'Location off — your sky stays a mystery': '位置情報オフ — あなたの空は謎のまま',
-    "My sky hasn't loaded yet — retry the weather card first.": 'こちらの空がまだ読み込まれていません。先に天気カードを再試行してください。',
-    'Same temperature as you': 'あなたと同じ気温',
-    'Aberystwyth': 'アベリストウィス',
-    'Your sky': 'あなたの空',
-    'Difference': '差',
-    'Forecast unavailable right now.': '現在、予報を取得できません。',
-    'Loading forecast…': '予報を読み込み中…',
-    'Today': '今日',
-
-    // Pop-up: age & life stats
-    'Age & life stats': '年齢と人生の記録',
-    'old': '',
-    'days lived': '生きた日数',
-    'weeks lived': '生きた週数',
-    'hours lived': '生きた時間',
-    'heartbeats': '心拍',
-    'Next milestone': '次の節目',
-    'reached on': '到達日',
-    'Star sign': '星座',
-    'Life in fun units': 'おもしろ単位で見る人生',
-    'full moons seen': '見た満月',
-    'laps of the Sun': '太陽を回った周回',
-    'years asleep': '眠っていた年数',
-    'breaths taken': '呼吸の回数',
-
-    // Pop-up: next birthday
-    'Turning': '',
-    "It's today — happy birthday! Turning": '今日が誕生日、おめでとう! 今日で',
-    'days': '日',
-    'hours': '時間',
-    'mins': '分',
-    'secs': '秒',
-    'Add to Google Calendar': 'Googleカレンダーに追加',
-    'Download .ics file': '.icsファイルをダウンロード',
-    'Adds a yearly all-day event with a reminder the day before.': '毎年の終日イベントを、前日のリマインダー付きで追加します。'
   };
 
   var WEEKDAYS = { Mon: '月', Tue: '火', Wed: '水', Thu: '木', Fri: '金', Sat: '土', Sun: '日' };
   var WEEKDAY_LONG = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun' };
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  var SIGNS = { Aries: '牡羊座', Taurus: '牡牛座', Gemini: '双子座', Cancer: '蟹座', Leo: '獅子座', Virgo: '乙女座', Libra: '天秤座', Scorpio: '蠍座', Sagittarius: '射手座', Capricorn: '山羊座', Aquarius: '水瓶座', Pisces: '魚座' };
-  // Forecast labels (short weekday) and star signs are exact phrases too.
+  // Short weekday names are exact phrases too.
   Object.keys(WEEKDAYS).forEach(function (k) { PHRASES[k] = WEEKDAYS[k] + '曜'; });
-  Object.keys(SIGNS).forEach(function (k) { PHRASES[k] = SIGNS[k]; });
 
   function normKey(s) {
     return String(s).replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
@@ -281,31 +208,6 @@
     function (s) { var m = /^on (.+)$/.exec(s); var d = m && dateJa(m[1]); return d ? 'の誕生日 — ' + d : null; },
     // Weather
     function (s) { var m = /^wind (\d+) mph$/i.exec(s); return m ? '風速 ' + m[1] + ' mph' : null; },
-    function (s) {
-      var m = /^(\d+)°C (warmer|colder) where you are$/.exec(s);
-      return m ? 'あなたの所は' + m[1] + '°C' + (m[2] === 'warmer' ? '暖かい' : '寒い') : null;
-    },
-    // Time pop-up
-    function (s) {
-      var m = /^([\d.]+) hours? (ahead of|behind) the UK$/.exec(s);
-      return m ? 'イギリスより' + m[1] + '時間' + (m[2] === 'ahead of' ? '進んでいる' : '遅れている') : null;
-    },
-    // "(in 6 days) — clocks go <strong>back</strong>": one text node up to the <strong>
-    function (s) {
-      var m = /^\(in (\d+) days?\) —( clocks go)?$/.exec(s);
-      return m ? '(あと' + m[1] + '日) —' + (m[2] ? ' ' + PHRASES['clocks go'] : '') : null;
-    },
-    // Age pop-up
-    function (s) {
-      var m = /^(\d+) years?, (\d+) months?, (\d+) days?$/.exec(s);
-      return m ? m[1] + '歳' + m[2] + 'か月' + m[3] + '日' : null;
-    },
-    function (s) { var m = /^([\d,]+) to go$/.exec(s); return m ? 'あと' + m[1] + '日' : null; },
-    function (s) {
-      var m = /^Born (.+) — an? (Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/.exec(s);
-      var d = m && dateJa(m[1]);
-      return d ? d + '(' + WEEKDAYS[WEEKDAY_LONG[m[2]]] + '曜日)生まれ' : null;
-    },
     // Discord game timer
     function (s) {
       var m = /^for (?:(\d+)h (\d+)m|(\d+) min|(\d+)s)$/.exec(s);
@@ -409,7 +311,7 @@
 
   // ---- Quotes ---------------------------------------------------------------
   // [English, Japanese, author in Japanese]. Holds every FALLBACK_QUOTES entry
-  // in script.js (a gate test keeps them in step); Japanese mode shows these
+  // in script.js (keep them in step); Japanese mode shows these
   // because the live quote API has no Japanese.
   var QUOTES = [
     ['The only way to do great work is to love what you do.', '偉大な仕事をする唯一の方法は、自分のしていることを愛することだ。', 'スティーブ・ジョブズ'],
@@ -606,7 +508,7 @@
 
   // ---- DOM shell ----------------------------------------------------------
   // Only on a page that carries the switch (index.html loads this file after
-  // the markup); tests.html loads the core alone and must stay untouched.
+  // the markup); the core alone runs without it.
   if (typeof document === 'undefined' || !document.querySelector || !document.querySelector('[data-lang-set]')) return;
 
   var root = document.documentElement;
