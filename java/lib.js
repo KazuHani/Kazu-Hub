@@ -874,19 +874,6 @@
     };
   }
 
-  // ---- Quote (localStorage copy) --------------------------------------------
-  // The last quote zenquotes dealt: { q, a } with the text required. Printed
-  // through textContent, so the checks only keep junk out.
-  function quoteCacheParse(raw) {
-    if (typeof raw !== 'string' || !raw) return null;
-    var payload;
-    try { payload = JSON.parse(raw); } catch (e) { return null; }
-    var q = payload && payload.quote;
-    var text = q && cacheText(q.q, 1000).trim();
-    if (!text) return null;
-    return { q: text, a: cacheText(q.a, 200).trim() || 'Unknown' };
-  }
-
   // Reads the localStorage fallback copy of the MAL card (written after every
   // successful fetch). Jikan's user endpoints 504 whenever MyAnimeList refuses
   // its scraper, so the card renders the last good rows instead of an error
@@ -1386,32 +1373,6 @@
     return c + diff * (1 - Math.pow(1 - e, dt / (1000 / 60)));
   }
 
-  // ---- Chiikawa peek (Japanese mode) -------------------------------------
-  // Chiikawa hides behind the profile picture while the page is in Japanese
-  // and peeks out over its rim now and then. How it shows:
-  //   'off'   English page: not rendered at all.
-  //   'still' reduced motion: parked in the peeking pose, no motion.
-  //   'move'  one-shot peek animations, re-armed by a timer (no infinite CSS loop).
-  // Low-power still moves: every phone trips it (coarse pointer + small
-  // screen), and a peek is one composited transform on a 92px image for 3.4 s
-  // every 7-12 s, with no timer while hidden or scrolled away.
-  function chiikawaPeekMode(o) {
-    o = o || {};
-    if (o.lang !== 'ja') return 'off';
-    return o.reducedMotion ? 'still' : 'move';
-  }
-  // Wait before peek number n (0 = the first after the page turns Japanese).
-  // The first waits out the profile picture's entrance pop (~1 s); later ones
-  // are spaced 7-12 s apart so it reads as a visit, not a loop. r in [0, 1).
-  var CHIIKAWA_FIRST_MS = 1200, CHIIKAWA_GAP_MS = 7000, CHIIKAWA_JITTER_MS = 5000;
-  function chiikawaPeekDelay(n, r) {
-    if (!(n > 0)) return CHIIKAWA_FIRST_MS;
-    r = +r;
-    if (!(r >= 0)) r = 0;
-    if (r >= 1) r = 0.999;
-    return Math.round(CHIIKAWA_GAP_MS + r * CHIIKAWA_JITTER_MS);
-  }
-
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
@@ -1444,7 +1405,6 @@
     steamCacheParse: steamCacheParse,
     weatherCacheParse: weatherCacheParse,
     ukDateIso: ukDateIso,
-    quoteCacheParse: quoteCacheParse,
     backoffCreate: backoffCreate,
     malRow: malRow,
     malListRow: malListRow,
@@ -1477,7 +1437,5 @@
     scrollThumbScrollY: scrollThumbScrollY,
     wheelDeltaPx: wheelDeltaPx,
     smoothScrollStep: smoothScrollStep,
-    chiikawaPeekMode: chiikawaPeekMode,
-    chiikawaPeekDelay: chiikawaPeekDelay,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

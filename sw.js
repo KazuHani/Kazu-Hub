@@ -13,17 +13,17 @@
    ========================================================================== */
 'use strict';
 
-const CACHE = 'kazu-shell-v141';
+const CACHE = 'kazu-shell-v143';
 const PRECACHE = [
   './',
   './index.html',
-  './style.css?v=131',
-  './java/script.js?v=107',
-  './java/lib.js?v=49',
-  './java/site-config.js?v=1',
+  './style.css?v=133',
+  './java/script.js?v=108',
+  './java/lib.js?v=50',
+  './java/site-config.js?v=2',
   './java/i18n.js?v=6',
   './assets/favicon.png',
-  './assets/profile.webp?v=2',
+  './assets/New Kazu.png',
 ];
 
 self.addEventListener('install', (event) => {

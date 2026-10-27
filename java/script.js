@@ -937,7 +937,7 @@
   // atmosphere takes back over.
   // Preview: ?weather=rain,wind,clouds,snow,storm,all,none (each optionally
   // :0..1, e.g. rain:1) forces layers on any weather; still desktop-only.
-  const WEATHER_FX_SRC = 'java/weather-fx.js?v=5';
+  const WEATHER_FX_SRC = 'java/weather-fx.js?v=6';
   const WEATHER_FX_RAW = (() => {
     try { return new URLSearchParams(location.search).get('weather') || ''; } catch (e) { return ''; }
   })();
@@ -1565,8 +1565,8 @@
     lastDiscordFallbackAvatar = discordAvatarUrl(u);
     const avatarEl = $('discordAvatar');
     if (avatarEl) {
-      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : 'assets/profile.webp?v=2');
-      avatarEl.onerror = () => { avatarEl.src = 'assets/profile.webp?v=2'; };
+      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : 'assets/New Kazu.png');
+      avatarEl.onerror = () => { avatarEl.src = 'assets/New Kazu.png'; };
     }
     $('discordName').textContent = displayName;
 
@@ -2024,49 +2024,6 @@
     }
   }
   document.addEventListener('kazu-langchange', loadMalJa);
-
-  // ---------- Chiikawa peek (Japanese mode) ----------
-  // Chiikawa hides behind the profile picture and peeks over its rim now and
-  // then while the page is in Japanese. Each peek is a one-shot CSS animation
-  // (.is-peeking, dropped on animationend) re-armed by a timer, so between
-  // visits nothing runs. No timer while the tab is hidden or the picture is
-  // scrolled away; reduced motion parks it in the peeking pose. Low-power
-  // (every phone) still peeks: see KazuLib.chiikawaPeekMode.
-  (function initChiikawaPeek() {
-    const el = document.querySelector('.chiikawa-peek');
-    if (!el || !KazuLib || !KazuLib.chiikawaPeekMode) return;
-    let timer = 0, count = 0, inView = true;
-    const mode = () => KazuLib.chiikawaPeekMode({
-      lang: pageIsJapanese() ? 'ja' : 'en', reducedMotion: REDUCED_MOTION, lowPower: LOW_POWER,
-    });
-    function disarm() { clearTimeout(timer); timer = 0; }
-    function arm() {
-      disarm();
-      if (mode() !== 'move' || document.hidden || !inView) return;
-      timer = setTimeout(() => {
-        timer = 0;
-        if (mode() !== 'move' || document.hidden || !inView) return;
-        count++;
-        el.classList.add('is-peeking');
-      }, KazuLib.chiikawaPeekDelay(count, Math.random()));
-    }
-    function sync() {
-      const m = mode();
-      el.classList.toggle('is-still', m === 'still');
-      if (m !== 'move') { el.classList.remove('is-peeking'); count = 0; disarm(); return; }
-      if (!el.classList.contains('is-peeking')) arm();
-    }
-    el.addEventListener('animationend', () => { el.classList.remove('is-peeking'); arm(); });
-    document.addEventListener('kazu-langchange', () => { count = 0; sync(); });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) disarm(); else sync(); });
-    if ('IntersectionObserver' in window) {
-      new IntersectionObserver((entries) => {
-        inView = entries[entries.length - 1].isIntersecting;
-        if (inView) sync(); else disarm();
-      }).observe(el.parentElement);
-    }
-    sync();
-  })();
 
   function renderMalRows(rows) {
     malAnimeRows = rows;
@@ -3170,7 +3127,7 @@
     showToast('Konami! The dragon takes flight…');
     const d = document.createElement('div');
     d.className = 'konami-dragon';
-    d.innerHTML = '<img src="assets/profile.webp?v=2" width="64" height="64" alt="">';
+    d.innerHTML = '<img src="assets/New Kazu.png" width="64" height="64" alt="">';
     d.setAttribute('aria-hidden', 'true');
     document.body.appendChild(d);
     d.addEventListener('animationend', () => { d.remove(); konamiBusy = false; });

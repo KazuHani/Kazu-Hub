@@ -27,13 +27,11 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 `sw.js` offline shell), a single time-of-day-reactive palette (a soft
 slate blue that lightens towards midday and dims towards sunset/night,
 driven by `KazuLib.skyTint` on the UK clock — there is no theme toggle),
-seasonal themes (birthday, Christmas, pride, and an October Halloween theme),
 a weather-reactive cherry-blossom atmosphere (petals
 detach from the branches and drift down-wind; the layer is anchored to the
 top of the page, so it scrolls away with the hero), a "moonlit sakura"
 scenery layer (SVG branches from the page edges plus a sun-by-day /
-moon-by-night sky body arcing left→right on the UK clock; hidden during
-the Christmas season), and custom scrollbars. The blossom branches and the
+moon-by-night sky body arcing left→right on the UK clock), and custom scrollbars. The blossom branches and the
 falling petals only appear during Japan's cherry-blossom season (20 March to
 10 May, on the UK date; see "Cherry-blossom season" below); the sun and
 moon stay all year. On desktop only, the live UK weather is also drawn behind
@@ -57,8 +55,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
   Europe/London wall-clock frame, UK DST maths, the birthday countdown, HTML
   escaping, Steam/MAL data shaping, dev-code matching, scrollbar thumb
-  geometry, the Christmas frost pictures (`frostCard`, `frostBorderImage`; see
-  "Christmas" below), and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
+  geometry, and the sun/moon sky-arc maths (`sunTimesUK`, `skyBodyState`).
   The arc (`skyArcPoint`) is one sine that runs on past the horizon points
   until both ends are off-screen (`SKY_ARC_OVERSHOOT`, x = -8.08% .. 108.08%),
   so the body slides in and out through the page edges and the sun<->moon
@@ -114,10 +111,11 @@ python -m http.server 8000
 
 Preview/dev affordances built into the page:
 
-- `?season=birthday|christmas|pride|sakura|halloween|all` (comma-combinable) forces
-  seasonal themes on any date. The `?season=` param wins over the dev panel.
-  `sakura` (the blossom branches + petals) is only ever forced ON: a param
-  that doesn't name it leaves the blossoms on the calendar.
+- `?season=sakura` (or `blossom`, or `all`) forces the cherry-blossom branches
+  and petals on any date. The `?season=` param wins over the dev panel. It is
+  only ever forced ON: a param that doesn't name it leaves the blossoms on the
+  calendar. Sakura is the only season left (the birthday, Christmas, pride and
+  Halloween themes were removed on 2026-10-27).
 - `?atmosphere=rain|blossom|blossom-heavy|aurora|none` forces the particle mode.
   `blossom` / `blossom-heavy` also bring the branches back out of season, so
   the preview looks like the real in-season page. It previews the OLDER
@@ -134,7 +132,7 @@ Preview/dev affordances built into the page:
 - `?fireworks=1` previews the 20-second New Year fireworks on
   any date, once per page load. It doesn't change the real celebration latch.
 - Typing `kazudev` anywhere on the page opens a dev settings panel with
-  per-season Auto/On/Off overrides (Birthday, Christmas, Pride, Sakura, Halloween)
+  the Sakura season's Auto/On/Off override
   persisted to localStorage. Typing it again or Esc closes it.
 
 ## Verification
@@ -166,15 +164,13 @@ observers or the boot path.
   transition, even compositor-only, even a 5px progress bar, makes the
   compositor and GPU process produce a frame on every vsync (144 a second on a
   fast display): about 0.19 CPU cores each, measured on a bare test page. The
-  seasonal loops (petals, rain drops, aurora, the Pride halo)
+  seasonal loops (petals, rain drops, aurora)
   are allowed because they ARE the feature and run only in season; any other
-  new infinite loop needs a reason. The Pride halo's spin used to sit on the base rule and
-  ran all year at opacity 0 (~0.3 cores). Where a loop can afford a lower frame
-  rate it is limited: the halo is a uniform rotation on `steps(420)` (30 steps a
-  second, under a degree each: identical to the eye, ~35-57% less GPU work, because
-  the compositor skips drawing frames where nothing changed), and the birthday
-  balloons skip draws inside a ~100 fps ceiling (`BALLOON_MIN_FRAME_MS`). `steps()`
-  is only valid on a LINEAR animation; on an eased one (the aurora ribbons, the
+  new infinite loop needs a reason. A seasonal loop must sit on the in-season
+  rule, never the base rule: an invisible infinite animation still costs a
+  frame per vsync (the removed Pride halo ran all year at opacity 0, ~0.3 cores).
+  Where a loop can afford a lower frame rate it can be stepped: `steps(n)` is
+  only valid on a LINEAR animation; on an eased one (the aurora ribbons, the
   petals' sway) it would flatten the easing, so those stay smooth. For a small,
   long-lived indicator
   prefer discrete steps: the Spotify bar steps four times a second off a timer
@@ -183,8 +179,7 @@ observers or the boot path.
 - **Never transition an inherited custom property** (or anything else that
   restyles the whole document per frame). The sky tint was a 90 s transition on
   `--bg-h/s/l/glow`, retargeted every minute, so one was always running: every
-  frame restyled ~1,000 nodes (the meadow's ~35 `color-mix()` tokens and ~500
-  SVG nodes included) and repainted the gradient behind every frosted card. A
+  frame restyled ~1,000 nodes and repainted the gradient behind every frosted card. A
   throttled phone missed 200 of 201 scroll frames; now 1 of 1,171.
 - **Sky tint cadence.** `stepSky` (called from the 1 Hz `tick`, so it pauses
   with a hidden tab and owns no timer) writes the tint every `TINT_STEP_MS`
@@ -231,7 +226,7 @@ observers or the boot path.
   pointer and a small screen as two weak signals, and every phone has both, so
   every phone runs in low-power mode: no particles, no backdrop blur, no glass
   refraction, no entrance or scroll-reveal motion, no wheel-lerp. What phones
-  keep: the sky tint and sunset, the meadow, hover and
+  keep: the sky tint and sunset, hover and
   press feedback. Tablets and narrow desktop windows get the full effects with
   the mobile layout. (`particleCount`'s phone density tier is therefore dead
   code.) Changing that is a product decision, not an optimisation. (The
@@ -253,79 +248,6 @@ Reduced-motion and low-power devices skip the show. The
 canvas uses half CSS resolution and at most 30 fps; spark motion is analytic
 in `KazuLib.fireworkSparkState`, mirrored in `java/script.js`. Completion,
 visibility loss and pagehide remove temporary DOM, rAF, timers and listeners.
-
-## Halloween (October)
-
-Halloween follows the Europe/London date from 1 October through 31 October,
-including a page left open across UK midnight. `?season=halloween` previews it
-on any date; the dev panel has a Halloween Auto/On/Off row stored under the
-existing `kazu-dev-seasons` key. URL previews win over saved settings, and
-Christmas takes palette priority when both are forced on.
-
-The plum sky uses `skyTint(minutes, dayOfYear, 'halloween')`: hue and saturation
-change, while daylight, lightness, sunset and weather timing stay the same.
-The inline boot script resolves the same date and overrides before first paint.
-`html.season-halloween` represents the effective palette; `body.season-halloween`
-records the requested season. Static SVG bats and profile pumpkins show with
-the effective palette, and the meadow becomes an autumn field with three
-jack-o'-lanterns. Their faces, halos and pools use the cottage's existing
-`--m-lit` switch. All artwork remains static on phones and low-power devices.
-The bats are `min(560px, 100%)` wide at every width (a fixed 340px phone size
-spilled a 320px screen 10px sideways), and the pumpkins are sized and placed
-from the picture's ring in `%` (94px at the 191px desktop ring, 76px at a
-320px phone's 134px ring), so they keep their place on it as it scales.
-
-## Christmas (25 December)
-
-Christmas is the visitor-local 25 December (`seasonState`), previewed with
-`?season=christmas` or the dev panel. It owns the palette (pine, cranberry,
-gold; `body.season-christmas`) and on top of it the page freezes over:
-
-- **Frozen cards.** Every card and social tile gets snow lying along its top
-  edge, frost ferns growing in from its corners, a frosted haze and an icy rim.
-  It is one CSS border-image per card: `KazuLib.frostCard({ w, h, r, seed })`
-  draws the SVG and `frostBorderImage` turns it into the `--xf` value that
-  `html body.season-christmas .xmas-frost` uses. A border-image is the only paint
-  CSS allows outside a box that clips its own content (every card is
-  `overflow: hidden`, the below-fold ones `content-visibility: auto`), which is
-  how the snow sits ON the card (13px proud, `FROST_RISE`) and lifts with it on
-  hover. It is a 9-slice: corners keep their shape, straight edges stretch, the
-  middle is never drawn (frost stays at the edges, never behind the middle of
-  the text). Seeded by the card's place on the page, so no two cards match and a
-  reload draws the same frost. `java/script.js` ("Christmas frost") draws a card when
-  it nears the viewport (IntersectionObserver, 600px margin), one card per idle
-  slice (`scheduleIdle`), and redraws only on a real width change (over 8%) or
-  a card grown too short for its corners (ResizeObserver). Cards the control
-  panel rebuilds are picked up by `frostRescan` from `applySiteConfig`. Grid row
-  gaps and section-title margins open up while the season is live so the snow
-  never touches the card above. Static paint: shown on phones and in low-power
-  mode too. `border-width: 0` keeps every card's layout as it was.
-- **Snowfall (desktop only).** `KazuWeatherFx.layersFor(w, { festive: true })`
-  adds a light snow (`FESTIVE_SNOW`, 0.32) whatever the sky is doing, unless it
-  is really raining (rain and snow never share the canvas) or already snowing
-  harder; it invents no cloud. `applySeasons` flips `christmasLive` and re-syncs.
-  Same canvas, same guards and budget as real snow; phones get none.
-- **Decorations.** String lights along the top of the page (`.xmas-garland`,
-  static SVG, steady bulbs, no twinkle loop; the centre hook sits over the
-  profile picture), and in the footer a snowman, a wreath on the cottage door
-  and lights under the eaves (`.mf-christmas`, its colours are day/night
-  `--mf-*` tokens like the rest of the field). There is deliberately no
-  Christmas tree and no Santa hat on the avatar: the owner removed both
-  (2026-10-14).
-- **The footer at night** stays snow (moonlit blue-grey `--n-*` overrides), and
-  the credit line switches ink at 65% daylight (`--m-ink`): dark on bright snow,
-  light over a deeper bottom shade once it is darker. The switch point is where
-  both pass WCAG AA.
-- **Phones** keep the pine cards in low-power mode
-  (`body.low-power.season-christmas` outranks the slate low-power fill).
-- **Cost** (measured with the perf eval before it was removed): frost, lights
-  and footer add nothing measurable at idle on desktop. Desktop idles like any
-  snowy day (~0.21 cores, the weather canvas; 5 recalcs a second, inside the
-  idle budget; no running CSS animations, since the tree and its twinkle loop
-  are gone). Phone load on Christmas Day: TBT ~140 ms vs ~120 ms without the
-  frost (it was ~280 ms before the frost moved to idle slices).
-- **Known gap** (unchanged): the Christmas palette and decorations are applied
-  by `java/script.js`, so 25 December shows the blue tint for a moment first.
 
 ## Fluid sizing
 
@@ -374,8 +296,6 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
   last three centred from 760px ("MyAnimeList" is 113px at 19.5px, 121px in
   the fallback font; a four-up tile has 127px inside at 760px). Stories:
   `minmax(min(100%, 300px), 1fr)`, one or two across.
-- **Decorations scale with the picture.** The Halloween pumpkins and the
-  birthday hat are sized and placed in `%` of the picture's ring.
 - **Readable floors.** 10px at 320px, 12px from 390px wide, for every text on
   the page (only the owner-only kazudev panel is smaller).
 - **`100vw`** excludes a classic scrollbar, because the gutter is reserved
@@ -400,8 +320,7 @@ hairline rules instead of glass cards, one accent. It is the LAST block of
 `html:not(#rd)`. The `:not(#rd)` adds an id's worth of specificity, which is
 how the layer beats the legacy rules above it (seasonal palettes, per-card
 glass) without `!important`; `!important` appears only where the markup has
-inline colours (card titles, pills, story cards) or the old Halloween and
-Christmas rules use it. A browser without CSS nesting keeps the legacy look.
+inline colours (card titles, pills, story cards) use it. A browser without CSS nesting keeps the legacy look.
 
 - **Do not delete the legacy rules above the block.** The seasonal code
   still runs and relies on them. To change how the
@@ -409,11 +328,11 @@ Christmas rules use it. A browser without CSS nesting keeps the legacy look.
   and let it win by specificity. Every top-level rule in the block must carry
   the `:not(#rd)` prefix (a loose rule would not win by specificity).
 - **Retired from view, not from the code:** the sunset sky, sakura scene and
-  petals, weather canvas, Christmas lights and frost, Halloween decor, party
-  hat, meadow illustration, the cover images (playlist cover, MAL covers,
-  Letterboxd posters) and the brand marks on the social tiles are
-  `display: none` in that block. Their scripts still run (hidden). Remove the `display: none` and
-  the legacy rule shows again.
+  petals and the weather canvas are `display: none` in that block. Their
+  scripts still run (hidden). Remove the `display: none` and the legacy rule
+  shows again. (The theme decorations, the meadow illustration, the cover
+  images and the brand marks on the social tiles were deleted outright on
+  2026-10-27.)
 - **Header and anchors:** `.site-header` holds the wordmark, the section nav
   (`#now #socials #writing #playlist #pc`, which are the `h2.section-title` ids,
   in page order) and the language switch. The sections run Now, Socials,
@@ -444,8 +363,8 @@ and hold their full size from there to the widest desktop.
 - **Targets.** The name fills 70-86% of the hero up to 600px, 60%+ up to 768px, never
   over 86%, never smaller at a wider width; its box fits in a 5em fallback font, and a
   short screen (667 x 375, 1280 x 600) gives it at most a fifth of its height. Look at
-  320px (Halloween), 390px, 590px and 1200px: the name clear of the picture, the
-  pumpkins and the quote, no sideways scroll, a 320 character quote not cut off. If the
+  320px, 390px, 590px and 1200px: the name clear of the picture and the
+  quote, no sideways scroll, a 320 character quote not cut off. If the
   title font is re-cut, re-measure the name's width per px of font size (it was 'TITLE_EM').
 
 ## Conventions and gotchas
@@ -484,9 +403,7 @@ These are load-bearing; read before editing.
   until `updateSkyBody`'s first snap places it (`java/script.js` lifts the class;
   an 8s timeout is the failsafe). Any new state that `java/script.js` sets on
   load and that changes the look of the first screen belongs in the same
-  boot script or it will flash. Known gap: on Dec 25 the Christmas palette
-  is still applied by `java/script.js` (`body.season-christmas`), so that one day
-  shows the blue tint briefly before the pine palette.
+  boot script or it will flash.
 - **Cherry-blossom season.** The branches (`.sakura-branch`) and the petal
   modes (`blossom`, `blossom-heavy`) only exist from 20 March to 10 May
   inclusive (first blooms in Kyushu/Tokyo to the last Hokkaido petals),
@@ -512,7 +429,7 @@ These are load-bearing; read before editing.
   script carries a compact copy so a page opened at dusk starts with the
   sunset in place; keep the two in step. It is
   static CSS (no transition, no animation; the value steps under 0.5% per
-  step), so it shows on phones and in low-power mode too; only Christmas hides it.
+  step), so it shows on phones and in low-power mode too.
   Changing the timing means editing `sunsetGlow` AND the matching numbers in
   the boot script. The gradient stops live in `style.css` (`.sunset-sky`).
 - **Sky edges (no line at the fold).** The sunset, the scenery and the cloud
@@ -532,32 +449,6 @@ These are load-bearing; read before editing.
   - Clouds never sit lower than one sprite height above the bottom of their
     one-viewport canvas (`createScene` in `java/weather-fx.js`; windows under
     570px tall used to cut them).
-- **Meadow footer (a grassy field with a house).** The last thing on the
-  page is a full-bleed illustrated field: cottage, trees, picket fences, a
-  path and wildflowers, with the credit line resting on the grass. It is one
-  decorative inline SVG (`<footer class="footer meadow">`, a sibling AFTER
-  `.container` so it can run edge to edge; 1440x340 view box, the hills extend
-  far past both sides so any width fills; the page scales it between 860px and
-  1800px and centres it, phones see the middle). Every colour is a `--mf-*`
-  token in `style.css` ("MEADOW FOOTER"), a `color-mix()` of a day (`--d-*`)
-  and a night (`--n-*`) value: `--m-day` comes from the live sky tint
-  (`--bg-l`, plus a little `--sunset`), the window lights are their own "dark enough" switch
-  (`--m-lit`: off all day and through the sunset itself, easing on from about
-  20 minutes after sunset to fully on by about 55, off again within an hour of
-  sunrise; when on the glass turns amber, each pane gets a bright centre, the
-  windows, attic and door lantern get halos and warm light pools on the grass;
-  without `color-mix()` the panes and pools still light up), `--m-warm` folds the sunset
-  orange in, the pink blossom on the big tree only shows in blossom season
-  (`html:not(.no-sakura)`), and Christmas repaints it as a snowy field (moonlit
-  snow by night, with a snowman, a door wreath and eave lights). Static
-  paint (no animation), shown on every device. It is `content-visibility: auto`
-  so it costs nothing at load (~535 SVG nodes at the end of a long page; phone
-  first contentful paint is ~28% earlier with it skipped), with a placeholder
-  height computed from the art's own width clamp and aspect ratio so it never
-  shifts when it renders. It is `z-index: 0` so the fixed
-  back-to-top button (inside `.container`, z-index 1) stays on top. To change
-  the art, edit the SVG in `index.html`; every class it uses must be styled and
-  no fill may be hard-coded except the flowers.
 - **Live weather layers (desktop only).** `java/weather-fx.js` draws rain, snow,
   wind streaks and clouds from the UK weather `java/script.js` already fetches
   (Open-Meteo now also asks for `cloud_cover` and `wind_direction_10m`).
@@ -617,7 +508,8 @@ These are load-bearing; read before editing.
   by class name. The logo wrapper on each social tile used to be
   `.social-badge`, which Fanboy's Social Blocking list hides (`##.social-badge`),
   so for visitors with an ad blocker (seen on Firefox) every logo vanished and
-  the tiles collapsed to name + handle. It is `.social-mark` now. Keep new
+  the tiles collapsed to name + handle. The logo marks are gone now (deleted
+  2026-10-27), but keep new
   class names near social/share/ad vocabulary off those lists, and avoid the
   known offenders (`social-badge`, `social-badges`, `social-follow`,
   `social-profiles`, `social-share`, `social-widget`).
@@ -752,8 +644,8 @@ a future bug lets one into the page.
   them would need `'unsafe-hashes'`, which not every browser in use supports, and
   a browser without it would never apply the fonts). `#boot-handlers`, placed before the font
   links, holds the two the page had: capturing `load`/`error` listeners on the
-  document flip `link[data-font]` to `media="all"` and hide a `.music-cover` that
-  fails. The listener exists before the elements are parsed, so neither can be missed.
+  document flip `link[data-font]` to `media="all"`. The listener exists before the
+  elements are parsed, so none can be missed.
 - **What it does not cover.** A meta policy cannot set `frame-ancestors` or reporting
   (GitHub Pages sends no custom headers). Code run over the DevTools protocol is exempt.
 - **Checked:** Chrome over http, from `file://` (headless, `'self'` matches); every boot script runs with no refusal in the console.
@@ -811,7 +703,7 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
   `.story-link` / `.story-card` / `.story-title` / `.story-desc` / `.story-cta`,
   `.pc-spec-card--graphics|platform|storage|build`, `.music-card` and its
   `.music-playlist-name|sub`, `.right-now-grid`, `.discord-card|steam-card|mal-card|lb-card`,
-  `.meadow-credit`, the `h2.section-title` just before each grid, and `#hubBulletin`.
+  the `h2.section-title` just before each grid, and `#hubBulletin`.
 - **Declarations the panel's importer reads.** `DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`,
   `LB_USER` and `YTM_PLAYLIST_ID` are `let`s set through `siteId(...)` / `siteValue(...)`.
   The last quoted value on each line is the page's own default and the importer reads
@@ -897,28 +789,13 @@ language and the default**; Japanese is a layer that `java/i18n.js` puts on top,
   must be unique (switching back looks them up in reverse) and emoji-free.
 - **Colours follow the palette.** The switch (and the announcement strip's
   default tone) paint with `--chip-bg`, `--chip-bd` and `--on-accent`, set in
-  every palette block that sets `--accent` (default `body`,
-  `body.season-christmas`, `html.season-halloween body`). `--chip-bg` is the
+  every palette block that sets `--accent` (default `body`). `--chip-bg` is the
   card colour made near-solid (alpha >= .85) because the switch has no blur;
   `--on-accent` is the dark label on the accent-filled pressed button. A new
   palette must set all three, and the idle and pressed labels must stay above 4.5:1.
 - **Layout notes.** Weekdays and fonts need nothing special: the page's fonts have no
   kana, so browsers fall back per glyph to the system Japanese font
   (`<html lang="ja">` makes them pick Japanese glyph forms).
-- **Chiikawa peek (Japanese only).** `assets/chiikawa.webp` (192px wide for 2x; the source
-  `Chiikawa.png` was deleted, so re-export from the original art if it is ever needed) sits dead centre behind the
-  profile picture (`.chiikawa-peek`, `z-index: 0` under `.pfp`'s `1`), tilted
-  -38deg toward the upper left, clear of the Halloween pumpkins and the party
-  hat. `display: none` unless `<html lang="ja">`, and `loading="lazy"`, so the
-  English page never downloads it. A peek is the one-shot `chiikawaPeek`
-  keyframes (3.4 s: slide out along the tilt, wobble, hold, slide back);
-  `initChiikawaPeek` in `java/script.js` adds `.is-peeking`, drops it on
-  `animationend` and re-arms a timer: first peek 1.2 s after the page turns
-  Japanese (after the picture's entrance pop), then every 7-12 s
-  (`KazuLib.chiikawaPeekDelay`). No timer while the tab is hidden or the
-  picture is scrolled away (IntersectionObserver). Never an infinite CSS loop. `KazuLib.chiikawaPeekMode`: reduced motion parks it in the
-  peek pose (`.is-still`); low-power still animates on purpose, because every
-  phone trips low-power and the peek is one composited transform.
 - **Not translated by design:** the quote (English source text), song, game,
   anime and story titles, and announcement text from the control panel unless
   it matches a known phrase.
