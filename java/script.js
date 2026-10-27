@@ -125,24 +125,14 @@
   };
 
   // ---------- Seasons ----------
-  // Preview any season on any date: ?season=birthday|christmas|pride|sakura|halloween|all (comma-combinable)
-  // `sakura` (the cherry-blossom branches + petals) is only ever forced ON here;
-  // a param that doesn't name it leaves the blossoms following the calendar.
+  // Force the cherry-blossom season on any date: ?season=sakura (or blossom, or all).
+  // A param that doesn't name it leaves the blossoms following the calendar.
   const SEASON_OVERRIDE = (() => {
     try {
       const p = new URLSearchParams(location.search).get('season');
       if (!p) return null;
-      const v = p.toLowerCase();
-      if (v === 'all') return { birthday: true, christmas: true, pride: true, sakura: true, halloween: true };
-      const set = v.split(',').map((s) => s.trim());
-      const o = {
-        birthday: set.includes('birthday') || set.includes('bday'),
-        christmas: set.includes('christmas') || set.includes('xmas'),
-        pride: set.includes('pride'),
-        halloween: set.includes('halloween'),
-      };
-      if (set.includes('sakura') || set.includes('blossom')) o.sakura = true;
-      return o;
+      const set = p.toLowerCase().split(',').map((s) => s.trim());
+      return set.includes('all') || set.includes('sakura') || set.includes('blossom') ? { sakura: true } : {};
     } catch (e) { return null; }
   })();
 
@@ -175,9 +165,9 @@
   };
   const seasonDevApply = (KazuLib && KazuLib.seasonDevApply) || function (state, overrides) {
     const s = state || {};
-    const out = { birthday: !!s.birthday, christmas: !!s.christmas, pride: !!s.pride, sakura: !!s.sakura, halloween: !!s.halloween };
+    const out = { sakura: !!s.sakura };
     overrides = overrides || {};
-    ['birthday', 'christmas', 'pride', 'sakura', 'halloween'].forEach((k) => {
+    ['sakura'].forEach((k) => {
       if (overrides[k] === 'on') out[k] = true;
       else if (overrides[k] === 'off') out[k] = false;
     });
@@ -189,7 +179,7 @@
     try { p = JSON.parse(raw); } catch (e) { return null; }
     if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
     const out = {};
-    ['birthday', 'christmas', 'pride', 'sakura', 'halloween'].forEach((k) => {
+    ['sakura'].forEach((k) => {
       if (p[k] === 'on' || p[k] === 'off') out[k] = p[k];
     });
     return out;
@@ -226,8 +216,8 @@
     return key >= 220 && key <= 410;
   };
 
-  // One cached UK formatter also covers a missing lib.js: October must never
-  // start/end on the visitor's local date. Shared by the season key and sky.
+  // One cached UK formatter also covers a missing lib.js: the blossom window
+  // must never start/end on the visitor's local date. Shared by the season key and sky.
   const fmtSeasonUK = new Intl.DateTimeFormat('en-GB', {
     timeZone: TIMEZONE, year: 'numeric', month: 'numeric', day: 'numeric',
     hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false,
@@ -240,26 +230,15 @@
   }
 
   function seasonState(now) {
-    const m = now.getMonth(), d = now.getDate(); // visitor-local: Christmas & pride are ambient
-    // The birthday and blossom seasons follow the UK wall clock (the birthday
-    // is Kazu's day, in the UK; the blossom window matches the boot script).
+    // The blossom season follows the UK wall clock (the window matches the boot script).
     const w = seasonUKParts(now);
-    const bM = w.month, bD = w.day;
     // An explicit ?atmosphere=blossom preview brings the branches with it, so
     // the preview looks like the real in-season page.
-    const sakura = sakuraInBloom(bM, bD) || ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy';
+    const sakura = sakuraInBloom(w.month, w.day) || ATMOSPHERE_OVERRIDE === 'blossom' || ATMOSPHERE_OVERRIDE === 'blossom-heavy';
     // The ?season= param beats even the dev panel (and only names sakura to force it on).
     if (SEASON_OVERRIDE) return Object.assign({ sakura }, SEASON_OVERRIDE);
-    return seasonDevApply({
-      birthday: (bM === BIRTH_MONTH && bD === BIRTH_DAY), // Nov 9, UK time
-      christmas: (m === 11 && d === 25),                  // Dec 25
-      pride: (m === 5),                                   // all of June
-      sakura,                                             // 20 Mar - 10 May, UK date
-      halloween: (bM === 9),                              // all of October, UK date
-    }, Object.assign({}, siteSeasons, devSeasons)); // control panel overrides, then this browser's dev panel on top
+    return seasonDevApply({ sakura }, Object.assign({}, siteSeasons, devSeasons)); // control panel overrides, then this browser's dev panel on top
   }
-
-  let bdayCelebrated = false; // latch so confetti fires once per OFF->ON birthday transition
 
   // ---------- Clock / age / birthday ----------
   // Intl.DateTimeFormat construction is one of the priciest built-ins there
@@ -530,7 +509,7 @@
     reducedMotion: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches),
   };
   // particleCount() clamps to a minimum of 8 (it's sized for petals/drops);
-  // the one-off canvas bursts (confetti, balloons) scale smaller counts off
+  // the one-off canvas bursts (fireworks) scale smaller counts off
   // the same hardware flags directly.
   const lightDevice = PARTICLE_FLAGS.coarsePointer || PARTICLE_FLAGS.smallScreen ||
     PARTICLE_FLAGS.lowConcurrency || PARTICLE_FLAGS.saveData;
@@ -958,10 +937,7 @@
   // atmosphere takes back over.
   // Preview: ?weather=rain,wind,clouds,snow,storm,all,none (each optionally
   // :0..1, e.g. rain:1) forces layers on any weather; still desktop-only.
-  // Christmas Day adds a light snowfall to the layers (KazuWeatherFx FESTIVE_SNOW),
-  // unless it is really raining; applySeasons keeps this flag and re-syncs.
   const WEATHER_FX_SRC = 'java/weather-fx.js?v=5';
-  let christmasLive = false;
   const WEATHER_FX_RAW = (() => {
     try { return new URLSearchParams(location.search).get('weather') || ''; } catch (e) { return ''; }
   })();
@@ -1000,8 +976,7 @@
       weatherCurrent
         ? { code: weatherCurrent.code, cloudCover: weatherCurrent.cloudCover, windKmh: weatherCurrent.windKmh, windDir: weatherCurrent.windDir }
         : null,
-      WEATHER_FX_RAW ? fx.forcedParse(WEATHER_FX_RAW) : null,
-      { festive: christmasLive }
+      WEATHER_FX_RAW ? fx.forcedParse(WEATHER_FX_RAW) : null
     );
   }
 
@@ -1017,7 +992,7 @@
     }
     if (weatherFxState === 'failed') return;
     if (ATMOSPHERE_OVERRIDE && !WEATHER_FX_RAW) return; // previewing the older atmosphere
-    if (!weatherCurrent && !WEATHER_FX_RAW && !christmasLive) return; // nothing to draw until the weather is known (Christmas snows anyway)
+    if (!weatherCurrent && !WEATHER_FX_RAW) return; // nothing to draw until the weather is known
     if (window.KazuWeatherFx) { weatherFxState = 'ready'; feedWeatherFx(); return; }
     if (weatherFxState === 'loading') return;           // feedWeatherFx runs from onload
     weatherFxState = 'loading';
@@ -1096,7 +1071,7 @@
 
   // Same clock-driven palette as KazuLib.skyTint / KazuLib.hslToHex; these
   // local copies keep the background breathing if lib.js fails to load.
-  const skyTint = (KazuLib && KazuLib.skyTint) || function (ukMinutes, dayOfYear, season) {
+  const skyTint = (KazuLib && KazuLib.skyTint) || function (ukMinutes, dayOfYear) {
     let t = +ukMinutes;
     if (isNaN(t)) return null;
     t = ((t % 1440) + 1440) % 1440;
@@ -1120,8 +1095,8 @@
     else sunP = t < 720 ? 0.5 * (t - rise) / (720 - rise)
                         : 0.5 + 0.5 * (t - 720) / (set - 720);
     return {
-      h: +(season === 'halloween' ? 275 + 8 * dusk : 215 + 22 * dusk).toFixed(2),
-      s: +(season === 'halloween' ? 28 + 6 * dusk : 33 + 9 * dusk).toFixed(2),
+      h: +(215 + 22 * dusk).toFixed(2),
+      s: +(33 + 9 * dusk).toFixed(2),
       l: +(36 * day).toFixed(2), // 0% AMOLED black night -> 36% gentle daylight
       daylight: +day.toFixed(4),
       dusk: +dusk.toFixed(4),
@@ -1160,8 +1135,7 @@
   // values gliding over a 90s CSS transition, but every new minute retargeted
   // the glide before the last one had finished, so from the first minute of
   // daylight a transition was ALWAYS running. Custom properties inherit, so
-  // every frame restyled the whole document (the meadow's ~35 colour-mix
-  // tokens and ~500 SVG nodes included) and repainted the gradient behind each
+  // every frame restyled the whole document and repainted the gradient behind each
   // frosted card. Measured: a full CPU core at idle, a main thread ~98% busy,
   // and on a throttled phone every scroll frame missed. The tint moves under a
   // fifth of one 8-bit colour level per TINT_STEP_MS even at the fastest hour
@@ -1173,7 +1147,7 @@
   let skyTintHex = '#000000'; // AMOLED deep-night default, matches the inline first paint
   let skyTintKey = '';        // last written values: an unchanged tint writes nothing
   function applySkyTint(mins, doy) {
-    const tint = skyTint(mins, doy, document.documentElement.classList.contains('season-halloween') ? 'halloween' : null);
+    const tint = skyTint(mins, doy);
     if (!tint) return null;
     // Sunset gradient (style.css .sunset-sky): strength + golden->rose palette
     // mix. Without lib.js it simply keeps the value the boot script set.
@@ -1193,7 +1167,7 @@
       skyTintHex = hslToHex(tint.h, tint.s, tint.l);
       skyFxLight = { daylight: tint.daylight, dusk: tint.dusk }; // cloud colours follow the time of day
       if (window.KazuWeatherFx) window.KazuWeatherFx.setSky(skyFxLight);
-      if (!document.body.classList.contains('season-christmas')) setThemeColor(skyTintHex);
+      setThemeColor(skyTintHex);
     }
     return tint;
   }
@@ -1331,7 +1305,7 @@
     const now = performance.now();
     const bodyDue = now - skyBodyAt >= BODY_STEP_MS;
     if (!bodyDue && now - skyTintAt < TINT_STEP_MS) return;
-    if (now - lastScrollAt < SKY_QUIET_MS || modalAnim || window.__kazuPopAnim) return;
+    if (now - lastScrollAt < SKY_QUIET_MS || window.__kazuPopAnim) return;
     if (bodyDue) { updateSkyBody(); return; } // moves the body and refreshes the tint too
     skyTintAt = now;
     const c = skyClock(new Date());
@@ -2623,113 +2597,20 @@
   if (themeDarkMQ && themeDarkMQ.addEventListener) themeDarkMQ.addEventListener('change', () => setThemeColor());
   setThemeColor();
 
-  // ---------- Christmas frost (snow on the cards, frost in their corners) ----------
-  // KazuLib.frostCard draws each card's picture (seeded, so every card gets its
-  // own snow line and frost and a reload draws the same ones) and style.css
-  // shows it as a border-image only under body.season-christmas ("frozen
-  // cards"). This part only measures cards and hands the pictures over, and
-  // only while Christmas is live (applySeasons calls setFrost). A card's
-  // picture is made the first time it comes near the viewport (an
-  // IntersectionObserver, so a phone that never scrolls makes three or four,
-  // not twenty-two), then a ResizeObserver remakes it only when the card really
-  // changed: the 9-slice already absorbs height changes, so only a width change
-  // of more than 8%, or a card grown too short for its corners, draws again.
-  // Cards are drawn one per idle slice: each picture costs a style pass and an
-  // image decode on the next frame, and drawing the first screen's six at once
-  // was a ~160 ms task on a 4x-throttled phone (perf.js, Christmas Day load);
-  // one at a time each stays under the long-task line. Nothing runs at rest or
-  // outside the season; if lib.js is missing the season simply has no frost.
-  const FROST_SELECTOR = '.stat-card, .discord-card, .steam-card, .mal-card, .lb-card, .social-card, .pc-spec-card, .music-card, .story-card';
-  let frostOn = false;
-  let frostSeeds = new WeakMap(); // card -> seed (its place on the page)
-  const frostDrawn = new WeakMap(); // card -> { w, reach } it was drawn for
-  let frostIO = null, frostRO = null;
-  const frostQueue = [];
-  let frostPumping = false;
-  function frostQueueCard(el) {
-    if (frostQueue.indexOf(el) === -1) frostQueue.push(el);
-    if (!frostPumping) { frostPumping = true; scheduleIdle(frostPump, 1500); }
-  }
-  function frostPump() {
-    frostPumping = false;
-    const el = frostQueue.shift();
-    if (el && frostOn && frostStale(el)) frostDraw(el);
-    if (frostQueue.length) { frostPumping = true; scheduleIdle(frostPump, 1500); }
-  }
-  function frostDraw(el) {
-    const w = el.offsetWidth, h = el.offsetHeight;
-    const f = KazuLib.frostCard({ w, h, r: parseFloat(getComputedStyle(el).borderTopLeftRadius), seed: frostSeeds.get(el) || 1 });
-    if (!f) return; // not laid out yet (hidden, or still 0 wide): the ResizeObserver tries again
-    el.style.setProperty('--xf', KazuLib.frostBorderImage(f));
-    el.classList.add('xmas-frost');
-    frostDrawn.set(el, { w, reach: f.reach });
-  }
-  function frostStale(el) {
-    const d = frostDrawn.get(el);
-    if (!d) return true;
-    return Math.abs(el.offsetWidth - d.w) > d.w * 0.08 || el.offsetHeight < 2 * d.reach + 2;
-  }
-  // Cards the control panel rebuilt (socials, stories) are new elements:
-  // applySiteConfig calls this so they freeze over too.
-  function frostRescan() {
-    if (!frostOn) return;
-    document.querySelectorAll(FROST_SELECTOR).forEach((el, i) => {
-      if (frostSeeds.has(el)) return;
-      frostSeeds.set(el, i + 1);
-      if (frostIO) frostIO.observe(el);
-      else frostQueueCard(el);
-    });
-  }
-  function setFrost(on) {
-    if (on === frostOn || !(KazuLib && KazuLib.frostCard && KazuLib.frostBorderImage)) return;
-    frostOn = on;
-    if (!on) { // style.css hides the pictures with the season; just stop watching
-      if (frostIO) frostIO.disconnect();
-      if (frostRO) frostRO.disconnect();
-      frostSeeds = new WeakMap();
-      frostQueue.length = 0;
-      return;
-    }
-    if (!frostIO && 'IntersectionObserver' in window) {
-      frostRO = 'ResizeObserver' in window
-        ? new ResizeObserver((entries) => entries.forEach((e) => { if (frostOn && frostStale(e.target)) frostQueueCard(e.target); }))
-        : null;
-      frostIO = new IntersectionObserver((entries) => entries.forEach((e) => {
-        if (!e.isIntersecting || !frostOn) return;
-        frostIO.unobserve(e.target);
-        if (frostStale(e.target)) frostQueueCard(e.target);
-        if (frostRO) frostRO.observe(e.target);
-      }), { rootMargin: '600px 0px' });
-    }
-    frostRescan();
-  }
-
   // ---------- Seasonal effects ----------
-  // Seasons only depend on the calendar date (visitor-local for Christmas and
-  // pride, UK wall clock for birthday, sakura and Halloween) plus overrides, so the
-  // per-second tick skips all re-evaluation until one of those flips — midnight
+  // The one season left is the cherry-blossom window (UK date), plus overrides,
+  // so the per-second tick skips all re-evaluation until the date flips: midnight
   // crossover is still caught within a second, and dev-panel clicks apply
   // instantly (they mutate devSeasons, which changes the key).
   let lastSeasonKey = null;
   function applySeasons() {
     const now = new Date();
-    let key = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate() + '|' + JSON.stringify(devSeasons);
     const w = seasonUKParts(now);
-    key = w.year + '-' + w.month + '-' + w.day + '|' + key;
+    const key = w.year + '-' + w.month + '-' + w.day + '|' + JSON.stringify(devSeasons);
     if (key === lastSeasonKey) return;
     lastSeasonKey = key;
     const s = seasonState(now);
-    const body = document.body;
-    body.classList.toggle('season-birthday', s.birthday);
-    body.classList.toggle('season-christmas', s.christmas);
-    body.classList.toggle('season-pride', s.pride);
-    body.classList.toggle('season-halloween', s.halloween);
-    // The root class is the effective Halloween palette: boot can set it
-    // before body exists, and Christmas takes precedence in combined previews.
-    const root = document.documentElement;
-    const halloween = !!s.halloween && !s.christmas;
-    root.classList.toggle('season-halloween', halloween);
-    // The tint is never transitioned (see applySkyTint), so a palette change
+    // The tint is never transitioned (see applySkyTint), so a change
     // simply lands: the new hue is written and painted in the same pass.
     updateSkyBody(); // dev clicks and midnight refresh tint immediately
     // Blossom season: outside it the branches are not drawn (html.no-sakura; the
@@ -2741,53 +2622,7 @@
       sakuraLive = !!s.sakura;
       if (atmosphereWanted !== null) setAtmosphere(atmosphereWanted);
     }
-    // Christmas owns the palette, so it owns the browser-chrome colour too;
-    // otherwise follow the current time-of-day tint.
-    setThemeColor(s.christmas ? '#071f16' : skyTintHex);
-    // Christmas also freezes the cards over (see "Christmas frost" below) and,
-    // on desktop, snows lightly unless it is really raining.
-    setFrost(!!s.christmas);
-    if (christmasLive !== !!s.christmas) { christmasLive = !!s.christmas; syncWeatherFx(); }
-    if (s.birthday && !bdayCelebrated) { bdayCelebrated = true; fireConfetti(); }
-    if (!s.birthday) bdayCelebrated = false; // re-arm if it turns off (e.g. preview param removed)
     syncDevPanel(s); // keep the dev panel's live badges / pressed buttons current
-    setBalloons(s.birthday); // balloon canvas runs only while the birthday season is live
-  }
-
-  function fireConfetti() {
-    if (LOW_POWER) return; // reduced motion is one of the low-power signals
-    if (document.getElementById('confetti-canvas')) return; // already running
-    const canvas = document.createElement('canvas');
-    canvas.id = 'confetti-canvas';
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext('2d');
-    const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    function size() { canvas.width = innerWidth * DPR; canvas.height = innerHeight * DPR; ctx.setTransform(DPR, 0, 0, DPR, 0, 0); }
-    size();
-    const COLORS = ['#ff5ea8', '#a05cff', '#5cc6ff', '#ffd34d', '#3ddc97', '#ff7a59'];
-    const parts = [];
-    const COUNT = lightDevice ? 84 : 140; // lighter burst on weak hardware
-    for (let i = 0; i < COUNT; i++) parts.push({
-      x: innerWidth / 2 + (Math.random() - 0.5) * 120, y: innerHeight * 0.32 + (Math.random() - 0.5) * 60,
-      vx: (Math.random() - 0.5) * 11, vy: Math.random() * -13 - 4, g: 0.28 + Math.random() * 0.12,
-      size: 5 + Math.random() * 6, rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
-      color: COLORS[(Math.random() * COLORS.length) | 0],
-    });
-    const start = performance.now(), DURATION = 3200;
-    function frame(t) {
-      const e = t - start;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.globalAlpha = Math.max(0, 1 - e / DURATION); // one fade value for the whole frame
-      for (const p of parts) {
-        p.vy += p.g; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.rot += p.vr;
-        ctx.save();
-        ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
-        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-        ctx.restore();
-      }
-      if (e < DURATION) requestAnimationFrame(frame); else canvas.remove();
-    }
-    requestAnimationFrame(frame);
   }
 
   // ---------- New Year fireworks ----------
@@ -2934,136 +2769,6 @@
     frameId = requestAnimationFrame(frame);
   }
 
-  // ---------- Birthday balloons (canvas physics) ----------
-  // Six balloons drift up behind the content while the birthday season is
-  // live. The physics core is KazuLib.balloonDriftStep / ropeStep:
-  // buoyant drift with deterministic wind gusts for the body,
-  // a verlet rope for the string, so the trailing wiggle is real physics,
-  // not a keyframe. No local fallback: if lib.js failed to load the balloons
-  // sit this one out, same as the manga rows.
-  const BALLOON_COLORS = ['#ff5ea8', '#a05cff', '#5cc6ff', '#ffd34d', '#3ddc97', '#ff7a59']; // confetti palette
-  const BALLOON_COUNT = 8, BALLOON_SEGS = 7, BALLOON_SEGLEN = 9;
-  let balloonCanvas = null, balloonCtx = null, balloonRaf = 0, balloonLast = 0, balloonT = 0;
-  let balloons = [];
-
-  function knotPos(b) {
-    return { x: b.x - Math.sin(b.tilt) * b.ry, y: b.y + Math.cos(b.tilt) * b.ry };
-  }
-
-  function initRope(b) {
-    const knot = knotPos(b);
-    b.rope = [];
-    for (let i = 0; i < BALLOON_SEGS; i++) {
-      b.rope.push({ x: knot.x, y: knot.y + i * BALLOON_SEGLEN, px: knot.x, py: knot.y + i * BALLOON_SEGLEN });
-    }
-  }
-
-  function spawnBalloon(w, h, midAir) {
-    const r = 24 + Math.random() * 12;
-    const b = {
-      x: w * (0.08 + Math.random() * 0.84),
-      // Spawn off-screen below the viewport and float in, rather than popping
-      // in mid-air. Re-entry after leaving the top also comes from below.
-      y: midAir ? h + 80 + Math.random() * 420 : h + 120 + Math.random() * 160,
-      vx: 0, vy: 0, tilt: 0,
-      r, rx: r * 0.82, ry: r,
-      buoy: 15 + Math.random() * 8,       // terminal rise ≈ buoy/drag: 80-130 px/s
-      drag: 0.18,
-      windAmp: 8 + Math.random() * 8,      // stronger gusts match the quicker pace
-      phase: Math.random() * 7,
-      color: BALLOON_COLORS[(Math.random() * BALLOON_COLORS.length) | 0],
-      rope: [],
-    };
-    initRope(b);
-    return b;
-  }
-
-  function sizeBalloonCanvas() {
-    const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    balloonCanvas.width = innerWidth * DPR;
-    balloonCanvas.height = innerHeight * DPR;
-    balloonCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  }
-
-  // The balloons are physics-driven (dt-scaled), so they need no particular
-  // frame rate: a ~100 fps ceiling draws every other frame on a 144 Hz display
-  // (72 fps) and every other frame on 120 Hz (60 fps), halving the full-screen
-  // canvas + compositor work, while 60 and 90 Hz displays are untouched. At
-  // ~100 px/s of drift the difference is not visible.
-  const BALLOON_MIN_FRAME_MS = 10;
-  function balloonFrame(now) {
-    balloonRaf = requestAnimationFrame(balloonFrame);
-    if (now - balloonLast < BALLOON_MIN_FRAME_MS) return;
-    const dt = Math.min((now - balloonLast) / 1000, 0.05); // tab-switch gaps can't teleport
-    balloonLast = now;
-    balloonT += dt;
-    const w = innerWidth, h = innerHeight;
-    for (let i = 0; i < balloons.length; i++) {
-      let b = balloons[i];
-      KazuLib.balloonDriftStep(b, { dt, t: balloonT, buoy: b.buoy, drag: b.drag, windAmp: b.windAmp, phase: b.phase });
-      // Soft wall: gusts may never carry a balloon off-screen sideways.
-      const M = 50;
-      if (b.x < M) b.vx += (M - b.x) * 0.9 * dt;
-      else if (b.x > w - M) b.vx -= (b.x - (w - M)) * 0.9 * dt;
-      b.tilt = Math.max(-0.3, Math.min(0.3, b.vx * 0.0022)); // lean into the drift
-      if (b.y < -(b.ry + 140)) { balloons[i] = b = spawnBalloon(w, h, false); continue; }
-      KazuLib.ropeStep(b.rope, knotPos(b), { dt, gravity: 1400, segLen: BALLOON_SEGLEN });
-    }
-    const c = balloonCtx;
-    c.clearRect(0, 0, w, h);
-    for (const b of balloons) {
-      const pts = b.rope;
-      // String first (behind the body): a smooth curve through the rope.
-      c.strokeStyle = 'rgba(255,255,255,.55)';
-      c.lineWidth = 1.4;
-      c.beginPath();
-      c.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length - 1; i++) {
-        c.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2);
-      }
-      c.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-      c.stroke();
-      c.save();
-      c.translate(b.x, b.y);
-      c.rotate(b.tilt);
-      c.fillStyle = b.color;
-      c.beginPath(); c.ellipse(0, 0, b.rx, b.ry, 0, 0, Math.PI * 2); c.fill();
-      c.beginPath(); c.moveTo(-5, b.ry - 2); c.lineTo(5, b.ry - 2); c.lineTo(0, b.ry + 7); c.closePath(); c.fill(); // knot
-      c.fillStyle = 'rgba(255,255,255,.35)'; // shine
-      c.beginPath(); c.ellipse(-b.rx * 0.32, -b.ry * 0.38, b.rx * 0.28, b.ry * 0.34, -0.5, 0, Math.PI * 2); c.fill();
-      c.restore();
-    }
-  }
-
-  function startBalloons() {
-    if (balloonCanvas) return; // applySeasons re-calls every second: stay idempotent
-    if (!KazuLib || !KazuLib.balloonDriftStep || !KazuLib.ropeStep) return;
-    if (LOW_POWER) return; // reduced motion is one of the low-power signals
-    balloonCanvas = document.createElement('canvas');
-    balloonCanvas.id = 'balloon-canvas';
-    balloonCanvas.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(balloonCanvas);
-    balloonCtx = balloonCanvas.getContext('2d');
-    sizeBalloonCanvas();
-    balloons = [];
-    const count = lightDevice ? 5 : BALLOON_COUNT; // smaller fleet on weak hardware
-    for (let i = 0; i < count; i++) balloons.push(spawnBalloon(innerWidth, innerHeight, true));
-    balloonT = 0;
-    balloonLast = performance.now();
-    window.addEventListener('resize', sizeBalloonCanvas, { passive: true });
-    balloonRaf = requestAnimationFrame(balloonFrame);
-  }
-
-  function stopBalloons() {
-    if (!balloonCanvas) return;
-    cancelAnimationFrame(balloonRaf); balloonRaf = 0;
-    window.removeEventListener('resize', sizeBalloonCanvas);
-    balloonCanvas.remove();
-    balloonCanvas = null; balloonCtx = null; balloons = [];
-  }
-
-  function setBalloons(on) { if (on) startBalloons(); else stopBalloons(); }
-
   // ---------- Site control: applying the settings ----------
   // Each edit is recorded as it is made, so adopting a newer copy first puts the
   // page back exactly as index.html wrote it and then applies the new settings;
@@ -3135,7 +2840,6 @@
     a.setAttribute('rel', 'noopener');
     a.style.setProperty('--brand-a', s.colorA || '#7c5cff');
     a.style.setProperty('--brand-b', s.colorB || '#4a34b8');
-    a.appendChild(siteEl('span', 'social-mark social-mark--text', s.mark || s.name.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase()));
     a.appendChild(siteEl('span', 'social-name', s.name));
     a.appendChild(siteEl('span', 'social-handle', s.handle));
     return a;
@@ -3211,11 +2915,6 @@
       ovText(graphics.querySelector('.pc-spec-maker'), g.maker);
       const strong = siteEl('strong', '', g.model);
       ovChildren(graphics.querySelector('.pc-spec-feature-name'), [document.createTextNode(g.brand ? g.brand + ' ' : ''), strong]);
-      const mark = graphics.querySelector('.pc-gpu-mark');
-      if (mark) {
-        ovText(mark.querySelector('span'), g.markTop);
-        ovText(mark.querySelector('strong'), g.markBottom);
-      }
     }
     [['platform', 'pc-spec-entry', 'label', 'value'], ['storage', 'pc-storage-entry', 'size', 'name'], ['build', 'pc-spec-entry', 'label', 'value']].forEach((spec) => {
       const rows = pc[spec[0]];
@@ -3238,8 +2937,7 @@
     ovText(card.querySelector('.music-playlist-name'), p.name);
     ovText(card.querySelector('.music-playlist-sub'), p.sub);
     const url = SiteConfig.playlistUrl(p.playlistId);
-    card.querySelectorAll('a.pill-link, a.music-cover-wrap').forEach((a) => ovAttr(a, 'href', url));
-    if (p.cover) ovAttr(card.querySelector('.music-cover'), 'src', p.cover);
+    card.querySelectorAll('a.pill-link').forEach((a) => ovAttr(a, 'href', url));
     // The static rows belong to the page's own playlist; another playlist shows none until its feed arrives.
     if (p.playlistId !== siteDefaults['playlist.playlistId']) {
       const list = $('musicFeatured');
@@ -3300,10 +2998,7 @@
     applySitePc();
     applySitePlaylist();
     applySiteIntegrations();
-    const footer = siteSection('footer');
-    if (footer && footer.credit) ovText(document.querySelector('.meadow-credit'), footer.credit);
     applySiteNotice();
-    frostRescan(); // rebuilt socials / stories freeze over too at Christmas
   }
 
   const siteIdList = () => ({ discord: DISCORD_ID, steam: STEAM_VANITY, mal: MAL_USER, lb: LB_USER, ytm: YTM_PLAYLIST_ID });
@@ -3510,15 +3205,11 @@
   });
 
   // ---------- Dev settings panel (secret code: kazudev) ----------
-  // A floating panel for previewing the seasonal event themes on any date
+  // A floating panel for previewing the blossom season on any date
   // and checking the responsive sky curve guide. Built once on first use; styles
   // live in style.css ("DEV SETTINGS PANEL").
   const DEV_SEASON_ROWS = [
-    ['birthday', 'Birthday'],
-    ['christmas', 'Christmas'],
-    ['pride', 'Pride'],
     ['sakura', 'Sakura'],
-    ['halloween', 'Halloween'],
   ];
   const devRecent = [];
   let devPanel = null;

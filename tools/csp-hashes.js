@@ -12,7 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const FILE = path.join(__dirname, '..', 'index.html');
-const META_RE = /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/;
+const META_RE = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)">/;
 // Comments are matched first so a <script> inside one is skipped.
 const TOKEN_RE = /<!--[\s\S]*?-->|<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
 const JS_TYPES = ['', 'text/javascript', 'application/javascript', 'module'];

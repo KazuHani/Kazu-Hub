@@ -53,7 +53,6 @@ body { background: hsl(var(--bg-h, 215) calc(var(--bg-s, 33) * 1%) calc(var(--bg
   container-type: inline-size;
   --font-unit: clamp(16px, max(3.6cqi, 15.5px + .05vw), 19px);
   --font-size-feature: clamp(22px, 7cqi, 42px);
-  --font-size-mark: clamp(40px, 15cqi, 80px);
 }
 
 /* The tiers are re-derived in every card so they pick up the card's unit. */
@@ -97,11 +96,6 @@ body * {
 .pc-spec-feature-name,
 .pc-spec-feature-name * {
   font-size: var(--font-size-feature) !important;
-}
-
-.pc-gpu-mark strong,
-.pc-gpu-mark strong * {
-  font-size: var(--font-size-mark) !important;
 }
 
 .card-head-title,
@@ -153,12 +147,8 @@ body * {
 .mal-title *,
 .pc-spec-list--build dd,
 .pc-spec-list--build dd *,
-.pc-gpu-mark span,
-.pc-gpu-mark span *,
 .lb-stars,
-.lb-stars *,
-.social-mark--text,
-.social-mark--text * {
+.lb-stars * {
   font-size: var(--font-size-body) !important;
 }
 
@@ -194,8 +184,6 @@ body * {
 .pc-spec-maker *,
 .pc-spec-entry dt,
 .pc-spec-entry dt *,
-.music-playlist-label,
-.music-playlist-label *,
 .music-recent-label,
 .music-recent-label *,
 .music-track-artist,
@@ -321,8 +309,7 @@ body {
    horizon) plus a wide glow anchored where the sun leaves the screen (right
    edge, ~70% down: the end of the sky arc). Static gradients with an opacity
    that steps ~1% a minute: no animation, so it costs nothing and shows on
-   every device, phones and low-power mode included. Christmas has its own
-   pine palette and skips it.
+   every device, phones and low-power mode included.
    The glow is still ~30% strong at the bottom of the first screen, so the
    layer runs on past it (128vh) and every vertical size and stop is in vh,
    not %: the first screen paints exactly as before, and below it the glow
@@ -347,7 +334,6 @@ body {
     radial-gradient(150% 76vh at 100% 62vh, rgba(238,92,124,.74) 0%, rgba(196,72,144,.5) 26%, rgba(112,62,152,.3) 52%, rgba(84,62,152,.1) 70%, rgba(84,62,152,0) 86%),
     linear-gradient(to bottom, rgba(24,22,84,0) 0vh, rgba(58,44,132,.38) 20vh, rgba(150,70,152,.42) 42vh, rgba(240,112,112,.4) 58vh, rgba(255,142,92,.26) 70vh, rgba(255,142,92,.08) 80vh, rgba(255,142,92,0) 92vh);
 }
-body.season-christmas .sunset-sky { display: none; }
 /* Anchored to the top of the page (absolute, not fixed): it scrolls away
    with the hero and comes back when you scroll back up. z-index 0, same as
    .atmosphere; it sits earlier in the DOM so petals fall in front of the
@@ -470,10 +456,6 @@ body.low-power .weather-fx { display: none !important; }
    preview show petals out of season. */
 html.no-sakura .sakura-branch { display: none; }
 html.no-sakura .atmosphere:not([data-built]) .petal { display: none; }
-/* Christmas owns a pine/cranberry/gold palette; the
-   pink branches would clash, so they sit the season out. The scene itself stays:
-   the sun and moon live in it and must still cross the Christmas sky. */
-body.season-christmas .sakura-branch { display: none; }
 /* Phones: no left branch (no horizontal room), and no
    sky body — it just reads as a smudge behind the hero avatar. Custom scrollbar
    is hidden on touch / compact screens so native inertial scrolling prevails. */
@@ -510,44 +492,14 @@ body.season-christmas .sakura-branch { display: none; }
 /* ---- Hero ---- */
 .hero { position: relative; text-align: center; padding: clamp(2px, .625vw, 8px) 0 clamp(6px, 1.875vw, 8px); display: flex; flex-direction: column; align-items: center; }
 .pfp-ring {
-  position: relative;            /* anchors .party-hat and the pride ::before halo */
+  position: relative;
   margin-bottom: 8px; padding: 5px; border-radius: 50%;
   /* No idle bob: the profile picture sits still (vetoed by the owner). */
 }
 .pfp {
-  position: relative; z-index: 1; /* above .chiikawa-peek, which hides behind it */
+  position: relative; z-index: 1;
   display: block; width: clamp(124px, 38.75vw, 181px); height: clamp(124px, 38.75vw, 181px); border-radius: 50%;
   background: var(--card-bg); object-fit: cover;
-}
-/* ---- Chiikawa peek (Japanese mode) ----
-   Chiikawa sits dead centre behind the picture (fully covered: its corners are
-   ~68px from the centre, the picture's rim 90px), tilted toward the upper left,
-   clear of the Halloween pumpkins (bottom right) and the party hat (top).
-   A peek slides it out along its own tilt until head and cheeks clear the rim,
-   wobbles, holds, and slides back. One-shot: script.js adds .is-peeking, drops
-   it on animationend and re-arms a timer (KazuLib.chiikawaPeekDelay), so
-   nothing runs between visits (no infinite loop).
-   Sizes are percentages of the ring, so the phone picture scales with it. */
-.chiikawa-peek {
-  display: none; position: absolute; z-index: 0; left: 50%; top: 50%;
-  width: 50%; height: auto; opacity: 0; pointer-events: none; user-select: none;
-  transform: translate(-50%, -50%) rotate(-38deg) translateY(0);
-  filter: drop-shadow(0 3px 5px rgba(40,60,90,.22));
-}
-html[lang="ja"] .chiikawa-peek { display: block; }
-html[lang="ja"] .chiikawa-peek.is-peeking { animation: chiikawaPeek 3.4s cubic-bezier(.3,.7,.4,1) both; }
-html[lang="ja"] .chiikawa-peek.is-still { opacity: 1; transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); }
-@keyframes chiikawaPeek {
-  0%   { opacity: 0; transform: translate(-50%, -50%) rotate(-38deg) translateY(0); }
-  5%   { opacity: 1; }
-  24%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-102%); }
-  31%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); }
-  40%  { transform: translate(-50%, -50%) rotate(-30deg) translateY(-96%); }
-  50%  { transform: translate(-50%, -50%) rotate(-45deg) translateY(-96%); }
-  59%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); }
-  76%  { transform: translate(-50%, -50%) rotate(-38deg) translateY(-96%); animation-timing-function: cubic-bezier(.5,0,.75,0); }
-  95%  { opacity: 1; transform: translate(-50%, -50%) rotate(-38deg) translateY(0); }
-  100% { opacity: 0; transform: translate(-50%, -50%) rotate(-38deg) translateY(0); }
 }
 /* Editorial serif wordmark instead of the old rounded-sans + rainbow-shimmer
    combo (the saturated multi-stop gradient sliding forever was the thing that
@@ -706,7 +658,6 @@ html.i18n-pending .container, html.i18n-pending .footer { visibility: hidden; }
 .pill-link:hover::after { opacity: 1; transition: opacity .5s ease; animation: pillSheen 1.4s ease forwards; }
 @keyframes pillSheen { from { background-position: 150% 0; } to { background-position: -50% 0; } }
 .steam-card .pill-link { padding: 5px 12px; }
-.steam-bg-icon, .discord-bg-icon, .mal-bg-icon { position: absolute; right: -20px; bottom: -26px; opacity: .12; }
 
 .presence-row { display: flex; align-items: center; gap: 14px; }
 .avatar-wrap { position: relative; flex: none; }
@@ -902,19 +853,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   font-size: clamp(22px, 8cqi, 46px); line-height: 1.06; color: var(--ink);
 }
 .pc-spec-feature-name strong { display: block; color: var(--accent); font-weight: 700; }
-.pc-gpu-mark {
-  min-width: 0; padding-left: 20px;
-  border-left: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
-  display: flex; flex-direction: column; align-items: flex-end; color: var(--ink); text-align: right;
-}
-.pc-gpu-mark span {
-  font-size: clamp(10px, 3.125vw, 13px); font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--ink-soft); white-space: nowrap;
-}
-.pc-gpu-mark strong {
-  font-family: 'Fredoka', sans-serif; font-weight: 700;
-  font-size: clamp(44px, 18cqi, 100px); line-height: .9; letter-spacing: -.04em;
-}
 .pc-spec-list, .pc-storage-list { margin: 0; flex: 1; }
 .pc-spec-list { display: grid; gap: clamp(12px, 3.75vw, 18px); align-content: space-between; }
 .pc-spec-list--build { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; }
@@ -943,11 +881,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 }
 @media (max-width: 600px) {
   .pc-spec-card--graphics { grid-template-columns: minmax(0,1fr); align-items: start; }
-  .pc-gpu-mark {
-    min-width: 0; padding: clamp(12px, 3.75vw, 18px) 0 0; border-left: 0;
-    border-top: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
-    align-items: flex-start; text-align: left;
-  }
   /* One column: each entry gets the card's full width, so it takes the same
      card-sized type as the other lists. */
   .pc-spec-list--build { grid-template-columns: minmax(0,1fr); }
@@ -968,13 +901,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
   -webkit-backdrop-filter: blur(6px) saturate(1.7);
           backdrop-filter: blur(6px) saturate(1.7);
 }
-.music-card::before {
-  content: ""; position: absolute; inset: -10%; z-index: -1;
-  background: url('assets/Sisu.jpg') center / cover no-repeat;
-  filter: blur(28px) saturate(1.3) brightness(.65);
-  transform: scale(1.15);
-  opacity: .45;
-}
 .music-card::after {
   content: ""; position: absolute; inset: 0; z-index: -1;
   background: linear-gradient(150deg, rgba(20,8,10,.35), rgba(10,6,14,.5));
@@ -989,15 +915,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 /* Left zone column: spreads the cover + playlist info across the card's full
    height so no dead space sits under the text. */
 .music-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-evenly; }
-.music-cover-wrap {
-  position: relative; width: clamp(110px, 34.375vw, 152px); height: clamp(110px, 34.375vw, 152px); border-radius: clamp(16px, 5vw, 18px); flex: none; overflow: hidden;
-  text-decoration: none; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(150deg,#ff1a1a,#7c1d2b);
-  box-shadow: 0 10px 24px rgba(255,0,0,.22);
-}
-.music-cover { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; display: block; }
 .music-body { min-width: 0; }
-.music-playlist-label { font-size: clamp(11px, 3.4375vw, 13px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #ff4d4d; }
 .music-playlist-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(20px, 6.25vw, 28px); color: var(--ink); line-height: 1.08; margin-top: 4px; }
 .music-playlist-sub { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: var(--ink-soft); margin-top: 5px; }
 .music-recent { margin-top: 16px; border-top: 1px solid rgba(255,90,90,.18); padding-top: 12px; }
@@ -1012,33 +930,9 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .music-track-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(14.5px, 4.5313vw, 18.85px); color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .music-track-artist { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: var(--ink-soft); margin-top: 1px; }
 
-/* ---- Music card hover: expand/bounce + equalizer (desktop only) ---- */
+/* ---- Music card hover: expand/bounce (desktop only) ---- */
 /* The whole effect is gated behind @media (hover: hover) and (pointer: fine)
-   so touch devices never see it, and killed under prefers-reduced-motion at
-   the bottom of this block. Bars sit invisible and paused until hover, so
-   the animation only ever runs while the mouse is over the card. */
-.music-viz {
-  display: flex; align-items: flex-end; gap: 3px; height: 22px; margin-top: 12px;
-  opacity: 0; transition: opacity .35s ease;
-}
-.music-viz span {
-  width: 4px; height: 100%; border-radius: 2px;
-  transform: scaleY(.22); transform-origin: bottom;
-  background: linear-gradient(180deg,#ff8a8a,#ff1a1a);
-  animation: music-viz-bounce 1.1s ease-in-out infinite;
-  animation-play-state: paused;
-}
-/* Varied durations/delays so the bars move out of sync, like a real meter. */
-.music-viz span:nth-child(2) { animation-duration: .85s; animation-delay: .14s; }
-.music-viz span:nth-child(3) { animation-duration: 1.25s; animation-delay: .3s; }
-.music-viz span:nth-child(4) { animation-duration: .75s; animation-delay: .06s; }
-.music-viz span:nth-child(5) { animation-duration: 1.05s; animation-delay: .22s; }
-.music-viz span:nth-child(6) { animation-duration: .9s; animation-delay: .38s; }
-.music-viz span:nth-child(7) { animation-duration: 1.2s; animation-delay: .1s; }
-@keyframes music-viz-bounce {
-  0%, 100% { transform: scaleY(.22); }
-  50% { transform: scaleY(1); }
-}
+   so touch devices never see it. */
 @media (hover: hover) and (pointer: fine) {
   /* .music-card also carries .scroll-reveal — same fix as .social-card above:
      restate the transition at higher specificity so the reveal transition
@@ -1053,17 +947,11 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
     transform: scale(1.03);
     box-shadow: 0 22px 46px rgba(255,26,26,.3), var(--glint);
   }
-  .music-card:hover .music-viz { opacity: 1; }
-  .music-card:hover .music-viz span { animation-play-state: running; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .music-viz { display: none; }
 }
 @media (max-width: 560px) {
   .music-card-inner { flex-direction: column; align-items: center; text-align: center; }
   .music-body { width: 100%; }
   .music-recent { text-align: left; }
-  .music-viz { justify-content: center; }
   .music-side { align-items: center; }
   .music-featured {
     width: 100%; text-align: left; margin-top: 18px;
@@ -1163,19 +1051,7 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
    a generic `##.social-badge` hide rule, so uBlock Origin and Adblock Plus
    users saw every logo vanish (the tiles collapsed to name + handle). Keep
    class names in this section off those lists. */
-.social-mark, .social-name, .social-handle { position: relative; z-index: 1; }
-.social-mark {
-  width: clamp(36px, 11.25vw, 48px); height: clamp(36px, 11.25vw, 48px); margin-bottom: clamp(8px, 2.5vw, 12px);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform .28s cubic-bezier(.34,1.3,.5,1);
-}
-.social-mark svg { width: clamp(30px, 9.375vw, 40px); height: clamp(30px, 9.375vw, 40px); display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.28)); transition: filter .28s ease; }
-/* No tilt: the mark lifts straight up with the tile and grows a touch, its
-   shadow softening as if it floated a little off the face. */
-.social-card:hover .social-mark { transform: translateY(-2px) scale(1.07); }
-.social-card:hover .social-mark svg { filter: drop-shadow(0 5px 9px rgba(0,0,0,.38)); }
-.social-mark--text { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 17px; color: #fff; letter-spacing: .03em; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
-.social-mark--dots span { width: 24px; height: 24px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 3px rgba(0,0,0,.25); }
+.social-name, .social-handle { position: relative; z-index: 1; }
 .social-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(15px, 4.6875vw, 19.5px); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
 .social-handle { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: rgba(255,255,255,.74); transition: color .22s ease; }
 .social-card:hover .social-handle { color: #fff; }
@@ -1199,8 +1075,8 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 /* Reduced motion: the lift/press/sheen are decorative — the tile simply
    changes its shadows, with no movement at all. */
 @media (prefers-reduced-motion: reduce) {
-  .social-card, .social-card::after, .social-card:hover::after, .social-mark, .social-mark svg, .social-handle { transition: none; }
-  .social-card:hover, .social-card:active, .social-card:hover .social-mark { transform: none; }
+  .social-card, .social-card::after, .social-card:hover::after, .social-handle { transition: none; }
+  .social-card:hover, .social-card:active { transform: none; }
 }
 
 /* ---- Stories ---- */
@@ -1219,573 +1095,19 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 
 /* ---- Back to top ---- */
 
-/* ============ MEADOW FOOTER (a grassy field with a house) ============ */
-/* The last thing on the page: a full-bleed illustrated field with a cottage,
-   trees, a picket fence, a path and wildflowers, the credit line resting on the
-   grass. It is one decorative inline SVG (index.html: 1440x340 units, the hills
-   running far past both edges so any width fills) painted entirely from the
-   --mf-* tokens below, so it follows the same clock as the sky:
-     - Day and night. --m-day is 0 in deep night and 1 by day, read from the live
-       page tint (--bg-l: 0% black night .. ~36% at noon; full colour once the sky
-       is ~22% light) plus a little of the sunset glow, so at dusk the field is
-       still half lit by the low sun. Every colour is a colour-mix() between its
-       --d-* (day) and --n-* (night) value.
-     - The window lights. --m-lit is a proper "dark enough" switch, not a creep:
-       0 while it is light (through the whole day and the sunset itself), easing
-       on once the afterglow has faded (--m-day below 0.4, i.e. from about 20
-       minutes after sunset, fully on by about 55) and easing off again about an
-       hour after sunrise. When it
-       is on, the window glass turns amber, each pane gets a bright lit centre, a
-       soft halo surrounds the windows, the attic window and the door lantern, and
-       warm light pools on the grass and the path. Even without colour-mix() the
-       panes and pools (plain gradients) still light up.
-     - Sunset. --m-warm folds up to 24% orange (--sunset, from KazuLib.sunsetGlow)
-       into everything except the glass and the blossom.
-     - Cherry-blossom season. The pink blossom on the big tree is only there
-       while html:not(.no-sakura), the same 20 Mar - 10 May window as the branches.
-     - Christmas repaints it as a snowy field with the lights on all day.
-   Static paint, no animation, so it costs nothing and shows on every device.
-   Browsers without colour-mix() keep the plain day colours. It sits at
-   z-index 0 (above the weather canvases, below .container) so the fixed
-   back-to-top button, which lives inside .container, stays on top of it. */
-.footer.meadow {
-  position: relative; z-index: 0; margin-top: -34px; overflow: hidden; text-align: center;
-  /* Skipped (no style, layout or paint) until the reader nears the bottom of the
-     page. The illustration is ~535 SVG nodes at the very end of a long page, and
-     on a phone every incremental layout pass while the document streams in
-     used to re-lay-out all of it: with it skipped, first contentful paint is
-     ~28% earlier (4x-throttled phone profile, median of 9). The placeholder is
-     the art's real height (viewBox 1440x340, width clamp(860px, 100%, 1800px)),
-     so nothing shifts when it renders; `auto` then remembers the measured one. */
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto calc(clamp(860px, 100vw, 1800px) * 340 / 1440);
-  --m-day: clamp(0, calc((var(--bg-l, 36) + var(--sunset, 0) * 9) / 22), 1);
-  --m-dp: calc(var(--m-day) * 100%);
-  --m-lit: clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1);
-  --m-lp: calc(var(--m-lit) * 100%);
-  --m-warm: calc(var(--sunset, 0) * 24%);
-  /* October lanterns: paint shares the cottage's daylight and light switch. */
-  --d-pumpkin: #ce7535; --n-pumpkin: #653421;
-  --d-pumpkin-rib: #ad5228; --n-pumpkin-rib: #42241f;
-  --d-pumpkin-face: #3c242b; --n-pumpkin-face: #ffd48b;
-  --d-pumpkin-stem: #596b43; --n-pumpkin-stem: #283c30;
-  --d-pumpkin-lit: #ffd48b; --n-pumpkin-lit: #ffd48b;
-  --mf-pumpkin: var(--d-pumpkin);
-  --mf-pumpkin-rib: var(--d-pumpkin-rib);
-  --mf-pumpkin-face: var(--d-pumpkin-face);
-  --mf-pumpkin-stem: var(--d-pumpkin-stem);
-  --mf-pumpkin-lit: var(--d-pumpkin-lit);
-  /* Christmas: the snowman by the cottage, the wreath on the door and the
-     lights along the eaves. The bulbs are the same by day and night (they are
-     lit); the rest dims with the field. */
-  --d-snowman: #fbfdff; --n-snowman: #a3b6cf;
-  --d-snowman-shade: #cbdbe8; --n-snowman-shade: #6c7f9b;
-  --d-coal: #1d232c; --n-coal: #0b0f15;
-  --d-carrot: #ec862c; --n-carrot: #7f4a24;
-  --d-scarf: #c8283f; --n-scarf: #6b2232;
-  --d-twig: #6d4a2c; --n-twig: #2a221c;
-  --d-wreath: #2c7a48; --n-wreath: #163a27;
-  --d-bulb-1: #ff5d6c; --n-bulb-1: #ff5d6c;
-  --d-bulb-2: #ffcf5c; --n-bulb-2: #ffcf5c;
-  --d-bulb-3: #fff3d1; --n-bulb-3: #fff3d1;
-  --mf-snowman: var(--d-snowman);
-  --mf-snowman-shade: var(--d-snowman-shade);
-  --mf-coal: var(--d-coal);
-  --mf-carrot: var(--d-carrot);
-  --mf-scarf: var(--d-scarf);
-  --mf-twig: var(--d-twig);
-  --mf-wreath: var(--d-wreath);
-  --mf-bulb-1: var(--d-bulb-1);
-  --mf-bulb-2: var(--d-bulb-2);
-  --mf-bulb-3: var(--d-bulb-3);
-  /* Day colours (--d-*) and night colours (--n-*). --mf-* below are what the scene paints with. */
-  --d-far: #8fc3a0; --n-far: #0e1d2c;
-  --d-far-hi: #b7dfbd; --n-far-hi: #1b3a49;
-  --d-far-tree: #6fae86; --n-far-tree: #0b1826;
-  --d-mid: #63b46e; --n-mid: #10261f;
-  --d-mid-hi: #93d582; --n-mid-hi: #1d4a3a;
-  --d-near: #48a259; --n-near: #12301f;
-  --d-near-hi: #82ca6c; --n-near-hi: #1f5236;
-  --d-fg: #2e7f45; --n-fg: #0e2a1b;
-  --d-fg-hi: #4fa457; --n-fg-hi: #184129;
-  --d-blade: #8fd67d; --n-blade: #24583a;
-  --d-blade-fg: #56b060; --n-blade-fg: #1a4a2d;
-  --d-path: #e8d6ae; --n-path: #3b3f4e;
-  --d-stone: #f1e3c0; --n-stone: #4a5064;
-  --d-wall: #f8edd9; --n-wall: #38425e;
-  --d-wall-2: #e5d3b5; --n-wall-2: #2c3550;
-  --d-base: #b8b1a5; --n-base: #2a3040;
-  --d-roof: #c9583f; --n-roof: #33263f;
-  --d-roof-2: #a8452f; --n-roof-2: #281d33;
-  --d-trim: #fff4e0; --n-trim: #465074;
-  --d-chimney: #a9513c; --n-chimney: #2d2233;
-  --d-cap: #7d3b2c; --n-cap: #211a2b;
-  --d-door: #7c4b2d; --n-door: #2c2130;
-  --d-door-2: #5f3720; --n-door-2: #221925;
-  --d-frame: #fffaf0; --n-frame: #4a5478;
-  --d-glass: #c4e4f8; --n-glass: #2b3656;
-  --d-box: #8b5b37; --n-box: #2a2230;
-  --d-trunk: #7d5634; --n-trunk: #22201f;
-  --d-leaf-1: #2f8a4a; --n-leaf-1: #10301f;
-  --d-leaf-2: #47a857; --n-leaf-2: #163c27;
-  --d-leaf-3: #7dcd6b; --n-leaf-3: #22503a;
-  --d-bush: #3b9c50; --n-bush: #12331f;
-  --d-fence: #faf6ee; --n-fence: #4d5771;
-  --d-blossom: #f9b9d1; --n-blossom: #5b4360;
-  --lit-glass: #ffd27a; /* the lit window colour: the lights, once they are on */
-  --mf-far: var(--d-far);
-  --mf-far-hi: var(--d-far-hi);
-  --mf-far-tree: var(--d-far-tree);
-  --mf-mid: var(--d-mid);
-  --mf-mid-hi: var(--d-mid-hi);
-  --mf-near: var(--d-near);
-  --mf-near-hi: var(--d-near-hi);
-  --mf-fg: var(--d-fg);
-  --mf-fg-hi: var(--d-fg-hi);
-  --mf-blade: var(--d-blade);
-  --mf-blade-fg: var(--d-blade-fg);
-  --mf-path: var(--d-path);
-  --mf-stone: var(--d-stone);
-  --mf-wall: var(--d-wall);
-  --mf-wall-2: var(--d-wall-2);
-  --mf-base: var(--d-base);
-  --mf-roof: var(--d-roof);
-  --mf-roof-2: var(--d-roof-2);
-  --mf-trim: var(--d-trim);
-  --mf-chimney: var(--d-chimney);
-  --mf-cap: var(--d-cap);
-  --mf-door: var(--d-door);
-  --mf-door-2: var(--d-door-2);
-  --mf-frame: var(--d-frame);
-  --mf-glass: var(--d-glass);
-  --mf-box: var(--d-box);
-  --mf-trunk: var(--d-trunk);
-  --mf-leaf-1: var(--d-leaf-1);
-  --mf-leaf-2: var(--d-leaf-2);
-  --mf-leaf-3: var(--d-leaf-3);
-  --mf-bush: var(--d-bush);
-  --mf-fence: var(--d-fence);
-  --mf-blossom: var(--d-blossom);
-}
-@supports (color: color-mix(in oklab, red 50%, blue)) {
-  .footer.meadow {
-    --mf-far: color-mix(in oklab, color-mix(in oklab, var(--d-far) var(--m-dp), var(--n-far)), #ff9a4a var(--m-warm));
-    --mf-far-hi: color-mix(in oklab, color-mix(in oklab, var(--d-far-hi) var(--m-dp), var(--n-far-hi)), #ff9a4a var(--m-warm));
-    --mf-far-tree: color-mix(in oklab, color-mix(in oklab, var(--d-far-tree) var(--m-dp), var(--n-far-tree)), #ff9a4a var(--m-warm));
-    --mf-mid: color-mix(in oklab, color-mix(in oklab, var(--d-mid) var(--m-dp), var(--n-mid)), #ff9a4a var(--m-warm));
-    --mf-mid-hi: color-mix(in oklab, color-mix(in oklab, var(--d-mid-hi) var(--m-dp), var(--n-mid-hi)), #ff9a4a var(--m-warm));
-    --mf-near: color-mix(in oklab, color-mix(in oklab, var(--d-near) var(--m-dp), var(--n-near)), #ff9a4a var(--m-warm));
-    --mf-near-hi: color-mix(in oklab, color-mix(in oklab, var(--d-near-hi) var(--m-dp), var(--n-near-hi)), #ff9a4a var(--m-warm));
-    --mf-fg: color-mix(in oklab, color-mix(in oklab, var(--d-fg) var(--m-dp), var(--n-fg)), #ff9a4a var(--m-warm));
-    --mf-fg-hi: color-mix(in oklab, color-mix(in oklab, var(--d-fg-hi) var(--m-dp), var(--n-fg-hi)), #ff9a4a var(--m-warm));
-    --mf-blade: color-mix(in oklab, color-mix(in oklab, var(--d-blade) var(--m-dp), var(--n-blade)), #ff9a4a var(--m-warm));
-    --mf-blade-fg: color-mix(in oklab, color-mix(in oklab, var(--d-blade-fg) var(--m-dp), var(--n-blade-fg)), #ff9a4a var(--m-warm));
-    --mf-path: color-mix(in oklab, color-mix(in oklab, var(--d-path) var(--m-dp), var(--n-path)), #ff9a4a var(--m-warm));
-    --mf-stone: color-mix(in oklab, color-mix(in oklab, var(--d-stone) var(--m-dp), var(--n-stone)), #ff9a4a var(--m-warm));
-    --mf-wall: color-mix(in oklab, color-mix(in oklab, var(--d-wall) var(--m-dp), var(--n-wall)), #ff9a4a var(--m-warm));
-    --mf-wall-2: color-mix(in oklab, color-mix(in oklab, var(--d-wall-2) var(--m-dp), var(--n-wall-2)), #ff9a4a var(--m-warm));
-    --mf-base: color-mix(in oklab, color-mix(in oklab, var(--d-base) var(--m-dp), var(--n-base)), #ff9a4a var(--m-warm));
-    --mf-roof: color-mix(in oklab, color-mix(in oklab, var(--d-roof) var(--m-dp), var(--n-roof)), #ff9a4a var(--m-warm));
-    --mf-roof-2: color-mix(in oklab, color-mix(in oklab, var(--d-roof-2) var(--m-dp), var(--n-roof-2)), #ff9a4a var(--m-warm));
-    --mf-trim: color-mix(in oklab, color-mix(in oklab, var(--d-trim) var(--m-dp), var(--n-trim)), #ff9a4a var(--m-warm));
-    --mf-chimney: color-mix(in oklab, color-mix(in oklab, var(--d-chimney) var(--m-dp), var(--n-chimney)), #ff9a4a var(--m-warm));
-    --mf-cap: color-mix(in oklab, color-mix(in oklab, var(--d-cap) var(--m-dp), var(--n-cap)), #ff9a4a var(--m-warm));
-    --mf-door: color-mix(in oklab, color-mix(in oklab, var(--d-door) var(--m-dp), var(--n-door)), #ff9a4a var(--m-warm));
-    --mf-door-2: color-mix(in oklab, color-mix(in oklab, var(--d-door-2) var(--m-dp), var(--n-door-2)), #ff9a4a var(--m-warm));
-    --mf-frame: color-mix(in oklab, color-mix(in oklab, var(--d-frame) var(--m-dp), var(--n-frame)), #ff9a4a var(--m-warm));
-    --mf-glass: color-mix(in oklab, var(--lit-glass) var(--m-lp), color-mix(in oklab, var(--d-glass) var(--m-dp), var(--n-glass)));
-    --mf-box: color-mix(in oklab, color-mix(in oklab, var(--d-box) var(--m-dp), var(--n-box)), #ff9a4a var(--m-warm));
-    --mf-trunk: color-mix(in oklab, color-mix(in oklab, var(--d-trunk) var(--m-dp), var(--n-trunk)), #ff9a4a var(--m-warm));
-    --mf-leaf-1: color-mix(in oklab, color-mix(in oklab, var(--d-leaf-1) var(--m-dp), var(--n-leaf-1)), #ff9a4a var(--m-warm));
-    --mf-leaf-2: color-mix(in oklab, color-mix(in oklab, var(--d-leaf-2) var(--m-dp), var(--n-leaf-2)), #ff9a4a var(--m-warm));
-    --mf-leaf-3: color-mix(in oklab, color-mix(in oklab, var(--d-leaf-3) var(--m-dp), var(--n-leaf-3)), #ff9a4a var(--m-warm));
-    --mf-bush: color-mix(in oklab, color-mix(in oklab, var(--d-bush) var(--m-dp), var(--n-bush)), #ff9a4a var(--m-warm));
-    --mf-fence: color-mix(in oklab, color-mix(in oklab, var(--d-fence) var(--m-dp), var(--n-fence)), #ff9a4a var(--m-warm));
-    --mf-blossom: color-mix(in oklab, var(--d-blossom) var(--m-dp), var(--n-blossom));
-  }
-}
-.meadow-art {
-  display: block; position: relative; left: 50%; translate: -50% 0;
-  width: clamp(860px, 100%, 1800px); height: auto; aspect-ratio: 1440 / 340; overflow: visible;
-}
-/* Phones only ever see the middle of the scene (the svg is never narrower than
-   860px); nudge the window so the tree-and-house group sits centred. */
-@media (max-width: 600px) { .meadow-art { translate: calc(-50% - 44px) 0; } }
-.mf-c-far { fill: var(--mf-far); }
-.mf-c-mid { fill: var(--mf-mid); }
-.mf-c-near { fill: var(--mf-near); }
-.mf-c-fg { fill: var(--mf-fg); }
-.mf-c-path { fill: var(--mf-path); }
-.mf-c-stone { fill: var(--mf-stone); }
-.mf-c-wall { fill: var(--mf-wall); }
-.mf-c-wall2 { fill: var(--mf-wall-2); }
-.mf-c-base { fill: var(--mf-base); }
-.mf-c-roof { fill: var(--mf-roof); }
-.mf-c-roof2 { fill: var(--mf-roof-2); }
-.mf-c-trim { fill: var(--mf-trim); }
-.mf-c-chimney { fill: var(--mf-chimney); }
-.mf-c-cap { fill: var(--mf-cap); }
-.mf-c-door { fill: var(--mf-door); }
-.mf-c-door2 { fill: var(--mf-door-2); }
-.mf-c-frame { fill: var(--mf-frame); }
-.mf-c-glass { fill: var(--mf-glass); }
-.mf-c-box { fill: var(--mf-box); }
-.mf-c-trunk { fill: var(--mf-trunk); }
-.mf-c-leaf1 { fill: var(--mf-leaf-1); }
-.mf-c-leaf2 { fill: var(--mf-leaf-2); }
-.mf-c-leaf3 { fill: var(--mf-leaf-3); }
-.mf-c-fence { fill: var(--mf-fence); }
-.mf-s-farhi { stroke: var(--mf-far-hi); }
-.mf-s-midhi { stroke: var(--mf-mid-hi); }
-.mf-s-nearhi { stroke: var(--mf-near-hi); }
-.mf-s-fghi { stroke: var(--mf-fg-hi); }
-.mf-s-blade { stroke: var(--mf-blade); }
-.mf-s-bladefg { stroke: var(--mf-blade-fg); }
-.mf-far-tree { fill: var(--mf-far-tree); }
-.mf-bush { fill: var(--mf-bush); }
-.mf-blossom { fill: var(--mf-blossom); }
-.mf-shadow { fill: #04140a; opacity: .22; }
-.mf-crest { fill: none; stroke-width: 3; stroke-linecap: round; opacity: .55; }
-.mf-blades { fill: none; stroke-width: 1.9; stroke-linecap: round; }
-.mf-line { fill: none; stroke: var(--mf-frame); stroke-width: 2.4; }
-.mf-courses { fill: none; stroke: var(--mf-roof-2); stroke-width: 1.6; opacity: .5; }
-.mf-trimline { fill: none; stroke: var(--mf-trim); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
-.mf-doorline { fill: none; stroke: var(--mf-door-2); stroke-width: 1.6; }
-.mf-smoke { fill: none; stroke: #e8eef5; stroke-width: 4; stroke-linecap: round; opacity: calc(.18 + .3 * var(--m-day)); }
-.mf-glow { opacity: var(--m-lit); }
-.mf-flowers { opacity: calc(.45 + .55 * var(--m-day)); }
-html.no-sakura .mf-blossom { display: none; }
-/* A soft shade at the bottom keeps the credit line readable at any scale and
-   time of day; the line itself rests on the foreground grass. */
-.meadow::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; pointer-events: none;
-  background: linear-gradient(to top, rgba(4,26,12,.55), rgba(4,26,12,0));
-}
 /* Fade in only: the generic .scroll-reveal also slides the element 28px, and a
    full-bleed element at the very bottom of the page would grow the document. */
-.footer.meadow.scroll-reveal, .footer.meadow.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }
-/* Christmas: a snowy field, snowy roof, pines with snow-tipped boughs, lights on. */
-body.season-christmas .footer.meadow {
-  --d-far: #cfe0ea; --d-far-hi: #eef6fb; --d-far-tree: #9fbccb;
-  --d-mid: #e3eff6; --d-mid-hi: #ffffff; --d-near: #eff6fa; --d-near-hi: #ffffff;
-  --d-fg: #d3e4ee; --d-fg-hi: #f1f8fc; --d-blade: #ffffff; --d-blade-fg: #cfe2ed;
-  --d-path: #c9b58e; --d-stone: #efe4c6; --d-roof: #f3f8fb; --d-roof-2: #d6e5ef; --d-trim: #ffffff;
-  --d-leaf-1: #1d6b46; --d-leaf-2: #24825a; --d-leaf-3: #e9f5f0; --d-bush: #2a7a55;
-  --d-fence: #ffffff; --d-wall: #f6ead4;
-  /* ...and by night it stays snow, lit by the moon: blue-grey, not green grass */
-  --n-far: #1b2738; --n-far-hi: #2a3a50; --n-far-tree: #142030;
-  --n-mid: #2b3c53; --n-mid-hi: #3b5069; --n-near: #33475f; --n-near-hi: #46607c;
-  --n-fg: #2a3c52; --n-fg-hi: #3a5069; --n-blade: #50698a; --n-blade-fg: #405a78;
-  --n-roof: #4b5d78; --n-roof-2: #3d4d66; --n-leaf-3: #4a5f78;
-  --m-lit: max(0.75, clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1)); /* cosy lights on all day */
-  /* The credit line's ink. On bright snow it is dark; once the field is darker
-     than 65% daylight dark ink would fail AA, so it turns light and the bottom
-     shade comes back under it (a near-step: the switch takes one tint step). */
-  --m-ink: clamp(0, calc((0.65 - var(--m-day)) * 100), 1);
-}
-body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }
-/* Without colour-mix() the field keeps its day colours all day, so no shade and dark ink. */
-body.season-christmas .meadow::after { display: none; }
-@supports (color: color-mix(in oklab, red 50%, blue)) {
-  body.season-christmas .meadow::after { display: block; opacity: var(--m-ink); background: linear-gradient(to top, rgba(4,26,12,.8), rgba(4,26,12,0)); }
-}
-
-/* October: an autumn field; its existing day/night and sunset mixes still run. */
-html.season-halloween .footer.meadow {
-  --d-far: #a6a47d; --n-far: #231e30; --d-far-hi: #c6bd99; --n-far-hi: #372b42;
-  --d-far-tree: #8d775b; --n-far-tree: #241d2b;
-  --d-mid: #85734b; --n-mid: #29272b; --d-mid-hi: #b5a06a; --n-mid-hi: #41373b;
-  --d-near: #746744; --n-near: #282d25; --d-near-hi: #a58a56; --n-near-hi: #3b4030;
-  --d-fg: #514e35; --n-fg: #1e241f; --d-fg-hi: #85794e; --n-fg-hi: #323b29;
-  --d-blade: #bfa46b; --n-blade: #454535; --d-blade-fg: #9c8753; --n-blade-fg: #3e4030;
-  --d-leaf-1: #a86137; --n-leaf-1: #4c2d32; --d-leaf-2: #cd914c; --n-leaf-2: #704331;
-  --d-leaf-3: #e3b86d; --n-leaf-3: #8c5b3e; --d-bush: #8d7148; --n-bush: #39362c;
-  --d-roof: #634c62; --n-roof: #302536; --d-roof-2: #4c394e; --n-roof-2: #241c2b;
-}
-@supports (color: color-mix(in oklab, red 50%, blue)) {
-  .footer.meadow {
-    --mf-pumpkin: color-mix(in oklab, var(--d-pumpkin) var(--m-dp), var(--n-pumpkin));
-    --mf-pumpkin-rib: color-mix(in oklab, var(--d-pumpkin-rib) var(--m-dp), var(--n-pumpkin-rib));
-    --mf-pumpkin-face: color-mix(in oklab, var(--n-pumpkin-face) var(--m-lp), var(--d-pumpkin-face));
-    --mf-pumpkin-stem: color-mix(in oklab, var(--d-pumpkin-stem) var(--m-dp), var(--n-pumpkin-stem));
-    --mf-pumpkin-lit: color-mix(in oklab, var(--d-pumpkin-lit) var(--m-dp), var(--n-pumpkin-lit));
-    --mf-snowman: color-mix(in oklab, color-mix(in oklab, var(--d-snowman) var(--m-dp), var(--n-snowman)), #ff9a4a var(--m-warm));
-    --mf-snowman-shade: color-mix(in oklab, color-mix(in oklab, var(--d-snowman-shade) var(--m-dp), var(--n-snowman-shade)), #ff9a4a var(--m-warm));
-    --mf-coal: color-mix(in oklab, var(--d-coal) var(--m-dp), var(--n-coal));
-    --mf-carrot: color-mix(in oklab, color-mix(in oklab, var(--d-carrot) var(--m-dp), var(--n-carrot)), #ff9a4a var(--m-warm));
-    --mf-scarf: color-mix(in oklab, color-mix(in oklab, var(--d-scarf) var(--m-dp), var(--n-scarf)), #ff9a4a var(--m-warm));
-    --mf-twig: color-mix(in oklab, var(--d-twig) var(--m-dp), var(--n-twig));
-    --mf-wreath: color-mix(in oklab, color-mix(in oklab, var(--d-wreath) var(--m-dp), var(--n-wreath)), #ff9a4a var(--m-warm));
-    --mf-bulb-1: color-mix(in oklab, var(--d-bulb-1) var(--m-dp), var(--n-bulb-1));
-    --mf-bulb-2: color-mix(in oklab, var(--d-bulb-2) var(--m-dp), var(--n-bulb-2));
-    --mf-bulb-3: color-mix(in oklab, var(--d-bulb-3) var(--m-dp), var(--n-bulb-3));
-  }
-}
-.mf-halloween { display: none; pointer-events: none; }
-html.season-halloween .mf-halloween { display: block; }
-.mf-hw-pumpkin { fill: var(--mf-pumpkin); }
-.mf-hw-rib { fill: none; stroke: var(--mf-pumpkin-rib); stroke-width: 1.3; }
-.mf-hw-stem { fill: var(--mf-pumpkin-stem); }
-.mf-hw-face { fill: var(--mf-pumpkin-face); }
-.mf-hw-lit { fill: var(--mf-pumpkin-lit); opacity: var(--m-lit); }
-.mf-hw-light { stop-color: var(--mf-pumpkin-lit); }
-.mf-hw-pool { fill: url(#mf-hw-pool); opacity: var(--m-lit); }
-.mf-hw-halo { fill: url(#mf-hw-halo); opacity: var(--m-lit); }
-html.season-halloween .mf-flowers, html.season-halloween .mf-blossom { display: none; }
-
-/* Christmas: a snowman beside the cottage, a wreath on the door and a string of
-   lights under the eaves. Static like the rest of the field; the bulbs' halos
-   follow the cottage's own light switch (--m-lit, kept on all Christmas Day). */
-.mf-christmas { display: none; pointer-events: none; }
-body.season-christmas .mf-christmas { display: block; }
-.mf-x-snow { fill: var(--mf-snowman); }
-/* the shade doubles as a soft outline, so a white snowman still reads against
-   white snow and the white fence */
-.mf-x-shade { fill: var(--mf-snowman-shade); stroke: var(--mf-snowman-shade); stroke-width: 1.2; }
-.mf-x-coal { fill: var(--mf-coal); }
-.mf-x-carrot { fill: var(--mf-carrot); }
-.mf-x-scarf, .mf-x-berry { fill: var(--mf-scarf); }
-.mf-x-twig { fill: none; stroke: var(--mf-twig); stroke-width: 1.3; stroke-linecap: round; }
-.mf-x-wreath { fill: none; stroke: var(--mf-wreath); stroke-width: 3.4; }
-.mf-x-wire { fill: none; stroke: var(--mf-coal); stroke-width: .9; }
-.mf-x-halo { fill: url(#mf-x-halo); opacity: var(--m-lit); }
-.mf-x-bulb1 { fill: var(--mf-bulb-1); }
-.mf-x-bulb2 { fill: var(--mf-bulb-2); }
-.mf-x-bulb3 { fill: var(--mf-bulb-3); }
-
-/* ============ SEASONAL EFFECTS ============ */
-/* These rules intentionally sit AFTER the base palette block so the
-   Christmas repaint (higher specificity) always wins while the season is live. */
-
-/* ---- Birthday: party hat (revealed on body.season-birthday) ---- */
-.party-hat {
-  position: absolute; display: none;
-  width: 38.74%; height: auto; top: -35.6%; left: 50%; margin-left: -15.71%; /* 74px, -68px, -30px on the 191px desktop ring */
-  transform: rotate(14deg); transform-origin: bottom center;
-  z-index: 3; pointer-events: none;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
-}
-body.season-birthday .party-hat { display: block; }
-
-/* ---- Birthday: the rest of the page joins the party ---- */
-/* Same pink -> purple -> blue set as the hat + confetti, so the day reads as
-   one theme instead of a lone hat on the default page. */
-body.season-birthday .title {
-  background: linear-gradient(100deg, #ff5ea8 0%, #a05cff 45%, #5cc6ff 100%);
-  background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-body.season-birthday .stat-card--bday {
-  background: linear-gradient(150deg, #ff5ea8 0%, #a05cff 100%);
-  box-shadow: 0 16px 34px rgba(160,92,255,.35);
-}
-
-/* ---- Birthday: balloon canvas (physics in lib.js, rendering in script.js) ---- */
-#balloon-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-
-/* ---- Birthday: confetti canvas (created/removed by JS) ---- */
-#confetti-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 70; }
+.footer.scroll-reveal, .footer.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }
 
 /* ---- UK New Year: finite fireworks ---- */
 #fireworks-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 70; }
 body.low-power #fireworks-canvas { display: none; }
 @media (prefers-reduced-motion: reduce) { #fireworks-canvas { display: none; } }
 
-/* ---- Pride (June): aro-ace halo around the profile picture ---- */
-/* The spin lives on the season rule, not the base: with `animation` on the
-   base it ran all year at opacity 0, and an infinite animation keeps the
-   compositor producing a frame on every vsync (144 a second on a fast
-   display) even though nothing is visible. Measured: ~0.3 CPU cores at idle
-   for an invisible halo. Out of season the halo has no animation at all. */
-@keyframes prideSpin { to { transform: rotate(360deg); } }
-.pfp-ring::before {
-  content: ""; position: absolute; inset: -18px; border-radius: 50%;
-  z-index: -1; opacity: 0;
-  background: conic-gradient(from 0deg,
-    #E28C00 0deg, #ECCD00 72deg, #FFFFFF 144deg, #62AEDC 216deg, #203856 288deg, #E28C00 360deg);
-  filter: blur(10px);
-  -webkit-mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
-          mask: radial-gradient(circle, #000 52%, rgba(0,0,0,0) 74%);
-  pointer-events: none;
-}
-/* steps(420) is the same uniform spin at 30 steps a second (0.86 degrees each,
-   under the blur radius: indistinguishable), and it is a frame-rate limiter:
-   the compositor skips drawing the frames where nothing changed, ~58% less GPU
-   work than a smooth 144 Hz spin (measured on a bare page). Only valid
-   because the rotation is linear: steps() would flatten an eased one. */
-body.season-pride .pfp-ring::before { opacity: 1; animation: prideSpin 14s steps(420) infinite; }
-
-/* ---- Christmas (Dec 25): dark festive palette override ---- */
-body.season-christmas {
-  --page-bg:
-    radial-gradient(1000px 620px at 85% -10%, rgba(255,190,80,.10) 0%, rgba(255,190,80,0) 55%),
-    radial-gradient(900px 620px at 4% 2%, rgba(158,27,50,.28) 0%, rgba(158,27,50,0) 55%),
-    linear-gradient(165deg, #0c2e1f 0%, #0a3524 42%, #071f16 100%);
-  --ink: #fff7e8; --ink-soft: #e8d3ae; --ink-faint: #b9a488;
-  --accent: #ffd166;
-  --card-bg: rgba(16,52,36,.66); --card-blur: blur(12px);
-  --card-bd: 1px solid rgba(255,209,102,.38); --card-shadow: 0 14px 34px rgba(2,16,10,.45);
-  --chip-bg: rgba(16,52,36,.9); --chip-bd: 1px solid rgba(255,209,102,.38); --on-accent: #0c2e1f;
-}
-
-/* ---- Christmas: hero + cards follow the palette ---- */
-/* The base card rules keep their brand colours the rest of the year;
-   these scoped overrides repaint the
-   lot into the pine/cranberry/gold set while the season is live. */
-body.season-christmas .title {
-  background: linear-gradient(100deg, #ffd166 0%, #fff3d6 45%, #ff8a8a 100%);
-  background-size: 200% auto; -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-body.season-christmas .stat-card--bday {
-  background: linear-gradient(150deg, #a4133c, #6d0f28);
-  border: 1px solid rgba(255,209,102,.5);
-  box-shadow: 0 16px 34px rgba(80,8,26,.5);
-}
-body.season-christmas .discord-card,
-body.season-christmas .steam-card,
-body.season-christmas .mal-card {
-  background: linear-gradient(150deg, #123c29 0%, #1b5a3a 60%, #123c29 100%);
-  box-shadow: 0 16px 38px rgba(2,16,10,.5), var(--glint);
-}
-body.season-christmas .discord-card .card-head-title,
-body.season-christmas .steam-card .card-head-title,
-body.season-christmas .mal-card .card-head-title,
-body.season-christmas .lb-card .card-head-title,
-body.season-christmas .music-card .card-head-title { color: #ffd166 !important; }
-body.season-christmas .discord-card .pill-link,
-body.season-christmas .steam-card .pill-link,
-body.season-christmas .mal-card .pill-link,
-body.season-christmas .lb-card .pill-link {
-  color: #ffe9b0 !important; background: rgba(255,209,102,.16) !important;
-}
-body.season-christmas .music-card .pill-link { color: #ffd166 !important; background: rgba(255,209,102,.16) !important; }
-body.season-christmas .info-pill--game,
-body.season-christmas .info-pill--spotify,
-body.season-christmas .info-pill--steam-game {
-  background: rgba(255,209,102,.1); border: 1px solid rgba(255,209,102,.3);
-}
-body.season-christmas .discord-card .presence-status,
-body.season-christmas .discord-card .idle-banner,
-body.season-christmas .steam-card .presence-status { color: #d9c9a8; }
-
-/* ---- Halloween: cosy pumpkin/plum glass, with quiet illustrated scenery ---- */
-/* The root class is set before first paint, and only when Christmas is not
-   owning the palette. All artwork is static: no timers, rAF, or mobile costs. */
-html.season-halloween body {
-  --page-bg:
-    radial-gradient(780px 580px at 78% 8%, rgba(225,151,85,calc(.13 * var(--bg-glow, 1))) 0%, transparent 65%),
-    radial-gradient(900px 640px at 6% 84%, rgba(139,87,157,calc(.11 * var(--bg-glow, 1))) 0%, transparent 65%),
-    linear-gradient(170deg, hsl(var(--bg-h) calc(var(--bg-s) * 1%) calc((var(--bg-l) + 5 * var(--bg-glow)) * 1%)) 0%, hsl(var(--bg-h) calc(var(--bg-s) * 1%) calc(var(--bg-l) * 1%)) 48%, hsl(calc(var(--bg-h) + 5) calc(var(--bg-s) * 1%) calc((var(--bg-l) + 2 * var(--bg-glow)) * 1%)) 100%);
-  --ink: #fff2de; --ink-soft: #dfc6b9; --ink-faint: #c1aebf; --accent: #ffc078;
-  --card-bg: rgba(61,40,66,.86);
-  --card-bd: 1px solid rgba(223,159,103,.4);
-  --card-shadow: 0 14px 34px rgba(24,12,28,.32);
-  --chip-bg: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), rgba(61,40,66,.9);
-  --chip-bd: 1px solid rgba(223,159,103,.4); --on-accent: #382137;
-  --hw-pumpkin: #dc8948; --hw-rib: #b76b39; --hw-face: #ffe2a0; --hw-stem: #82916b;
-  --hw-bat: #332333;
-}
-html.season-halloween body:not(.season-birthday) .title {
-  background: linear-gradient(105deg, #fff0d9 12%, #ffd09a 70%, #e2b6b3);
-  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-}
-html.season-halloween .card:not(.stat-card--bday) {
-  background: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), var(--card-bg);
-  box-shadow: var(--card-shadow), var(--glint);
-}
-/* The existing stories have inline brand fills; only this seasonal repaint
-   needs priority over those fills. Their layout/refraction is unchanged. */
-html.season-halloween .story-card {
-  background: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), var(--card-bg) !important;
-  box-shadow: var(--card-shadow), var(--glint) !important;
-}
-html.season-halloween body:not(.season-birthday) .stat-card--bday {
-  background: linear-gradient(145deg, #ad6038, #63384e); border-color: rgba(255,194,121,.45);
-  box-shadow: 0 16px 34px rgba(62,26,32,.35);
-}
-html.season-halloween .card-head-title,
-html.season-halloween .story-title,
-html.season-halloween .stat-label,
-html.season-halloween .lb-label,
-html.season-halloween .music-track-num,
-html.season-halloween .card .info-pill-label { color: var(--accent) !important; }
-html.season-halloween .card .pill-link { color: var(--accent) !important; }
-html.season-halloween .story-cta { color: #382137 !important; background: #ffd09a; }
-html.season-halloween .card .pill-link { background: rgba(255,192,120,.12) !important; }
-html.season-halloween .card .idle-banner,
-html.season-halloween .card .loading-row { color: var(--ink-soft); }
-html.season-halloween .retry-btn,
-html.season-halloween .dev-reset,
-html.season-halloween .dev-seg,
-html.season-halloween .dev-panel-close { border-color: rgba(223,159,103,.4); background: rgba(194,127,91,.12); }
-html.season-halloween .dev-seg button.is-active { background: var(--accent); color: #382137; }
-html.season-halloween a:focus-visible,
-html.season-halloween button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-html.season-halloween .cscroll-thumb { background: linear-gradient(180deg, #ffe5ba, #dfa87d); }
-html.season-halloween .music-viz span { background: linear-gradient(180deg, #ffe0a6, #d48760); }
-html.season-halloween .music-card.scroll-reveal.is-visible:hover { box-shadow: 0 22px 46px rgba(149,84,51,.3), var(--glint); }
-.halloween-decor { position: absolute; display: none; pointer-events: none; }
-html.season-halloween .halloween-decor { display: block; }
-/* The bats span the hero up to 560px. The pumpkins are sized and placed from
-   the picture's ring, so they keep their place on it at every size: 94px
-   tucked 35px out at the 191px desktop ring, 76px and 22px at the 134px
-   ring of a 320px phone, a straight line between. */
-.halloween-bats { width: min(560px, 100%); height: auto; top: 30px; left: 50%; transform: translateX(-50%); fill: var(--hw-bat); }
-.halloween-pumpkins { width: calc(31.6% + 33.7px); height: auto; bottom: calc(-3.51% - 5.3px); right: calc(-22.8% + 8.5px); z-index: 3; filter: drop-shadow(0 4px 7px rgba(26,13,28,.3)); }
-.hw-pumpkin { fill: var(--hw-pumpkin); }
-.hw-rib { fill: none; stroke: var(--hw-rib); stroke-width: 1.3; }
-.hw-face { fill: var(--hw-face); }
-.hw-stem { fill: var(--hw-stem); }
-
-/* ---- Christmas: frozen cards ----
-   Every card and social tile freezes over: snow lying along its top edge,
-   frost ferns growing in from the corners, a frosted haze and an icy rim at
-   the glass edge. All of it is ONE border-image per card, drawn by
-   KazuLib.frostCard (seeded per card, so no two match) and handed over as --xf
-   by script.js ("Christmas frost"). A border-image is the one paint CSS allows
-   outside a box that clips its own content (every card is overflow: hidden),
-   which is how the snow can sit ON the card and lift with it on hover; the
-   picture's middle is never drawn, so the frost stays at the edges and never
-   sits behind the middle of the text. Static paint: no animation, nothing at
-   rest, and it shows on every device, phones and low-power mode included.
-   border-width: 0 keeps every card's layout exactly as it was (the birthday
-   tile's 1px gold line gives way to the icy rim). The selector outranks the
-   cards' own `border: none` / birthday border, which would reset it. */
-html body.season-christmas .xmas-frost { border-style: solid; border-width: 0; border-image: var(--xf); }
-/* The snow stands 13px proud of each card, so rows and section titles move
-   apart a little to keep it off the cards above. */
-body.season-christmas .section-title { margin-bottom: 26px; }
-body.season-christmas .stat-grid,
-body.season-christmas .right-now-grid,
-body.season-christmas .socials-grid,
-body.season-christmas .pc-specs-grid,
-body.season-christmas .stories-grid { row-gap: 30px; }
-
-/* ---- Christmas: string lights along the top of the page ----
-   Static SVG in index.html: steady bulbs with a soft glow (real fairy lights
-   on a dark night), no twinkle loop, so it costs nothing at rest and shows on
-   every device. Hung from the top edge and anchored to the page like the sky
-   scenery, so it scrolls away with the hero. The view box is 1600 wide and
-   sliced around its centre: below 1600px the sides are cropped at full size
-   (phones see the two swags either side of the profile picture), above it the
-   height grows with the width so the swags are never cut off. */
-.xmas-garland {
-  position: absolute; top: 0; left: 0; width: 100%; height: clamp(64px, 4vw, 96px);
-  z-index: 0; pointer-events: none; display: none; overflow: hidden;
-  filter: drop-shadow(0 2px 2px rgba(2,14,8,.35));
-}
-.xmas-garland-wire { fill: none; stroke: #0e1f16; stroke-width: 1.5; }
-body.season-christmas .xmas-garland { display: block; }
-
-/* ---- Respect reduced motion: keep the halo, stop the spin (confetti is skipped in JS) ---- */
-@media (prefers-reduced-motion: reduce) { body.season-pride .pfp-ring::before { animation: none; } }
-
 /* ============ DEV SETTINGS PANEL (secret code: kazudev) ============ */
 /* Floating season-trigger overrides; the element is built and owned by
    script.js. Runs on the same glass tokens as the toast/modal, so it follows
-   the active theme — including the Christmas palette the panel itself can
-   force on. */
+   the active theme. */
 .dev-panel {
   position: fixed; left: 18px; bottom: 18px; z-index: 80;
   width: min(92vw, 304px); padding: 14px 16px 12px; border-radius: 18px;
@@ -2190,7 +1512,6 @@ body.low-power .populated-in { animation: none; }
    .mal-card). It must come BEFORE the liquid-glass section: down here it
    overrode the translucent fill, glint shadow and frosted backdrop on source
    order, which is why the LB card used to render solid instead of glass. */
-.lb-bg-icon { position: absolute; right: -20px; bottom: -26px; opacity: .12; }
 .lb-card .pill-link { color: #fff !important; background: rgba(255,255,255,.16) !important; }
 .lb-card .loading-row { color: #b8c4cf; }
 .lb-card .idle-banner { background: rgba(255,255,255,.12); color: #b8c4cf; }
@@ -2390,10 +1711,6 @@ html.glass-scrolling .toast {
        aurora drift, equalizer, pulse dots) and all entrance motion stop. */
 body.low-power { --card-blur: none; }
 body.low-power { --card-bg: rgba(40,63,98,.95); }
-/* Christmas keeps its pine cards on phones: the near-solid low-power fill would
-   otherwise paint them slate blue on the green page (Halloween's root-scoped
-   fill already outranks this rule). */
-body.low-power.season-christmas { --card-bg: rgba(16,52,36,.95); }
 body.low-power .card:not(.stat-card--bday),
 body.low-power .stat-card:not(.stat-card--bday),
 body.low-power .social-card,
@@ -2419,12 +1736,10 @@ body.low-power .pfp-ring,
 body.low-power .pfp-ring::before,
 body.low-power .title,
 body.low-power .pulse-dot,
-body.low-power .music-viz span,
 body.low-power .hero .pfp,
 body.low-power .stat-card {
   animation: none !important;
 }
-body.low-power .music-viz { display: none; }
 /* Everything is simply present — the observer/stagger in script.js is skipped
    too, this is the belt-and-braces half (and covers a slow script.js). */
 body.low-power .scroll-reveal {
@@ -2474,8 +1789,7 @@ body.low-power .scroll-reveal {
    colours (card titles, pills, story cards) or the TEXT SCALE rules at the top
    use it. A browser without CSS nesting simply keeps the rules above.
    What it retires from view (the code behind them still runs): the sunset sky,
-   the sakura scene and petals, the weather canvas, the Christmas and Halloween
-   decorations, the party hat, the meadow illustration and the cover images.
+   the sakura scene and petals and the weather canvas.
    Keep the tokens, the contrast and the markup this layer leans on in
    step. */
 html:not(#rd) { background: #F7F6F3; color-scheme: light; }
@@ -2513,7 +1827,7 @@ body:not(#rd) {
     --font-unit: 16px;
     --font-size-small: 14px; --font-size-body: 16px; --font-size-lead: 16px;
     --font-size-title: 24px; --font-size-display: 30px;
-    --font-size-feature: 16px; --font-size-mark: 16px;
+    --font-size-feature: 16px;
   }
   .stat-card { --font-size-display: min(30px, 15.5cqi); }
 
@@ -2521,12 +1835,8 @@ body:not(#rd) {
   &, & p, & li, & dd, & dt, & figure { line-height: 1.5; }
 
   /* ---- What the redesign retires from view ---- */
-  .sunset-sky, .sakura-scene, .atmosphere, .xmas-garland, .halloween-decor, .party-hat,
-  .weather-fx, .frost-flight, .meadow-art, .meadow::after,
-  .discord-bg-icon, .steam-bg-icon, .mal-bg-icon, .lb-bg-icon,
-  .music-cover-wrap, .music-playlist-label, .music-viz,
-  .card-head-title svg, .card-head-title img,
-  .social-mark, .pc-gpu-mark { display: none !important; }
+  .sunset-sky, .sakura-scene, .atmosphere,
+  .weather-fx { display: none !important; }
 
   a { color: inherit; text-underline-offset: 3px; }
   a:hover { color: var(--accent); }
@@ -2873,7 +2183,7 @@ body:not(#rd) {
   }
 
   /* ---- Footer ---- */
-  .footer.meadow {
+  .footer {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px 24px;
     width: calc(100% - 2 * max(var(--gutter), env(safe-area-inset-left))); max-width: calc(1080px - 2 * var(--gutter));
     margin: 96px auto 0; padding: 20px 0 96px;
