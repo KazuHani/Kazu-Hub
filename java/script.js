@@ -960,7 +960,7 @@
   // :0..1, e.g. rain:1) forces layers on any weather; still desktop-only.
   // Christmas Day adds a light snowfall to the layers (KazuWeatherFx FESTIVE_SNOW),
   // unless it is really raining; applySeasons keeps this flag and re-syncs.
-  const WEATHER_FX_SRC = 'weather-fx.js?v=5';
+  const WEATHER_FX_SRC = 'java/weather-fx.js?v=5';
   let christmasLive = false;
   const WEATHER_FX_RAW = (() => {
     try { return new URLSearchParams(location.search).get('weather') || ''; } catch (e) { return ''; }

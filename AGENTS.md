@@ -45,14 +45,14 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 ## Code layout
 
 - `index.html` — the whole page. Loads `style.css?v=121`,
-  `lib.js?v=47`, `site-config.js?v=1`, `i18n.js?v=6`, `script.js?v=99` (version
+  `java/lib.js?v=47`, `java/site-config.js?v=1`, `java/i18n.js?v=6`, `java/script.js?v=99` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
   `#boot-cards` hold (see "Live-card cache" below), the
   `#boot-handlers` script and the `#boot-lang` script (see "Language switch"
   below) in the `<head>`.
-- `lib.js` (~1700 lines) — **pure, DOM-free helpers**, exposed as the global
+- `java/lib.js` (~1700 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
   config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
   Europe/London wall-clock frame, UK DST maths, the birthday countdown, HTML
@@ -62,40 +62,40 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
   The arc (`skyArcPoint`) is one sine that runs on past the horizon points
   until both ends are off-screen (`SKY_ARC_OVERSHOOT`, x = -8.08% .. 108.08%),
   so the body slides in and out through the page edges and the sun<->moon
-  hand-overs happen off-screen. `script.js` keeps an inline fallback copy of
+  hand-overs happen off-screen. `java/script.js` keeps an inline fallback copy of
   `skyArcPoint`; keep the two in step.
-- `site-config.js` — the contract for the control panel's settings (`KazuSiteConfig`):
+- `java/site-config.js` — the contract for the control panel's settings (`KazuSiteConfig`):
   validates and normalises everything the page will accept from the online store
   (links must be https, ids are pattern-checked, text is stripped of emoji and hidden
-  characters, unknown keys are dropped). Pure and DOM-free, loaded after `lib.js`,
+  characters, unknown keys are dropped). Pure and DOM-free, loaded after `java/lib.js`,
   versioned `?v=1`, precached. It is **byte-identical to `shared/site-config.js` in
   the control panel project**: edit it there and copy it here, never the other way.
   See "Control panel" below.
-- `script.js` (~4100 lines) — all DOM behaviour: stat cards,
+- `java/script.js` (~4100 lines) — all DOM behaviour: stat cards,
   particles/atmosphere, themes and seasons, live API integrations (Lanyard,
   Steam, Jikan/MAL, Letterboxd, YouTube playlist feed, ListenBrainz,
   ZenQuotes), custom scrollbars,
   the `kazudev` dev panel. It consumes `KazuLib` but keeps inline fallbacks
-  for the lib helpers it needs, so the page still works if `lib.js` fails to
+  for the lib helpers it needs, so the page still works if `java/lib.js` fails to
   load. User-facing IDs (`DISCORD_ID`, `STEAM_VANITY`, `MAL_USER`, `LB_USER`,
   `LISTENBRAINZ_USER`) are constants near the top of each section.
-- `weather-fx.js` — the live weather layers (rain, snow, wind, clouds) on one
+- `java/weather-fx.js` — the live weather layers (rain, snow, wind, clouds) on one
   background canvas, **desktop only and loaded on demand**: never a static
-  `<script>` tag and never precached, `script.js` injects it after
+  `<script>` tag and never precached, `java/script.js` injects it after
   `KazuLib.weatherFxAllowed` says yes (see "Live weather layers" below).
   Pure, DOM-free core (weather -> layers, quality governor, seeded particle
   physics, colours) exposed as `KazuWeatherFx`, plus a thin DOM shell at the
-  bottom. Versioned by the `WEATHER_FX_SRC` constant in `script.js`.
+  bottom. Versioned by the `WEATHER_FX_SRC` constant in `java/script.js`.
 - `style.css` (~2500 lines) — all styling, including seasonal and
   weather-atmosphere variants and the sakura scenery layer.
 - `sw.js` — service worker. Network-first for navigations, cache-first for
   same-origin versioned assets, cross-origin requests (live APIs, fonts)
   untouched. Precache list mirrors the `?v=` URLs from `index.html`.
-  (`weather-fx.js` is deliberately absent: phones would download it on install.)
-- `i18n.js` — the English / Japanese switch (`KazuI18n`). Pure, DOM-free
-  translation core (phrase table + rules for text `script.js` composes) plus
+  (`java/weather-fx.js` is deliberately absent: phones would download it on install.)
+- `java/i18n.js` — the English / Japanese switch (`KazuI18n`). Pure, DOM-free
+  translation core (phrase table + rules for text `java/script.js` composes) plus
   a thin DOM shell that only runs while Japanese is on. Loaded after
-  `site-config.js` and before `script.js`, versioned by `?v=` (see cache busting), precached. See
+  `java/site-config.js` and before `java/script.js`, versioned by `?v=` (see cache busting), precached. See
   "Language switch" below.
 - `robots.txt`, `sitemap.xml`, `site.webmanifest` — static
   plumbing. `assets/` holds images/icons.
@@ -213,7 +213,7 @@ observers or the boot path.
   paints. Before it existed, every phone started the entrance animations and
   frosted glass it was about to cancel: the profile picture, title and stat
   cards sat at opacity 0 behind those animations, so first contentful paint
-  waited for `script.js`. Phone FCP is ~26% earlier (4x-throttled profile,
+  waited for `java/script.js`. Phone FCP is ~26% earlier (4x-throttled profile,
   median of 11) and main-thread task time at load halved. Resource hints follow
   the boot ladder: full `preconnect` only for hosts used in the first seconds
   (an idle preconnected socket is dropped after ~10 s), `dns-prefetch` for the
@@ -235,7 +235,7 @@ observers or the boot path.
   press feedback. Tablets and narrow desktop windows get the full effects with
   the mobile layout. (`particleCount`'s phone density tier is therefore dead
   code.) Changing that is a product decision, not an optimisation. (The
-  comment on `lowPowerMode` in `lib.js` says a weak phone needs three signals,
+  comment on `lowPowerMode` in `java/lib.js` says a weak phone needs three signals,
   but the code trips on two.)
 
 ## New Year (UK midnight)
@@ -251,7 +251,7 @@ trigger it; `?fireworks=1` is a separate preview.
 
 Reduced-motion and low-power devices skip the show. The
 canvas uses half CSS resolution and at most 30 fps; spark motion is analytic
-in `KazuLib.fireworkSparkState`, mirrored in `script.js`. Completion,
+in `KazuLib.fireworkSparkState`, mirrored in `java/script.js`. Completion,
 visibility loss and pagehide remove temporary DOM, rAF, timers and listeners.
 
 ## Halloween (October)
@@ -292,7 +292,7 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   hover. It is a 9-slice: corners keep their shape, straight edges stretch, the
   middle is never drawn (frost stays at the edges, never behind the middle of
   the text). Seeded by the card's place on the page, so no two cards match and a
-  reload draws the same frost. `script.js` ("Christmas frost") draws a card when
+  reload draws the same frost. `java/script.js` ("Christmas frost") draws a card when
   it nears the viewport (IntersectionObserver, 600px margin), one card per idle
   slice (`scheduleIdle`), and redraws only on a real width change (over 8%) or
   a card grown too short for its corners (ResizeObserver). Cards the control
@@ -325,7 +325,7 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   are gone). Phone load on Christmas Day: TBT ~140 ms vs ~120 ms without the
   frost (it was ~280 ms before the frost moved to idle slices).
 - **Known gap** (unchanged): the Christmas palette and decorations are applied
-  by `script.js`, so 25 December shows the blue tint for a moment first.
+  by `java/script.js`, so 25 December shows the blue tint for a moment first.
 
 ## Fluid sizing
 
@@ -417,12 +417,12 @@ Christmas rules use it. A browser without CSS nesting keeps the legacy look.
 - **Header and anchors:** `.site-header` holds the wordmark, the section nav
   (`#now #socials #writing #playlist #pc`, which are the `h2.section-title` ids,
   in page order) and the language switch. The sections run Now, Socials,
-  Writing, Playlist, PC. Nav labels have Japanese phrases in `i18n.js`.
+  Writing, Playlist, PC. Nav labels have Japanese phrases in `java/i18n.js`.
 - **Layout tricks the markup leans on:** each Right-now card is a CSS grid
   (`200px | content | button`) with `.card-head { display: contents }`; the
   playlist card uses grid areas (`side / open / featured`); the PC specs are two
   balanced CSS columns. Adding a card means keeping those hooks.
-- **Browser chrome:** `setThemeColor` in `script.js` paints the meta
+- **Browser chrome:** `setThemeColor` in `java/script.js` paints the meta
   `theme-color` with the canvas colour (it ignores the colour its callers pass).
 ## Hero (legacy rules, overridden by the redesign)
 
@@ -453,7 +453,7 @@ and hold their full size from there to the widest desktop.
 These are load-bearing; read before editing.
 
 - **Cache busting.** CSS/JS are versioned by query string. After editing
-  `style.css`, `script.js`, `lib.js`, `i18n.js` or `site-config.js`: bump the `?v=` in `index.html`, keep the matching entries in `sw.js`'s
+  `style.css`, `java/script.js`, `java/lib.js`, `java/i18n.js` or `java/site-config.js`: bump the `?v=` in `index.html`, keep the matching entries in `sw.js`'s
   `PRECACHE` list in sync (and the "Loads ..." line in "Code layout"), and bump `CACHE` in `sw.js` when the precache list or `sw.js` itself
   changes. Nothing checks this any more: a missed bump serves a stale file.
 - **Staged boot & populate animation.** Startup work runs in priority order,
@@ -469,7 +469,7 @@ These are load-bearing; read before editing.
   "Live-card cache").
   Any new always-on animated layer (infinite CSS loops, canvas rAF) must
   register with `fxWatch(el)` so it pauses off-screen via `.fx-paused`.
-- **First paint = live tint (no night-black flash).** `script.js` runs at the
+- **First paint = live tint (no night-black flash).** `java/script.js` runs at the
   end of `<body>`, so anything it writes lands AFTER the first paint. The
   inline `<script id="boot-tint">` in `<head>` therefore writes the
   time-of-day palette itself before the first paint: `--bg-h/s/l/glow` on
@@ -479,20 +479,20 @@ These are load-bearing; read before editing.
   ICU's one-off start-up, ~25 ms on a fast phone and ~100 ms on a mid one, and
   this script blocks first paint; its clock must agree with `KazuLib.ukWallParts`
   on every clock-change minute);
-  if you change the tint maths in `lib.js` you MUST change the boot script to
+  if you change the tint maths in `java/lib.js` you MUST change the boot script to
   match, by hand (nothing compares the two any more). It also raises `html.sky-pending`, which hides `.sky-body`
-  until `updateSkyBody`'s first snap places it (`script.js` lifts the class;
-  an 8s timeout is the failsafe). Any new state that `script.js` sets on
+  until `updateSkyBody`'s first snap places it (`java/script.js` lifts the class;
+  an 8s timeout is the failsafe). Any new state that `java/script.js` sets on
   load and that changes the look of the first screen belongs in the same
   boot script or it will flash. Known gap: on Dec 25 the Christmas palette
-  is still applied by `script.js` (`body.season-christmas`), so that one day
+  is still applied by `java/script.js` (`body.season-christmas`), so that one day
   shows the blue tint briefly before the pine palette.
 - **Cherry-blossom season.** The branches (`.sakura-branch`) and the petal
   modes (`blossom`, `blossom-heavy`) only exist from 20 March to 10 May
   inclusive (first blooms in Kyushu/Tokyo to the last Hokkaido petals),
   judged on the UK date. Rain and aurora are weather and unaffected; the
   sun/moon share the `.sakura-scene` layer, so hide branches, never the
-  layer. The window is `SAKURA_FIRST` / `SAKURA_LAST` in `lib.js`
+  layer. The window is `SAKURA_FIRST` / `SAKURA_LAST` in `java/lib.js`
   (`sakuraInBloom`) and the matching numbers in the `#boot-tint` script
   (`md < 220 || md > 410`); keep them in step by hand.
   `html.no-sakura` is set by the boot script before first paint and kept in
@@ -506,7 +506,7 @@ These are load-bearing; read before editing.
   `KazuLib.sunsetGlow` (evening only, no sunrise version): it eases in 110
   minutes before the day's sunset, is full from sunset for 12 minutes, and is
   gone 85 minutes later; the palette crossfades from golden orange to
-  rose/violet from 10 minutes before to 40 after. `script.js` writes the two
+  rose/violet from 10 minutes before to 40 after. `java/script.js` writes the two
   variables on every 10-second tint step (in `applySkyTint`, see "Sky tint
   cadence" below), and the inline `#boot-tint`
   script carries a compact copy so a page opened at dusk starts with the
@@ -530,7 +530,7 @@ These are load-bearing; read before editing.
     sliding out through the page edges, free downwards so the horizon glow,
     the low sun's halo and the branches fade out on short windows.
   - Clouds never sit lower than one sprite height above the bottom of their
-    one-viewport canvas (`createScene` in `weather-fx.js`; windows under
+    one-viewport canvas (`createScene` in `java/weather-fx.js`; windows under
     570px tall used to cut them).
 - **Meadow footer (a grassy field with a house).** The last thing on the
   page is a full-bleed illustrated field: cottage, trees, picket fences, a
@@ -558,8 +558,8 @@ These are load-bearing; read before editing.
   back-to-top button (inside `.container`, z-index 1) stays on top. To change
   the art, edit the SVG in `index.html`; every class it uses must be styled and
   no fill may be hard-coded except the flowers.
-- **Live weather layers (desktop only).** `weather-fx.js` draws rain, snow,
-  wind streaks and clouds from the UK weather `script.js` already fetches
+- **Live weather layers (desktop only).** `java/weather-fx.js` draws rain, snow,
+  wind streaks and clouds from the UK weather `java/script.js` already fetches
   (Open-Meteo now also asks for `cloud_cover` and `wind_direction_10m`).
   Layers combine only when the weather says so: rain and snow come from one
   weather code so they never overlap, precipitation implies cloud, cloud
@@ -568,7 +568,7 @@ These are load-bearing; read before editing.
   `KazuWeatherFx.layersFor`; change the rules there.
   - *Not for mobile.* Three independent guards: (1) `KazuLib.weatherFxAllowed`
     refuses coarse pointers, no-hover devices, a mobile UA, a window <= 768px,
-    reduced motion, save-data and `lowPower`, and `script.js` never even
+    reduced motion, save-data and `lowPower`, and `java/script.js` never even
     requests the file for those visitors; (2) the CSS media query + `body.low-power`
     rule hide `.weather-fx` regardless; (3) media-query `change` listeners
     stop the layers live if the window narrows. Phones keep the older DOM
@@ -627,7 +627,7 @@ These are load-bearing; read before editing.
   any machine). Never reintroduce visitor-local `Date` getters for those
   paths.
 - **lib.js is the single source of truth.** Deterministic maths belongs in
-  `lib.js` (DOM-free). `script.js` consumes it via `KazuLib` with
+  `java/lib.js` (DOM-free). `java/script.js` consumes it via `KazuLib` with
   inline fallbacks in case the file fails to load — when you add a lib helper
   used by the page, mirror that fallback pattern.
 - **HTML escaping.** API-sourced strings (Steam game names, MAL titles, etc.)
@@ -639,10 +639,10 @@ These are load-bearing; read before editing.
   card's list (`MAL_HOSTS`, `LETTERBOXD_HOSTS`, `SPOTIFY_HOSTS`). A refused link
   falls back to a URL built from a validated id, or the row is dropped. Links
   built from a fixed host plus a checked id (Steam app ids, YouTube video ids)
-  need no list. A new href sink in `script.js` must take its URL from one of those builders.
-- **Style.** Plain ES5-ish in `lib.js` (`var`, function expressions, IIFE
+  need no list. A new href sink in `java/script.js` must take its URL from one of those builders.
+- **Style.** Plain ES5-ish in `java/lib.js` (`var`, function expressions, IIFE
   attaching to a global), modern JS (arrow functions, `const`/`let`) in
-  `script.js` and `sw.js`. Heavy header-comment banners explain intent at the
+  `java/script.js` and `sw.js`. Heavy header-comment banners explain intent at the
   top of each file and each section; match that density. 2-space indent.
 - **Service worker.** `sw.js` must never serve stale content while online:
   network-first for pages, versioned-URL cache-first for assets, and live
@@ -683,7 +683,7 @@ Letterboxd still empty after 10 s on a cold visit.
   painted; a copy without an id (written before ids existed) is painted but
   never stands in for a fetch.
 - **The hold (`#boot-cards`).** The browser paints the page before
-  `script.js` (end of `<body>`) runs, on every device (first paint 236 ms vs
+  `java/script.js` (end of `<body>`) runs, on every device (first paint 236 ms vs
   boot paint 311 ms on desktop, 892 vs 1771 ms on the throttled phone), so a
   boot paint alone made the cards jump from loading-row height to full height
   after they were on screen: CLS 0.32 on a phone. When any Right-now copy
@@ -794,7 +794,7 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
 - **The address** is `<meta name="kazu-control" content="...">` in `index.html`. The
   panel writes it. Empty means the page is exactly what `index.html` says (no fetch,
   no cache, nothing changes). `#boot-control` in `<head>` starts the download before
-  the stylesheet arrives; `loadSiteControl` in `script.js` takes the result over and
+  the stylesheet arrives; `loadSiteControl` in `java/script.js` takes the result over and
   polls once a minute with the other pollers. Only `https://` addresses or a path on
   this origin are ever fetched.
 - **Precedence: a managed section overrides the HTML.** A section the panel manages
@@ -829,28 +829,28 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
 
 ## Language switch (English / Japanese)
 
-**Switch removed.** The page is English only: there is no switch in the header, and `i18n.js` starts in English whatever the saved choice, `?lang=` or the device language says (see the `var start = 'en'` line at the bottom). The Japanese table, `pickLang` and the Chiikawa peek code stay; restoring the commented `pickLang(...)` call and a switch in the header brings it back. The text below is history.
+**Switch removed.** The page is English only: there is no switch in the header, and `java/i18n.js` starts in English whatever the saved choice, `?lang=` or the device language says (see the `var start = 'en'` line at the bottom). The Japanese table, `pickLang` and the Chiikawa peek code stay; restoring the commented `pickLang(...)` call and a switch in the header brings it back. The text below is history.
 
 A pill at the top right of the page (`.lang-switch`, first thing in
 `.container`) switches between English and 日本語. **English is the page's own
-language and the default**; Japanese is a layer that `i18n.js` puts on top, so
-`index.html` and `script.js` stay plain English and know nothing about it.
+language and the default**; Japanese is a layer that `java/i18n.js` puts on top, so
+`index.html` and `java/script.js` stay plain English and know nothing about it.
 
 - **How text gets translated.** `KazuI18n.translate(text)` returns Japanese or
   `null`: an exact phrase table first (`PHRASES`, keys whitespace-collapsed
-  with straight apostrophes), then `RULES` for text `script.js` builds at run
+  with straight apostrophes), then `RULES` for text `java/script.js` builds at run
   time (the clock goes 24-hour, en-GB dates become `2026年10月19日(月)`,
   countdowns, Steam hours, MAL progress, Discord timers, toasts), and
   `"A · B"` is translated part by part. Anything unknown stays English, so live
   content and control-panel text are never mangled.
 - **The DOM shell.** Switching to Japanese walks `<body>` once (text nodes plus
   `title` / `aria-label` / `alt` / `placeholder`) and connects a
-  MutationObserver that translates whatever `script.js` writes afterwards
+  MutationObserver that translates whatever `java/script.js` writes afterwards
   (callbacks run before the next paint, so no English flashes). Every swap is
   recorded; switching back puts the exact originals back (keeping any fresh
-  English `script.js` wrote meanwhile), reverses stray Japanese phrases, and
+  English `java/script.js` wrote meanwhile), reverses stray Japanese phrases, and
   disconnects the observer. **The English page runs none of it.**
-- **Never translated:** `SKIP_SELECTOR` in `i18n.js` (live names and titles:
+- **Never translated:** `SKIP_SELECTOR` in `java/i18n.js` (live names and titles:
   Discord / Steam / Spotify fields, game, anime, film and song titles, the quote,
   story titles, the dev panel) and anything marked `translate="no"`. Put new
   live-content elements there. Product names (the PC parts), brand kickers
@@ -859,22 +859,22 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
 - **Live data with its own Japanese: `data-ja`.** An element with
   `data-ja="..."` and a single text node shows that text in Japanese mode, even
   inside `SKIP_SELECTOR`, and is restored on English. The MAL card uses it:
-  `script.js` asks AniList's public GraphQL API (`graphql.anilist.co`, no key,
+  `java/script.js` asks AniList's public GraphQL API (`graphql.anilist.co`, no key,
   CORS-clean) for each row's native title by MAL id, one POST for every anime
   and manga row (`KazuLib.anilistTitlesQuery` / `anilistTitlesParse`; ids come
   out of the row url via `malIdFromUrl`). It only asks while the page is in
-  Japanese, and again on `kazu-langchange` (fired by `i18n.js` on every
+  Japanese, and again on `kazu-langchange` (fired by `java/i18n.js` on every
   switch). Titles are kept in `kazu-mal-ja` (at most 100 per kind,
   `malJaCacheParse`); an id AniList doesn't answer for is not asked again that
   visit. MAL's own feeds carry no Japanese title (`load.json`'s
   `title_localized` is null), hence AniList.
 - **The quote.** zenquotes is English only, so Japanese mode shows a quote
-  from `QUOTES` in `i18n.js` (`[English, Japanese, author in Japanese]`):
+  from `QUOTES` in `java/i18n.js` (`[English, Japanese, author in Japanese]`):
   the quote's own translation when it is one of `FALLBACK_QUOTES`, otherwise
   `QUOTES[hash(text) % n]`, the same pick every time for the same English.
   `createQuoteSync` keeps text and author paired and puts the latest English
   back on a switch. Every `FALLBACK_QUOTES` line in
-  `script.js` needs a row in `QUOTES`. Japanese quotes are upright in 「」.
+  `java/script.js` needs a row in `QUOTES`. Japanese quotes are upright in 「」.
 - **Japanese labels run longer.** Header pills (`.pill-link`) and `.retry-btn`
   are `white-space: nowrap; flex-shrink: 0` so プロフィール → and 再試行 never
   break over two lines.
@@ -888,12 +888,12 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
   device > English (`pickLang(search, stored, langs)`).
   `#boot-lang` in `<head>` reads the same choice before first paint: it
   sets `<html lang="ja">` and `html.i18n-pending` (page text hidden) until
-  `i18n.js` has run, with a 3 s failsafe. Keep it in step with
+  `java/i18n.js` has run, with a 3 s failsafe. Keep it in step with
   `pickLang`.
 - **Adding or changing copy.** Add the Japanese line to `PHRASES` (or a rule for
   composed text). Names, brands and product models stay English on purpose. Any other
   visible string or label in `index.html`, and any new weather condition,
-  status or empty state in `script.js`, needs Japanese. Japanese values
+  status or empty state in `java/script.js`, needs Japanese. Japanese values
   must be unique (switching back looks them up in reverse) and emoji-free.
 - **Colours follow the palette.** The switch (and the announcement strip's
   default tone) paint with `--chip-bg`, `--chip-bd` and `--on-accent`, set in
@@ -912,7 +912,7 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
   hat. `display: none` unless `<html lang="ja">`, and `loading="lazy"`, so the
   English page never downloads it. A peek is the one-shot `chiikawaPeek`
   keyframes (3.4 s: slide out along the tilt, wobble, hold, slide back);
-  `initChiikawaPeek` in `script.js` adds `.is-peeking`, drops it on
+  `initChiikawaPeek` in `java/script.js` adds `.is-peeking`, drops it on
   `animationend` and re-arms a timer: first peek 1.2 s after the page turns
   Japanese (after the picture's entrance pop), then every 7-12 s
   (`KazuLib.chiikawaPeekDelay`). No timer while the tab is hidden or the
@@ -927,6 +927,6 @@ language and the default**; Japanese is a layer that `i18n.js` puts on top, so
 
 User-facing text and metadata contain no emojis. `KazuLib.stripEmoji` removes
 emoji sequences from live text and labels via the targeted DOM observer in
-`script.js`, with a matching inline fallback. Discord custom emoji images are
+`java/script.js`, with a matching inline fallback. Discord custom emoji images are
 not rendered. Blossom particles use CSS petal shapes, forecasts use condition
 text, and the Konami dragon uses the existing profile image. Keep new UI copy emoji-free.
