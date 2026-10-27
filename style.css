@@ -2943,3 +2943,9 @@ body:not(#rd) .quote-box, body:not(#rd) .quote-box.visible { max-height: none; m
 @media (max-width: 600px) {
   body:not(#rd) .quote-box, body:not(#rd) .quote-box.visible { margin-top: 0; }
 }
+
+/* Until the quote arrives the name sits half the quote's reserved height lower;
+   when the quote fades in the name glides up to its place, so nothing below moves. */
+body:not(#rd) .hero:has(.quote-box:not(.visible)) .title { translate: 0 66px; }
+body:not(#rd) .hero .title { transition: translate .5s ease; }
+@media (prefers-reduced-motion: reduce) { body:not(#rd) .hero .title { transition: none; } }
