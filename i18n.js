@@ -679,7 +679,11 @@
 
   var stored = null;
   try { stored = localStorage.getItem(STORE_KEY); } catch (e) {}
-  var start = pickLang(global.location && global.location.search, stored, navLangs(global.navigator));
+  // The language switch is gone and the page is English only: the saved choice,
+  // ?lang= and the device language no longer pick Japanese. The Japanese table
+  // and pickLang stay, so a switch can come back by restoring this line to
+  // pickLang(global.location && global.location.search, stored, navLangs(global.navigator)).
+  var start = 'en';
 
   document.addEventListener('click', function (e) {
     var btn = e.target && e.target.closest && e.target.closest('[data-lang-set]');
@@ -687,5 +691,5 @@
   });
 
   if (start === 'ja') apply('ja');
-  else { syncButtons(); root.classList.remove('i18n-pending'); }
+  else { syncButtons(); root.setAttribute('lang', 'en'); root.classList.remove('i18n-pending'); }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

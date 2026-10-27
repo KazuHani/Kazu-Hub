@@ -44,8 +44,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=111`,
-  `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=4`, `script.js?v=96` (version
+- `index.html` — the whole page. Loads `style.css?v=112`,
+  `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=5`, `script.js?v=97` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
@@ -529,6 +529,8 @@ gold; `body.season-christmas`) and on top of it the page freezes over:
   by `script.js`, so 25 December shows the blue tint for a moment first.
 
 ## Pop-up motion
+
+**Removed.** The stat tiles no longer open pop-ups: the modal markup, its script (`openModal`, the flight, the focus trap, the globe, forecast, age and birthday bodies), its CSS and `evals/modal-motion.js` are gone, along with the Christmas snow that rode the flight. The pure helpers in `lib.js` (`modalMorphFrames`, `outerShadows`, ICS and calendar builders) remain tested but unused. The text below is history.
 
 A stat tile opens into its pop-up and closes back onto it (`flyModal` in
 `script.js`). Up to 2026-10-16 this was a `transform: scale(sx, sy)` FLIP: a
@@ -1128,6 +1130,8 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
 - **Privacy.** Every visit makes one request to the Firebase host named in the meta tag.
 
 ## Language switch (English / Japanese)
+
+**Switch removed.** The page is English only: there is no switch in the header, and `i18n.js` starts in English whatever the saved choice, `?lang=` or the device language says (see the `var start = 'en'` line at the bottom). The Japanese table, `pickLang` and the Chiikawa peek code stay; restoring the commented `pickLang(...)` call and a switch in the header brings it back. The text below is history.
 
 A pill at the top right of the page (`.lang-switch`, first thing in
 `.container`) switches between English and 日本語. **English is the page's own

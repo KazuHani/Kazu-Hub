@@ -103,7 +103,7 @@
       !!fm && !!mk && +fm[1] >= 22 && +fm[2] <= 46 && +mk[1] >= 40 && +mk[2] <= 100, (fm || []).slice(1) + ' / ' + (mk || []).slice(1));
     ok('font scale: body text is the body tier', /body,\nbody \* \{\s*font-size: var\(--font-size-body\) !important;/.test(css));
     var want = {
-      '.section-title': 'title', '.stat-value': 'display', '.music-playlist-name': 'title', '.story-title': 'title', '.modal-title': 'title',
+      '.section-title': 'title', '.stat-value': 'display', '.music-playlist-name': 'title', '.story-title': 'title',
       '.card-head-title': 'lead', '.presence-name': 'lead', '.mal-title': 'lead', '.lb-title': 'lead', '.social-name': 'lead',
       '.music-track-name': 'body', '.story-desc': 'body',
       '.stat-label': 'body', '.stat-sub': 'body', '.mal-title': 'body', '.social-handle': 'small', '.music-track-artist': 'small', '.pill-link': 'small', '.mal-eps': 'small',

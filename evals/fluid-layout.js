@@ -172,7 +172,7 @@
         bad.push(r.sel + ' ' + v);
       });
     });
-    ok('fluid: every text size is plain, clamp(B, B/3.2 vw or steeper, P >= B), the name\'s rule, or card-sized on a card selector', fluidCount >= 60 && bad.length === 0, fluidCount + ' fluid rules / ' + bad.join(' | '));
+    ok('fluid: every text size is plain, clamp(B, B/3.2 vw or steeper, P >= B), the name\'s rule, or card-sized on a card selector', fluidCount >= 35 && bad.length === 0, fluidCount + ' fluid rules / ' + bad.join(' | '));
     ok('fluid: readable floors (fluid sizes 10px+ at 320px and 12px+ from 390px; fixed page text 12px+)', floors.length === 0, floors.join(' | '));
 
     // ---- the stat grid: 2 columns, 4 from STAT_FOUR_UP, no value jump ----
@@ -223,12 +223,6 @@
     // on the stat cards cost two style passes a second at rest (perf.js idle).
     ok('fluid: the stat cards are not size containers (the per-second clock would restyle them)', base('.stat-card', 'container-type') === null && !rules.some(function (r) { return /^\.stat-(card|grid)/.test(r.sel) && r.decls.some(function (d) { return d[0] === 'container-type' || d[0] === 'container'; }); }));
 
-    // ---- the pop-ups stay in view on short screens ----
-    // Bigger pop-up text made the weather pop-up scroll 55px in a 1280 x 600
-    // window; its globe now shrinks first (layout-sweep.js measures the fit).
-    ok('fluid: the weather pop-up is a flex column whose globe (140px at least) shrinks before the pop-up scrolls',
-      base('.modal-panel:has(.globe-frame)', 'flex-direction') === 'column' && base('.modal-panel:has(.globe-frame) .modal-body', 'min-height') === '0' &&
-      base('.modal-panel:has(.globe-frame) .globe-frame', 'flex') === '0 1 auto' && /^1[0-9]{2}px$/.test(base('.modal-panel:has(.globe-frame) .globe-frame', 'min-height') || ''));
 
     // ---- the other grids ----
     ok('fluid: "Right now" is one column, then two (never 3 + 1)', base('.right-now-grid', 'grid-template-columns') === 'minmax(0, 1fr)' && rules.some(function (r) { return r.sel === '.right-now-grid' && /min-width/.test(r.at) && r.decls.some(function (d) { return d[0] === 'grid-template-columns' && d[1] === 'repeat(2, minmax(0, 1fr))'; }); }));

@@ -89,7 +89,7 @@
       /--font-text: Figtree, 'Noto Sans JP'/.test(layer) && /--font-serif: Fraunces, Georgia/.test(layer));
 
     /* ---- touch targets ---- */
-    ['.site-nav a', '.lang-switch-btn', '.pill-link, .retry-btn', '.footer-top', '.story-cta, .story-link:hover .story-cta'].forEach(function (sel) {
+    ['.site-nav a', '.pill-link, .retry-btn', '.footer-top', '.story-cta, .story-link:hover .story-cta'].forEach(function (sel) {
       var esc = sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var m = new RegExp(esc + ' \\{[^}]*min-height: 44px').exec(layer);
       ok('redesign: ' + sel + ' is at least 44px tall', !!m);
@@ -112,8 +112,8 @@
         ok('redesign: every nav label and its aria-label has a Japanese phrase', missing.length === 0, missing.join(' | '));
       }
     }
-    ok('redesign: the language switch lives in the header, before the hero',
-      html.indexOf('class="site-header"') > 0 && html.indexOf('class="lang-switch"') > html.indexOf('class="site-header"') && html.indexOf('class="lang-switch"') < html.indexOf('<header class="hero">'));
+    ok('redesign: the header names the site Kazu Hub and carries no language switch, pop-up, floating button or footer credit',
+      /<a class="site-mark"[^>]*>Kazu Hub<\/a>/.test(html) && !/lang-switch|data-lang-set|cardModal|toTopBtn|meadow-credit|data-modal/.test(html));
     ok('redesign: the footer keeps a Back to top link', /<a class="footer-top" href="#top">Back to top<\/a>/.test(html));
 
     /* ---- what the layer retires stays out of sight, not out of the page ---- */

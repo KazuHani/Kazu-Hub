@@ -41,7 +41,7 @@
 
   // Intentionally English in Japanese mode: names, brands, handles, product
   // models, song and story titles.
-  var KEEP = ['English', 'Kazu Hani', 'Discord', 'Steam', 'MyAnimeList', 'Letterboxd', 'X', '@Kazu_Hani', 'Instagram',
+  var KEEP = ['Kazu Hani', 'Discord', 'Steam', 'MyAnimeList', 'Letterboxd', 'X', '@Kazu_Hani', 'Instagram',
     '@kazu_hani', 'YouTube', 'Reddit', 'u/Korat24', 'TikTok', 'MAL', 'Kazu_Hani', 'KazuHani', 'Gigabyte', 'NVIDIA GeForce',
     'RTX 4060', 'GeForce RTX', 'AMD Ryzen 5 3600', 'MSI B450 Tomahawk Max', '32 GB DDR4-3200', '2 TB', 'Western Digital HDD',
     '240 GB', 'Kingston SSD', '1 TB', 'Crucial P3 Plus M.2 PCIe 4.0 NVMe SSD', 'Cooler Master Hyper 212 Black Edition',
@@ -124,11 +124,8 @@
       'weather conditions': grab(/return \{ d: '([^']+)' \}/g),
       'Discord statuses': grab(/^\s+\w+: \['([^']+)', '#[0-9a-f]{6}'\],$/gm),
       'Steam statuses': grab(/return \['([^']+)', '#[0-9a-f]{6}'\];/g),
-      'pop-up titles': grab(/^\s+\w+: \{ title: '([^']+)'/gm),
-      'pop-up empty states': grab(/<div class="forecast-empty">([^<']+)</g),
       'Discord platforms': grab(/\{ k: '\w+', t: '([^']+)' \}/g),
-      'age tiles and fun units': grab(/(?:statTile|funCell)\([^,]+(?:\([^)]*\))?[^,]*, '([^']+)'\)/g),
-      'countdown labels': grab(/cdCell\('\w+', [^,]+(?:\([^)]*\))?, '([^']+)'\)/g)
+      
     };
     Object.keys(families).forEach(function (name) {
       var list = families[name];
@@ -284,13 +281,10 @@
     // ---- markup, load order, precache ----
     var cont = html.indexOf('<div class="container">');
     var sw0 = html.indexOf('<div class="lang-switch"');
-    ok('i18n: the switch is the first thing on the page, above the announcement and the hero', sw0 > cont && sw0 < html.indexOf('id="hubBulletin"') && sw0 < html.indexOf('<header class="hero">'));
-    ok('i18n: the switch has an English and a Japanese button, English pressed by default', html.indexOf('data-lang-set="en" lang="en" aria-pressed="true">English</button>') !== -1 && html.indexOf('data-lang-set="ja" lang="ja" aria-pressed="false">日本語</button>') !== -1);
     ok('i18n: the page starts in English', /<html lang="en">/.test(html));
     var ver = (/<script src="i18n\.js\?v=(\d+)"><\/script>/.exec(html) || [])[1];
     ok('i18n: i18n.js loads after site-config.js and before script.js (its observer must be live before script.js writes)', !!ver && html.indexOf('<script src="site-config.js') < html.indexOf('<script src="i18n.js') && html.indexOf('<script src="i18n.js') < html.indexOf('<script src="script.js'));
     ok('i18n: the service worker precaches the same i18n.js version', !!ver && sw.indexOf("'./i18n.js?v=" + ver + "'") !== -1);
-    ok('i18n: the switch has a 44px tap target on touch screens', /@media \(pointer: coarse\) \{ \.lang-switch-btn \{ min-height: 44px;/.test(css));
     // ---- quotes ----
     var fbBlock = (/const FALLBACK_QUOTES = \[([\s\S]*?)\n  \];/.exec(scriptSrc) || [])[1] || '';
     var fb = [], fre = /\['((?:[^'\\]|\\.)*)', '((?:[^'\\]|\\.)*)'\]/g, fm;
@@ -361,8 +355,6 @@
     // ---- theme: the switch follows the active palette ----
     function rule(sel) { var at = css.indexOf('\n' + sel + ' {'); if (at === -1) return null; var open = css.indexOf('{', at); return css.slice(open + 1, css.indexOf('}', open)); }
     var swRule = rule('.lang-switch'), onRule = rule('.lang-switch-btn[aria-pressed="true"]'), blRule = rule('.hub-bulletin');
-    ok('theme: the switch fill and border come from the palette, no fixed colours', !!swRule && /background: var\(--chip-bg\);/.test(swRule) && /border: var\(--chip-bd\);/.test(swRule) && !/rgba?\(|#[0-9a-f]{3}/i.test(swRule), swRule);
-    ok('theme: the pressed button is the palette accent with its own label colour', !!onRule && /background: var\(--accent\)/.test(onRule) && /color: var\(--on-accent\)/.test(onRule) && !/#[0-9a-f]{3}/i.test(onRule), onRule);
     ok('theme: the announcement strip uses the same palette tokens', !!blRule && /background: var\(--chip-bg\);/.test(blRule) && /border: var\(--chip-bd\);/.test(blRule) && /color: var\(--on-accent\)/.test(rule('.hub-bulletin-link') || ''));
     function hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.replace(/./g, '$&$&'); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
     function lum(c) { var v = c.map(function (x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }

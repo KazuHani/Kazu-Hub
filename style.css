@@ -85,16 +85,12 @@ body * {
 .music-playlist-name,
 .music-playlist-name *,
 .story-title,
-.story-title *,
-.modal-title,
-.modal-title * {
+.story-title * {
   font-size: var(--font-size-title) !important;
 }
 
 .stat-value,
-.stat-value *,
-.to-top,
-.to-top * {
+.stat-value * {
   font-size: var(--font-size-display) !important;
 }
 
@@ -206,8 +202,6 @@ body * {
 .music-track-artist *,
 .story-cta,
 .story-cta *,
-.meadow-credit,
-.meadow-credit *,
 .quote-author,
 .quote-author * {
   font-size: var(--font-size-small) !important;
@@ -611,32 +605,9 @@ html[lang="ja"] .quote-text::before { content: '「'; } html[lang="ja"] .quote-t
   margin-top: clamp(6px, 1.875vw, 8px); font-size: clamp(12.5px, 3.9063vw, 16.25px); font-weight: 800; letter-spacing: .06em;
   text-transform: uppercase; color: var(--accent);
 }
-
-/* ---- Language switch (i18n.js) ----
-   English / 日本語, top right of the page. It tucks into the container's top
-   padding so the hero barely moves. Flat fill like the announcement strip: no
-   blur, no animation, nothing running at rest. Colours come from the active
-   palette's chip tokens, so it follows Christmas, Halloween and the rest. */
-.lang-switch {
-  display: flex; gap: 2px; width: max-content; margin: calc(-1 * clamp(12px, 3vw, 40px)) 0 14px auto;
-  padding: 3px; border-radius: 999px;
-  background: var(--chip-bg); border: var(--chip-bd);
-}
-.lang-switch-btn {
-  appearance: none; border: 0; background: none; color: var(--ink-soft); cursor: pointer;
-  font: inherit; font-size: 13px; font-weight: 800; line-height: 1; letter-spacing: .02em;
-  padding: 7px 14px; border-radius: 999px;
-}
-.lang-switch-btn:hover { color: var(--ink); }
-.lang-switch-btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-.lang-switch-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-@media (pointer: coarse) { .lang-switch-btn { min-height: 44px; padding: 0 16px; } }
 /* Japanese visitor, before i18n.js has run: keep the English text off screen
    (set by #boot-lang in <head>; i18n.js lifts it, a 3 s timeout is the failsafe). */
 html.i18n-pending .container, html.i18n-pending .footer { visibility: hidden; }
-/* Birthday pop-up head: "Turning <strong>25</strong> on <date>" puts the age
-   first in Japanese, and the age needs its counter (歳). */
-html[lang="ja"] .modal-panel--bday .modal-note--center strong::after { content: '歳'; }
 
 /* ---- Announcement (set from the control panel) ----
    One quiet strip above the hero, shown only while the owner has it switched
@@ -1253,35 +1224,6 @@ a.recent-game-row[href]:hover { background: rgba(102,192,244,.12); }
 .story-link:hover .story-cta { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0,0,0,.28); gap: 11px; }
 
 /* ---- Back to top ---- */
-/* Fades + scales in/out instead of popping via display:none, matching the
-   .scroll-reveal easing used everywhere else. Stays display:flex at all times
-   so the transition can actually run; .to-top.hidden overrides the generic
-   .hidden{display:none!important} rule (two classes beats one at equal
-   !important weight) and drives the hidden state with opacity/transform/
-   pointer-events instead. right reaches 28px (not 20px) from 640px because
-   the custom page scrollbar (.cscroll, wider than 768px only) ends flush at
-   20px from the screen edge (4px offset + 16px wide): 28px leaves an 8px gap
-   instead of touching it. No hover state by design; only :active gives press
-   feedback. */
-.to-top {
-  position: fixed; right: clamp(14px, 4.375vw, 28px); bottom: max(clamp(16px, 5vw, 20px), env(safe-area-inset-bottom, 16px)); z-index: 50;
-  width: clamp(60px, 17vw, 68px); height: clamp(60px, 17vw, 68px);
-  border-radius: 50%; border: none; cursor: pointer;
-  background: linear-gradient(150deg,#0ea5e9,#7c5cff); color: #fff; font-size: clamp(18px, 5.625vw, 23px); line-height: 1;
-  box-shadow: 0 12px 28px rgba(80,110,230,.42); display: flex; align-items: center; justify-content: center;
-  opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
-  transition: opacity .35s cubic-bezier(.21,.6,.35,1), transform .3s cubic-bezier(.34,1.6,.55,1);
-}
-.to-top:active { transform: translateY(-1px) scale(.96); }
-.to-top.hidden {
-  display: flex !important;
-  opacity: 0;
-  transform: translateY(14px) scale(.85);
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .to-top { transition: none; }
-}
 
 /* ============ MEADOW FOOTER (a grassy field with a house) ============ */
 /* The last thing on the page: a full-bleed illustrated field with a cottage,
@@ -1525,11 +1467,6 @@ html.no-sakura .mf-blossom { display: none; }
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; pointer-events: none;
   background: linear-gradient(to top, rgba(4,26,12,.55), rgba(4,26,12,0));
 }
-.meadow-credit {
-  position: absolute; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom, 0px)); z-index: 1;
-  margin: 0; padding: 0 16px; font-size: 13px; font-weight: 800; letter-spacing: .02em;
-  color: #f4f8e6; text-shadow: 0 1px 3px rgba(4,24,12,.75);
-}
 /* Fade in only: the generic .scroll-reveal also slides the element 28px, and a
    full-bleed element at the very bottom of the page would grow the document. */
 .footer.meadow.scroll-reveal, .footer.meadow.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }
@@ -1553,15 +1490,10 @@ body.season-christmas .footer.meadow {
   --m-ink: clamp(0, calc((0.65 - var(--m-day)) * 100), 1);
 }
 body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }
-body.season-christmas .meadow-credit { color: #0f3b2a; text-shadow: 0 1px 0 rgba(255,255,255,.65); }
 /* Without colour-mix() the field keeps its day colours all day, so no shade and dark ink. */
 body.season-christmas .meadow::after { display: none; }
 @supports (color: color-mix(in oklab, red 50%, blue)) {
   body.season-christmas .meadow::after { display: block; opacity: var(--m-ink); background: linear-gradient(to top, rgba(4,26,12,.8), rgba(4,26,12,0)); }
-  body.season-christmas .meadow-credit {
-    color: color-mix(in oklab, #f4f8e6 calc(var(--m-ink) * 100%), #0f3b2a);
-    text-shadow: 0 1px 3px rgba(4,24,12,calc(.75 * var(--m-ink))), 0 1px 0 rgba(255,255,255,calc(.65 - .65 * var(--m-ink)));
-  }
 }
 
 /* October: an autumn field; its existing day/night and sunset mixes still run. */
@@ -1606,7 +1538,6 @@ html.season-halloween .mf-halloween { display: block; }
 .mf-hw-pool { fill: url(#mf-hw-pool); opacity: var(--m-lit); }
 .mf-hw-halo { fill: url(#mf-hw-halo); opacity: var(--m-lit); }
 html.season-halloween .mf-flowers, html.season-halloween .mf-blossom { display: none; }
-html.season-halloween .meadow-credit { color: #fff1d9; }
 
 /* Christmas: a snowman beside the cottage, a wreath on the door and a string of
    lights under the eaves. Static like the rest of the field; the bulbs' halos
@@ -1651,12 +1582,6 @@ body.season-birthday .title {
   -webkit-text-fill-color: transparent;
 }
 body.season-birthday .stat-card--bday {
-  background: linear-gradient(150deg, #ff5ea8 0%, #a05cff 100%);
-  box-shadow: 0 16px 34px rgba(160,92,255,.35);
-}
-/* The birthday pop-up wears its tile's seasonal colours too (see script.js
-   flyModal: the tile grows into the panel, so the two must match). */
-body.season-birthday .modal-panel--bday {
   background: linear-gradient(150deg, #ff5ea8 0%, #a05cff 100%);
   box-shadow: 0 16px 34px rgba(160,92,255,.35);
 }
@@ -1723,11 +1648,6 @@ body.season-christmas .stat-card--bday {
   border: 1px solid rgba(255,209,102,.5);
   box-shadow: 0 16px 34px rgba(80,8,26,.5);
 }
-body.season-christmas .modal-panel--bday {
-  background: linear-gradient(150deg, #a4133c, #6d0f28);
-  border: 1px solid rgba(255,209,102,.5);
-  box-shadow: 0 16px 34px rgba(80,8,26,.5);
-}
 body.season-christmas .discord-card,
 body.season-christmas .steam-card,
 body.season-christmas .mal-card {
@@ -1790,15 +1710,6 @@ html.season-halloween body:not(.season-birthday) .stat-card--bday {
   background: linear-gradient(145deg, #ad6038, #63384e); border-color: rgba(255,194,121,.45);
   box-shadow: 0 16px 34px rgba(62,26,32,.35);
 }
-/* Pop-ups match the tile they grew out of: the plum glass of the other stat
-   tiles, and the pumpkin gradient for the birthday one. */
-html.season-halloween .modal-panel {
-  background: linear-gradient(145deg, rgba(108,68,105,.3), rgba(89,50,62,.16)), var(--card-bg);
-}
-html.season-halloween body:not(.season-birthday) .modal-panel--bday {
-  background: linear-gradient(145deg, #ad6038, #63384e); border-color: rgba(255,194,121,.45);
-  box-shadow: 0 16px 34px rgba(62,26,32,.35);
-}
 html.season-halloween .card-head-title,
 html.season-halloween .story-title,
 html.season-halloween .stat-label,
@@ -1817,7 +1728,6 @@ html.season-halloween .dev-reset,
 html.season-halloween .dev-seg,
 html.season-halloween .dev-panel-close { border-color: rgba(223,159,103,.4); background: rgba(194,127,91,.12); }
 html.season-halloween .dev-seg button.is-active { background: var(--accent); color: #382137; }
-html.season-halloween .modal-panel { border-color: rgba(223,159,103,.4); }
 html.season-halloween a:focus-visible,
 html.season-halloween button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 html.season-halloween .cscroll-thumb { background: linear-gradient(180deg, #ffe5ba, #dfa87d); }
@@ -1859,26 +1769,6 @@ body.season-christmas .right-now-grid,
 body.season-christmas .socials-grid,
 body.season-christmas .pc-specs-grid,
 body.season-christmas .stories-grid { row-gap: 30px; }
-/* While the pop-up flies, true-size copies of its snow and the card's ride
-   over it (script.js frostFly): each copy (> div, which carries its fade) is
-   its 9-slice cut into eight pieces (> div > div), every piece one slice of
-   the picture (its image set by a rule in the layer's own <style>, its size
-   and slice inline), moved and stretched by transform alone so the whole
-   flight stays on the compositor with the pop-up and repaints nothing.
-   The layer is only an anchor at the overlay's top-left (0x0, so nothing is
-   screen-sized). No blend mode: an isolated plus-lighter group over the whole
-   screen cost an offscreen pass every frame (perf.js modal, desktop). */
-.frost-flight { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 1; pointer-events: none; contain: size layout style; }
-.frost-flight > div { position: absolute; left: 0; top: 0; }
-.frost-flight > div > div { position: absolute; left: 0; top: 0; transform-origin: 0 0; background-repeat: no-repeat; }
-/* The open pop-up wears the snow too (script.js frostModal). Desktop always
-   leaves at least 20px above it (13px of snow); a phone lets a tall pop-up
-   run to the overlay's padding (--ov-pad, 10px on a 320px phone), which would
-   cut the snow off, so it starts 13px further down instead. */
-@media (max-width: 560px) {
-  body.season-christmas .modal-overlay { padding-top: calc(var(--ov-pad) + 13px); }
-  body.season-christmas .modal-panel { max-height: min(90vh, calc(100dvh - 2 * var(--ov-pad) - 13px)); }
-}
 
 /* ---- Christmas: string lights along the top of the page ----
    Static SVG in index.html: steady bulbs with a soft glow (real fairy lights
@@ -2214,218 +2104,6 @@ body.low-power .populated-in { animation: none; }
    script.js). The panel reuses the same brand-tinted glass + glint as the
    stat/social tiles so it sits in the existing visual language. */
 
-/* clickable affordance on the four tiles */
-.stat-card[data-modal] {
-  cursor: pointer;
-  transition: transform .25s cubic-bezier(.34,1.45,.55,1), box-shadow .25s ease;
-}
-.stat-card[data-modal]:hover { transform: translateY(-3px); }
-.stat-card[data-modal]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.stat-card[data-modal]::after {
-  content: "\2922"; /* ⤢ expand */
-  position: absolute; right: 12px; bottom: 9px; z-index: 2;
-  font-size: 14px; line-height: 1; color: var(--ink-soft);
-  opacity: 0; transition: opacity .25s ease; pointer-events: none;
-}
-.stat-card[data-modal]:hover::after,
-.stat-card[data-modal]:focus-visible::after { opacity: .65; }
-.stat-card--bday[data-modal]::after { color: rgba(255,255,255,.9); }
-@media (pointer: coarse), (max-width: 768px) {
-  .stat-card[data-modal]::after { opacity: .45; }
-}
-
-body.modal-open { overflow: hidden; }
-
-/* The dim + blur backdrop lives on ::before so only IT fades; the panel itself
-   is moved by script.js (openModal/closeModal), which flies it from the card
-   that was clicked to its resting place and back again (FLIP, Web Animations). */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: center;
-  --ov-pad: clamp(10px, 3.125vw, 20px); padding: var(--ov-pad);
-}
-.modal-overlay::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: rgba(4,10,22,.55);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  opacity: 0; transition: opacity .34s ease;
-}
-.modal-overlay.is-open::before { opacity: 1; }
-.modal-panel.is-flying { -webkit-backdrop-filter: none; backdrop-filter: none; }
-/* The flying pop-up's drop shadow (script.js flightShadow): the clip-path that
-   shapes the panel in flight cuts its own shadow off, so this box carries it,
-   under the panel and over the dimmed backdrop. Transform-only animation. */
-.modal-flight-shadow { position: absolute; pointer-events: none; transform-origin: 0 0; will-change: transform; }
-/* Phones: a plain dim instead of a live blur behind the moving panel */
-@media (pointer: coarse), (max-width: 768px) {
-  .modal-overlay::before { background: rgba(4,10,22,.68); -webkit-backdrop-filter: none; backdrop-filter: none; }
-}
-.modal-overlay[hidden] { display: none; }
-
-.modal-panel {
-  position: relative; width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
-  border-radius: clamp(20px, 6.25vw, 26px); padding: clamp(20px, 6.25vw, 26px) clamp(14px, 4.375vw, 24px) clamp(22px, 6.875vw, 28px); color: var(--ink);
-  background:
-    linear-gradient(150deg, rgba(14,165,233,.18), rgba(124,92,255,.18)),
-    var(--card-bg);
-  -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
-  /* identical edge light + drop shadow to the stat tiles, so the tile and the
-     panel it grows into look like one object at both sizes */
-  --glint:
-    inset 0 1.5px 0.5px rgba(255, 255, 255, .55),
-    inset 2px 3px 4px rgba(255, 255, 255, .18),
-    inset -2px -3px 8px rgba(0, 0, 0, .24);
-  box-shadow: var(--card-shadow), var(--glint);
-  transform-origin: 0 0; will-change: transform;
-}
-.modal-panel--wide { max-width: 760px; }
-/* focused only to anchor the focus-trap — no visible ring on the container itself */
-.modal-panel:focus { outline: none; }
-
-.modal-close {
-  position: absolute; top: clamp(10px, 3.125vw, 14px); right: clamp(10px, 3.125vw, 14px); width: clamp(36px, 11.25vw, 38px); height: clamp(36px, 11.25vw, 38px);
-  border: none; cursor: pointer; border-radius: 50%;
-  background: rgba(140,170,210,.18); color: var(--ink);
-  font-size: clamp(22px, 6.875vw, 24px); line-height: 1; display: flex; align-items: center; justify-content: center;
-  transition: background .2s ease, transform .2s ease;
-}
-.modal-close:hover { background: rgba(140,170,210,.34); transform: rotate(90deg) scale(1.06); }
-
-.modal-title {
-  font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(20px, 6.25vw, 26px);
-  margin: 2px clamp(34px, 10.625vw, 44px) clamp(14px, 4.375vw, 18px) 2px; color: var(--ink);
-  display: flex; align-items: center; gap: 9px;
-}
-.modal-body { font-size: clamp(15px, 4.6875vw, 19.5px); }
-.modal-lead { font-size: clamp(14px, 4.375vw, 18.2px); font-weight: 600; color: var(--ink-soft); line-height: 1.5; margin-bottom: 10px; }
-.modal-lead-src { font-size: clamp(12px, 3.75vw, 15.6px); color: var(--ink-faint); }
-.modal-credit { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 600; color: var(--ink-faint); margin-top: 10px; }
-.modal-credit--center { text-align: center; }
-
-.modal-note {
-  margin-top: 12px; background: rgba(140,170,210,.12); border-radius: 16px;
-  padding: 12px 16px; font-size: clamp(14px, 4.375vw, 18.2px); font-weight: 600; color: var(--ink-soft); line-height: 1.5;
-}
-.modal-note--center { text-align: center; color: var(--ink); }
-.modal-note strong { color: var(--ink); font-weight: 800; }
-.modal-note-hr { height: 1px; background: rgba(140,170,210,.22); margin: 10px 0; }
-.modal-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.modal-row-sub { color: var(--ink-faint); font-weight: 700; }
-.modal-row.modal-row-sub { margin-top: 6px; font-size: clamp(13px, 4.0625vw, 16.9px); }
-
-.modal-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-.modal-actions--center { justify-content: center; }
-.modal-btn {
-  display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none;
-  text-decoration: none; font-family: inherit; font-size: clamp(14px, 4.375vw, 18.2px); font-weight: 800;
-  padding: 11px 18px; border-radius: 999px; color: #fff;
-  background: linear-gradient(150deg,#0ea5e9,#7c5cff);
-  box-shadow: 0 8px 20px rgba(80,110,230,.35);
-  transition: transform .25s cubic-bezier(.34,1.5,.6,1), box-shadow .25s ease, filter .25s ease, background .2s ease;
-}
-.modal-btn:hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.08); box-shadow: 0 12px 26px rgba(80,110,230,.5); }
-.modal-btn:active { transform: scale(.97); }
-.modal-btn--ghost { background: rgba(140,170,210,.16); color: var(--ink); box-shadow: none; }
-.modal-btn--ghost:hover { background: rgba(140,170,210,.3); filter: none; }
-
-/* Time modal */
-.tz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.tz-cell { background: rgba(140,170,210,.12); border-radius: 16px; padding: 13px 16px; }
-.tz-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
-.tz-time { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(28px, 8.75vw, 36.4px); line-height: 1.05; margin-top: 6px; font-variant-numeric: tabular-nums; }
-.tz-meta { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 700; color: var(--ink-soft); margin-top: 4px; }
-
-/* Weather globe — clamp keeps the whole pop-up scroll-free on laptop-height screens */
-.globe-frame {
-  position: relative; width: 100%; height: clamp(200px, 34vh, 340px);
-  border-radius: 18px; overflow: hidden; background: #05070d;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
-}
-.globe-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
-/* On a short screen the weather pop-up gives up globe height (down to 140px)
-   before it scrolls, so the forecast and the buttons stay in view: the panel
-   and its body are flex columns, and the globe is the only item that shrinks
-   (the text keeps its content height). A 1280 x 600 window used to scroll
-   55px once the pop-up text took its full size; a 375 x 667 phone 63px. */
-.modal-panel:has(.globe-frame) { display: flex; flex-direction: column; }
-.modal-panel:has(.globe-frame) .modal-body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-.modal-panel:has(.globe-frame) .globe-frame { flex: 0 1 auto; min-height: 140px; }
-
-/* 5-day forecast strip (weather modal) */
-.forecast-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: clamp(6px, 1.875vw, 8px); margin-top: 12px; }
-.forecast-day {
-  background: rgba(140,170,210,.12); border-radius: 14px; padding: clamp(8px, 2.5vw, 9px) clamp(3px, .9375vw, 6px);
-  text-align: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
-}
-.forecast-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-.forecast-condition { font-size: clamp(12px, 3.75vw, 15.6px); line-height: 1.35; min-height: 2.7em; margin: 8px 0; }
-.forecast-emoji { font-size: clamp(20px, 6.25vw, 24px); line-height: 1.2; margin-top: 5px; }
-.forecast-temps { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(13px, 4.0625vw, 16.9px); margin-top: 4px; font-variant-numeric: tabular-nums; color: var(--ink); }
-.forecast-min { color: var(--ink-soft); font-weight: 500; }
-.forecast-precip { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: #7db8f0; margin-top: 3px; font-variant-numeric: tabular-nums; }
-.forecast-empty { grid-column: 1 / -1; text-align: center; font-size: clamp(13px, 4.0625vw, 16.9px); font-weight: 700; color: var(--ink-soft); padding: 10px 0; }
-
-/* Age modal */
-.age-head { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(21px, 6.5625vw, 28px); color: var(--ink); margin-bottom: clamp(8px, 2.5vw, 12px); }
-.age-head .age-sub { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: clamp(14px, 4.375vw, 18.2px); color: var(--ink-soft); }
-/* minmax(min(200px,100%),1fr): the heartbeats count is 12 chars at 23px (~160px),
-   so 4-across 118px tiles clipped it against the panel edge. 200px minimum wraps
-   the row to 2x2 in the 512px modal and 1-up on phones. */
-.stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px,100%),1fr)); gap: clamp(8px, 2.5vw, 10px); }
-.stat-tile { background: rgba(140,170,210,.12); border-radius: clamp(13px, 4.0625vw, 16px); padding: clamp(9px, 2.8125vw, 12px) clamp(11px, 3.4375vw, 16px); }
-.stat-tile-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(18px, 5.625vw, 23.4px); line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
-.stat-tile-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: var(--ink-soft); margin-top: clamp(4px, 1.25vw, 6px); }
-.sign-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; background: rgba(140,170,210,.12); border-radius: clamp(13px, 4.0625vw, 16px); padding: clamp(9px, 2.8125vw, 12px) clamp(12px, 3.75vw, 16px); }
-.sign-glyph { font-size: 34px; line-height: 1; flex: none; }
-.sign-name { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(17px, 5.3125vw, 22.1px); color: var(--ink); line-height: 1.1; }
-/* Fun units (age modal): playful equivalents from ageBreakdown — replaced the
-   old life-in-weeks canvas so the pop-up fits without scrolling. */
-.fun-wrap { margin-top: clamp(10px, 3.125vw, 14px); }
-.fun-title { font-size: clamp(12px, 3.75vw, 15.6px); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-.fun-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px,100%),1fr)); gap: clamp(8px, 2.5vw, 10px); margin-top: clamp(6px, 1.875vw, 9px); }
-.fun-cell { display: flex; align-items: center; gap: clamp(8px, 2.5vw, 12px); background: rgba(140,170,210,.12); border-radius: clamp(12px, 3.75vw, 14px); padding: clamp(8px, 2.5vw, 10px) clamp(10px, 3.125vw, 14px); }
-.fun-emoji { font-size: clamp(22px, 6.875vw, 26px); line-height: 1; flex: none; }
-.fun-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(16px, 5vw, 20.8px); line-height: 1.05; font-variant-numeric: tabular-nums; color: var(--ink); }
-.fun-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
-
-/* Age modal layout: wider panel, tiles always 2-up, milestone + star sign side
-   by side and fun units 4-up on desktop; everything stays 2-up and compact on
-   phones so the whole pop-up fits one screen with no inner scroll. Its padding
-   and notes start tighter than the other pop-ups' (the most content). */
-.modal-panel--age { max-width: 680px; padding: clamp(16px, 5vw, 26px) clamp(12px, 3.75vw, 24px) clamp(16px, 5vw, 28px); }
-.modal-panel--age .modal-title { margin-bottom: clamp(8px, 2.5vw, 18px); }
-.modal-panel--age .modal-note { padding: clamp(9px, 2.8125vw, 12px) clamp(12px, 3.75vw, 16px); border-radius: clamp(13px, 4.0625vw, 16px); line-height: 1.4; }
-.modal-panel--age .modal-row.modal-row-sub { margin-top: clamp(3px, .9375vw, 6px); }
-.modal-panel--age .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.modal-panel--age .fun-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.age-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 2.5vw, 10px); margin-top: clamp(8px, 2.5vw, 10px); }
-.age-meta .modal-note, .age-meta .sign-row { margin-top: 0; }
-.age-meta .sign-row { align-items: center; }
-@media (max-width: 640px) {
-  .modal-panel--age .fun-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .age-meta { grid-template-columns: 1fr; }
-}
-
-/* Birthday countdown */
-.countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(6px, 1.875vw, 10px); margin-top: 12px; }
-.cd-cell { background: rgba(140,170,210,.14); border-radius: clamp(12px, 3.75vw, 16px); padding: clamp(8px, 2.5vw, 12px) clamp(3px, .9375vw, 6px); text-align: center; }
-.cd-num { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: clamp(26px, 8.125vw, 33.8px); line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
-.cd-label { font-size: clamp(11px, 3.4375vw, 14.3px); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-top: 6px; }
-
-@media (max-width: 520px) {
-  .tz-grid { grid-template-columns: 1fr; }
-  .modal-actions { flex-direction: column; }
-  .modal-btn { justify-content: center; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal-overlay::before { transition: opacity .2s ease; }
-  .modal-close:hover { transform: none; }
-  .stat-card[data-modal] { transition: none; }
-  .stat-card[data-modal]:hover { transform: none; }
-  .modal-btn:hover { transform: none; }
-}
-
 /* ---- Konami dragon easter egg ----
    Fixed-position, pointer-events none, created on the fly by script.js.
    The  glyph faces left, so every keyframe keeps scaleX(-1) to fly right. */
@@ -2567,9 +2245,6 @@ body.modal-open { overflow: hidden; }
 a.music-track-row { text-decoration: none; color: inherit; border-radius: 10px; }
 a.music-track-row:hover { background: rgba(255,255,255,.08); }
 
-/* ---- Weather modal: "compare with your sky" output ---- */
-.sky-compare { margin-top: 16px; }
-
 /* ============ CUSTOM SCROLLBAR ============ */
 /* JS-built page scroller (see the custom-scrollbar IIFE in script.js). The
    native bar is hidden only once script.js sets html.has-cscroll — which it
@@ -2651,10 +2326,6 @@ html.cscroll-dragging, html.cscroll-dragging * {
 .cscroll-host { scrollbar-width: none; }
 .cscroll-host::-webkit-scrollbar { display: none; }
 
-/* Page scroll is locked while a modal is open (body.modal-open) — the window
-   bar would be a dead control, so it goes away until the modal closes. */
-body.modal-open > .cscroll { display: none; }
-
 /* ============ SCROLL PERFORMANCE ============ */
 /* Render containment: below-the-fold glass cards skip layout/paint entirely
    until they approach the viewport. Each of these carries a backdrop-filter,
@@ -2730,9 +2401,7 @@ body.low-power .mal-card,
 body.low-power .lb-card,
 body.low-power .story-card,
 body.low-power .toast,
-body.low-power .dev-panel,
-body.low-power .modal-overlay::before,
-body.low-power .modal-panel {
+body.low-power .dev-panel {
   -webkit-backdrop-filter: none !important;
           backdrop-filter: none !important;
 }
@@ -2766,9 +2435,6 @@ body.low-power .scroll-reveal {
    needs no size overrides; this block only covers what a narrow touch
    screen does differently. */
 @media (max-width: 560px) {
-  /* A phone's vh is taller than what is on screen (the address bar), so the
-     pop-up is capped by dvh too. */
-  .modal-panel { max-height: min(90vh, calc(100dvh - 2 * var(--ov-pad))); }
   .toast {
     width: min(calc(100vw - 24px), 380px);
     bottom: max(16px, env(safe-area-inset-bottom, 16px));
@@ -2783,14 +2449,10 @@ body.low-power .scroll-reveal {
   }
 
   /* Tactile active feedback for touch */
-  .card[role="button"]:active,
-  .stat-card[data-modal]:active,
   .pill-link:active,
-  .retry-btn:active,
-  .modal-btn:active,
-  .modal-close:active,
-  .story-cta:active,
-  .quote-box:active {
+.retry-btn:active,
+.story-cta:active,
+.quote-box:active {
     transform: scale(0.97);
     transition-duration: .08s;
   }
@@ -2882,7 +2544,7 @@ body:not(#rd) {
   }
   .card::before, .card::after { content: none; }
 
-  /* ---- Header: wordmark, section links, language switch ---- */
+  /* ---- Header: wordmark and section links ---- */
   .site-header {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: 8px 24px; padding: 14px 0; border-bottom: 1px solid var(--line);
@@ -2898,18 +2560,6 @@ body:not(#rd) {
     display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px;
     font-size: 15px !important; font-weight: 500; text-decoration: none;
   }
-  .lang-switch {
-    display: flex; gap: 0; width: auto; margin: 0; padding: 0; align-items: center; min-height: 46px;
-    background: none; border: 1px solid var(--line-strong); border-radius: 9px;
-  }
-  .lang-switch-btn {
-    min-height: 44px; padding: 0 14px; border-radius: 8px; color: var(--ink);
-    font-size: 14px !important; font-weight: 600; letter-spacing: 0; cursor: pointer;
-  }
-  .lang-switch-btn:hover { color: var(--ink); }
-  .lang-switch-btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
-  .lang-switch-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
   /* ---- Announcement strip ---- */
   .hub-bulletin {
     margin: 16px 0 0; padding: 12px 16px; border-radius: 8px; background: none;
@@ -2967,13 +2617,11 @@ body:not(#rd) {
   }
   @media (min-width: 1000px) { .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 32px; } }
   .stat-card {
-    position: relative; display: block; padding: 17px 0 0; text-align: left; min-width: 0; cursor: pointer;
-    border-radius: 12px;
+    position: relative; display: block; padding: 17px 0 0; text-align: left; min-width: 0;
   }
   .stat-card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--line);
   }
-  .stat-card:hover .stat-value { color: var(--accent); }
   .stat-label {
     font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted) !important;
   }
@@ -2982,7 +2630,6 @@ body:not(#rd) {
     margin-top: 6px; line-height: 1.15; font-weight: 600; color: var(--ink);
   }
   .stat-card--bday .stat-value { color: var(--ink); }
-  .stat-card--bday:hover .stat-value { color: var(--accent); }
   .stat-sub, .stat-faint { margin-top: 4px; font-weight: 400; color: var(--muted); }
   .stat-loading-text { font-weight: 400; color: var(--muted); }
   .stat-card .retry-btn { margin-top: 8px; }
@@ -3215,23 +2862,13 @@ body:not(#rd) {
 
   /* ---- Footer ---- */
   .footer.meadow {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px 24px;
     width: calc(100% - 2 * max(var(--gutter), env(safe-area-inset-left))); max-width: calc(1080px - 2 * var(--gutter));
     margin: 96px auto 0; padding: 20px 0 96px;
     border-top: 1px solid var(--line); text-align: left; overflow: visible;
     content-visibility: visible; contain-intrinsic-block-size: auto;
   }
-  .meadow-credit {
-    position: static; margin: 0; padding: 0; font-weight: 400; letter-spacing: 0; color: var(--muted); text-shadow: none;
-  }
   .footer-top { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--ink); font-size: 16px !important; }
-
-  /* ---- Floating back-to-top ---- */
-  .to-top {
-    width: 48px; height: 48px; background: var(--ink); color: var(--bg); border: 1px solid var(--ink); box-shadow: none;
-    font-size: 20px !important;
-  }
-  .to-top * { font-size: 20px !important; }
 
   /* ---- Toast ---- */
   .toast {
@@ -3247,37 +2884,6 @@ body:not(#rd) {
   .cscroll-thumb:hover, .cscroll-dragging .cscroll-thumb { background: var(--muted); }
   .cscroll-btn, .cscroll-btn:hover { color: var(--muted); }
   .cscroll-btn:hover { color: var(--ink); }
-
-  /* ---- Pop-ups: a flat sheet over a plain dim ---- */
-  .modal-overlay::before { background: rgba(23, 25, 28, .45); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .modal-panel {
-    background: var(--bg); border: 1px solid var(--line-strong); border-radius: 12px; color: var(--ink);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, .2); -webkit-backdrop-filter: none; backdrop-filter: none;
-  }
-  .modal-title { font-weight: 600; line-height: 1.25; letter-spacing: -.01em; color: var(--ink); }
-  .modal-close { background: none; border: 1px solid var(--line-strong); color: var(--ink); }
-  .modal-close:hover { background: none; border-color: var(--ink); transform: none; }
-  .modal-lead, .modal-lead-src, .modal-credit, .modal-row-sub, .age-head .age-sub { color: var(--muted); font-weight: 400; }
-  .modal-note, .tz-cell, .forecast-day, .stat-tile, .sign-row, .fun-cell, .cd-cell {
-    background: none; border: 1px solid var(--line); border-radius: 8px; box-shadow: none;
-  }
-  .modal-note { color: var(--muted); font-weight: 400; }
-  .modal-note--center, .modal-note strong { color: var(--ink); }
-  .modal-note strong { font-weight: 600; }
-  .modal-note-hr { background: var(--line); }
-  .tz-label, .forecast-label, .fun-title, .cd-label, .stat-tile-label, .fun-label, .tz-meta, .forecast-min, .forecast-empty {
-    color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none;
-  }
-  .tz-time, .age-head, .stat-tile-num, .fun-num, .sign-name, .cd-num, .forecast-temps { color: var(--ink); font-weight: 600; }
-  .forecast-precip { color: var(--accent); }
-  .globe-frame { border-radius: 8px; }
-  .modal-btn {
-    min-height: 44px; padding: 0 16px; justify-content: center; border-radius: 8px; box-shadow: none; filter: none;
-    background: var(--ink); color: var(--bg); font-weight: 600;
-  }
-  .modal-btn:hover { transform: none; filter: none; box-shadow: none; background: var(--accent); color: var(--bg); }
-  .modal-btn--ghost { background: none; color: var(--ink); border: 1px solid var(--line-strong); }
-  .modal-btn--ghost:hover { background: none; border-color: var(--ink); color: var(--ink); }
 
   /* ---- Phones and narrow windows ---- */
   @media (max-width: 720px) {

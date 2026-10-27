@@ -1037,7 +1037,6 @@ require('./evals/emoji-free.js').run(L, scriptSrc, [{ name: 'index.html', text: 
 require('./evals/perf-guards.js').run(L, scriptSrc, cssSrc, htmlSrc, ok, eq);
 require('./evals/site-control.js').run(require('./site-config.js'), scriptSrc, htmlSrc.replace(/\r\n/g, '\n'), fs.readFileSync(__dirname + '/sw.js', 'utf8').replace(/\r\n/g, '\n'), ok, eq);
 require('./evals/christmas.js').run(L, FX, scriptSrc, cssSrc, htmlSrc, ok, eq);
-require('./evals/modal-motion.js').run(L, scriptSrc, cssSrc, ok, eq);
 const FLUID = require('./evals/fluid-layout.js');
 FLUID.run(cssSrc, ok);
 require('./evals/hero-fill.js').run(cssSrc, ok);
@@ -1774,8 +1773,8 @@ ok('clouds are on their own page-scrolling canvas; rain/snow/wind stay on the fi
   }
   function contrast(a, b) { var la = lumOf(a), lb = lumOf(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); }
 
-  ok('meadow: the footer holds the scene and still carries the credit line', block.length > 0 && svg.length > 0 && block.indexOf('class="meadow-credit"') !== -1 && block.indexOf('Kazu Hani') !== -1 && block.indexOf('Arctic Dragon') !== -1);
-  ok('meadow: full-bleed, so it is a sibling after the width-limited .container and inside .page', /<\/div>\s*<!-- MEADOW FOOTER[\s\S]*?-->\s*<footer class="footer meadow scroll-reveal">/.test(htmlSrc) && /<\/footer>\s*<\/div>\s*<!-- Card detail pop-up/.test(htmlSrc));
+  ok('meadow: the footer holds the scene', block.length > 0 && svg.length > 0);
+  ok('meadow: full-bleed, so it is a sibling after the width-limited .container and inside .page', /<\/div>\s*<!-- MEADOW FOOTER[\s\S]*?-->\s*<footer class="footer meadow scroll-reveal">/.test(htmlSrc) && /<\/footer>\s*<\/div>\s*<div id="toast"/.test(htmlSrc));
   ok('meadow: the scene is decorative (aria-hidden, not focusable, no text or title)', svg.indexOf('aria-hidden="true"') !== -1 && svg.indexOf('focusable="false"') !== -1 && svg.indexOf('viewBox="0 0 1440 340"') !== -1 && svg.indexOf('<title') === -1 && svg.indexOf('<text') === -1);
   ok('meadow: the field, hills, house, trees, fences, path and flowers are all there', ['mf-house', 'mf-tree', 'mf-fence', 'mf-flowers', 'mf-blossom', 'mf-c-far', 'mf-c-mid', 'mf-c-near', 'mf-c-fg', 'mf-c-path', 'mf-c-roof', 'mf-c-door', 'mf-c-wall', 'mf-c-chimney', 'mf-smoke'].every(function (c) { return svg.indexOf('"' + c + '"') !== -1 || svg.indexOf('"' + c + ' ') !== -1 || svg.indexOf(' ' + c + '"') !== -1; }) && count(svg, 'class="mf-tree"') === 3 && count(svg, 'class="mf-fence"') === 2);
 ok('meadow: two windows, the attic window and the lantern all have glass and a halo; the windows and attic also get a lit pane', count(svg, 'mf-c-glass') === 4 && count(svg, 'fill="url(#mf-glow)"') === 4 && count(svg, 'fill="url(#mf-pane)"') === 3);
@@ -1840,13 +1839,6 @@ ok('meadow: the window lights switch on when it is dark enough, in every season 
 })(), lightsFail);
   ok('meadow: the blossom on the tree follows the cherry-blossom season', svg.indexOf('<g class="mf-blossom">') !== -1 && css.indexOf('html.no-sakura .mf-blossom { display: none; }') !== -1);
   ok('meadow: Christmas repaints it as a snowy field with the flowers and blossom put away', css.indexOf('body.season-christmas .footer.meadow {') !== -1 && css.indexOf('--m-lit: max(0.75, clamp(0, calc(((1 - var(--m-day)) - 0.6) / 0.2), 1));') !== -1 && css.indexOf('--d-roof: #f3f8fb') !== -1 && css.indexOf('--d-mid: #e3eff6') !== -1 && css.indexOf('body.season-christmas .mf-flowers, body.season-christmas .mf-blossom { display: none; }') !== -1);
-  ok('meadow: the credit line stays legible on the grass (WCAG AA) by day, at night and on Christmas snow', (function () {
-    var credit = /\.meadow-credit \{[^}]*color: (#[0-9a-f]{6});/.exec(css)[1];
-    var dfg = /--d-fg: (#[0-9a-f]{6});/.exec(css)[1], nfg = /--n-fg: (#[0-9a-f]{6});/.exec(css)[1];
-    var xcredit = /body\.season-christmas \.meadow-credit \{ color: (#[0-9a-f]{6});/.exec(css)[1];
-    var xfg = /body\.season-christmas \.footer\.meadow \{[^}]*--d-fg: (#[0-9a-f]{6});/.exec(css)[1];
-    return contrast(credit, dfg) >= 4.5 && contrast(credit, nfg) >= 4.5 && contrast(xcredit, xfg) >= 4.5;
-  })());
   ok('meadow: static paint only (no animation, one transition: the fade-in)', !/animation\s*:|animation-name|@keyframes/.test(css) && count(css, 'transition:') === 1 && css.indexOf('.footer.meadow.scroll-reveal, .footer.meadow.scroll-reveal.is-visible { transform: none; transition: opacity .9s ease; }') !== -1);
   ok('meadow: it is never hidden on phones or low-power devices (only seasonal decorations, flowers and shade are ever display:none)', count(css, 'display: none') === 6 && css.indexOf('@media (pointer') === -1 && !/low-power[^{]*(meadow|footer)/.test(cssFlat) && !/@media[^{]*\{[^}]*\.(meadow|footer)[^{]*\{[^}]*display: none/.test(css));
   ok('meadow: it sits behind .container (z-index 0 vs 1), so the fixed back-to-top button stays on top of it', css.indexOf('position: relative; z-index: 0; margin-top: -34px; overflow: hidden; text-align: center;') !== -1 && cssFlat.indexOf('position: relative; z-index: 1; max-width: 1120px;') !== -1);

@@ -64,10 +64,6 @@
     ['attr {gameUrl}', 'Steam current game: steamStoreUrl, a fixed host plus a numeric app id (steamCacheParse rebuilds it the same way)'],
     ['attr {s.url}', 'custom social tiles: site-config httpsUrl (https, no credentials)'],
     ['attr {n.linkUrl}', 'notice link: site-config httpsUrl, then controlUrlOk'],
-    ['prop {url}', 'globe link: nullschoolUrl from fixed coordinates'],
-    ["prop {KazuLib.googleCalendarUrl({ summary: summary, date: p.targetDate, details: 'Kazu turns ' + (p.isToday ? p.ageNow : p.turning) + '! ' })}", 'birthday calendar link: fixed host, encoded params'],
-    ['prop {url}', 'birthday .ics download: a blob: URL the page makes itself'],
-    ['iframe {url}', 'globe iframe: nullschoolUrl from fixed coordinates']
   ];
 
   function hrefSinks(source) {
