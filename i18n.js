@@ -131,6 +131,12 @@
     'Latest watch': '最近観た映画',
     'rewatch': '再鑑賞',
 
+    // Header navigation (the section links; the headings below double as their targets)
+    'Sections': 'セクション',
+    'Now': '現在',
+    'Writing': '執筆',
+    'PC': 'パソコン',
+
     // Section titles
     'Socials': 'SNS',
     'My PC': 'マイPC',

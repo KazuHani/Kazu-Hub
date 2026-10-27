@@ -123,20 +123,25 @@
 
     /* ---------------------------------- the heading font is subset, safely */
 
-    // Fraunces italic is used by exactly one element (the h1) and was ~half of all
-    // font bytes on a cold load (81.5 KB). Google Fonts subsets a whole request by
-    // `text=`, so it rides its own request, cut to the heading's characters with the
-    // optical-size axis intact (measured identical at 42/54/80px). The characters
-    // must cover the heading, or the missing ones silently fall through to Fredoka.
+    // Fraunces italic is used only by the name (the h1 and the header wordmark) and
+    // was ~half of all font bytes on a cold load (81.5 KB). Google Fonts subsets a
+    // whole request by `text=`, so it rides its own request, cut to those two
+    // names' characters with the optical-size axis intact (measured identical at
+    // 42/54/80px). The characters must cover both, or the missing ones silently
+    // fall through to the serif fallback. The upright Fraunces (the quote and the
+    // story titles) is pinned to one optical size, so it is a small static
+    // instance, and Figtree + Noto Sans JP ride the first request.
     var h1 = /<h1 class="title">([^<]*)<\/h1>/.exec(html);
-    var sub = /family=Fraunces:ital,opsz,wght@1,9\.\.144,560&text=([^&"]+)/.exec(html);
-    var have = sub ? decodeURIComponent(sub[1]) : '', want = h1 ? h1[1].replace(/&nbsp;/g, ' ') : null;
-    ok('perf: the heading font request is subset to cover every character of the h1 (and keeps the optical-size axis)',
+    var mark = /<a class="site-mark"[^>]*>([^<]*)<\/a>/.exec(html);
+    var sub = /family=Fraunces:ital,opsz,wght@1,9\.\.144,500&text=([^&"]+)/.exec(html);
+    var have = sub ? decodeURIComponent(sub[1]) : '', want = h1 && mark ? (h1[1] + mark[1]).replace(/&nbsp;/g, ' ') : null;
+    ok('perf: the name font request is subset to cover every character of the h1 and the wordmark (and keeps the optical-size axis)',
       !!sub && want !== null && want.split('').every(function (c) { return have.indexOf(c) !== -1; }), 'have ' + JSON.stringify(have) + ' want ' + JSON.stringify(want));
-    ok('perf: the full-weight font request no longer carries Fraunces, and the stylesheet uses it for the h1 only',
-      /<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Fredoka[^"]*" rel="stylesheet" media="print"/.test(html) &&
-      !/family=Fredoka[^"]*family=Fraunces/.test(html) && (flat.match(/font-family:[^;}]*Fraunces/g) || []).length === 1 &&
-      /\.title \{[^}]*font-family: 'Fraunces'/.test(flat) && /\.title \{[^}]*font-style: italic/.test(flat));
+    ok('perf: the text font request is Figtree + Noto Sans JP only, and the upright Fraunces is one fixed optical size',
+      /<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Figtree:wght@400;500;600;700&family=Noto\+Sans\+JP:[^"]*" rel="stylesheet" media="print"/.test(html) &&
+      !/family=Figtree[^"]*family=Fraunces/.test(html) &&
+      /<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Fraunces:opsz,wght@24,400;24,500&display=swap" rel="stylesheet" media="print"/.test(html) &&
+      !/Fredoka|Nunito/.test(html.replace(/<!--[\s\S]*?-->/g, '')));
 
     /* ----------------------------------------- no traffic nobody can see */
 

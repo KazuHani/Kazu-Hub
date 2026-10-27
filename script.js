@@ -2578,15 +2578,22 @@
 
 
   // ---------- Browser-chrome colour ----------
-  // There is no theme toggle any more: the single time-of-day palette owns
-  // the page, and this paints the meta theme-color to match (the sky tint
-  // writer refreshes it every minute; Christmas overrides it while live).
+  // There is no theme toggle: the redesign paints the page one flat canvas
+  // (style.css REDESIGN; light, or dark from the system setting), so the
+  // browser chrome follows that canvas and not the sky tint or the seasonal
+  // colour its callers still pass in. The head's first-paint script writes the
+  // tint until this runs; this corrects it and follows a change of system theme.
+  const THEME_CANVAS = { light: '#F7F6F3', dark: '#111316' };
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-  function setThemeColor(c) {
+  const themeDarkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function setThemeColor() {
+    const c = themeDarkMQ && themeDarkMQ.matches ? THEME_CANVAS.dark : THEME_CANVAS.light;
     if (themeColorMeta && themeColorMeta.getAttribute('content') !== c) {
       themeColorMeta.setAttribute('content', c);
     }
   }
+  if (themeDarkMQ && themeDarkMQ.addEventListener) themeDarkMQ.addEventListener('change', () => setThemeColor());
+  setThemeColor();
 
   // ---------- Back to top ----------
   const toTopBtn = $('toTopBtn');

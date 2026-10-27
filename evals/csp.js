@@ -113,8 +113,8 @@
     ok('csp: #boot-handlers hides a music cover that fails to load', !!handlers && handlers.text.indexOf("t.classList.contains('music-cover')) t.style.display = 'none'") !== -1);
     // The <noscript> copies stay plain render-blocking links on purpose.
     var fontLinks = plain.replace(/<noscript>[\s\S]*?<\/noscript>/g, '').match(/<link href="https:\/\/fonts\.googleapis\.com[^>]*>/g) || [];
-    ok('csp: both font links load as print and are marked data-font, and #boot-handlers comes before them',
-      fontLinks.length === 2 && fontLinks.every(function (l) { return / media="print" data-font>$/.test(l); }) &&
+    ok('csp: all three font links (Figtree + Noto Sans JP, Fraunces italic, Fraunces upright) load as print and are marked data-font, and #boot-handlers comes before them',
+      fontLinks.length === 3 && fontLinks.every(function (l) { return / media="print" data-font>$/.test(l); }) &&
       plain.indexOf('<script id="boot-handlers">') !== -1 && plain.indexOf('<script id="boot-handlers">') < plain.indexOf(fontLinks[0]));
   }
 

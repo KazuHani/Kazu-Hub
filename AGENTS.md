@@ -13,7 +13,9 @@ manager, no dependencies.** There is no `package.json`, `pyproject.toml`, or
 any other manifest — do not add one. The only tooling is Node (used solely to
 run the headless test file) and a static file server for local preview.
 
-The page shows: live stat cards (UK time, Aberystwyth weather, age, birthday
+The look is the flat editorial redesign (see "Redesign" below): the time-of-day
+sky, sakura, weather and seasonal scenery described next still run but are
+hidden by it. The page shows: live stat cards (UK time, Aberystwyth weather, age, birthday
 countdown) with detail pop-ups; a "right now" section with live Discord
 presence (Lanyard, WebSocket + REST fallback), Steam status, MyAnimeList
 watching/reading (Jikan, falling back to MAL list endpoints through
@@ -42,8 +44,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=110`,
-  `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=3`, `script.js?v=95` (version
+- `index.html` — the whole page. Loads `style.css?v=111`,
+  `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=4`, `script.js?v=96` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
@@ -644,7 +646,49 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
   worth tracking means adding it to `TEXT` (or `CARD_TEXT`) in
   `evals/fluid-layout.js`.
 
-## Hero
+## Redesign (the look that ships)
+
+The page looks like the editorial, flat redesign: a warm paper canvas
+(`#F7F6F3`) or near-black (`#111316`, from `prefers-color-scheme`; there is no
+toggle), Figtree for text, Fraunces (italic for the name and the wordmark,
+upright for the quote and the story titles), Noto Sans JP for Japanese,
+hairline rules instead of glass cards, one accent. It is the LAST block of
+`style.css` ("REDESIGN"), written with CSS nesting inside `body:not(#rd)` /
+`html:not(#rd)`. The `:not(#rd)` adds an id's worth of specificity, which is
+how the layer beats the legacy rules above it (seasonal palettes, per-card
+glass) without `!important`; `!important` appears only where the markup has
+inline colours (card titles, pills, story cards) or the old Halloween and
+Christmas rules use it. A browser without CSS nesting keeps the legacy look.
+
+- **Do not delete the legacy rules above the block.** `tests.js` and the evals
+  assert on their source, and the seasonal code still runs. To change how the
+  page looks, edit the REDESIGN block; to change a rule's meaning, edit it there
+  and let it win by specificity. Every top-level rule in the block must carry
+  the `:not(#rd)` prefix (`evals/redesign.js` fails a loose one).
+- **Retired from view, not from the code:** the sunset sky, sakura scene and
+  petals, weather canvas, Christmas lights and frost, Halloween decor, party
+  hat, meadow illustration, the cover images (playlist cover, MAL covers,
+  Letterboxd posters) and the brand marks on the social tiles are
+  `display: none` in that block. Their scripts still run (hidden); the live
+  checks that measure them are listed as "retired by the redesign" in
+  `tests.html` (`RETIRED`) instead of failing. Remove the `display: none` and
+  the legacy rule shows again.
+- **Header and anchors:** `.site-header` holds the wordmark, the section nav
+  (`#now #socials #writing #playlist #pc`, which are the `h2.section-title` ids,
+  in page order) and the language switch. The sections run Now, Socials,
+  Writing, Playlist, PC. Nav labels have Japanese phrases in `i18n.js`.
+- **Layout tricks the markup leans on:** each Right-now card is a CSS grid
+  (`200px | content | button`) with `.card-head { display: contents }`; the
+  playlist card uses grid areas (`side / open / featured`); the PC specs are two
+  balanced CSS columns. Adding a card means keeping those hooks.
+- **Browser chrome:** `setThemeColor` in `script.js` paints the meta
+  `theme-color` with the canvas colour (it ignores the colour its callers pass).
+- `evals/redesign.js` pins the tokens and their contrast (WCAG), the prefix
+  rule, the nav targets and translations, the 44px touch targets and the hidden
+  scenery. `evals/hero-fill.js` and the fluid evals still pin the legacy rules
+  at the start of a line; the rendered page is judged by `tests.html`.
+
+## Hero (legacy rules, overridden by the redesign)
 
 The name and the quote fill the width on phones, foldables and small tablets
 and hold their full size from there to the widest desktop.

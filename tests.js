@@ -1041,6 +1041,7 @@ require('./evals/modal-motion.js').run(L, scriptSrc, cssSrc, ok, eq);
 const FLUID = require('./evals/fluid-layout.js');
 FLUID.run(cssSrc, ok);
 require('./evals/hero-fill.js').run(cssSrc, ok);
+require('./evals/redesign.js').run(cssSrc, htmlSrc, require('./i18n.js'), ok);
 // analyse() is what tests.html and evals/layout-sweep.js judge real layouts
 // with, so its verdicts are pinned on made-up snapshots: one of each problem.
 (function () {
@@ -1715,7 +1716,7 @@ ok('sunset element is the first thing in the body (sun, moon and branches paint 
 ok('sunset CSS: layer strength is --sunset, two palettes crossfade on --sunset-late', cssFlat.indexOf('opacity: var(--sunset, 0);') !== -1 && cssFlat.indexOf('opacity: calc(1 - var(--sunset-late, 0));') !== -1 && cssFlat.indexOf('opacity: var(--sunset-late, 0);') !== -1);
 ok('sunset CSS: golden palette holds orange + a wide horizon glow, rose palette holds magenta/violet', cssFlat.indexOf('rgba(255,150,45,') !== -1 && cssFlat.indexOf('rgba(255,152,60,') !== -1 && cssFlat.indexOf('rgba(238,92,124,') !== -1 && cssFlat.indexOf('rgba(112,62,152,') !== -1);
 ok('sunset CSS: static (no transition or animation) and click-through', !/\.sunset-sky[^{]*\{[^}]*(transition|animation)/.test(cssFlat) && /\.sunset-sky \{\n  position: absolute; top: 0; left: 0; right: 0; height: 128vh;\n  z-index: 0; pointer-events: none;/.test(cssFlat));
-ok('sunset CSS: only Christmas hides it (phones and low-power keep the static gradient)', cssFlat.indexOf('body.season-christmas .sunset-sky { display: none; }') !== -1 && (cssFlat.match(/\.sunset-sky[^{]*\{[^}]*display/g) || []).length === 1 && !/body\.low-power[^{]*\.sunset-sky/.test(cssFlat));
+ok('sunset CSS: only Christmas hides it (phones and low-power keep the static gradient)', cssFlat.indexOf('body.season-christmas .sunset-sky { display: none; }') !== -1 && (cssFlat.split('/* ============ REDESIGN')[0].match(/\.sunset-sky[^{]*\{[^}]*display/g) || []).length === 1 && !/body\.low-power[^{]*\.sunset-sky/.test(cssFlat));
 // No sky layer stops in a line below the first screen (evals/sky-edges.js).
 require('./evals/sky-edges.js').run(FX, cssSrc, ok);
 ok('script.js writes --sunset / --sunset-late from KazuLib.sunsetGlow on every tint step', scriptSrc.indexOf('KazuLib.sunsetGlow(mins, doy)') !== -1 && scriptSrc.indexOf("root.setProperty('--sunset', sunset.glow);") !== -1 && scriptSrc.indexOf("root.setProperty('--sunset-late', sunset.late);") !== -1);

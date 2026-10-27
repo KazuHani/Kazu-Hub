@@ -94,10 +94,10 @@
     // ---- the quote ----
     var q = /\n\.quote-text \{[^}]*font-size: clamp\(([\d.]+)px, ([\d.]+)vw, ([\d.]+)px\);/.exec(css), a = /\n\.quote-author \{[^}]*font-size: clamp\(([\d.]+)px, ([\d.]+)vw, ([\d.]+)px\);/.exec(css);
     ok('hero: the quote and its author are one fluid rule each, bigger than the old phone (14.5px / 11px) and desktop (16px / 12px) sizes',
-      !!q && !!a && +q[1] > 14.5 && +a[1] > 11 && +q[3] > 16 && +a[3] > 12 && (css.match(/\.quote-(text|author) \{[^}]*font-size/g) || []).length === 2,
+      !!q && !!a && +q[1] > 14.5 && +a[1] > 11 && +q[3] > 16 && +a[3] > 12 && (css.match(/\n\.quote-(text|author) \{[^}]*font-size/g) || []).length === 2,
       q && a ? q[0].split('font-size: ')[1] + ' / ' + a[0].split('font-size: ')[1] : 'rules not found');
     var mh = /\n\.quote-box\.visible \{\n  max-height: (\d+)px;/.exec(css);
-    ok('hero: the quote box opens to 420px or more at every width, room for a long quote at the full size', !!mh && +mh[1] >= 420 && (css.match(/\.quote-box\.visible \{[^}]*max-height/g) || []).length === 1, mh ? mh[1] : 'rule not found');
+    ok('hero: the quote box opens to 420px or more at every width, room for a long quote at the full size', !!mh && +mh[1] >= 420 && (css.match(/\n\.quote-box\.visible \{[^}]*max-height/g) || []).length === 1, mh ? mh[1] : 'rule not found');
   }
 
   global.KazuHeroFillChecks = { run: run, title: title, em: em };
