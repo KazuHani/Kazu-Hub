@@ -2935,3 +2935,11 @@ body:not(#rd) {
 @media (max-width: 640px) {
   body:not(#rd) .lb-entry .lb-review { flex: 1 1 100%; padding-left: 0; margin-top: 4px; }
 }
+
+/* The quote box used to open from 0 to full height when the quote arrived and
+   pushed everything below it down. It now holds its room from the first paint
+   (a three-line quote) and only fades in; a longer quote grows past it a little. */
+body:not(#rd) .quote-box, body:not(#rd) .quote-box.visible { max-height: none; min-height: 132px; margin-top: 32px; transition: opacity .45s ease; }
+@media (max-width: 600px) {
+  body:not(#rd) .quote-box, body:not(#rd) .quote-box.visible { margin-top: 0; }
+}
