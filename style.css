@@ -1783,10 +1783,10 @@ body:not(#rd) {
 
   /* ---- Footer ---- */
   .footer {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px 24px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 24px;
     width: calc(100% - 2 * max(var(--gutter), env(safe-area-inset-left))); max-width: calc(1080px - 2 * var(--gutter));
     margin: 96px auto 0; padding: 20px 0 96px;
-    border-top: 1px solid var(--line); text-align: left; overflow: visible;
+    border-top: 1px solid var(--line); text-align: right; overflow: visible;
     content-visibility: visible; contain-intrinsic-block-size: auto;
   }
   .footer-top { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--ink); font-size: 16px !important; }
