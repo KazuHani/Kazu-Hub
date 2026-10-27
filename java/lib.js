@@ -1026,6 +1026,25 @@
   // document. Returns null when the feed has no usable entry. Poster comes
   // from the first <img> inside the description CDATA (Letterboxd always puts
   // the film poster there); missing poster → ''.
+  // The review text, when the entry has one: the description's <p> blocks after
+  // the poster, minus the "Watched on ..." line Letterboxd writes for a plain
+  // log and the spoiler notice. Tags stripped, entities decoded, capped.
+  function letterboxdReview(desc) {
+    var paras = String(desc || '').match(/<p>[\s\S]*?<\/p>/g) || [];
+    var out = [];
+    for (var i = 0; i < paras.length; i++) {
+      var p = paras[i];
+      if (/<img\b/.test(p)) continue;
+      var txt = p.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '')
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;|&rsquo;/g, "'")
+        .replace(/\s+/g, ' ').trim();
+      if (!txt || /^Watched on /i.test(txt) || /^This review may contain spoilers/i.test(txt)) continue;
+      out.push(txt);
+    }
+    var s = out.join(' ');
+    return s.length > 320 ? s.slice(0, 317).replace(/\s+\S*$/, '') + '...' : s;
+  }
+
   function parseLetterboxdRss(xml) {
     if (typeof xml !== 'string' || xml.indexOf('<item>') === -1) return null;
     var item = /<item>([\s\S]*?)<\/item>/.exec(xml)[1];
@@ -1056,6 +1075,7 @@
       poster: imgM ? imgM[1] : '',
       watched: watchedRaw ? letterboxdWatchedLabel(watchedRaw) : '',
       rewatch: /^yes$/i.test(rssPick(item, 'letterboxd:rewatch')),
+      review: letterboxdReview(desc),
     };
   }
 
@@ -1079,6 +1099,7 @@
       poster: typeof e2.poster === 'string' ? e2.poster : '',
       watched: typeof e2.watched === 'string' ? e2.watched : '',
       rewatch: e2.rewatch === true,
+      review: typeof e2.review === 'string' ? e2.review.slice(0, 330) : '',
     };
   }
 

@@ -2221,6 +2221,7 @@ body.low-power .populated-in { animation: none; }
 .lb-year { color: #b8c4cf; font-weight: 500; font-size: .82em; }
 .lb-stars { color: #ff8000; font-size: 15px; letter-spacing: .08em; margin-top: 3px; }
 .lb-watched { font-size: clamp(11.5px, 3.5938vw, 14.95px); font-weight: 700; color: #b8c4cf; margin-top: 3px; }
+.lb-review { font-size: clamp(11.5px, 3.5938vw, 14.95px); line-height: 1.45; color: #dfe6ec; margin-top: 8px; font-style: italic; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) {
   .lb-entry { transition: none; }
   .lb-entry:hover, .lb-entry:active { transform: none; }
@@ -2743,6 +2744,7 @@ body:not(#rd) {
   .lb-year { color: var(--muted); font-weight: 400; font-size: 18px !important; }
   .lb-stars { margin-top: 8px; color: var(--ink) !important; letter-spacing: .12em; }
   .lb-watched { margin-top: 4px; color: var(--muted) !important; font-weight: 400; }
+  .lb-review { margin-top: 8px; color: var(--ink) !important; font-style: normal; }
 
   /* ---- Socials: a hairline list, name over handle ---- */
   .socials-grid {
