@@ -150,7 +150,7 @@
         bdaySub = 'Happy birthday — turning ' + p.ageNow;
       } else {
         bdayText = p.calDays + (p.calDays === 1 ? ' day' : ' days');
-        bdaySub = 'until turning ' + p.turning;
+        bdaySub = 'Until Turning ' + p.turning;
       }
     } else {
       // Fallback if lib.js failed to load: visitor-local math (approximate).
@@ -171,7 +171,7 @@
         bdaySub = 'Happy birthday — turning ' + age;
       } else {
         bdayText = days + (days === 1 ? ' day' : ' days');
-        bdaySub = 'until turning ' + (age + 1);
+        bdaySub = 'Until Turning ' + (age + 1);
       }
     }
     return { timeStr, dateStr, ageStr, bdayText, bdaySub };

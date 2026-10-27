@@ -203,7 +203,7 @@
     dateJa,
     // Birthday card + countdowns
     function (s) { var m = /^([\d,]+) days?$/.exec(s); return m ? m[1] + '日' : null; },
-    function (s) { var m = /^until turning (\d+)$/.exec(s); return m ? m[1] + '歳まで' : null; },
+    function (s) { var m = /^until turning (\d+)$/i.exec(s); return m ? m[1] + '歳まで' : null; },
     function (s) { var m = /^Happy birthday — turning (\d+)$/i.exec(s); return m ? 'お誕生日おめでとう! ' + m[1] + '歳に' : null; },
     function (s) { var m = /^on (.+)$/.exec(s); var d = m && dateJa(m[1]); return d ? 'の誕生日 — ' + d : null; },
     // Weather
