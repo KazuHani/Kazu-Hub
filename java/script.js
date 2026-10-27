@@ -2578,9 +2578,7 @@
     ['Don’t stop when you’re tired. Stop when you’re done.', 'Unknown'],
   ];
 
-  // The quote is the quote of the UK day: it is fetched once per day, cached with
-  // that day's date, and never changes until the UK date does. When the live
-  // fetch fails the fallback is picked by the date, so it is stable all day too.
+  // The quote of the UK day: picked by the date, so it never changes until the date does.
   const ukToday = () => (KazuLib && KazuLib.ukDateIso ? KazuLib.ukDateIso(new Date()) : new Date().toISOString().slice(0, 10));
   function showFallbackQuote() {
     const day = ukToday();
@@ -2592,59 +2590,19 @@
     $('quoteBox').classList.add('visible');
   }
 
-  // The quote zenquotes last dealt is kept like a live card's answer, so a
-  // reload inside the 15-minute poll shows it at once instead of an empty
-  // slot until the quote's rung (8.5 s). Only a fresh copy is painted: a stale
-  // one is certain to be swapped for a different random quote at the rung,
-  // resizing the hero under the reader. The local fallback quotes are never
-  // stored: they need no network to show.
-  const QUOTE_CACHE_KEY = 'kazu-quote-cache';
-
-  function renderQuote(text, author) {
-    $('quoteText').textContent = text;
-    $('quoteAuthor').textContent = '— ' + author;
-    $('quoteBox').classList.add('visible');
+  // No network: the quote of the day is picked from FALLBACK_QUOTES by the UK
+  // date, so it is on screen at the first paint (the boot paint below), the same
+  // all day, and different tomorrow. The poller re-runs it so a page left open
+  // across midnight changes.
+  function paintQuoteCache() {
+    if (siteSectionOff('quote')) return 0;
+    showFallbackQuote();
+    return 0;
   }
 
-  // A cached quote is painted only when it was stored on today's UK date.
-  function quoteCacheToday(raw, now) {
-    if (!raw || !KazuLib.quoteCacheParse) return null;
-    try {
-      const day = KazuLib.ukDateIso(new Date(now || Date.now()));
-      if (JSON.parse(raw).day !== day) return null;
-    } catch (e) { return null; }
-    return KazuLib.quoteCacheParse(raw);
-  }
-
-  function paintQuoteCache(ms, now) {
-    if (siteSectionOff('quote') || !KazuLib.quoteCacheParse) return 0;
-    const raw = cardCacheRaw(QUOTE_CACHE_KEY);
-    const meta = KazuLib.cardCacheMeta(raw, null);
-    const q = meta.paint ? quoteCacheToday(raw, now) : null;
-    if (!q) return 0;
-    renderQuote(q.q, q.a);
-    return meta.at;
-  }
-
-  async function loadQuote() {
+  function loadQuote() {
     if (siteSectionOff('quote')) return;
-    // Already have today's quote: nothing to fetch, nothing to change.
-    const have = quoteCacheToday(cardCacheRaw(QUOTE_CACHE_KEY));
-    if (have) {
-      if ($('quoteText').textContent !== have.q) renderQuote(have.q, have.a);
-      return;
-    }
-    try {
-      const r = await proxyFetch('https://zenquotes.io/api/random');
-      if (!r.ok) throw new Error('bad status ' + r.status);
-      const j = await r.json();
-      const q = j && j[0];
-      if (!q || !q.q) throw new Error('bad payload');
-      renderQuote(q.q, q.a || 'Unknown');
-      cardCacheWrite(QUOTE_CACHE_KEY, null, { day: ukToday(), quote: { q: q.q, a: q.a || 'Unknown' } });
-    } catch (e) {
-      if (!$('quoteText').textContent) showFallbackQuote();
-    }
+    showFallbackQuote();
   }
 
   // ---------- Browser-chrome colour ----------
