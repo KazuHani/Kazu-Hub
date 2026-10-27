@@ -44,8 +44,8 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=130`,
-  `java/lib.js?v=49`, `java/site-config.js?v=1`, `java/i18n.js?v=6`, `java/script.js?v=103` (version
+- `index.html` — the whole page. Loads `style.css?v=131`,
+  `java/lib.js?v=49`, `java/site-config.js?v=1`, `java/i18n.js?v=6`, `java/script.js?v=104` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
@@ -674,7 +674,7 @@ Letterboxd still empty after 10 s on a cold visit.
 | MyAnimeList | `kazu-mal-cache` + `kazu-mal-manga-cache` | 10 min (the older copy decides) | MAL user |
 | Letterboxd | `kazu-lb-cache` | 30 min | Letterboxd user |
 | Playlist | `kazu-ytm-cache` | 30 min | playlist id |
-| Quote | `kazu-quote-cache` | 15 min | none |
+| Quote | `kazu-quote-cache` | once per UK day (a new quote only when the date changes; clicking it does nothing) | none |
 
 - **Envelope.** `{ at, id, ...payload }`, written only by `cardCacheWrite`
   after a live answer, never by a renderer (a render from the copy would

@@ -2578,8 +2578,15 @@
     ['Don’t stop when you’re tired. Stop when you’re done.', 'Unknown'],
   ];
 
+  // The quote is the quote of the UK day: it is fetched once per day, cached with
+  // that day's date, and never changes until the UK date does. When the live
+  // fetch fails the fallback is picked by the date, so it is stable all day too.
+  const ukToday = () => (KazuLib && KazuLib.ukDateIso ? KazuLib.ukDateIso(new Date()) : new Date().toISOString().slice(0, 10));
   function showFallbackQuote() {
-    const [text, author] = FALLBACK_QUOTES[(Math.random() * FALLBACK_QUOTES.length) | 0];
+    const day = ukToday();
+    let n = 0;
+    for (let i = 0; i < day.length; i++) n = (n * 31 + day.charCodeAt(i)) >>> 0;
+    const [text, author] = FALLBACK_QUOTES[n % FALLBACK_QUOTES.length];
     $('quoteText').textContent = text;
     $('quoteAuthor').textContent = '— ' + author;
     $('quoteBox').classList.add('visible');
@@ -2599,11 +2606,21 @@
     $('quoteBox').classList.add('visible');
   }
 
+  // A cached quote is painted only when it was stored on today's UK date.
+  function quoteCacheToday(raw, now) {
+    if (!raw || !KazuLib.quoteCacheParse) return null;
+    try {
+      const day = KazuLib.ukDateIso(new Date(now || Date.now()));
+      if (JSON.parse(raw).day !== day) return null;
+    } catch (e) { return null; }
+    return KazuLib.quoteCacheParse(raw);
+  }
+
   function paintQuoteCache(ms, now) {
     if (siteSectionOff('quote') || !KazuLib.quoteCacheParse) return 0;
     const raw = cardCacheRaw(QUOTE_CACHE_KEY);
     const meta = KazuLib.cardCacheMeta(raw, null);
-    const q = meta.paint && KazuLib.cardCacheFresh(meta.at, ms, now) ? KazuLib.quoteCacheParse(raw) : null;
+    const q = meta.paint ? quoteCacheToday(raw, now) : null;
     if (!q) return 0;
     renderQuote(q.q, q.a);
     return meta.at;
@@ -2611,6 +2628,12 @@
 
   async function loadQuote() {
     if (siteSectionOff('quote')) return;
+    // Already have today's quote: nothing to fetch, nothing to change.
+    const have = quoteCacheToday(cardCacheRaw(QUOTE_CACHE_KEY));
+    if (have) {
+      if ($('quoteText').textContent !== have.q) renderQuote(have.q, have.a);
+      return;
+    }
     try {
       const r = await proxyFetch('https://zenquotes.io/api/random');
       if (!r.ok) throw new Error('bad status ' + r.status);
@@ -2618,22 +2641,11 @@
       const q = j && j[0];
       if (!q || !q.q) throw new Error('bad payload');
       renderQuote(q.q, q.a || 'Unknown');
-      cardCacheWrite(QUOTE_CACHE_KEY, null, { quote: { q: q.q, a: q.a || 'Unknown' } });
+      cardCacheWrite(QUOTE_CACHE_KEY, null, { day: ukToday(), quote: { q: q.q, a: q.a || 'Unknown' } });
     } catch (e) {
-      showFallbackQuote();
+      if (!$('quoteText').textContent) showFallbackQuote();
     }
   }
-
-  // Click/Enter on the quote deals a new one. Debounced: zenquotes' free tier
-  // rate-limits per IP, and a hammered click shouldn't burn it.
-  let quoteLastShuffle = 0;
-  function reshuffleQuote() {
-    const now = Date.now();
-    if (now - quoteLastShuffle < 3000) return;
-    quoteLastShuffle = now;
-    loadQuote();
-  }
-
 
   // ---------- Browser-chrome colour ----------
   // There is no theme toggle: the redesign paints the page one flat canvas
@@ -3692,15 +3704,6 @@
     $('lbLoading').classList.remove('hidden');
     loadLetterboxd();
   });
-
-  // Quote box: click / Enter / Space deals a new quote (debounced in reshuffleQuote)
-  const quoteBox = $('quoteBox');
-  if (quoteBox) {
-    quoteBox.addEventListener('click', reshuffleQuote);
-    quoteBox.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); reshuffleQuote(); }
-    });
-  }
 
   // The petal/drop build waits for an idle slice: ~40 animated nodes' worth
   // of style work has no business inside the load task (the hardcoded
