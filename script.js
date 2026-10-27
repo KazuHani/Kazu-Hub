@@ -4451,6 +4451,20 @@
     if (rafId === null) { lastTickAt = 0; rafId = requestAnimationFrame(tick); }
   };
 
+  // The header links and "Back to top" are plain #anchors; the wheel loop owns the
+  // scroll position, so a native jump is overwritten. Glide through the loop instead.
+  document.addEventListener('click', (e) => {
+    const a = e.target && e.target.closest && e.target.closest('.site-header a[href^="#"], .footer-top');
+    if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    const id = a.getAttribute('href').slice(1);
+    const el = id && id !== 'top' ? document.getElementById(id) : null;
+    if (id && id !== 'top' && !el) return;
+    e.preventDefault();
+    const y = el ? el.getBoundingClientRect().top + window.scrollY - 16 : 0;
+    if (window.kazuSmoothScrollTo) window.kazuSmoothScrollTo(y);
+    else window.scrollTo({ top: y, behavior: 'smooth' });
+  });
+
   // Scroll-anchor adjustments (layout shifts above the fold) move the resting
   // point too: pre-seed lastWritten with the value the write will produce, so
   // the scroll listener reads it as one of the loop's own writes and an

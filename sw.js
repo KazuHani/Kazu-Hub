@@ -18,7 +18,7 @@ const PRECACHE = [
   './',
   './index.html',
   './style.css?v=112',
-  './script.js?v=97',
+  './script.js?v=98',
   './lib.js?v=46',
   './site-config.js?v=1',
   './i18n.js?v=5',

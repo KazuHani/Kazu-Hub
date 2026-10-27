@@ -45,7 +45,7 @@ evening a static orange-to-violet sunset gradient sits behind the sky (see
 ## Code layout
 
 - `index.html` — the whole page. Loads `style.css?v=112`,
-  `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=5`, `script.js?v=97` (version
+  `lib.js?v=46`, `site-config.js?v=1`, `i18n.js?v=5`, `script.js?v=98` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-tint` first-paint script (see "First paint" below), the
