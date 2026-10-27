@@ -2900,6 +2900,11 @@ body:not(#rd) {
     .stories-grid { grid-template-columns: minmax(0, 1fr); }
     .music-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "side" "open" "featured"; row-gap: 20px; }
     .pc-specs-grid { column-count: 1; }
+    /* bigger pictures on a phone */
+    .mal-cover, .lb-poster { width: 76px; height: 108px; }
+    .recent-game-logo { width: 150px; height: 70px; }
+    .avatar-img, .steam-avatar { width: 60px; height: 60px; }
+    .mal-row, a.mal-row, .lb-entry, a.lb-entry { gap: 18px; }
   }
   @media (max-width: 600px) {
     .hero { grid-template-columns: minmax(0, 1fr); row-gap: 24px; }
