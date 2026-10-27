@@ -2888,7 +2888,8 @@ body:not(#rd) {
 
   /* ---- Phones and narrow windows ---- */
   @media (max-width: 720px) {
-    .site-nav { order: 3; flex-basis: 100%; margin-left: -10px; }
+    .site-header { justify-content: center; }
+    .site-nav { order: 3; flex-basis: 100%; margin-left: 0; justify-content: center; }
     .right-now-grid .card { grid-template-columns: minmax(0, 1fr); }
     .right-now-grid .card-head-title { grid-column: 1; grid-row: 1; }
     .right-now-grid .card > :not(.card-head) { grid-column: 1; grid-row: 2; }
@@ -2901,8 +2902,9 @@ body:not(#rd) {
   @media (max-width: 600px) {
     .hero { grid-template-columns: minmax(0, 1fr); row-gap: 24px; }
     .pfp-ring, .title, .quote-box, .quote-box.visible { grid-column: 1; }
-    .pfp-ring { grid-row: auto; }
-    .title { align-self: start; }
+    .pfp-ring { grid-row: auto; justify-self: center; }
+    .title { align-self: start; text-align: center; }
+    .quote-box, .quote-box.visible { margin-left: auto; margin-right: auto; text-align: center; }
     .quote-box.visible { margin-top: 0; }
   }
 }
