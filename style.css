@@ -1868,3 +1868,8 @@ html { scroll-behavior: auto !important; }
 *, *::before, *::after { transition: none !important; transition-delay: 0s !important; }
 *:not(.konami-dragon):not(.konami-flake), *:not(.konami-dragon):not(.konami-flake)::before, *:not(.konami-dragon):not(.konami-flake)::after { animation: none !important; }
 .scroll-reveal { opacity: 1 !important; transform: none !important; }
+
+/* The name used to start 66px low and glide up when the quote arrived. With no
+   transition that is a visible jump on every load, so it now sits in its final
+   place from the first paint (the quote box already reserves its height). */
+body:not(#rd) .hero:has(.quote-box:not(.visible)) .title { translate: none; }
