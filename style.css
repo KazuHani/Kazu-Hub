@@ -1496,7 +1496,7 @@ body:not(#rd) {
   .pfp-ring::before, .pfp-ring::after { content: none; }
   .pfp {
     width: clamp(104px, 16vw, 176px); height: clamp(104px, 16vw, 176px);
-    border: 1px solid var(--line); background: none;
+    border: 0; background: none;
   }
   .title {
     grid-column: 2; align-self: end; margin: 0; padding: 0;
