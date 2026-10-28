@@ -404,7 +404,7 @@
   // keep the instant swap, and the glass rebake is suppressed while the
   // height animates so the expansion doesn't trigger a per-frame map rebuild
   // (one bake lands on the final size instead, via window.kazuGlassSchedule).
-  const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const REDUCED_MOTION = true; // all motion removed, see the end of style.css
   const POP_EASE = 'cubic-bezier(.22,.9,.3,1)';
 
   // Is any part of `el` inside the viewport right now? Populate motion is only

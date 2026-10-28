@@ -1859,3 +1859,12 @@ body:not(#rd) .quote-box, body:not(#rd) .quote-box.visible { max-height: none; m
 body:not(#rd) .hero:has(.quote-box:not(.visible)) .title { translate: 0 66px; }
 body:not(#rd) .hero .title { transition: translate .5s ease; }
 @media (prefers-reduced-motion: reduce) { body:not(#rd) .hero .title { transition: none; } }
+
+/* No motion. Julien removed every animation and transition (2026-10-28): no
+   entrance fades, no scroll reveal, no hover easing, no smooth scroll. Elements
+   that start hidden for a reveal are forced visible. The konami easter egg keeps
+   its keyframes because script.js waits for its animationend. */
+html { scroll-behavior: auto !important; }
+*, *::before, *::after { transition: none !important; transition-delay: 0s !important; }
+*:not(.konami-dragon):not(.konami-flake), *:not(.konami-dragon):not(.konami-flake)::before, *:not(.konami-dragon):not(.konami-flake)::after { animation: none !important; }
+.scroll-reveal { opacity: 1 !important; transform: none !important; }
