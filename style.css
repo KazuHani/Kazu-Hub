@@ -1873,3 +1873,8 @@ html { scroll-behavior: auto !important; }
    transition that is a visible jump on every load, so it now sits in its final
    place from the first paint (the quote box already reserves its height). */
 body:not(#rd) .hero:has(.quote-box:not(.visible)) .title { translate: none; }
+
+/* Stable layout on load. content-visibility: auto sized the below-fold cards by
+   an estimate (280 to 420px) and corrected them as they rendered, which moved
+   the page under the reader. They lay out at their real size from the start. */
+.discord-card, .steam-card, .mal-card, .lb-card, .pc-spec-card, .music-card { content-visibility: visible; contain-intrinsic-size: none; }

@@ -13,7 +13,7 @@
      onerror= attributes are not allowed; #boot-handlers holds those. Keep this
      above every <script>: a meta policy only covers what comes after it. -->
   <meta http-equiv="Content-Security-Policy"
-    content="script-src 'self' 'sha256-OME5ujRqi3Ty3yeZ56IkDPjWXQD/o/6xb7E34IQ2nik=' 'sha256-52522rWN4AP/B7ub1DFvj/o+0dhCXSkkL+x+sRyHWig=' 'sha256-1ALHh1QYrraetCQ11DVdnUtJtL4ydmG6UFmy0FpMlUI=' 'sha256-Eh+xAfNnLZ7PxzmPxMuIdjILU9vczY5U9i5qForHtuo=' 'sha256-pDxHDRJ0sz0IgWuYM1HDPJHzwu6cVljTT5WZ5HWBQ4s=' 'sha256-ptCMkn6CQKg7QV/wenb8UprURBKit8t9TOjbvpWMtZ4='; object-src 'none'; base-uri 'self'">
+    content="script-src 'self' 'sha256-OME5ujRqi3Ty3yeZ56IkDPjWXQD/o/6xb7E34IQ2nik=' 'sha256-pAQTFazGS9WN3LByS4BC8r/Tjl6YWw/QIcNnZ5TUntA=' 'sha256-1ALHh1QYrraetCQ11DVdnUtJtL4ydmG6UFmy0FpMlUI=' 'sha256-Eh+xAfNnLZ7PxzmPxMuIdjILU9vczY5U9i5qForHtuo=' 'sha256-pDxHDRJ0sz0IgWuYM1HDPJHzwu6cVljTT5WZ5HWBQ4s=' 'sha256-ptCMkn6CQKg7QV/wenb8UprURBKit8t9TOjbvpWMtZ4='; object-src 'none'; base-uri 'self'">
   <title>Kazu Hani</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="kazu-control" content="">
@@ -94,7 +94,7 @@
           if (!localStorage.getItem(keys[i])) continue;
           var hold = document.createElement('style');
           hold.id = 'boot-cards-hold';
-          hold.textContent = '.right-now-grid > .card { visibility: hidden; }';
+          hold.textContent = '.container, .footer { visibility: hidden; }';
           document.head.appendChild(hold);
           setTimeout(function () { if (hold.parentNode) hold.parentNode.removeChild(hold); }, 8000);
           return;
@@ -146,7 +146,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@24,400;24,500&display=swap"
       rel="stylesheet">
   </noscript>
-  <link rel="stylesheet" href="style.css?v=138">
+  <link rel="stylesheet" href="style.css?v=139">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
