@@ -61,18 +61,19 @@
   <!-- Warm up DNS+TLS for the hosts the staged boot reaches in its first seconds
      (CORS-mode ⇒ crossorigin). A preconnected socket that sits unused for ~10s
      is dropped, so only hosts used inside that window get one; hosts reached
-     later get a DNS-only hint below. api.cors.lol is the shared CORS proxy
-     (Steam at +2s, then Letterboxd, the playlist feed and the MAL fallback);
-     proxy.cors.sh, corsproxy.io and api.listenbrainz.org used to be here but
-     are never fetched any more. -->
+     later get a DNS-only hint below. allorigins.hexlet.app is the primary
+     shared CORS proxy (Steam at +2s, then Letterboxd, the playlist feed and the
+     MAL fallback); proxy.cors.sh, corsproxy.io and api.listenbrainz.org used to
+     be here but are never fetched any more. -->
   <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
   <link rel="preconnect" href="https://api.lanyard.rest" crossorigin>
-  <link rel="preconnect" href="https://api.cors.lol" crossorigin>
+  <link rel="preconnect" href="https://allorigins.hexlet.app" crossorigin>
   <link rel="preconnect" href="https://api.jikan.moe" crossorigin>
   <!-- The Discord avatar is one of the first images painted: full handshake
      (no crossorigin — plain <img> loads aren't CORS-mode). -->
   <link rel="preconnect" href="https://cdn.discordapp.com">
-  <!-- Cheaper DNS-only hints for the other image CDNs and the late quote API -->
+  <!-- Cheaper DNS-only hints for the other image CDNs, fallback proxy and the late quote API -->
+  <link rel="dns-prefetch" href="//api.cors.lol">
   <link rel="dns-prefetch" href="//zenquotes.io">
   <link rel="dns-prefetch" href="//cdn.myanimelist.net">
   <link rel="dns-prefetch" href="//media.discordapp.net">
@@ -724,7 +725,7 @@
   <script src="java/lib.js?v=52"></script>
   <script src="java/site-config.js?v=2"></script>
   <script src="java/i18n.js?v=8"></script>
-  <script src="java/script.js?v=112"></script>
+  <script src="java/script.js?v=113"></script>
   <script id="sw-register">
     // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
     // ever serves stale while online; the cache is only the offline fallback.

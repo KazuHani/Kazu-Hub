@@ -206,8 +206,10 @@
   // Steam, Letterboxd, YouTube, MAL and zenquotes send no
   // Access-Control-Allow-Origin, so the browser can only reach them through a
   // CORS proxy. The free ones come and go (two earlier ones went key-only or left DNS,
-  // and api.cors.lol answers 429 after a burst), so
-  // proxyFetch walks a list and rests any proxy that errors, 429s or 5xxs for
+  // api.cors.lol answers 429 when rate-limited, and api.allorigins.win times out on
+  // bad days), so proxyFetch walks a list — allorigins.hexlet.app first (disableCache
+  // so Steam's online state is never served stale), then api.cors.lol, then
+  // api.allorigins.win — and rests any proxy that errors, 429s or 5xxs for
   // PROXY_REST_MS, instead of every poll of every card hammering it again.
   //
   // The rest MUST be shorter than Steam's 5-minute poll. A failure is stamped
@@ -217,6 +219,7 @@
   // ten minutes without data, which is exactly PRESENCE_KEEP_MS, so the card
   // dropped to "Offline" while Steam was open. `ms` is the per-proxy timeout.
   const PROXIES = [
+    function (t) { return 'https://allorigins.hexlet.app/raw?disableCache=true&url=' + encodeURIComponent(t); },
     function (t) { return 'https://api.cors.lol/?url=' + encodeURIComponent(t); },
     function (t) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(t); },
   ];
