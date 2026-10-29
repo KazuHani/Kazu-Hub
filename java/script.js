@@ -194,10 +194,10 @@
   // loading line forever. AbortSignal.timeout fails the fetch fast instead,
   // landing in each loader's existing catch (error card / localStorage cache
   // / fallback quotes) — no new failure modes. Older browsers without it get
-  // exactly today's behaviour.
-  function fetchT(url, opts) {
+  // exactly today's behaviour. `ms` overrides the 12 s limit for one call.
+  function fetchT(url, opts, ms) {
     if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-      return fetch(url, Object.assign({}, opts, { signal: AbortSignal.timeout(12000) }));
+      return fetch(url, Object.assign({}, opts, { signal: AbortSignal.timeout(ms || 12000) }));
     }
     return fetch(url, opts);
   }
@@ -209,21 +209,28 @@
   // and api.cors.lol answers 429 after a burst), so
   // proxyFetch walks a list and rests any proxy that errors, 429s or 5xxs for
   // PROXY_REST_MS, instead of every poll of every card hammering it again.
+  //
+  // The rest MUST be shorter than Steam's 5-minute poll. A failure is stamped
+  // when the request gives up, seconds after the poll started, so a 5-minute
+  // rest was still running when the next poll fired: that poll found every
+  // proxy resting and failed without sending anything. One bad poll became
+  // ten minutes without data, which is exactly PRESENCE_KEEP_MS, so the card
+  // dropped to "Offline" while Steam was open. `ms` is the per-proxy timeout.
   const PROXIES = [
     function (t) { return 'https://api.cors.lol/?url=' + encodeURIComponent(t); },
     function (t) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(t); },
   ];
-  const PROXY_REST_MS = 5 * 60 * 1000;
+  const PROXY_REST_MS = 4 * 60 * 1000;
   const hostRest = KazuLib && KazuLib.backoffCreate
     ? KazuLib.backoffCreate(PROXY_REST_MS)
     : { down: function () { return false; }, fail: function () {}, ok: function () {} };
-  async function proxyFetch(target) {
+  async function proxyFetch(target, ms) {
     let last = null;
     for (let i = 0; i < PROXIES.length; i++) {
       const key = 'proxy' + i;
       if (hostRest.down(key, Date.now())) continue;
       try {
-        const r = await fetchT(PROXIES[i](target), { cache: 'no-store' });
+        const r = await fetchT(PROXIES[i](target), { cache: 'no-store' }, ms);
         if (r.status === 429 || r.status === 403 || r.status >= 500) { hostRest.fail(key, Date.now()); last = r; continue; }
         hostRest.ok(key);
         return r;
@@ -736,6 +743,7 @@
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
       if (lanyardWsLive) return; // a socket update beat this response
       renderDiscord(j.data);
+      noteDiscordDesktop(j.data);
       cardCacheWrite(DISCORD_CACHE_KEY, DISCORD_ID, { data: j.data });
     } catch (e) {
       if (lanyardWsLive) return;
@@ -944,6 +952,7 @@
           lanyardWsLive = true;
           lanyardBackoff = 1000; // healthy traffic resets the reconnect backoff
           renderDiscord(msg.d);
+          noteDiscordDesktop(msg.d);
           cardCacheWrite(DISCORD_CACHE_KEY, DISCORD_ID, { data: msg.d });
         } else if (!discordHasData) {
           const cached = discordCacheRead();
@@ -971,10 +980,17 @@
   }
 
   // ---------- Steam ----------
+  // 'checking' and 'unknown' are not Steam answers: they mean the page has no
+  // live answer to show (see KazuLib.steamCacheParse). 'checking' is the boot
+  // paint of an expired copy while the first fetch is on its way; 'unknown' is
+  // what is left after that fetch failed. Neither may say "Offline": only
+  // Steam itself can say that.
   function steamStatusInfo(state) {
     if (state === 'in-game') return ['In-Game', '#90c040'];
     if (state === 'online') return ['Online', '#57cbde'];
     if (state === 'away') return ['Away', '#faa61a'];
+    if (state === 'checking') return ['Checking status…', '#8b95a1'];
+    if (state === 'unknown') return ['Status unavailable', '#8b95a1'];
     return ['Offline', '#9fc0d8'];
   }
 
@@ -982,7 +998,15 @@
   // see KazuLib.steamCacheParse) so the same renderer draws a live answer and
   // the stored copy, and the copy holds data rather than markup.
   const STEAM_CACHE_KEY = 'kazu-steam-cache';
+  // Per-proxy timeout for Steam. The profile XML is small, so a proxy that has
+  // not answered in 8 s is hung (allorigins on a bad day) and the next one gets
+  // its turn; the default 12 s made two hung proxies cost 24 s.
+  const STEAM_PROXY_TIMEOUT_MS = 8000;
   let steamHasData = false;
+  // The vanity name being fetched, '' when idle: the poll and the Discord
+  // nudge never overlap for one account, but a control-panel account change
+  // mid-fetch still gets its own load (see loadSteam).
+  let steamInFlight = '';
 
   function renderSteam(p) {
     sharedAvatarUrl = p.avatar;
@@ -1050,13 +1074,24 @@
     const meta = KazuLib.cardCacheMeta(raw, STEAM_VANITY);
     const profile = meta.paint ? KazuLib.steamCacheParse(raw, now) : null;
     if (!profile) return 0;
+    // An expired copy is refetched on the card's boot rung, so say so rather
+    // than "Status unavailable" (nothing has failed yet).
+    if (profile.state === 'unknown') profile.state = 'checking';
     renderSteam(profile);
     return meta.at;
   }
 
   async function loadSteam() {
     if (!siteIntegrationOn('steam')) return;
-    const STEAM_URL = 'https://steamcommunity.com/id/' + STEAM_VANITY + '/?xml=1';
+    const vanity = STEAM_VANITY;
+    if (steamInFlight === vanity) return;
+    steamInFlight = vanity;
+    // `t` changes once a minute: enough that a proxy or edge cache can never
+    // hand back the profile from when the PC was off (each 5-minute poll and
+    // each Discord nudge gets a new URL), while every visitor inside the same
+    // minute still shares one URL, so it never looks like a scraper to Valve.
+    // Steam ignores the extra parameter.
+    const STEAM_URL = 'https://steamcommunity.com/id/' + vanity + '/?xml=1&t=' + Math.floor(Date.now() / 60000);
     try {
       let xmlText;
       try {
@@ -1064,7 +1099,7 @@
         // so a direct browser fetch can never succeed. (Order flipped after the
         // direct attempt wasted one doomed round trip on every 5-min poll.)
         // no-store: status must track the server, not the browser HTTP cache.
-        const r = await proxyFetch(STEAM_URL);
+        const r = await proxyFetch(STEAM_URL, STEAM_PROXY_TIMEOUT_MS);
         if (!r.ok) throw new Error('proxy failed');
         xmlText = await r.text();
       } catch (e) {
@@ -1111,19 +1146,63 @@
           hoursOnRecord: g.hoursOnRecord,
         })),
       };
+      // The control panel switched accounts mid-fetch: this answer belongs to
+      // the old one, and the new account's load draws the card.
+      if (vanity !== STEAM_VANITY) return;
       renderSteam(profile);
-      cardCacheWrite(STEAM_CACHE_KEY, STEAM_VANITY, { data: profile });
+      cardCacheWrite(STEAM_CACHE_KEY, vanity, { data: profile });
     } catch (e) {
+      if (vanity !== STEAM_VANITY) return;
       console.warn('Steam load failed:', e);
-      // Same rule as Discord: data on screen stays, redrawn from the copy so
-      // the status drops to offline once the last live answer is too old.
+      // Same rule as Discord: data on screen stays, redrawn from the copy. Once
+      // the last live answer is too old the copy says 'unknown', which reads
+      // "Status unavailable": a dead proxy is not Steam saying "offline".
       const cached = steamCacheRead(Date.now());
       if (cached) { renderSteam(cached); return; }
       if (steamHasData) return;
       $('steamLoading').classList.add('hidden');
       $('steamLoaded').classList.add('hidden');
       $('steamErr').classList.remove('hidden');
+    } finally {
+      if (steamInFlight === vanity) steamInFlight = '';
     }
+  }
+
+  // ---- Discord → Steam nudge ----
+  // Discord reaches the page instantly over Lanyard's socket; Steam only on its
+  // 5-minute poll. So when Kazu turns the PC on, Discord flips to online at once
+  // and Steam lags behind for up to five minutes. When a LIVE Discord answer
+  // (socket or REST, never the stored copy) shows the desktop client going from
+  // not-active to active, Steam is asked once more. Discord is only the
+  // trigger: what the Steam card shows still comes from Steam alone (being on
+  // Discord does not mean Steam is open).
+  //   - Rising edge only. The first live answer of a visit sets the baseline
+  //     (the boot poll covers Steam then), and Discord's frequent other updates
+  //     (Spotify, custom status, idle) are not edges, so they cost nothing.
+  //   - STEAM_NUDGE_DELAY: Steam logs in after Discord on a cold boot and its
+  //     public profile trails the client, so asking at once would mostly
+  //     read "offline" again.
+  //   - STEAM_NUDGE_COOLDOWN plus steamInFlight: at most one extra request
+  //     per few minutes, so the shared, rate-limited proxies are not stormed.
+  // The one timer lives only between an edge and its fetch: idle stays idle.
+  const STEAM_NUDGE_DELAY = 45 * 1000;
+  const STEAM_NUDGE_COOLDOWN = 3 * 60 * 1000;
+  let discordDesktopSeen = null; // last live desktop flag; null until the first answer
+  let steamNudgeTimer = null;
+  let steamNudgeAt = 0;
+
+  function noteDiscordDesktop(dc) {
+    const desktop = !!(dc && dc.discord_status !== 'offline' && dc.active_on_discord_desktop);
+    const was = discordDesktopSeen;
+    discordDesktopSeen = desktop;
+    if (was !== false || !desktop) return;
+    if (steamNudgeTimer || Date.now() - steamNudgeAt < STEAM_NUDGE_COOLDOWN) return;
+    steamNudgeTimer = setTimeout(() => {
+      steamNudgeTimer = null;
+      if (document.hidden) return; // the visible-again poll covers it
+      steamNudgeAt = Date.now();
+      loadSteam();
+    }, STEAM_NUDGE_DELAY);
   }
 
   // ---------- MyAnimeList (Jikan) ----------

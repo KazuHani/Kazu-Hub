@@ -420,6 +420,8 @@
   // always finds the same presence, so the card comes up exactly as it was
   // left; past this the copy is more likely wrong than right, and it is shown
   // offline with no activity until the live answer lands (about a second).
+  // (Steam's copy says 'unknown' instead of 'offline' past this point: see
+  // steamCacheParse.)
   var PRESENCE_KEEP_MS = 10 * 60 * 1000;
   function presenceKept(payload, now) {
     return typeof now === 'number' && !!payload && typeof payload.at === 'number' &&
@@ -512,7 +514,11 @@
   // the app id (steamStoreUrl: a fixed host plus digits), images must be https,
   // and the hours line is recomputed from numbers at render, so nothing stored
   // reaches the page as markup or as a foreign link. Status and the current
-  // game follow PRESENCE_KEEP_MS like Discord's. Same contract as
+  // game follow PRESENCE_KEEP_MS like Discord's, except that an expired copy
+  // reports state 'unknown', not 'offline': Steam only ever reaches the page
+  // through a free CORS proxy, and "the proxy was down" must not read as
+  // "Kazu is offline" (script.js labels it "Checking status…" on the boot
+  // paint, "Status unavailable" after a failed refetch). Same contract as
   // malCacheParse otherwise: the sanitised profile, or null.
   var STEAM_STATES = { 'in-game': 1, online: 1, away: 1, offline: 1 };
   function steamCacheParse(raw, now) {
@@ -540,7 +546,7 @@
     var gameName = live && d.game ? cacheText(d.game.name, 200) : '';
     return {
       avatar: avatar,
-      state: live && STEAM_STATES[d.state] ? d.state : 'offline',
+      state: !live ? 'unknown' : (STEAM_STATES[d.state] ? d.state : 'offline'),
       game: gameName ? { name: gameName, url: steamStoreUrl(d.game.url) || '' } : null,
       recent: recent,
     };

@@ -19,7 +19,7 @@ deleted on 2026-10-27. The page shows: live stat cards (UK time, Aberystwyth wea
 countdown); a "right now" section with live Discord
 presence (Lanyard, WebSocket + REST fallback), Steam status, MyAnimeList
 watching/reading (Jikan, falling back to MAL list endpoints through
-the shared CORS proxy list in `proxyFetch`: `api.cors.lol`, then `api.allorigins.win`, each rested for 5 minutes after an error/429/5xx via `KazuLib.backoffCreate`; Jikan is rested the same way), and the latest Letterboxd diary entry (RSS via the same
+the shared CORS proxy list in `proxyFetch`: `api.cors.lol`, then `api.allorigins.win`, each rested for 4 minutes after an error/429/5xx via `KazuLib.backoffCreate` (the rest must stay shorter than Steam's 5-minute poll, or the next poll finds every proxy resting and fails unsent); Jikan is rested the same way), and the latest Letterboxd diary entry (RSS via the same
 proxy); a YouTube Music playlist card whose "From the playlist" rows update
 themselves from the playlist's Atom feed (`feeds/videos.xml`, via the same
 proxy, newest additions first), plus an optional ListenBrainz "recently played" strip (its markup is currently absent, and the page does not even fetch while it is);
@@ -28,8 +28,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=134`,
-  `java/lib.js?v=51`, `java/site-config.js?v=2`, `java/i18n.js?v=6`, `java/script.js?v=109` (version
+- `index.html` — the whole page. Loads `style.css?v=140`,
+  `java/lib.js?v=52`, `java/site-config.js?v=2`, `java/i18n.js?v=8`, `java/script.js?v=112` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-cards` hold (see "Live-card cache" below), the
@@ -435,7 +435,17 @@ Letterboxd still empty after 10 s on a cold visit.
   identity only, shown offline, until the live answer lands. A failed refetch
   keeps the card (stale beats an error card) but redraws it from the copy
   under the same window, so a card never says "playing" forever while Lanyard
-  or the proxy is down.
+  or the proxy is down. Steam differs in one way: an expired copy is state
+  `'unknown'`, never `'offline'` (Steam only arrives through a free proxy, and a
+  dead proxy is not Steam saying offline). The boot paint labels it "Checking
+  status…", a failed refetch "Status unavailable"; only a live answer from
+  Steam may say "Offline".
+- **Discord → Steam nudge.** When a live Lanyard answer shows the desktop
+  client going from not-active to active (PC switched on), `noteDiscordDesktop`
+  asks Steam once more 45 s later instead of waiting up to 5 minutes. Rising
+  edge only, a 3-minute cooldown and a per-account in-flight lock keep it to
+  at most one extra proxy request. Discord is only the trigger; the Steam card
+  still shows only what Steam says.
 - **Weather** is fetched inside the load task, so its copy is painted only
   while fresh and only if its first forecast day is today's UK date (the strip
   labels row one "Today").   The **quote** is also painted only while fresh: a stale one is certain to be

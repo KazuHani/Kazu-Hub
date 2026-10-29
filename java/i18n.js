@@ -111,6 +111,8 @@
     'Steam avatar': 'Steamのアバター',
     'In-Game': 'ゲーム中',
     'Away': '離席中',
+    'Checking status…': '状態を確認中…',
+    'Status unavailable': '状態を取得できません',
 
     // MyAnimeList
     'View list →': 'リストを見る →',
