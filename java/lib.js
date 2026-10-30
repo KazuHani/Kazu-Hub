@@ -243,6 +243,17 @@
     return id ? !!STEAM_SOFTWARE_IDS[id] : false;
   }
 
+  // Steam's ?xml=1 feed used to include an <inGameInfo><gameName> block while
+  // in-game; it now often omits <inGameInfo> and only names the game on the
+  // second line of <stateMessage> ("In-Game<br/>Mini Cozy Room: Lo-Fi").
+  // Extracts the game name from <stateMessage> when <onlineState> is 'in-game'.
+  function steamInGameName(onlineState, stateMessage) {
+    if (onlineState !== 'in-game' || typeof stateMessage !== 'string') return '';
+    var parts = stateMessage.split(/<br\s*\/?>|\r?\n/i);
+    if (parts.length < 2) return '';
+    return xmlText(parts[1].replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+  }
+
   // Steam's profile XML reports each mostPlayedGame's hoursPlayed (past two
   // weeks — the only recent figure Steam publishes) and hoursOnRecord (all
   // time). Renders both on one line; collapses to a single figure when they
@@ -544,12 +555,34 @@
     }
     var live = presenceKept(payload, now);
     var gameName = live && d.game ? cacheText(d.game.name, 200) : '';
+    var startedAt = live && d.game ? cacheTime(d.game.startedAt) : null;
     return {
       avatar: avatar,
       state: !live ? 'unknown' : (STEAM_STATES[d.state] ? d.state : 'offline'),
-      game: gameName ? { name: gameName, url: steamStoreUrl(d.game.url) || '' } : null,
+      game: gameName ? {
+        name: gameName,
+        url: steamStoreUrl(d.game.url) || '',
+        startedAt: (startedAt && (typeof now !== 'number' || startedAt <= now)) ? startedAt : null,
+      } : null,
       recent: recent,
     };
+  }
+
+  // Recovers the saved session start time { name, startedAt } from the stored
+  // Steam copy so an ongoing in-game session keeps counting across 5-minute
+  // polls and tab reloads instead of resetting to 0s on every fetch. Capped at
+  // 24 hours; cleared as soon as a live fetch writes a non-in-game state.
+  var STEAM_SESSION_MAX_MS = 24 * 60 * 60 * 1000;
+  function steamSavedSession(raw, id, now) {
+    if (!cardCacheMeta(raw, id).paint || typeof now !== 'number') return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    var d = payload && payload.data;
+    if (!d || d.state !== 'in-game' || !d.game) return null;
+    var name = cacheText(d.game.name, 200);
+    var startedAt = cacheTime(d.game.startedAt);
+    if (!name || !startedAt || now - startedAt < 0 || now - startedAt >= STEAM_SESSION_MAX_MS) return null;
+    return { name: name, startedAt: startedAt };
   }
 
   // ---- Weather (localStorage copy) ------------------------------------------
@@ -1047,6 +1080,7 @@
     isLowEndDevice: isLowEndDevice,
     steamStoreUrl: steamStoreUrl,
     steamIsSoftware: steamIsSoftware,
+    steamInGameName: steamInGameName,
     steamHoursText: steamHoursText,
     cardCacheMeta: cardCacheMeta,
     cardCacheFresh: cardCacheFresh,
@@ -1054,6 +1088,7 @@
     PRESENCE_KEEP_MS: PRESENCE_KEEP_MS,
     discordCacheParse: discordCacheParse,
     steamCacheParse: steamCacheParse,
+    steamSavedSession: steamSavedSession,
     weatherCacheParse: weatherCacheParse,
     ukDateIso: ukDateIso,
     backoffCreate: backoffCreate,

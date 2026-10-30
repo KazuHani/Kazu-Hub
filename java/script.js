@@ -102,6 +102,13 @@
     const m = /\/apps?\/(\d{1,9})\b/.exec(String(url || ''));
     return m ? !!IDS[m[1]] : false;
   };
+  // Same for extracting the current game name from <stateMessage> (see lib.js).
+  const steamInGameName = (KazuLib && KazuLib.steamInGameName) || function (onlineState, stateMessage) {
+    if (onlineState !== 'in-game' || typeof stateMessage !== 'string') return '';
+    const parts = stateMessage.split(/<br\s*\/?>|\r?\n/i);
+    if (parts.length < 2) return '';
+    return parts[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  };
   // Same for the recent-games hours line (see lib.js).
   const steamHoursText = (KazuLib && KazuLib.steamHoursText) || function (hoursPlayed, hoursOnRecord) {
     const recent = (typeof hoursPlayed === 'number' && hoursPlayed > 0) ? hoursPlayed : 0;
@@ -622,6 +629,8 @@
   let discordHasData = false; // true after the first successful render
   let spotifyTimes = null;   // { start, end } in ms while listening
   let gameStartMs = null;    // activity start in ms while playing
+  let steamGameStartMs = null; // Steam session start in ms while in-game
+  let steamGameSession = null; // { name, startedAt } across polls while in-game
 
   const PLATFORM_ICONS = {
     mobile: '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M16 1H8a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm-4 21a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6zM16 18H8V4h8z"/></svg>',
@@ -682,8 +691,26 @@
     }
     const gEl = $('discordGameElapsed');
     if (gEl) {
-      if (gameStartMs) { gEl.textContent = fmtElapsed(now - gameStartMs); gEl.classList.remove('hidden'); }
-      else { gEl.textContent = ''; gEl.classList.add('hidden'); }
+      if (gameStartMs) {
+        const txt = fmtElapsed(now - gameStartMs);
+        if (gEl.textContent !== txt) gEl.textContent = txt;
+        gEl.classList.remove('hidden');
+      } else {
+        if (gEl.textContent !== '') gEl.textContent = '';
+        gEl.classList.add('hidden');
+      }
+    }
+    const sEl = $('steamGameElapsed');
+    if (sEl) {
+      const start = (gameStartMs && steamGameStartMs && gameStartMs < steamGameStartMs) ? gameStartMs : steamGameStartMs;
+      if (start) {
+        const txt = fmtElapsed(now - start);
+        if (sEl.textContent !== txt) sEl.textContent = txt;
+        sEl.classList.remove('hidden');
+      } else {
+        if (sEl.textContent !== '') sEl.textContent = '';
+        sEl.classList.add('hidden');
+      }
     }
   }
 
@@ -1022,6 +1049,8 @@
     $('steamStatusText').style.color = statusColor;
 
     if (p.game) {
+      steamGameStartMs = (typeof p.game.startedAt === 'number' && p.game.startedAt > 0) ? p.game.startedAt : Date.now();
+      steamGameSession = { name: p.game.name, startedAt: steamGameStartMs };
       $('steamGameName').textContent = p.game.name;
       const steamGameEl = $('steamGame');
       const gameUrl = p.game.url;
@@ -1029,9 +1058,12 @@
       else steamGameEl.removeAttribute('href');
       steamGameEl.classList.remove('hidden');
     } else {
+      if (p.state !== 'checking' && p.state !== 'unknown') steamGameSession = null;
+      steamGameStartMs = null;
       $('steamGame').removeAttribute('href');
       $('steamGame').classList.add('hidden');
     }
+    updatePresenceProgress();
 
     const recent = p.recent.map((g) => ({
       name: escapeHtml(g.name),
@@ -1119,8 +1151,9 @@
 
       const onlineState = txt('onlineState') || 'offline';
       const inGameEl = doc.querySelector('inGameInfo');
-      const currentGame = inGameEl ? txt('gameName', inGameEl) : '';
+      const currentGame = (inGameEl ? txt('gameName', inGameEl) : '') || steamInGameName(onlineState, txt('stateMessage'));
 
+      const allGames = [];
       const games = [];
       doc.querySelectorAll('mostPlayedGame').forEach((g) => {
         const name = txt('gameName', g);
@@ -1128,18 +1161,38 @@
         const link = txt('gameLink', g);
         const hoursPlayed = parseFloat((txt('hoursPlayed', g) || '0').replace(/,/g, '')) || 0;
         const hoursOnRecord = parseFloat((txt('hoursOnRecord', g) || '0').replace(/,/g, '')) || 0;
+        if (!name) return;
+        allGames.push({ name, logo, link, hoursPlayed, hoursOnRecord });
         // Skip software (SteamVR, Wallpaper Engine, …) — the list is games only.
-        if (name && !steamIsSoftware(link || logo)) games.push({ name, logo, link, hoursPlayed, hoursOnRecord });
+        if (!steamIsSoftware(link || logo)) games.push({ name, logo, link, hoursPlayed, hoursOnRecord });
       });
+
+      const now = Date.now();
+      const matchedGame = currentGame
+        ? allGames.find((g) => g.name.toLowerCase() === currentGame.toLowerCase())
+        : null;
+      const savedSession = (!steamGameSession && KazuLib && KazuLib.steamSavedSession)
+        ? KazuLib.steamSavedSession(cardCacheRaw(STEAM_CACHE_KEY), vanity, now)
+        : steamGameSession;
+      const keptStart = (savedSession && currentGame && savedSession.name.toLowerCase() === currentGame.toLowerCase())
+        ? savedSession.startedAt
+        : null;
+      const sessionStart = currentGame
+        ? ((gameStartMs && (!keptStart || gameStartMs < keptStart)) ? gameStartMs : (keptStart || now))
+        : null;
 
       const profile = {
         avatar,
         state: onlineState,
         // Click-through to the store page: gameLink when Steam includes it,
-        // else the appid recovered from the game's art URLs.
+        // else the appid recovered from the game's art URLs or the matching
+        // mostPlayedGame entry.
         game: currentGame ? {
           name: currentGame,
-          url: steamStoreUrl(txt('gameLink', inGameEl)) || steamStoreUrl(txt('gameLogo', inGameEl) || txt('gameIcon', inGameEl)) || '',
+          url: (inGameEl && (steamStoreUrl(txt('gameLink', inGameEl)) || steamStoreUrl(txt('gameLogo', inGameEl) || txt('gameIcon', inGameEl))))
+            || (matchedGame && (steamStoreUrl(matchedGame.link) || steamStoreUrl(matchedGame.logo)))
+            || '',
+          startedAt: sessionStart,
         } : null,
         recent: games.slice(0, 3).map((g) => ({
           name: g.name,

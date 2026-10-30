@@ -1609,8 +1609,10 @@ body:not(#rd) {
     margin: 14px 0 0; padding: 14px 0 0; gap: 12px; align-items: center; background: none !important;
     border: 0; border-top: 1px solid var(--line); border-radius: 0;
   }
+  .info-pill--steam-game { margin-bottom: 14px; }
   .info-pill--spotify { align-items: flex-start; }
   a.info-pill[href]:hover { transform: none; filter: none; }
+  a.info-pill[href]:hover .steam-game-name, a.info-pill[href]:hover .spotify-song { color: var(--accent) !important; }
   .info-pill-label, .info-pill-label[style] {
     color: var(--muted) !important; font-weight: 500; letter-spacing: 0; text-transform: none;
   }

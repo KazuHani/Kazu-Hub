@@ -147,7 +147,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@24,400;24,500&display=swap"
       rel="stylesheet">
   </noscript>
-  <link rel="stylesheet" href="style.css?v=140">
+  <link rel="stylesheet" href="style.css?v=141">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -394,6 +394,7 @@
               <div class="presence-text">
                 <div class="info-pill-label" style="color:#66c0f4;">Playing now</div>
                 <div class="info-pill-value steam-game-name" id="steamGameName">—</div>
+                <div class="info-pill-sub info-pill-elapsed hidden" id="steamGameElapsed"></div>
               </div>
             </a>
 
@@ -722,10 +723,10 @@
   <svg id="glass-filters" width="0" height="0" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink"
     style="position:absolute"></svg>
 
-  <script src="java/lib.js?v=52"></script>
+  <script src="java/lib.js?v=53"></script>
   <script src="java/site-config.js?v=2"></script>
   <script src="java/i18n.js?v=8"></script>
-  <script src="java/script.js?v=113"></script>
+  <script src="java/script.js?v=114"></script>
   <script id="sw-register">
     // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
     // ever serves stale while online; the cache is only the offline fallback.
