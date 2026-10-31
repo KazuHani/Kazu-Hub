@@ -1297,6 +1297,21 @@
       img: typeof entry.anime_image_path === 'string' ? entry.anime_image_path : '',
     };
   };
+  const malSortRecent = (KazuLib && KazuLib.malSortRecent) || function (list) {
+    if (!Array.isArray(list)) return [];
+    const stamp = (e) => {
+      if (!e || typeof e !== 'object') return 0;
+      if (typeof e.updated_at === 'number' && isFinite(e.updated_at)) return e.updated_at * 1000;
+      if (typeof e.updated_at === 'string' && e.updated_at) {
+        const t = Date.parse(e.updated_at);
+        if (isFinite(t)) return t;
+      }
+      if (typeof e.created_at === 'number' && isFinite(e.created_at)) return e.created_at * 1000;
+      return 0;
+    };
+    return list.slice().sort((a, b) => stamp(b) - stamp(a));
+  };
+  const JIKAN_TIMEOUT_MS = 4000;
 
   // Last-good rows survive Jikan outages (its user endpoints 504 whenever MAL
   // refuses the scrape): written on every successful fetch, read on failure.
@@ -1427,36 +1442,40 @@
 
   // Live rows come from the first source that answers. Jikan stays first
   // because it is CORS-clean, but MAL has been refusing its scrape of the
-  // user endpoints for long stretches (they 504 while the rest of Jikan is
-  // fine). The fallback is MAL's own load.json — the endpoint myanimelist.net
-  // itself uses — reached through the shared CORS proxy (proxyFetch),
-  // because MAL sends no Access-Control-Allow-Origin.
+  // user endpoints for long stretches (they 504 or time out while the rest of
+  // Jikan is fine), so it gets a short 4 s cap. The fallback is MAL's own
+  // load.json — the endpoint myanimelist.net itself uses — reached through the
+  // shared CORS proxy (proxyFetch) with `order=5` (last updated) and a
+  // per-minute cache-buster `t` so proxy edge caches never serve a stale list,
+  // then sorted newest-update-first via malSortRecent.
   async function fetchMalRows() {
+    const malBucket = Math.floor(Date.now() / 60000);
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
-      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' });
+      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
+      hostRest.ok('jikan');
       // ?status=watching does the filtering server-side; the extra client-side
       // check guards against the param being ignored, tolerating entries that
       // don't carry the field at all.
-      return ((j && j.data) || [])
-        .filter((e) => !e || !e.watching_status || e.watching_status === 'watching')
+      return malSortRecent(((j && j.data) || [])
+        .filter((e) => !e || !e.watching_status || e.watching_status === 'watching'))
         .map(malRow)
         .filter(Boolean)
         .slice(0, 3);
     } catch (e) {
       hostRest.fail('jikan', Date.now());
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
-      const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1';
+      const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
       const r2 = await proxyFetch(listUrl);
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
       // status 1 = watching; ?status=1 already filters server-side, same
       // belt-and-braces guard as the Jikan path above.
-      return list
-        .filter((e) => !e || e.status == null || e.status === 1)
+      return malSortRecent(list
+        .filter((e) => !e || e.status == null || e.status === 1))
         .map(malListRow)
         .filter(Boolean)
         .slice(0, 3);
@@ -1488,26 +1507,28 @@
   async function fetchMalMangaRows() {
     const mRow = KazuLib.malMangaRow;
     const mListRow = KazuLib.malMangaListRow;
+    const malBucket = Math.floor(Date.now() / 60000);
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
-      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' });
+      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
-      return ((j && j.data) || [])
-        .filter((e) => !e || !e.reading_status || e.reading_status === 'reading')
+      hostRest.ok('jikan');
+      return malSortRecent(((j && j.data) || [])
+        .filter((e) => !e || !e.reading_status || e.reading_status === 'reading'))
         .map(mRow)
         .filter(Boolean)
         .slice(0, 2);
     } catch (e) {
       hostRest.fail('jikan', Date.now());
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
-      const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1';
+      const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
       const r2 = await proxyFetch(listUrl);
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected mangalist load.json payload');
-      return list
-        .filter((e) => !e || e.status == null || e.status === 1)
+      return malSortRecent(list
+        .filter((e) => !e || e.status == null || e.status === 1))
         .map(mListRow)
         .filter(Boolean)
         .slice(0, 2);
@@ -1578,13 +1599,14 @@
     if (!siteIntegrationOn('mal') || !KazuLib || !KazuLib.malReviewRow) return;
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
-      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/reviews', { cache: 'no-store' });
+      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/reviews', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
+      hostRest.ok('jikan');
       const row = ((j && j.data) || []).map(KazuLib.malReviewRow).filter(Boolean)[0] || null;
       if (row) {
         try {
-          const r2 = await proxyFetch('https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=2');
+          const r2 = await proxyFetch('https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=2&t=' + Math.floor(Date.now() / 60000));
           if (r2.ok) {
             const fd = KazuLib.malFinishDate(await r2.json(), row.id);
             if (fd) { row.date = fd; row.finished = true; }
@@ -2463,7 +2485,7 @@
   if (malRetryBtn) malRetryBtn.addEventListener('click', () => {
     $('malError').classList.add('hidden');
     $('malLoading').classList.remove('hidden');
-    loadMal();
+    loadMalAll();
   });
   const lbRetryBtn = $('lbRetry');
   if (lbRetryBtn) lbRetryBtn.addEventListener('click', () => {

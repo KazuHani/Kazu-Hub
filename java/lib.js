@@ -291,6 +291,37 @@
     };
   }
 
+  // Ranks MAL list entries newest-update-first so the card always shows the
+  // three most recently watched shows/manga, matching MAL's own "Last Anime
+  // Updates" order. Handles both MAL load.json (`updated_at` / `created_at`
+  // Unix seconds) and Jikan (`updated_at` ISO string), breaking ties by
+  // episodes/chapters progressed.
+  function malEntryStamp(entry) {
+    if (!entry || typeof entry !== 'object') return 0;
+    if (typeof entry.updated_at === 'number' && isFinite(entry.updated_at)) return entry.updated_at * 1000;
+    if (typeof entry.updated_at === 'string' && entry.updated_at) {
+      var t = Date.parse(entry.updated_at);
+      if (isFinite(t)) return t;
+    }
+    if (typeof entry.created_at === 'number' && isFinite(entry.created_at)) return entry.created_at * 1000;
+    return 0;
+  }
+  function malEntryProgress(entry) {
+    if (!entry || typeof entry !== 'object') return 0;
+    var n = entry.num_watched_episodes != null ? entry.num_watched_episodes
+      : (entry.episodes_watched != null ? entry.episodes_watched
+      : (entry.num_read_chapters != null ? entry.num_read_chapters : entry.chapters_read));
+    return (typeof n === 'number' && isFinite(n) && n > 0) ? n : 0;
+  }
+  function malSortRecent(list) {
+    if (!Array.isArray(list)) return [];
+    return list.slice().sort(function (a, b) {
+      var d = malEntryStamp(b) - malEntryStamp(a);
+      if (d !== 0) return d;
+      return malEntryProgress(b) - malEntryProgress(a);
+    });
+  }
+
   // Extracts one entry of MAL's own GET /animelist/{user}/load.json payload
   // into the same flat shape as malRow. That endpoint is what myanimelist.net
   // itself calls to render the list page, so it keeps answering when Jikan's
@@ -1094,6 +1125,7 @@
     backoffCreate: backoffCreate,
     malRow: malRow,
     malListRow: malListRow,
+    malSortRecent: malSortRecent,
     malCacheParse: malCacheParse,
     malMangaRow: malMangaRow,
     malMangaListRow: malMangaListRow,
