@@ -81,6 +81,17 @@
     return String(s == null ? '' : s).replace(/[#*0-9]\uFE0F?\u20E3|\p{Regional_Indicator}{1,2}|\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?)*[\u{E0020}-\u{E007F}]*|\p{Emoji_Modifier}|[\uFE0E\uFE0F]/gu, '');
   }
 
+  // ---- Seasonal profile picture ---------------------------------------------
+  // November and December (0-indexed months 10 and 11 on the UK clock) swap the
+  // profile picture to the Christmas variant; every other month uses the
+  // standard image.
+  var PFP_DEFAULT = 'assets/New Kazu.png';
+  var PFP_CHRISTMAS = 'assets/Kazu Christmas Circle.png';
+  function pfpSrc(date) {
+    var w = ukWallParts(date);
+    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : PFP_DEFAULT;
+  }
+
   // ---- New Year celebration -----------------------------------------------
   // The first UK minute of 1 January catches both a live midnight tick and a
   // tab opened/resumed just after it. A year latch prevents repeat shows;
@@ -1098,6 +1109,9 @@
   global.KazuLib = {
     BIRTH: BIRTH,
     TIMEZONE: TIMEZONE,
+    PFP_DEFAULT: PFP_DEFAULT,
+    PFP_CHRISTMAS: PFP_CHRISTMAS,
+    pfpSrc: pfpSrc,
     escapeHtml: escapeHtml,
     safeLink: safeLink,
     stripEmoji: stripEmoji,

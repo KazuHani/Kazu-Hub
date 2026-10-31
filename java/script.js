@@ -135,6 +135,24 @@
     return { year: o.year, month: o.month - 1, day: o.day, hours: o.hour % 24, minutes: o.minute, seconds: o.second || 0 };
   }
 
+  // ---------- Seasonal profile picture ----------
+  // November and December (months 10 and 11, 0-indexed on the UK clock) show
+  // Kazu Christmas Circle.png; every other month uses New Kazu.png. Checked on
+  // boot and each clock tick so a tab open across midnight flips on time.
+  const PFP_DEFAULT = (KazuLib && KazuLib.PFP_DEFAULT) || 'assets/New Kazu.png';
+  const PFP_CHRISTMAS = (KazuLib && KazuLib.PFP_CHRISTMAS) || 'assets/Kazu Christmas Circle.png';
+  const pfpSrc = (KazuLib && KazuLib.pfpSrc) || function (now) {
+    const w = seasonUKParts(now || new Date());
+    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : PFP_DEFAULT;
+  };
+  const pfpEl = document.querySelector('.pfp');
+  function syncPfp(now) {
+    if (!pfpEl) return;
+    const want = pfpSrc(now);
+    if (pfpEl.getAttribute('src') !== want) pfpEl.setAttribute('src', want);
+  }
+  syncPfp(new Date());
+
   // ---------- Clock / age / birthday ----------
   // Intl.DateTimeFormat construction is one of the priciest built-ins there
   // is, and these two used to be rebuilt on every per-second tick. Construct
@@ -192,6 +210,7 @@
     set('liveAge', c.ageStr);
     set('liveBday', c.bdayText);
     set('liveBdaySub', c.bdaySub);
+    syncPfp(new Date());
     updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
     checkNewYear(); // uses the real UK clock, independently of seasonal/sky previews
   }
@@ -811,8 +830,9 @@
     lastDiscordFallbackAvatar = discordAvatarUrl(u);
     const avatarEl = $('discordAvatar');
     if (avatarEl) {
-      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : 'assets/New Kazu.png');
-      avatarEl.onerror = () => { avatarEl.src = 'assets/New Kazu.png'; };
+      const fallbackPfp = pfpSrc();
+      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : fallbackPfp);
+      avatarEl.onerror = () => { avatarEl.src = pfpSrc(); };
     }
     $('discordName').textContent = displayName;
 
@@ -2434,7 +2454,7 @@
     showToast('Konami! The dragon takes flight…');
     const d = document.createElement('div');
     d.className = 'konami-dragon';
-    d.innerHTML = '<img src="assets/New Kazu.png" width="64" height="64" alt="">';
+    d.innerHTML = '<img src="' + pfpSrc() + '" width="64" height="64" alt="">';
     d.setAttribute('aria-hidden', 'true');
     document.body.appendChild(d);
     d.addEventListener('animationend', () => { d.remove(); konamiBusy = false; });
