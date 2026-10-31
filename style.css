@@ -1495,7 +1495,7 @@ body:not(#rd) {
   .pfp-ring { grid-row: 1 / span 2; grid-column: 1; justify-self: start; margin: 0; padding: 0; }
   .pfp-ring::before, .pfp-ring::after { content: none; }
   .pfp {
-    width: clamp(104px, 16vw, 176px); height: clamp(104px, 16vw, 176px);
+    width: clamp(120px, 20vw, 240px); height: clamp(120px, 20vw, 240px);
     border: 0; background: none;
   }
   .title {
