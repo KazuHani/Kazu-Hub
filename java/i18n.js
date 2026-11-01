@@ -58,6 +58,7 @@
     'Show another quote': '別の名言を表示',
     'Updating…': '更新中…',
     'Last updated just now': 'たった今更新',
+    'Update now': '今すぐ更新',
 
     // Stat cards
     'UK time': 'イギリス時間',

@@ -442,8 +442,20 @@
     const at = updatedAt[key];
     if (typeof at === 'number' && at > 0) {
       const txt = formatUpdatedLabel(at, now == null ? Date.now() : now);
-      if (el.querySelector('.sync-spinner') || el.textContent !== txt) {
-        el.textContent = txt;
+      let labelEl = el.querySelector('.updated-text');
+      if (!labelEl) {
+        el.innerHTML =
+          '<span class="updated-text"></span>' +
+          '<button type="button" class="update-btn" data-update-key="' + key + '" title="Update now" aria-label="Update now">' +
+            '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<path d="M13.5 8a5.5 5.5 0 1 1-1.35-3.6"/>' +
+              '<path d="M13.5 2v2.6h-2.6"/>' +
+            '</svg>' +
+          '</button>';
+        labelEl = el.querySelector('.updated-text');
+      }
+      if (labelEl && labelEl.textContent !== txt) {
+        labelEl.textContent = txt;
       }
       el.classList.remove('hidden');
     } else {
@@ -534,7 +546,7 @@
       const url = (KazuLib && KazuLib.openMeteoUrl)
         ? KazuLib.openMeteoUrl(52.414, -4.081)
         : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day,cloud_cover,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
-      const r = await fetchT(url);
+      const r = await fetchT(url, { cache: 'no-store' });
       if (!r.ok) throw new Error('status ' + r.status);
       const j = await r.json();
       renderWeather(j.current, j.daily);
@@ -946,8 +958,8 @@
   // browser talks to the proxy's domain, which blocklists don't know. The
   // WebSocket can't be proxied, so on a blocking network the 20s REST poll
   // is what keeps the card alive.
-  async function loadDiscord() {
-    if (lanyardWsLive || !siteIntegrationOn('discord')) return;
+  async function loadDiscord(force) {
+    if ((!force && lanyardWsLive) || !siteIntegrationOn('discord')) return;
     const url = 'https://api.lanyard.rest/v1/users/' + DISCORD_ID;
     beginUpdate('discord');
     try {
@@ -962,7 +974,7 @@
         j = await r2.json();
       }
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
-      if (lanyardWsLive) { endUpdate('discord'); return; } // a socket update beat this response
+      if (!force && lanyardWsLive) { endUpdate('discord'); return; } // a socket update beat this response
       renderDiscord(j.data);
       noteDiscordDesktop(j.data);
       const at = Date.now();
@@ -1314,7 +1326,7 @@
     return meta.at;
   }
 
-  async function loadSteam() {
+  async function loadSteam(force) {
     if (!siteIntegrationOn('steam')) return;
     const vanity = STEAM_VANITY;
     if (steamInFlight === vanity) return;
@@ -1325,7 +1337,7 @@
     // each Discord nudge gets a new URL), while every visitor inside the same
     // minute still shares one URL, so it never looks like a scraper to Valve.
     // Steam ignores the extra parameter.
-    const STEAM_URL = 'https://steamcommunity.com/id/' + vanity + '/?xml=1&t=' + Math.floor(Date.now() / 60000);
+    const STEAM_URL = 'https://steamcommunity.com/id/' + vanity + '/?xml=1&t=' + (force ? Date.now() : Math.floor(Date.now() / 60000));
     try {
       let xmlText;
       try {
@@ -1652,8 +1664,8 @@
   // shared CORS proxy (proxyFetch) with `order=5` (last updated) and a
   // per-minute cache-buster `t` so proxy edge caches never serve a stale list,
   // then sorted newest-update-first via malSortRecent.
-  async function fetchMalRows() {
-    const malBucket = Math.floor(Date.now() / 60000);
+  async function fetchMalRows(force) {
+    const malBucket = force ? Date.now() : Math.floor(Date.now() / 60000);
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
       const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
@@ -1686,10 +1698,10 @@
     }
   }
 
-  async function loadMal() {
+  async function loadMal(force) {
     if (!siteIntegrationOn('mal')) return;
     try {
-      const rows = await fetchMalRows();
+      const rows = await fetchMalRows(force);
 
       renderMalRows(rows);
       const at = Date.now();
@@ -1710,10 +1722,10 @@
   // Unlike the anime path these helpers aren't duplicated locally: if lib.js
   // failed to load the section just stays hidden (the modals already degrade
   // the same way).
-  async function fetchMalMangaRows() {
+  async function fetchMalMangaRows(force) {
     const mRow = KazuLib.malMangaRow;
     const mListRow = KazuLib.malMangaListRow;
-    const malBucket = Math.floor(Date.now() / 60000);
+    const malBucket = force ? Date.now() : Math.floor(Date.now() / 60000);
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
       const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
@@ -1749,10 +1761,10 @@
 
   // Manga failures never flip the whole card to its error state: the anime
   // rows are the primary content, the reading section just hides.
-  async function loadMalManga() {
+  async function loadMalManga(force) {
     if (!KazuLib || !KazuLib.malMangaRow || !siteIntegrationOn('mal')) return;
     try {
-      const rows = await fetchMalMangaRows();
+      const rows = await fetchMalMangaRows(force);
       renderMalMangaRows(rows);
       cardCacheWrite(MAL_MANGA_CACHE_KEY, MAL_USER, { rows });
     } catch (e) {
@@ -1807,7 +1819,7 @@
     try { return parse(localStorage.getItem(MAL_REVIEW_CACHE_KEY)); } catch (e) { return null; }
   }
 
-  async function loadMalReview() {
+  async function loadMalReview(force) {
     if (!siteIntegrationOn('mal') || !KazuLib || !KazuLib.malReviewRow) return;
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
@@ -1818,7 +1830,7 @@
       const row = ((j && j.data) || []).map(KazuLib.malReviewRow).filter(Boolean)[0] || null;
       if (row) {
         try {
-          const r2 = await proxyFetch('https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=2&t=' + Math.floor(Date.now() / 60000));
+          const r2 = await proxyFetch('https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=2&t=' + (force ? Date.now() : Math.floor(Date.now() / 60000)));
           if (r2.ok) {
             const fd = KazuLib.malFinishDate(await r2.json(), row.id);
             if (fd) { row.date = fd; row.finished = true; }
@@ -1850,9 +1862,9 @@
         const meta = KazuLib.cardCacheMeta(cardCacheRaw(key), MAL_USER);
         return meta.paint && KazuLib.cardCacheFresh(meta.at, MAL_POLL_MS, now);
       };
-      if (!isPartFresh(MAL_CACHE_KEY)) await loadMal();
-      if (!isPartFresh(MAL_MANGA_CACHE_KEY)) await loadMalManga();
-      if (!isPartFresh(MAL_REVIEW_CACHE_KEY)) await loadMalReview();
+      if (!isPartFresh(MAL_CACHE_KEY)) await loadMal(force);
+      if (!isPartFresh(MAL_MANGA_CACHE_KEY)) await loadMalManga(force);
+      if (!isPartFresh(MAL_REVIEW_CACHE_KEY)) await loadMalReview(force);
     } finally {
       malSyncInFlight = false;
       endUpdate('mal');
@@ -1937,11 +1949,11 @@
     try { return parse(localStorage.getItem(LB_CACHE_KEY)); } catch (e) { return null; }
   }
 
-  async function loadLetterboxd() {
+  async function loadLetterboxd(force) {
     if (!KazuLib || !KazuLib.parseLetterboxdRss || !siteIntegrationOn('letterboxd')) return;
     beginUpdate('lb');
     try {
-      const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
+      const rss = 'https://letterboxd.com/' + LB_USER + '/rss/' + (force ? '?t=' + Date.now() : '');
       const r = await proxyFetch(rss);
       if (!r.ok) throw new Error('proxy status ' + r.status);
       const entry = KazuLib.parseLetterboxdRss(await r.text());
@@ -2827,7 +2839,43 @@
     $('lbError').classList.add('hidden');
     $('lbLoading').classList.remove('hidden');
     hostRest.clear();
-    loadLetterboxd();
+    loadLetterboxd(true);
+  });
+
+  // Manual update buttons next to the "Last updated …" labels
+  function manualUpdate(key) {
+    if (activeUpdates.has(key)) return;
+    const now = Date.now();
+    const poller = POLLERS.find((p) => p.key === key);
+    if (poller) {
+      poller.last = now;
+      poller.ran = true;
+    }
+    recordPollAttempt(key, now);
+    if (key === 'weather') {
+      loadWeather();
+    } else if (key === 'discord') {
+      hostRest.clear();
+      restartLanyard();
+      loadDiscord(true);
+    } else if (key === 'steam') {
+      hostRest.clear();
+      loadSteam(true);
+    } else if (key === 'mal') {
+      hostRest.clear();
+      loadMalAll(true);
+    } else if (key === 'lb') {
+      hostRest.clear();
+      loadLetterboxd(true);
+    }
+  }
+  document.addEventListener('click', (e) => {
+    const btn = e.target && e.target.closest ? e.target.closest('.update-btn[data-update-key]') : null;
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const key = btn.getAttribute('data-update-key');
+    if (key) manualUpdate(key);
   });
 
   // ---------- Pause polling/ticking while the page isn't visible ----------
