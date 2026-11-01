@@ -453,6 +453,22 @@
     return at > 0 && ms > 0 && age >= 0 && age < ms;
   }
 
+  // Human-readable relative timestamp for the "Last updated ..." line on
+  // the weather and Right-now cards. Returns '' when `at` is missing or in
+  // the future.
+  function formatUpdatedLabel(at, now) {
+    if (typeof at !== 'number' || !isFinite(at) || at <= 0) return '';
+    var cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
+    var diff = Math.max(0, cur - at);
+    var mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Last updated just now';
+    if (mins < 60) return 'Last updated ' + mins + 'm ago';
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return 'Last updated ' + hrs + 'h ago';
+    var days = Math.floor(hrs / 24);
+    return 'Last updated ' + days + 'd ago';
+  }
+
   // How long a poller waits before its next run when polling (re)starts: on
   // page load, and when a hidden tab comes back.
   //   last        when its data was last fetched, this visit or the stored
@@ -939,6 +955,38 @@
     return '';
   }
 
+  // localStorage copy of the latest finished anime review ('kazu-mal-review-cache').
+  // Returns { hasReview: true, row: obj|null } when valid, or null when malformed.
+  function malReviewCacheParse(raw) {
+    if (typeof raw !== 'string' || !raw) return null;
+    var payload;
+    try { payload = JSON.parse(raw); } catch (e) { return null; }
+    if (!payload || typeof payload !== 'object') return null;
+    if (payload.row === null) return { hasReview: true, row: null };
+    var r = payload.row;
+    if (!r || typeof r !== 'object') return null;
+    var url = safeLink(r.url, MAL_HOSTS);
+    var id = malIdFromUrl(url);
+    var title = cacheText(r.title, 200);
+    var text = cacheText(r.text, 340);
+    if (!url || !id || !title || !text) return null;
+    var score = (typeof r.score === 'number' && r.score >= 1 && r.score <= 10) ? Math.round(r.score) : null;
+    var date = (typeof r.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date)) ? r.date : '';
+    return {
+      hasReview: true,
+      row: {
+        id: id,
+        url: url,
+        title: title,
+        img: cacheImage(r.img),
+        score: score,
+        text: text,
+        date: date,
+        finished: r.finished === true,
+      },
+    };
+  }
+
   // ---- ListenBrainz (music card recent tracks) ------------------------------
   // Shapes one GET /1/user/{user}/listens entry into a flat row. Tolerant of
   // missing metadata; returns null when there's no track name. `url` prefers
@@ -1129,6 +1177,7 @@
     steamHoursText: steamHoursText,
     cardCacheMeta: cardCacheMeta,
     cardCacheFresh: cardCacheFresh,
+    formatUpdatedLabel: formatUpdatedLabel,
     pollDelay: pollDelay,
     PRESENCE_KEEP_MS: PRESENCE_KEEP_MS,
     discordCacheParse: discordCacheParse,
@@ -1147,6 +1196,7 @@
     malIdFromUrl: malIdFromUrl,
     malReviewRow: malReviewRow,
     malFinishDate: malFinishDate,
+    malReviewCacheParse: malReviewCacheParse,
     anilistTitlesQuery: anilistTitlesQuery,
     anilistTitlesParse: anilistTitlesParse,
     malJaCacheParse: malJaCacheParse,

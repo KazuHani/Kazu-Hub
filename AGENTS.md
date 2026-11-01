@@ -28,8 +28,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=142`,
-  `java/lib.js?v=55`, `java/site-config.js?v=2`, `java/i18n.js?v=8`, `java/script.js?v=116` (version
+- `index.html` — the whole page. Loads `style.css?v=143`,
+  `java/lib.js?v=56`, `java/site-config.js?v=2`, `java/i18n.js?v=9`, `java/script.js?v=117` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-cards` hold (see "Live-card cache" below), the
@@ -367,9 +367,9 @@ These are load-bearing; read before editing.
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
 - **localStorage keys in use:** `kazu-new-year-celebrated`, `kazu-discord-cache`, `kazu-steam-cache`,
-  `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
+  `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-mal-review-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
   `kazu-weather-cache`, `kazu-quote-cache`, `kazu-site-config`,
-  `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`. Don't collide
+  `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`, `kazu-host-rest`, `kazu-poll-attempts`. Don't collide
   (add any new key here).
 
 ## Live-card cache (repeat visits)

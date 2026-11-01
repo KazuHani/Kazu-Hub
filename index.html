@@ -40,7 +40,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Kazu Hani">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Kazu Hani">
   <meta property="og:title" content="Kazu Hani">
@@ -147,7 +147,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@24,400;24,500&display=swap"
       rel="stylesheet">
   </noscript>
-  <link rel="stylesheet" href="style.css?v=142">
+  <link rel="stylesheet" href="style.css?v=143">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -231,6 +231,10 @@
            English is the page's own language; Japanese is a layer on top. -->
       <div class="site-header">
         <a class="site-mark" href="#top" translate="no">Kazu Hub</a>
+        <div id="siteSyncStatus" class="site-sync-status hidden" role="status" aria-live="polite">
+          <span class="sync-spinner" aria-hidden="true"></span>
+          <span>Updating…</span>
+        </div>
         <nav class="site-nav" aria-label="Sections">
           <a href="#now">Now</a>
           <a href="#socials">Socials</a>
@@ -276,12 +280,13 @@
             <div class="stat-faint" id="liveWind">—</div>
           </div>
           <div id="weatherLoading">
-            <div class="stat-loading-text">Reading the sky…</div>
+            <div class="stat-loading-text"><span class="sync-spinner" aria-hidden="true"></span><span>Reading the sky…</span></div>
           </div>
           <div id="weatherError" class="hidden">
             <div class="stat-loading-text">Couldn't read the sky </div>
             <button type="button" class="retry-btn" id="weatherRetry">Retry</button>
           </div>
+          <div class="stat-updated hidden" id="weatherUpdated"></div>
         </div>
 
         <div class="card stat-card">
@@ -306,6 +311,7 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               Discord
+              <div class="card-updated hidden" id="discordUpdated"></div>
             </div>
             <a id="discordAddMe" class="pill-link" href="https://discord.com/users/346360416827473921" target="_blank"
               rel="noopener" title="Open my Discord profile &amp; copy my username">Add me</a>
@@ -361,8 +367,8 @@
           </div>
 
           <div id="discordLoading" class="loading-row">
-            <span class="pulse-dot" style="background:#5865F2;"></span>
-            Connecting to Discord…
+            <span class="sync-spinner" aria-hidden="true"></span>
+            <span>Connecting to Discord…</span>
           </div>
           <div id="discordError" class="loading-row hidden">
             Can't reach Discord right now.
@@ -375,6 +381,7 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               Steam
+              <div class="card-updated hidden" id="steamUpdated"></div>
             </div>
             <a class="pill-link" href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener"
               style="color:#66c0f4;background:rgba(102,192,244,.18);">View profile →</a>
@@ -405,8 +412,8 @@
           </div>
 
           <div id="steamLoading" class="loading-row" style="color:#9fc0d8;position:relative;">
-            <span class="pulse-dot" style="background:#66c0f4;"></span>
-            Connecting to Steam…
+            <span class="sync-spinner" aria-hidden="true"></span>
+            <span>Connecting to Steam…</span>
           </div>
 
           <div id="steamErr" class="hidden steam-fallback">
@@ -420,6 +427,7 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               MyAnimeList
+              <div class="card-updated hidden" id="malUpdated"></div>
             </div>
             <a class="pill-link" href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener">View
               list →</a>
@@ -439,8 +447,8 @@
           </div>
 
           <div id="malLoading" class="loading-row" style="position:relative;">
-            <span class="pulse-dot" style="background:#8fb0ff;"></span>
-            Connecting to MyAnimeList…
+            <span class="sync-spinner" aria-hidden="true"></span>
+            <span>Connecting to MyAnimeList…</span>
           </div>
 
           <div id="malError" class="loading-row hidden" style="position:relative;">
@@ -454,6 +462,7 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               Letterboxd
+              <div class="card-updated hidden" id="lbUpdated"></div>
             </div>
             <a class="pill-link" href="https://letterboxd.com/KazuHani/" target="_blank" rel="noopener">View profile
               →</a>
@@ -465,8 +474,8 @@
           </div>
 
           <div id="lbLoading" class="loading-row" style="position:relative;">
-            <span class="pulse-dot" style="background:#00e054;"></span>
-            Connecting to Letterboxd…
+            <span class="sync-spinner" aria-hidden="true"></span>
+            <span>Connecting to Letterboxd…</span>
           </div>
 
           <div id="lbError" class="loading-row hidden" style="position:relative;">
@@ -723,10 +732,10 @@
   <svg id="glass-filters" width="0" height="0" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink"
     style="position:absolute"></svg>
 
-  <script src="java/lib.js?v=55"></script>
+  <script src="java/lib.js?v=56"></script>
   <script src="java/site-config.js?v=2"></script>
-  <script src="java/i18n.js?v=8"></script>
-  <script src="java/script.js?v=116"></script>
+  <script src="java/i18n.js?v=9"></script>
+  <script src="java/script.js?v=117"></script>
   <script id="sw-register">
     // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
     // ever serves stale while online; the cache is only the offline fallback.

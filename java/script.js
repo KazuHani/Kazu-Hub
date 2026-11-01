@@ -211,6 +211,7 @@
     set('liveBday', c.bdayText);
     set('liveBdaySub', c.bdaySub);
     syncPfp(new Date());
+    refreshUpdatedLabels(Date.now());
     updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
     checkNewYear(); // uses the real UK clock, independently of seasonal/sky previews
   }
@@ -244,16 +245,68 @@
   // proxy resting and failed without sending anything. One bad poll became
   // ten minutes without data, which is exactly PRESENCE_KEEP_MS, so the card
   // dropped to "Offline" while Steam was open. `ms` is the per-proxy timeout.
+  //
+  // Rests are also saved in localStorage ('kazu-host-rest') so reloading or
+  // repeatedly refreshing the page does not forget that a proxy or Jikan just
+  // 502'd / 429'd / timed out and hammer it again on every refresh. Requests
+  // through proxyFetch are queued with a short gap so concurrent cards never
+  // burst the free proxies into a 429.
   const PROXIES = [
     function (t) { return 'https://allorigins.hexlet.app/raw?disableCache=true&url=' + encodeURIComponent(t); },
     function (t) { return 'https://api.cors.lol/?url=' + encodeURIComponent(t); },
     function (t) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(t); },
   ];
   const PROXY_REST_MS = 4 * 60 * 1000;
-  const hostRest = KazuLib && KazuLib.backoffCreate
+  const HOST_REST_KEY = 'kazu-host-rest';
+  const baseHostRest = KazuLib && KazuLib.backoffCreate
     ? KazuLib.backoffCreate(PROXY_REST_MS)
     : { down: function () { return false; }, fail: function () {}, ok: function () {} };
-  async function proxyFetch(target, ms) {
+  const hostRestUntil = {};
+  try {
+    const rawRest = JSON.parse(localStorage.getItem(HOST_REST_KEY) || '{}');
+    const now0 = Date.now();
+    if (rawRest && typeof rawRest === 'object') {
+      Object.keys(rawRest).forEach((k) => {
+        if (typeof rawRest[k] === 'number' && rawRest[k] > now0 && rawRest[k] <= now0 + PROXY_REST_MS * 2) {
+          hostRestUntil[k] = rawRest[k];
+        }
+      });
+    }
+  } catch (e) {}
+  function saveHostRest() {
+    try { localStorage.setItem(HOST_REST_KEY, JSON.stringify(hostRestUntil)); } catch (e) {}
+  }
+  const hostRest = {
+    down: function (key, now) {
+      return baseHostRest.down(key, now) || (hostRestUntil[key] || 0) > now;
+    },
+    fail: function (key, now) {
+      baseHostRest.fail(key, now);
+      hostRestUntil[key] = now + PROXY_REST_MS;
+      saveHostRest();
+    },
+    ok: function (key) {
+      baseHostRest.ok(key);
+      if (hostRestUntil[key]) { delete hostRestUntil[key]; saveHostRest(); }
+    },
+    clear: function (key) {
+      if (key) {
+        baseHostRest.ok(key);
+        delete hostRestUntil[key];
+      } else {
+        ['jikan', 'proxy0', 'proxy1', 'proxy2'].forEach((k) => {
+          baseHostRest.ok(k);
+          delete hostRestUntil[k];
+        });
+      }
+      saveHostRest();
+    },
+  };
+
+  const PROXY_GAP_MS = 1200;
+  let proxyChain = Promise.resolve();
+  let lastProxyAt = 0;
+  async function proxyFetchOnce(target, ms) {
     let last = null;
     for (let i = 0; i < PROXIES.length; i++) {
       const key = 'proxy' + i;
@@ -269,6 +322,17 @@
     }
     if (last) return last;
     throw new Error('every CORS proxy is resting or failed');
+  }
+  function proxyFetch(target, ms) {
+    const run = async () => {
+      const wait = lastProxyAt + PROXY_GAP_MS - Date.now();
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      lastProxyAt = Date.now();
+      return proxyFetchOnce(target, ms);
+    };
+    const p = proxyChain.then(run, run);
+    proxyChain = p.catch(() => {});
+    return p;
   }
 
   // ---------- Render dedup signatures ----------
@@ -311,6 +375,83 @@
     if (loadingEl) loadingEl.classList.add('hidden');
   }
 
+  // ---------- Live update status & "Last updated" stamps ----------
+  const formatUpdatedLabel = (KazuLib && KazuLib.formatUpdatedLabel) || function (at, now) {
+    if (typeof at !== 'number' || !isFinite(at) || at <= 0) return '';
+    const cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
+    const diff = Math.max(0, cur - at);
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Last updated just now';
+    if (mins < 60) return 'Last updated ' + mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return 'Last updated ' + hrs + 'h ago';
+    const days = Math.floor(hrs / 24);
+    return 'Last updated ' + days + 'd ago';
+  };
+  const UPDATED_IDS = {
+    weather: 'weatherUpdated',
+    discord: 'discordUpdated',
+    steam: 'steamUpdated',
+    mal: 'malUpdated',
+    lb: 'lbUpdated',
+  };
+  const updatedAt = {};
+  const activeUpdates = new Set();
+
+  function syncSiteStatusBanner() {
+    const banner = $('siteSyncStatus');
+    if (!banner) return;
+    banner.classList.toggle('hidden', activeUpdates.size === 0);
+  }
+
+  function renderUpdatedStatus(key, now) {
+    const id = UPDATED_IDS[key];
+    const el = id ? $(id) : null;
+    if (!el) return;
+    if (activeUpdates.has(key)) {
+      if (!el.querySelector('.sync-spinner')) {
+        el.innerHTML = '<span class="sync-spinner" aria-hidden="true"></span><span>Updating…</span>';
+      }
+      el.classList.remove('hidden');
+      return;
+    }
+    const at = updatedAt[key];
+    if (typeof at === 'number' && at > 0) {
+      const txt = formatUpdatedLabel(at, now == null ? Date.now() : now);
+      if (el.querySelector('.sync-spinner') || el.textContent !== txt) {
+        el.textContent = txt;
+      }
+      el.classList.remove('hidden');
+    } else {
+      el.textContent = '';
+      el.classList.add('hidden');
+    }
+  }
+
+  function setUpdatedStatus(key, at) {
+    if (typeof at === 'number' && isFinite(at) && at > 0) updatedAt[key] = at;
+    renderUpdatedStatus(key, Date.now());
+  }
+
+  function beginUpdate(key) {
+    activeUpdates.add(key);
+    syncSiteStatusBanner();
+    renderUpdatedStatus(key, Date.now());
+  }
+
+  function endUpdate(key, at) {
+    if (typeof at === 'number' && isFinite(at) && at > 0) updatedAt[key] = at;
+    activeUpdates.delete(key);
+    syncSiteStatusBanner();
+    renderUpdatedStatus(key, Date.now());
+  }
+
+  function refreshUpdatedLabels(now) {
+    Object.keys(UPDATED_IDS).forEach((k) => {
+      if (!activeUpdates.has(k) && updatedAt[k] > 0) renderUpdatedStatus(k, now);
+    });
+  }
+
   // ---------- Weather ----------
   function weatherInfo(code, isDay) {
     if (code === 0) return { d: 'Clear sky' };
@@ -331,9 +472,8 @@
   let weatherCurrent = null; // last good `current` snapshot, reused by "compare with your sky"
   let weatherDone = false;   // true once a fetch attempt has finished (ok or failed)
 
-  // Weather is fetched inside the load task, so its copy is only painted
-  // while fresh (and from today: see KazuLib.weatherCacheParse); an older one
-  // would be on screen for a fraction of a second before the answer replaced it.
+  // Today's cached weather is painted at boot (see KazuLib.weatherCacheParse)
+  // and refetched only once older than the 10-minute poll interval.
   const WEATHER_CACHE_KEY = 'kazu-weather-cache';
 
   function renderWeather(w, daily) {
@@ -355,25 +495,32 @@
     if (!KazuLib.weatherCacheParse || !KazuLib.ukDateIso) return 0;
     const raw = cardCacheRaw(WEATHER_CACHE_KEY);
     const meta = KazuLib.cardCacheMeta(raw, null);
-    if (!meta.paint || !KazuLib.cardCacheFresh(meta.at, ms, now)) return 0;
+    if (!meta.paint) return 0;
     const copy = KazuLib.weatherCacheParse(raw, KazuLib.ukDateIso(new Date(now)));
     if (!copy) return 0;
     renderWeather(copy.current, copy.daily);
+    if (meta.at > 0) setUpdatedStatus('weather', meta.at);
     return meta.at;
   }
 
   async function loadWeather() {
     weatherDone = false;
+    beginUpdate('weather');
     try {
       const url = (KazuLib && KazuLib.openMeteoUrl)
         ? KazuLib.openMeteoUrl(52.414, -4.081)
         : 'https://api.open-meteo.com/v1/forecast?latitude=52.414&longitude=-4.081&current=temperature_2m,weather_code,wind_speed_10m,is_day,cloud_cover,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon';
       const r = await fetchT(url);
+      if (!r.ok) throw new Error('status ' + r.status);
       const j = await r.json();
       renderWeather(j.current, j.daily);
+      const at = Date.now();
       cardCacheWrite(WEATHER_CACHE_KEY, null, { data: { current: j.current, daily: j.daily || null } });
+      endUpdate('weather', at);
     } catch (e) {
+      endUpdate('weather');
       weatherDone = true;
+      if (weatherCurrent) return;
       $('weatherLoading').classList.add('hidden');
       $('weatherError').classList.remove('hidden');
     }
@@ -778,6 +925,7 @@
   async function loadDiscord() {
     if (lanyardWsLive || !siteIntegrationOn('discord')) return;
     const url = 'https://api.lanyard.rest/v1/users/' + DISCORD_ID;
+    beginUpdate('discord');
     try {
       let j;
       try {
@@ -790,11 +938,14 @@
         j = await r2.json();
       }
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
-      if (lanyardWsLive) return; // a socket update beat this response
+      if (lanyardWsLive) { endUpdate('discord'); return; } // a socket update beat this response
       renderDiscord(j.data);
       noteDiscordDesktop(j.data);
+      const at = Date.now();
       cardCacheWrite(DISCORD_CACHE_KEY, DISCORD_ID, { data: j.data });
+      endUpdate('discord', at);
     } catch (e) {
+      endUpdate('discord');
       if (lanyardWsLive) return;
       // With data already on screen, stale beats an error card, but only for
       // as long as a stored presence may be shown: the copy is redrawn under
@@ -818,6 +969,7 @@
     const dc = meta.paint ? KazuLib.discordCacheParse(raw, now) : null;
     if (!dc) return 0;
     renderDiscord(dc);
+    if (meta.at > 0) setUpdatedStatus('discord', meta.at);
     return meta.at;
   }
 
@@ -1004,6 +1156,7 @@
           renderDiscord(msg.d);
           noteDiscordDesktop(msg.d);
           cardCacheWrite(DISCORD_CACHE_KEY, DISCORD_ID, { data: msg.d });
+          setUpdatedStatus('discord', Date.now());
         } else if (!discordHasData) {
           const cached = discordCacheRead();
           renderDiscord(cached || DISCORD_STATIC_FALLBACK);
@@ -1133,6 +1286,7 @@
     // than "Status unavailable" (nothing has failed yet).
     if (profile.state === 'unknown') profile.state = 'checking';
     renderSteam(profile);
+    if (meta.at > 0) setUpdatedStatus('steam', meta.at);
     return meta.at;
   }
 
@@ -1141,6 +1295,7 @@
     const vanity = STEAM_VANITY;
     if (steamInFlight === vanity) return;
     steamInFlight = vanity;
+    beginUpdate('steam');
     // `t` changes once a minute: enough that a proxy or edge cache can never
     // hand back the profile from when the PC was off (each 5-minute poll and
     // each Discord nudge gets a new URL), while every visitor inside the same
@@ -1226,7 +1381,9 @@
       // the old one, and the new account's load draws the card.
       if (vanity !== STEAM_VANITY) return;
       renderSteam(profile);
+      const at = Date.now();
       cardCacheWrite(STEAM_CACHE_KEY, vanity, { data: profile });
+      setUpdatedStatus('steam', at);
     } catch (e) {
       if (vanity !== STEAM_VANITY) return;
       console.warn('Steam load failed:', e);
@@ -1241,6 +1398,7 @@
       $('steamErr').classList.remove('hidden');
     } finally {
       if (steamInFlight === vanity) steamInFlight = '';
+      endUpdate('steam');
     }
   }
 
@@ -1337,6 +1495,8 @@
   // refuses the scrape): written on every successful fetch, read on failure.
   const MAL_CACHE_KEY = 'kazu-mal-cache';
   const MAL_MANGA_CACHE_KEY = 'kazu-mal-manga-cache';
+  const MAL_REVIEW_CACHE_KEY = 'kazu-mal-review-cache';
+  const MAL_POLL_MS = 10 * 60 * 1000;
 
   // Both lists feed the card's idle banner: it's only shown when there's
   // nothing being watched AND nothing being read.
@@ -1508,7 +1668,9 @@
       const rows = await fetchMalRows();
 
       renderMalRows(rows);
+      const at = Date.now();
       cardCacheWrite(MAL_CACHE_KEY, MAL_USER, { rows });
+      setUpdatedStatus('mal', at);
     } catch (e) {
       const cached = malCacheRead();
       if (cached) {
@@ -1579,8 +1741,8 @@
   // Jikan's reviews endpoint is CORS-clean and carries the review text. The
   // finish date comes from MAL's completed list (load.json, through the proxy)
   // and is optional: without it the review date is shown as "Reviewed".
-  // Shown only while the review is recent (MAL_REVIEW_DAYS). No cache: a failed
-  // fetch simply leaves the section hidden.
+  // Shown only while the review is recent (MAL_REVIEW_DAYS), and cached in
+  // localStorage ('kazu-mal-review-cache') so reloads do not re-fetch it.
   const MAL_REVIEW_DAYS = 90;
   let lastMalReviewSig = '';
   function malDateLabel(iso) {
@@ -1615,6 +1777,12 @@
     box.classList.remove('hidden');
   }
 
+  function malReviewCacheRead() {
+    const parse = KazuLib && KazuLib.malReviewCacheParse;
+    if (!parse) return null;
+    try { return parse(localStorage.getItem(MAL_REVIEW_CACHE_KEY)); } catch (e) { return null; }
+  }
+
   async function loadMalReview() {
     if (!siteIntegrationOn('mal') || !KazuLib || !KazuLib.malReviewRow) return;
     try {
@@ -1634,29 +1802,59 @@
         } catch (e) { /* the review date stands in */ }
       }
       renderMalReview(row);
+      cardCacheWrite(MAL_REVIEW_CACHE_KEY, MAL_USER, { row });
     } catch (e) {
       hostRest.fail('jikan', Date.now());
+      const cached = malReviewCacheRead();
+      if (cached && cached.hasReview) renderMalReview(cached.row);
     }
   }
 
-  function loadMalAll() { loadMal(); loadMalManga(); loadMalReview(); }
+  // Sequential, cache-aware MAL sync: Jikan rate-limits bursts (~3 req/s), so
+  // firing anime, manga, and review concurrently caused Jikan timeouts and
+  // simultaneous proxy fallbacks (429s). Each sub-part is now awaited in turn
+  // and skipped when its own localStorage copy is still fresh.
+  let malSyncInFlight = false;
+  async function loadMalAll(force) {
+    if (!siteIntegrationOn('mal') || malSyncInFlight) return;
+    malSyncInFlight = true;
+    beginUpdate('mal');
+    try {
+      const now = Date.now();
+      const isPartFresh = (key) => {
+        if (force || !KazuLib || !KazuLib.cardCacheMeta || !KazuLib.cardCacheFresh) return false;
+        const meta = KazuLib.cardCacheMeta(cardCacheRaw(key), MAL_USER);
+        return meta.paint && KazuLib.cardCacheFresh(meta.at, MAL_POLL_MS, now);
+      };
+      if (!isPartFresh(MAL_CACHE_KEY)) await loadMal();
+      if (!isPartFresh(MAL_MANGA_CACHE_KEY)) await loadMalManga();
+      if (!isPartFresh(MAL_REVIEW_CACHE_KEY)) await loadMalReview();
+    } finally {
+      malSyncInFlight = false;
+      endUpdate('mal');
+    }
+  }
 
-  // One poller fetches both lists, so the card counts as fresh only while
-  // BOTH copies are: the older stamp decides. The anime rows are the card
-  // itself; a manga copy alone paints nothing.
+  // Paints cached anime, manga, and review on boot. The anime stamp governs the
+  // card's poll schedule so an uncached manga/review never forces a reload loop.
   function paintMalCache(ms, now) {
     if (!siteIntegrationOn('mal') || !KazuLib.malMangaCacheParse) return 0;
     const animeRaw = cardCacheRaw(MAL_CACHE_KEY);
     const mangaRaw = cardCacheRaw(MAL_MANGA_CACHE_KEY);
+    const reviewRaw = cardCacheRaw(MAL_REVIEW_CACHE_KEY);
     const anime = KazuLib.cardCacheMeta(animeRaw, MAL_USER);
     const manga = KazuLib.cardCacheMeta(mangaRaw, MAL_USER);
+    const review = KazuLib.cardCacheMeta(reviewRaw, MAL_USER);
     const rows = anime.paint ? KazuLib.malCacheParse(animeRaw) : null;
     if (!rows) return 0;
     renderMalRows(rows);
     const mangaRows = manga.paint ? KazuLib.malMangaCacheParse(mangaRaw) : null;
     if (mangaRows) renderMalMangaRows(mangaRows);
+    const reviewParsed = (review.paint && KazuLib.malReviewCacheParse) ? KazuLib.malReviewCacheParse(reviewRaw) : null;
+    if (reviewParsed && reviewParsed.hasReview) renderMalReview(reviewParsed.row);
+    if (anime.at > 0) setUpdatedStatus('mal', anime.at);
     scheduleIdle(loadMalJa, 3000); // Japanese titles (a no-op in English mode)
-    return mangaRows ? Math.min(anime.at, manga.at) : 0;
+    return anime.at;
   }
 
   // ---------- Letterboxd (latest diary entry via RSS) ----------
@@ -1705,6 +1903,7 @@
     const entry = meta.paint ? KazuLib.letterboxdCacheParse(raw) : null;
     if (!entry) return 0;
     renderLetterboxd(entry);
+    if (meta.at > 0) setUpdatedStatus('lb', meta.at);
     return meta.at;
   }
 
@@ -1716,14 +1915,18 @@
 
   async function loadLetterboxd() {
     if (!KazuLib || !KazuLib.parseLetterboxdRss || !siteIntegrationOn('letterboxd')) return;
+    beginUpdate('lb');
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/';
       const r = await proxyFetch(rss);
       if (!r.ok) throw new Error('proxy status ' + r.status);
       const entry = KazuLib.parseLetterboxdRss(await r.text());
       renderLetterboxd(entry);
+      const at = Date.now();
       cardCacheWrite(LB_CACHE_KEY, LB_USER, { entry });
+      endUpdate('lb', at);
     } catch (e) {
+      endUpdate('lb');
       const cached = lbCacheRead();
       if (cached) { renderLetterboxd(cached); return; }
       $('lbLoading').classList.add('hidden');
@@ -1824,6 +2027,7 @@
 
   async function loadPlaylistTracks() {
     if (!KazuLib || !KazuLib.parseYouTubePlaylistRss) return;
+    beginUpdate('ytm');
     try {
       const feed = 'https://www.youtube.com/feeds/videos.xml?playlist_id=' + YTM_PLAYLIST_ID;
       const r = await proxyFetch(feed);
@@ -1836,6 +2040,8 @@
       // No cache yet → the static snapshot in index.html stays as the fallback.
       const cached = ytmCacheRead();
       if (cached && cached.length) renderPlaylistTracks(cached);
+    } finally {
+      endUpdate('ytm');
     }
   }
 
@@ -2487,7 +2693,7 @@
   const usernameBtn = $('discordUsername');
   if (usernameBtn) usernameBtn.addEventListener('click', copyDiscordUsername);
 
-  // Retry buttons on the weather / Discord error states
+  // Retry buttons on the weather / Discord / MAL / Letterboxd error states
   const weatherRetry = $('weatherRetry');
   if (weatherRetry) weatherRetry.addEventListener('click', () => {
     $('weatherError').classList.add('hidden');
@@ -2498,6 +2704,7 @@
   if (discordRetryBtn) discordRetryBtn.addEventListener('click', () => {
     $('discordError').classList.add('hidden');
     $('discordLoading').classList.remove('hidden');
+    hostRest.clear();
     loadDiscord();
     restartLanyard(); // re-arm the socket, reset backoff, and reconnect
   });
@@ -2505,12 +2712,14 @@
   if (malRetryBtn) malRetryBtn.addEventListener('click', () => {
     $('malError').classList.add('hidden');
     $('malLoading').classList.remove('hidden');
-    loadMalAll();
+    hostRest.clear();
+    loadMalAll(true);
   });
   const lbRetryBtn = $('lbRetry');
   if (lbRetryBtn) lbRetryBtn.addEventListener('click', () => {
     $('lbError').classList.add('hidden');
     $('lbLoading').classList.remove('hidden');
+    hostRest.clear();
     loadLetterboxd();
   });
 
@@ -2524,24 +2733,34 @@
   // fetchers at once, so rapid tab-switching stormed the APIs (and the CORS
   // proxy, which rate-limits).
   //
-  // Every live-API fetch passes { cache: 'no-store' }, so the browser HTTP
-  // cache can never answer for Discord/Steam/MAL/Letterboxd: when a poll
-  // runs it goes straight to the network and the cards track the server end.
-  // (The service worker ignores cross-origin requests entirely — see sw.js —
-  // so there is no second cache layer in front of them either.) What a reload
-  // skips is the poll itself: `paint` draws the card's own localStorage copy
-  // and returns its stamp, which becomes `last` (see "Live-card cache").
+  // Attempt timestamps are also saved in localStorage ('kazu-poll-attempts')
+  // with a 3-minute cooldown (RETRY_COOLDOWN_MS) so reloading or repeatedly
+  // refreshing after a failed or interrupted fetch does not re-send requests
+  // on every reload.
+  const POLL_ATTEMPTS_KEY = 'kazu-poll-attempts';
+  const RETRY_COOLDOWN_MS = 3 * 60 * 1000;
+  let pollAttempts = {};
+  try {
+    const rawAttempts = JSON.parse(localStorage.getItem(POLL_ATTEMPTS_KEY) || '{}');
+    if (rawAttempts && typeof rawAttempts === 'object') pollAttempts = rawAttempts;
+  } catch (e) {}
+  function recordPollAttempt(key, now) {
+    if (!key) return;
+    pollAttempts[key] = now;
+    try { localStorage.setItem(POLL_ATTEMPTS_KEY, JSON.stringify(pollAttempts)); } catch (e) {}
+  }
+
   const POLLERS = [
     { fn: tick, ms: 1000, last: 0 },
-    { fn: loadWeather, ms: 10 * 60 * 1000, last: 0, paint: paintWeatherCache },
+    { key: 'weather', fn: loadWeather, ms: 10 * 60 * 1000, last: 0, paint: paintWeatherCache },
     { fn: loadSiteControl, ms: 60 * 1000, last: 0 },
     // Steam before Discord: its avatar is the one both cards show, so the
     // boot paint must not start Discord's own avatar loading first.
-    { fn: loadSteam, ms: 5 * 60 * 1000, last: 0, firstDelay: bootGap(2000), paint: paintSteamCache },
-    { fn: loadDiscord, ms: 20 * 1000, last: 0, firstDelay: bootGap(700), paint: paintDiscordCache },
-    { fn: loadMalAll, ms: 10 * 60 * 1000, last: 0, firstDelay: bootGap(3300), paint: paintMalCache },
-    { fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(4600), paint: paintLetterboxdCache },
-    { fn: loadPlaylistTracks, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(5900), paint: paintPlaylistCache },
+    { key: 'steam', fn: loadSteam, ms: 5 * 60 * 1000, last: 0, firstDelay: bootGap(2000), paint: paintSteamCache },
+    { key: 'discord', fn: loadDiscord, ms: 2 * 60 * 1000, last: 0, firstDelay: bootGap(700), paint: paintDiscordCache },
+    { key: 'mal', fn: loadMalAll, ms: 10 * 60 * 1000, last: 0, firstDelay: bootGap(3300), paint: paintMalCache },
+    { key: 'lb', fn: loadLetterboxd, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(4600), paint: paintLetterboxdCache },
+    { key: 'ytm', fn: loadPlaylistTracks, ms: 30 * 60 * 1000, last: 0, firstDelay: bootGap(5900), paint: paintPlaylistCache },
     // firstDelay ladder: only the clock and the weather fetch inside the load task now. Every other
     // card's FIRST fetch waits for its own rung, so the network burst, the
     // JSON parsing and the DOM rewrites land one at a time instead of as a
@@ -2566,8 +2785,9 @@
   // the hold is lifted in this same task: they come into view already filled,
   // with no jump from loading-row height. A card whose copy is fresh skips its
   // first fetch (its `last` is the copy's stamp); a stale copy stays on screen
-  // while its rung refetches. One bad copy never stops the others, and the
-  // hold is lifted whatever happens.
+  // while its rung refetches. If a card already has cached data and a fetch
+  // was attempted inside RETRY_COOLDOWN_MS, wait out the cooldown so repeat
+  // refreshes after a failed or in-flight request never storm the APIs.
   function paintCardCaches() {
     try {
       if (!KazuLib || !KazuLib.cardCacheMeta) return;
@@ -2575,7 +2795,15 @@
       paintingFromCache = true;
       for (const p of POLLERS) {
         if (!p.paint) continue;
-        try { p.last = p.paint(p.ms, now) || 0; } catch (e) { p.last = 0; }
+        let paintedAt = 0;
+        try { paintedAt = p.paint(p.ms, now) || 0; } catch (e) { paintedAt = 0; }
+        const attemptAt = (p.key && typeof pollAttempts[p.key] === 'number') ? pollAttempts[p.key] : 0;
+        if (paintedAt > 0 && attemptAt > paintedAt && now - attemptAt >= 0 && now - attemptAt < RETRY_COOLDOWN_MS) {
+          // Shift `last` so pollDelay waits out the remaining cooldown.
+          p.last = now - p.ms + (RETRY_COOLDOWN_MS - (now - attemptAt));
+        } else {
+          p.last = paintedAt;
+        }
       }
     } finally {
       paintingFromCache = false;
@@ -2584,7 +2812,13 @@
     }
   }
 
-  function runPoller(p) { p.last = Date.now(); p.ran = true; p.fn(); }
+  function runPoller(p) {
+    const now = Date.now();
+    p.last = now;
+    p.ran = true;
+    if (p.key) recordPollAttempt(p.key, now);
+    p.fn();
+  }
 
   // Each poller waits pollDelay: due now, its boot rung, or (fresh data from
   // this visit or a stored copy) the rest of its interval, then runs every

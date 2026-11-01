@@ -1543,8 +1543,26 @@ body:not(#rd) {
   }
   .stat-card--bday .stat-value { color: var(--ink); }
   .stat-sub, .stat-faint { margin-top: 4px; font-weight: 400; color: var(--muted); }
-  .stat-loading-text { font-weight: 400; color: var(--muted); }
+  .stat-loading-text { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-weight: 400; color: var(--muted); }
   .stat-card .retry-btn { margin-top: 8px; }
+  .stat-updated, .card-updated, .site-sync-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-weight: 400; line-height: 1.4; color: var(--muted);
+  }
+  .stat-updated, .stat-updated *,
+  .card-updated, .card-updated *,
+  .site-sync-status, .site-sync-status * {
+    font-size: 12px !important;
+  }
+  .stat-updated { margin-top: 6px; }
+  .card-updated { order: 2; margin-top: 2px; }
+  .site-sync-status { margin-left: 8px; }
+  .sync-spinner {
+    display: inline-block; width: 11px; height: 11px; flex-shrink: 0;
+    border: 1.5px solid var(--line-strong); border-top-color: var(--accent);
+    border-radius: 50%; animation: kazuSpin .75s linear infinite !important;
+  }
+  .hidden .sync-spinner { animation: none !important; }
 
   /* ---- Section headings: a heavy rule, then the content ---- */
   .section-title {
@@ -1862,13 +1880,18 @@ body:not(#rd) .hero:has(.quote-box:not(.visible)) .title { translate: 0 66px; }
 body:not(#rd) .hero .title { transition: translate .5s ease; }
 @media (prefers-reduced-motion: reduce) { body:not(#rd) .hero .title { transition: none; } }
 
+@keyframes kazuSpin {
+  to { transform: rotate(360deg); }
+}
+
 /* No motion. Julien removed every animation and transition (2026-10-28): no
    entrance fades, no scroll reveal, no hover easing, no smooth scroll. Elements
    that start hidden for a reveal are forced visible. The konami easter egg keeps
-   its keyframes because script.js waits for its animationend. */
+   its keyframes because script.js waits for its animationend, and .sync-spinner
+   rotates only while a live card is actively fetching. */
 html { scroll-behavior: auto !important; }
 *, *::before, *::after { transition: none !important; transition-delay: 0s !important; }
-*:not(.konami-dragon):not(.konami-flake), *:not(.konami-dragon):not(.konami-flake)::before, *:not(.konami-dragon):not(.konami-flake)::after { animation: none !important; }
+*:not(.konami-dragon):not(.konami-flake):not(.sync-spinner), *:not(.konami-dragon):not(.konami-flake):not(.sync-spinner)::before, *:not(.konami-dragon):not(.konami-flake):not(.sync-spinner)::after { animation: none !important; }
 .scroll-reveal { opacity: 1 !important; transform: none !important; }
 
 /* The name used to start 66px low and glide up when the quote arrived. With no
