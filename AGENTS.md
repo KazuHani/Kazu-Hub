@@ -28,8 +28,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=143`,
-  `java/lib.js?v=57`, `java/site-config.js?v=2`, `java/i18n.js?v=9`, `java/script.js?v=118` (version
+- `index.html` — the whole page. Loads `style.css?v=144`,
+  `java/lib.js?v=58`, `java/site-config.js?v=2`, `java/i18n.js?v=9`, `java/script.js?v=119` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-cards` hold (see "Live-card cache" below), the
@@ -366,7 +366,7 @@ These are load-bearing; read before editing.
 - **Service worker.** `sw.js` must never serve stale content while online:
   network-first for pages, versioned-URL cache-first for assets, and live
   APIs always fetched fresh. Preserve that strategy.
-- **localStorage keys in use:** `kazu-new-year-celebrated`, `kazu-discord-cache`, `kazu-steam-cache`,
+- **localStorage keys in use:** `kazu-new-year-celebrated`, `kazu-winter-snow`, `kazu-discord-cache`, `kazu-steam-cache`,
   `kazu-mal-cache`, `kazu-mal-manga-cache`, `kazu-mal-review-cache`, `kazu-lb-cache`, `kazu-ytm-cache`,
   `kazu-weather-cache`, `kazu-quote-cache`, `kazu-site-config`,
   `kazu-notice-dismissed`, `kazu-lang`, `kazu-mal-ja`, `kazu-host-rest`, `kazu-poll-attempts`. Don't collide

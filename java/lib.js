@@ -92,6 +92,17 @@
     return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : (defaultSrc || PFP_DEFAULT);
   }
 
+  // Returns today's UK ISO date ('YYYY-MM-DD') when it is November or December
+  // on the UK clock (0-indexed months 10 and 11) and `lastDay` does not already
+  // match today; otherwise null. Caps the brief winter snow effect at once per
+  // UK calendar day across reloads.
+  function winterSnowDay(date, lastDay) {
+    var w = ukWallParts(date);
+    if (!w || !isFinite(w.year) || (w.month !== 10 && w.month !== 11)) return null;
+    var today = w.year + '-' + pad(w.month + 1) + '-' + pad(w.day);
+    return today === lastDay ? null : today;
+  }
+
   // ---- New Year celebration -----------------------------------------------
   // The first UK minute of 1 January catches both a live midnight tick and a
   // tab opened/resumed just after it. A year latch prevents repeat shows;
@@ -1160,6 +1171,7 @@
     PFP_DEFAULT: PFP_DEFAULT,
     PFP_CHRISTMAS: PFP_CHRISTMAS,
     pfpSrc: pfpSrc,
+    winterSnowDay: winterSnowDay,
     escapeHtml: escapeHtml,
     safeLink: safeLink,
     stripEmoji: stripEmoji,

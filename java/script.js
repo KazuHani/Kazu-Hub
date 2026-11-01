@@ -236,6 +236,7 @@
     syncPfp(new Date());
     refreshUpdatedLabels(Date.now());
     updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
+    checkWinterSnow(); // once-per-day brief snow shower in November and December (UK clock)
     checkNewYear(); // uses the real UK clock, independently of seasonal/sky previews
   }
 
@@ -2167,6 +2168,88 @@
   }
   if (themeDarkMQ && themeDarkMQ.addEventListener) themeDarkMQ.addEventListener('change', () => setThemeColor());
   setThemeColor();
+
+  // ---------- Seasonal winter snow (November & December, max once per day) ---
+  // In November and December (months 10 and 11 on the UK clock), a gentle snow
+  // shower falls for a few seconds (~4.5s) on the first visit of each UK
+  // calendar day. Saved in localStorage ('kazu-winter-snow' = 'YYYY-MM-DD') so
+  // reloads on the same day never replay it, with an in-memory fallback when
+  // storage is blocked. Preview with ?snow=1 on any date (once per page load,
+  // without changing the saved daily latch). All flake nodes and timers are
+  // removed when the shower finishes or the tab hides.
+  const WINTER_SNOW_KEY = 'kazu-winter-snow';
+  const SNOW_PREVIEW = (() => {
+    try { return new URLSearchParams(location.search).get('snow') === '1'; }
+    catch (e) { return false; }
+  })();
+  let winterSnowLastDay = '';
+  let winterSnowPreviewPlayed = false;
+  try {
+    const savedDay = localStorage.getItem(WINTER_SNOW_KEY);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(savedDay || '')) winterSnowLastDay = savedDay;
+  } catch (e) {}
+  const winterSnowDay = (KazuLib && KazuLib.winterSnowDay) || function (date, lastDay) {
+    const w = seasonUKParts(date || new Date());
+    if (!w || !isFinite(w.year) || (w.month !== 10 && w.month !== 11)) return null;
+    const pad2 = (n) => (n < 10 ? '0' + n : '' + n);
+    const today = w.year + '-' + pad2(w.month + 1) + '-' + pad2(w.day);
+    return today === lastDay ? null : today;
+  };
+
+  function checkWinterSnow() {
+    if (document.hidden) return;
+    if (SNOW_PREVIEW) {
+      if (winterSnowPreviewPlayed) return;
+      winterSnowPreviewPlayed = true;
+    } else {
+      const day = winterSnowDay(new Date(), winterSnowLastDay);
+      if (day === null) return;
+      winterSnowLastDay = day;
+      try { localStorage.setItem(WINTER_SNOW_KEY, day); } catch (e) {}
+    }
+    playWinterSnow();
+  }
+
+  function playWinterSnow() {
+    if (document.hidden || document.querySelector('.winter-flake')) return;
+    const motion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motion && motion.matches) return;
+    const count = lightDevice ? 14 : 24;
+    const flakes = [];
+    for (let i = 0; i < count; i++) {
+      const f = document.createElement('span');
+      f.className = 'winter-flake';
+      f.setAttribute('aria-hidden', 'true');
+      const size = (5 + Math.random() * 6).toFixed(1) + 'px';
+      const dur = (2.6 + Math.random() * 1.4).toFixed(2) + 's';
+      const delay = (Math.random() * 1.4).toFixed(2) + 's';
+      const sway = ((Math.random() < 0.5 ? -1 : 1) * (10 + Math.random() * 18)).toFixed(1) + 'px';
+      const opacity = (0.45 + Math.random() * 0.4).toFixed(2);
+      f.style.left = (Math.random() * 100).toFixed(2) + 'vw';
+      f.style.setProperty('--flake-size', size);
+      f.style.setProperty('--flake-dur', dur);
+      f.style.setProperty('--flake-delay', delay);
+      f.style.setProperty('--flake-sway', sway);
+      f.style.setProperty('--flake-opacity', opacity);
+      document.body.appendChild(f);
+      flakes.push(f);
+    }
+    function cleanup() {
+      clearTimeout(endTimer);
+      while (flakes.length) {
+        const f = flakes.pop();
+        if (f && f.parentNode) f.remove();
+      }
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pagehide', cleanup);
+      if (motion && motion.removeEventListener) motion.removeEventListener('change', cleanup);
+    }
+    function onVis() { if (document.hidden) cleanup(); }
+    const endTimer = setTimeout(cleanup, 4600);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', cleanup);
+    if (motion && motion.addEventListener) motion.addEventListener('change', cleanup);
+  }
 
   // ---------- New Year fireworks ----------
   // One finite, silent show at UK midnight, using the existing visible-tab

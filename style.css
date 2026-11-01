@@ -1126,8 +1126,30 @@ body.low-power .populated-in { animation: none; }
 @keyframes konamiFlakeFall {
   to { transform: translateY(115vh) rotate(320deg); opacity: .15; }
 }
+.winter-flake {
+  position: fixed; top: -16px; z-index: 199;
+  width: var(--flake-size, 7px); height: var(--flake-size, 7px);
+  border-radius: 50%;
+  background: rgba(125, 180, 232, .72);
+  box-shadow: 0 0 4px rgba(100, 160, 220, .35);
+  pointer-events: none; user-select: none;
+  animation: winterFlakeFall var(--flake-dur, 3.2s) linear var(--flake-delay, 0s) forwards;
+}
+@media (prefers-color-scheme: dark) {
+  .winter-flake {
+    background: rgba(220, 238, 255, .82);
+    box-shadow: 0 0 6px rgba(185, 220, 255, .35);
+  }
+}
+@keyframes winterFlakeFall {
+  0%   { transform: translate3d(0, -2vh, 0); opacity: 0; }
+  12%  { opacity: var(--flake-opacity, .75); }
+  50%  { transform: translate3d(var(--flake-sway, 14px), 52vh, 0); }
+  85%  { opacity: var(--flake-opacity, .75); }
+  100% { transform: translate3d(calc(var(--flake-sway, 14px) * -0.5), 106vh, 0); opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .konami-dragon, .konami-flake { display: none; }
+  .konami-dragon, .konami-flake, .winter-flake { display: none; }
 }
 
 /* ============ LETTERBOXD CARD ============ */
@@ -1891,7 +1913,7 @@ body:not(#rd) .hero .title { transition: translate .5s ease; }
    rotates only while a live card is actively fetching. */
 html { scroll-behavior: auto !important; }
 *, *::before, *::after { transition: none !important; transition-delay: 0s !important; }
-*:not(.konami-dragon):not(.konami-flake):not(.sync-spinner), *:not(.konami-dragon):not(.konami-flake):not(.sync-spinner)::before, *:not(.konami-dragon):not(.konami-flake):not(.sync-spinner)::after { animation: none !important; }
+*:not(.konami-dragon):not(.konami-flake):not(.winter-flake):not(.sync-spinner), *:not(.konami-dragon):not(.konami-flake):not(.winter-flake):not(.sync-spinner)::before, *:not(.konami-dragon):not(.konami-flake):not(.winter-flake):not(.sync-spinner)::after { animation: none !important; }
 .scroll-reveal { opacity: 1 !important; transform: none !important; }
 
 /* The name used to start 66px low and glide up when the quote arrived. With no
