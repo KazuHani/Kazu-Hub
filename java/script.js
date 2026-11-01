@@ -135,21 +135,44 @@
     return { year: o.year, month: o.month - 1, day: o.day, hours: o.hour % 24, minutes: o.minute, seconds: o.second || 0 };
   }
 
-  // ---------- Seasonal profile picture ----------
+  // ---------- Seasonal profile picture + favicon sync ----------
   // November and December (months 10 and 11, 0-indexed on the UK clock) show
-  // Kazu Christmas Circle.png; every other month uses New Kazu.png. Checked on
-  // boot and each clock tick so a tab open across midnight flips on time.
+  // Kazu Christmas Circle.png; every other month uses the homepage's default
+  // profile image (New Kazu.png unless .pfp in index.html names another).
+  // Checked on boot and each clock tick so a tab open across midnight flips on
+  // time. The favicon (<link rel="icon"> and <link rel="apple-touch-icon">)
+  // always mirrors .pfp's current src, including when .pfp changes in markup
+  // or at runtime.
   const PFP_DEFAULT = (KazuLib && KazuLib.PFP_DEFAULT) || 'assets/New Kazu.png';
   const PFP_CHRISTMAS = (KazuLib && KazuLib.PFP_CHRISTMAS) || 'assets/Kazu Christmas Circle.png';
-  const pfpSrc = (KazuLib && KazuLib.pfpSrc) || function (now) {
+  const pfpSrc = (KazuLib && KazuLib.pfpSrc) || function (now, defaultSrc) {
     const w = seasonUKParts(now || new Date());
-    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : PFP_DEFAULT;
+    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : (defaultSrc || PFP_DEFAULT);
   };
   const pfpEl = document.querySelector('.pfp');
+  const initialPfpSrc = pfpEl && pfpEl.getAttribute('src');
+  const pfpBaseSrc = (initialPfpSrc && initialPfpSrc !== PFP_CHRISTMAS) ? initialPfpSrc : PFP_DEFAULT;
+  const faviconEls = Array.from(document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]'));
+  function syncFavicon() {
+    if (!pfpEl) return;
+    const src = pfpEl.getAttribute('src');
+    if (!src) return;
+    faviconEls.forEach((link) => {
+      if (link.getAttribute('href') !== src) link.setAttribute('href', src);
+    });
+  }
+  let lastSeasonPfp = '';
   function syncPfp(now) {
     if (!pfpEl) return;
-    const want = pfpSrc(now);
-    if (pfpEl.getAttribute('src') !== want) pfpEl.setAttribute('src', want);
+    const want = pfpSrc(now, pfpBaseSrc);
+    if (want !== lastSeasonPfp) {
+      lastSeasonPfp = want;
+      if (pfpEl.getAttribute('src') !== want) pfpEl.setAttribute('src', want);
+    }
+    syncFavicon();
+  }
+  if (pfpEl && 'MutationObserver' in window) {
+    new MutationObserver(syncFavicon).observe(pfpEl, { attributes: true, attributeFilter: ['src'] });
   }
   syncPfp(new Date());
 
@@ -2660,7 +2683,8 @@
     showToast('Konami! The dragon takes flight…');
     const d = document.createElement('div');
     d.className = 'konami-dragon';
-    d.innerHTML = '<img src="' + pfpSrc() + '" width="64" height="64" alt="">';
+    const currentPfp = (pfpEl && pfpEl.getAttribute('src')) || pfpSrc(new Date(), pfpBaseSrc);
+    d.innerHTML = '<img src="' + escapeHtml(currentPfp) + '" width="64" height="64" alt="">';
     d.setAttribute('aria-hidden', 'true');
     document.body.appendChild(d);
     d.addEventListener('animationend', () => { d.remove(); konamiBusy = false; });

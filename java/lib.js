@@ -84,12 +84,12 @@
   // ---- Seasonal profile picture ---------------------------------------------
   // November and December (0-indexed months 10 and 11 on the UK clock) swap the
   // profile picture to the Christmas variant; every other month uses the
-  // standard image.
+  // standard image (or `defaultSrc` when the page specifies another default).
   var PFP_DEFAULT = 'assets/New Kazu.png';
   var PFP_CHRISTMAS = 'assets/Kazu Christmas Circle.png';
-  function pfpSrc(date) {
+  function pfpSrc(date, defaultSrc) {
     var w = ukWallParts(date);
-    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : PFP_DEFAULT;
+    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : (defaultSrc || PFP_DEFAULT);
   }
 
   // ---- New Year celebration -----------------------------------------------
