@@ -464,7 +464,7 @@
     return at > 0 && ms > 0 && age >= 0 && age < ms;
   }
 
-  // Human-readable relative timestamp for the "Last updated ..." line on
+  // Human-readable relative timestamp for the "Updated ..." line on
   // the weather and Right-now cards. Returns '' when `at` is missing or in
   // the future.
   function formatUpdatedLabel(at, now) {
@@ -472,12 +472,12 @@
     var cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
     var diff = Math.max(0, cur - at);
     var mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Last updated just now';
-    if (mins < 60) return 'Last updated ' + mins + 'm ago';
+    if (mins < 1) return 'Updated just now';
+    if (mins < 60) return 'Updated ' + mins + (mins === 1 ? ' minute' : ' minutes') + ' ago';
     var hrs = Math.floor(mins / 60);
-    if (hrs < 24) return 'Last updated ' + hrs + 'h ago';
+    if (hrs < 24) return 'Updated ' + hrs + (hrs === 1 ? ' hour' : ' hours') + ' ago';
     var days = Math.floor(hrs / 24);
-    return 'Last updated ' + days + 'd ago';
+    return 'Updated ' + days + (days === 1 ? ' day' : ' days') + ' ago';
   }
 
   // How long a poller waits before its next run when polling (re)starts: on

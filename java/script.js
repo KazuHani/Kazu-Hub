@@ -399,18 +399,18 @@
     if (loadingEl) loadingEl.classList.add('hidden');
   }
 
-  // ---------- Live update status & "Last updated" stamps ----------
+  // ---------- Live update status & "Updated" stamps ----------
   const formatUpdatedLabel = (KazuLib && KazuLib.formatUpdatedLabel) || function (at, now) {
     if (typeof at !== 'number' || !isFinite(at) || at <= 0) return '';
     const cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
     const diff = Math.max(0, cur - at);
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Last updated just now';
-    if (mins < 60) return 'Last updated ' + mins + 'm ago';
+    if (mins < 1) return 'Updated just now';
+    if (mins < 60) return 'Updated ' + mins + (mins === 1 ? ' minute' : ' minutes') + ' ago';
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return 'Last updated ' + hrs + 'h ago';
+    if (hrs < 24) return 'Updated ' + hrs + (hrs === 1 ? ' hour' : ' hours') + ' ago';
     const days = Math.floor(hrs / 24);
-    return 'Last updated ' + days + 'd ago';
+    return 'Updated ' + days + (days === 1 ? ' day' : ' days') + ' ago';
   };
   const UPDATED_IDS = {
     weather: 'weatherUpdated',
