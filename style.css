@@ -1632,9 +1632,9 @@ body:not(#rd) {
     font-weight: 400; color: var(--muted) !important;
   }
 
-  .presence-row { gap: 14px; }
-  .avatar-img, .steam-avatar { width: 44px; height: 44px; border-radius: 50%; box-shadow: none; background: var(--track); }
-  .status-dot { width: 12px; height: 12px; right: -2px; bottom: -2px; border: 2px solid var(--bg); }
+  .presence-row { gap: 16px; }
+  .avatar-img, .steam-avatar { width: 64px; height: 64px; border-radius: 50%; box-shadow: none; background: var(--track); }
+  .status-dot { width: 14px; height: 14px; right: 0; bottom: 0; border: 2px solid var(--bg); }
   .presence-name, .discord-card .presence-name { color: var(--ink) !important; font-weight: 600; line-height: 1.25; }
   .presence-status, .steam-card .presence-status, .discord-card .presence-status {
     margin-top: 2px; font-weight: 400; color: var(--muted);
@@ -1864,7 +1864,7 @@ body:not(#rd) {
     /* bigger pictures on a phone */
     .mal-cover, .lb-poster { width: 76px; height: 108px; }
     .recent-game-logo { width: 150px; height: 70px; }
-    .avatar-img, .steam-avatar { width: 60px; height: 60px; }
+    .avatar-img, .steam-avatar { width: 72px; height: 72px; }
     .mal-row, a.mal-row, .lb-entry, a.lb-entry { gap: 18px; }
   }
   @media (max-width: 600px) {
