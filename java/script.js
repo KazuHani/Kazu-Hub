@@ -442,20 +442,8 @@
     const at = updatedAt[key];
     if (typeof at === 'number' && at > 0) {
       const txt = formatUpdatedLabel(at, now == null ? Date.now() : now);
-      let labelEl = el.querySelector('.updated-text');
-      if (!labelEl) {
-        el.innerHTML =
-          '<span class="updated-text"></span>' +
-          '<button type="button" class="update-btn" data-update-key="' + key + '" title="Update now" aria-label="Update now">' +
-            '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-              '<path d="M13.5 8a5.5 5.5 0 1 1-1.35-3.6"/>' +
-              '<path d="M13.5 2v2.6h-2.6"/>' +
-            '</svg>' +
-          '</button>';
-        labelEl = el.querySelector('.updated-text');
-      }
-      if (labelEl && labelEl.textContent !== txt) {
-        labelEl.textContent = txt;
+      if (el.querySelector('.sync-spinner') || el.textContent !== txt) {
+        el.textContent = txt;
       }
       el.classList.remove('hidden');
     } else {
@@ -2840,42 +2828,6 @@
     $('lbLoading').classList.remove('hidden');
     hostRest.clear();
     loadLetterboxd(true);
-  });
-
-  // Manual update buttons next to the "Last updated …" labels
-  function manualUpdate(key) {
-    if (activeUpdates.has(key)) return;
-    const now = Date.now();
-    const poller = POLLERS.find((p) => p.key === key);
-    if (poller) {
-      poller.last = now;
-      poller.ran = true;
-    }
-    recordPollAttempt(key, now);
-    if (key === 'weather') {
-      loadWeather();
-    } else if (key === 'discord') {
-      hostRest.clear();
-      restartLanyard();
-      loadDiscord(true);
-    } else if (key === 'steam') {
-      hostRest.clear();
-      loadSteam(true);
-    } else if (key === 'mal') {
-      hostRest.clear();
-      loadMalAll(true);
-    } else if (key === 'lb') {
-      hostRest.clear();
-      loadLetterboxd(true);
-    }
-  }
-  document.addEventListener('click', (e) => {
-    const btn = e.target && e.target.closest ? e.target.closest('.update-btn[data-update-key]') : null;
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const key = btn.getAttribute('data-update-key');
-    if (key) manualUpdate(key);
   });
 
   // ---------- Pause polling/ticking while the page isn't visible ----------

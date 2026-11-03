@@ -1579,15 +1579,6 @@ body:not(#rd) {
   .stat-updated { margin-top: 6px; }
   .card-updated { order: 2; margin-top: 2px; }
   .site-sync-status { margin-left: 8px; }
-  .update-btn {
-    appearance: none; display: inline-flex; align-items: center; justify-content: center;
-    width: 20px; height: 20px; padding: 0; margin: 0; flex-shrink: 0;
-    border: 1px solid var(--line-strong); border-radius: 5px;
-    background: transparent; color: var(--muted); cursor: pointer;
-  }
-  .update-btn:hover { border-color: var(--ink); color: var(--ink); }
-  .update-btn:active { border-color: var(--accent); color: var(--accent); }
-  .update-btn svg { width: 11px; height: 11px; display: block; flex-shrink: 0; }
   .sync-spinner {
     display: inline-block; width: 11px; height: 11px; flex-shrink: 0;
     border: 1.5px solid var(--line-strong); border-top-color: var(--accent);
