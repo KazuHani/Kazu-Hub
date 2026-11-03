@@ -405,8 +405,8 @@
     const cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
     const diff = Math.max(0, cur - at);
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Updated just now';
-    if (mins < 60) return 'Updated ' + mins + (mins === 1 ? ' minute' : ' minutes') + ' ago';
+    if (mins < 5) return '';
+    if (mins < 60) return 'Updated ' + mins + ' minutes ago';
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return 'Updated ' + hrs + (hrs === 1 ? ' hour' : ' hours') + ' ago';
     const days = Math.floor(hrs / 24);
@@ -440,14 +440,18 @@
       return;
     }
     const at = updatedAt[key];
-    if (typeof at === 'number' && at > 0) {
-      const txt = formatUpdatedLabel(at, now == null ? Date.now() : now);
+    const txt = (typeof at === 'number' && at > 0)
+      ? formatUpdatedLabel(at, now == null ? Date.now() : now)
+      : '';
+    if (txt) {
       if (el.querySelector('.sync-spinner') || el.textContent !== txt) {
         el.textContent = txt;
       }
       el.classList.remove('hidden');
     } else {
-      el.textContent = '';
+      if (el.querySelector('.sync-spinner') || el.textContent !== '') {
+        el.textContent = '';
+      }
       el.classList.add('hidden');
     }
   }

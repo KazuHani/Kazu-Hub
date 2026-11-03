@@ -465,15 +465,15 @@
   }
 
   // Human-readable relative timestamp for the "Updated ..." line on
-  // the weather and Right-now cards. Returns '' when `at` is missing or in
-  // the future.
+  // the weather and Right-now cards. Returns '' when `at` is missing, in
+  // the future, or less than 5 minutes old (freshly updated cards hide the label).
   function formatUpdatedLabel(at, now) {
     if (typeof at !== 'number' || !isFinite(at) || at <= 0) return '';
     var cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
     var diff = Math.max(0, cur - at);
     var mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Updated just now';
-    if (mins < 60) return 'Updated ' + mins + (mins === 1 ? ' minute' : ' minutes') + ' ago';
+    if (mins < 5) return '';
+    if (mins < 60) return 'Updated ' + mins + ' minutes ago';
     var hrs = Math.floor(mins / 60);
     if (hrs < 24) return 'Updated ' + hrs + (hrs === 1 ? ' hour' : ' hours') + ' ago';
     var days = Math.floor(hrs / 24);
