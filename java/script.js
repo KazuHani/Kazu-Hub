@@ -823,7 +823,10 @@
   let discordHasData = false; // true after the first successful render
   let spotifyTimes = null;   // { start, end } in ms while listening
   let gameStartMs = null;    // activity start in ms while playing
-  let steamGameStartMs = null; // Steam session start in ms while in-game
+  let discordGameTitle = ''; // active Discord game name, matched against Steam
+  let steamCurrentGameName = ''; // active Steam game name while in-game
+  let steamCurrentGameHours = ''; // Steam playtime fallback when no session start is known
+  let steamGameStartMs = null; // verified session start in ms while in-game (from Discord)
   let steamGameSession = null; // { name, startedAt } across polls while in-game
 
   const PLATFORM_ICONS = {
@@ -896,10 +899,17 @@
     }
     const sEl = $('steamGameElapsed');
     if (sEl) {
-      const start = (gameStartMs && steamGameStartMs && gameStartMs < steamGameStartMs) ? gameStartMs : steamGameStartMs;
+      const sameDiscordGame = !!(gameStartMs && discordGameTitle && steamCurrentGameName &&
+        discordGameTitle.toLowerCase() === steamCurrentGameName.toLowerCase());
+      const start = sameDiscordGame
+        ? ((steamGameStartMs && steamGameStartMs < gameStartMs) ? steamGameStartMs : gameStartMs)
+        : steamGameStartMs;
       if (start) {
         const txt = fmtElapsed(now - start);
         if (sEl.textContent !== txt) sEl.textContent = txt;
+        sEl.classList.remove('hidden');
+      } else if (steamCurrentGameHours) {
+        if (sEl.textContent !== steamCurrentGameHours) sEl.textContent = steamCurrentGameHours;
         sEl.classList.remove('hidden');
       } else {
         if (sEl.textContent !== '') sEl.textContent = '';
@@ -1058,6 +1068,14 @@
 
     if (game) {
       gameStartMs = (game.timestamps && game.timestamps.start) ? game.timestamps.start : null;
+      discordGameTitle = (game.name || '').trim();
+      if (gameStartMs && discordGameTitle && steamCurrentGameName &&
+          discordGameTitle.toLowerCase() === steamCurrentGameName.toLowerCase()) {
+        if (!steamGameStartMs || gameStartMs < steamGameStartMs) {
+          steamGameStartMs = gameStartMs;
+          steamGameSession = { name: steamCurrentGameName, startedAt: gameStartMs };
+        }
+      }
       $('discordGameName').textContent = game.name || 'a game';
       const parts = [game.details, game.state].filter(Boolean);
       const sub = parts.join(' · ');
@@ -1078,6 +1096,7 @@
       }
     } else {
       gameStartMs = null;
+      discordGameTitle = '';
       $('discordGame').classList.add('hidden');
     }
 
@@ -1099,11 +1118,9 @@
       $('discordSpotify').classList.add('hidden');
     }
 
-    const idle = !game && !isSpotify && !hasCustom;
+    const idle = !game && !isSpotify && !hasCustom && dc.discord_status === 'offline';
     if (idle) {
-      $('discordIdle').textContent = dc.discord_status === 'offline'
-        ? 'Currently offline'
-        : 'Online, not in a game right now';
+      $('discordIdle').textContent = 'Currently offline';
       $('discordIdle').classList.remove('hidden');
     } else {
       $('discordIdle').classList.add('hidden');
@@ -1250,8 +1267,17 @@
     $('steamStatusText').style.color = statusColor;
 
     if (p.game) {
-      steamGameStartMs = (typeof p.game.startedAt === 'number' && p.game.startedAt > 0) ? p.game.startedAt : Date.now();
-      steamGameSession = { name: p.game.name, startedAt: steamGameStartMs };
+      steamCurrentGameName = p.game.name || '';
+      const hasHours = (typeof p.game.hoursPlayed === 'number' && p.game.hoursPlayed > 0) ||
+        (typeof p.game.hoursOnRecord === 'number' && p.game.hoursOnRecord > 0);
+      steamCurrentGameHours = hasHours ? steamHoursText(p.game.hoursPlayed, p.game.hoursOnRecord) : '';
+      const sameDiscordGame = !!(gameStartMs && discordGameTitle && steamCurrentGameName &&
+        discordGameTitle.toLowerCase() === steamCurrentGameName.toLowerCase());
+      const verifiedStart = (typeof p.game.startedAt === 'number' && p.game.startedAt > 0)
+        ? (sameDiscordGame && gameStartMs < p.game.startedAt ? gameStartMs : p.game.startedAt)
+        : (sameDiscordGame ? gameStartMs : null);
+      steamGameStartMs = verifiedStart;
+      steamGameSession = verifiedStart ? { name: p.game.name, startedAt: verifiedStart } : null;
       $('steamGameName').textContent = p.game.name;
       const steamGameEl = $('steamGame');
       const gameUrl = p.game.url;
@@ -1260,6 +1286,8 @@
       steamGameEl.classList.remove('hidden');
     } else {
       if (p.state !== 'checking' && p.state !== 'unknown') steamGameSession = null;
+      steamCurrentGameName = '';
+      steamCurrentGameHours = '';
       steamGameStartMs = null;
       $('steamGame').removeAttribute('href');
       $('steamGame').classList.add('hidden');
@@ -1380,8 +1408,13 @@
       const keptStart = (savedSession && currentGame && savedSession.name.toLowerCase() === currentGame.toLowerCase())
         ? savedSession.startedAt
         : null;
+      const sameDiscordGame = !!(gameStartMs && discordGameTitle && currentGame &&
+        discordGameTitle.toLowerCase() === currentGame.toLowerCase());
+      // Only record a session start time when a real launch timestamp is known
+      // (from Discord or a previously verified session) — never Date.now(),
+      // which would restart the timer at 0s whenever the website is opened.
       const sessionStart = currentGame
-        ? ((gameStartMs && (!keptStart || gameStartMs < keptStart)) ? gameStartMs : (keptStart || now))
+        ? ((sameDiscordGame && (!keptStart || gameStartMs < keptStart)) ? gameStartMs : keptStart)
         : null;
 
       const profile = {
@@ -1396,6 +1429,9 @@
             || (matchedGame && (steamStoreUrl(matchedGame.link) || steamStoreUrl(matchedGame.logo)))
             || '',
           startedAt: sessionStart,
+          verifiedStart: !!sessionStart,
+          hoursPlayed: matchedGame ? matchedGame.hoursPlayed : 0,
+          hoursOnRecord: matchedGame ? matchedGame.hoursOnRecord : 0,
         } : null,
         recent: games.slice(0, 3).map((g) => ({
           name: g.name,

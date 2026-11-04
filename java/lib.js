@@ -624,7 +624,9 @@
     }
     var live = presenceKept(payload, now);
     var gameName = live && d.game ? cacheText(d.game.name, 200) : '';
-    var startedAt = live && d.game ? cacheTime(d.game.startedAt) : null;
+    var startedAt = (live && d.game && d.game.verifiedStart === true) ? cacheTime(d.game.startedAt) : null;
+    var hoursPlayed = (live && d.game && typeof d.game.hoursPlayed === 'number' && d.game.hoursPlayed >= 0) ? d.game.hoursPlayed : 0;
+    var hoursOnRecord = (live && d.game && typeof d.game.hoursOnRecord === 'number' && d.game.hoursOnRecord >= 0) ? d.game.hoursOnRecord : 0;
     return {
       avatar: avatar,
       state: !live ? 'unknown' : (STEAM_STATES[d.state] ? d.state : 'offline'),
@@ -632,22 +634,26 @@
         name: gameName,
         url: steamStoreUrl(d.game.url) || '',
         startedAt: (startedAt && (typeof now !== 'number' || startedAt <= now)) ? startedAt : null,
+        verifiedStart: !!(startedAt && (typeof now !== 'number' || startedAt <= now)),
+        hoursPlayed: hoursPlayed,
+        hoursOnRecord: hoursOnRecord,
       } : null,
       recent: recent,
     };
   }
 
   // Recovers the saved session start time { name, startedAt } from the stored
-  // Steam copy so an ongoing in-game session keeps counting across 5-minute
-  // polls and tab reloads instead of resetting to 0s on every fetch. Capped at
-  // 24 hours; cleared as soon as a live fetch writes a non-in-game state.
+  // Steam copy when a verified session start timestamp (e.g. from Discord) was
+  // recorded, so an ongoing in-game session keeps counting across 5-minute
+  // polls and tab reloads. Capped at 24 hours; cleared as soon as a live fetch
+  // writes a non-in-game state.
   var STEAM_SESSION_MAX_MS = 24 * 60 * 60 * 1000;
   function steamSavedSession(raw, id, now) {
     if (!cardCacheMeta(raw, id).paint || typeof now !== 'number') return null;
     var payload;
     try { payload = JSON.parse(raw); } catch (e) { return null; }
     var d = payload && payload.data;
-    if (!d || d.state !== 'in-game' || !d.game) return null;
+    if (!d || d.state !== 'in-game' || !d.game || d.game.verifiedStart !== true) return null;
     var name = cacheText(d.game.name, 200);
     var startedAt = cacheTime(d.game.startedAt);
     if (!name || !startedAt || now - startedAt < 0 || now - startedAt >= STEAM_SESSION_MAX_MS) return null;
