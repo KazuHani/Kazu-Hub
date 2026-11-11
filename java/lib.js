@@ -81,24 +81,75 @@
     return String(s == null ? '' : s).replace(/[#*0-9]\uFE0F?\u20E3|\p{Regional_Indicator}{1,2}|\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:[\uFE0E\uFE0F]|\p{Emoji_Modifier})?)*[\u{E0020}-\u{E007F}]*|\p{Emoji_Modifier}|[\uFE0E\uFE0F]/gu, '');
   }
 
-  // ---- Seasonal profile picture ---------------------------------------------
-  // November and December (0-indexed months 10 and 11 on the UK clock) swap the
-  // profile picture to the Christmas variant; every other month uses the
-  // standard image (or `defaultSrc` when the page specifies another default).
+  // ---- Themes & seasonal profile picture -----------------------------------
+  // Themes follow the Europe/London calendar by default, can be forced 'on' or
+  // 'off' by the control panel (`themes` or legacy `seasons` config), and can
+  // be previewed per-page-load via `?theme=<id>` (`?season=<id>`) or turned
+  // off via `?theme=off` / `?theme=none` (`?season=off` / `?season=none`).
   var PFP_DEFAULT = 'assets/New Kazu.png';
   var PFP_CHRISTMAS = 'assets/Kazu Christmas Circle.png';
-  function pfpSrc(date, defaultSrc) {
+
+  // November and December (0-indexed months 10 and 11 on the UK clock).
+  function isChristmasSeason(date) {
     var w = ukWallParts(date);
-    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : (defaultSrc || PFP_DEFAULT);
+    return !!(w && (w.month === 10 || w.month === 11));
   }
 
-  // Returns today's UK ISO date ('YYYY-MM-DD') when it is November or December
-  // on the UK clock (0-indexed months 10 and 11) and `lastDay` does not already
-  // match today; otherwise null. Caps the brief winter snow effect at once per
-  // UK calendar day across reloads.
-  function winterSnowDay(date, lastDay) {
+  var THEME_KEYS = ['christmas'];
+  var THEMES = {
+    christmas: {
+      check: isChristmasSeason,
+      pfp: PFP_CHRISTMAS,
+    },
+  };
+
+  function parseThemeQuery(search) {
+    if (typeof search !== 'string' || !search) return null;
+    var m = /(?:^[?&]|&)(?:theme|season)=([^&#]*)/i.exec(search);
+    if (!m) return null;
+    try { return decodeURIComponent(m[1]).trim().toLowerCase(); } catch (e) { return m[1].trim().toLowerCase(); }
+  }
+
+  function isThemeActive(id, date, overrides, search) {
+    var def = THEMES[id];
+    if (!def) return false;
+    var q = parseThemeQuery(search);
+    if (q) {
+      if (q === 'none' || q === 'off') return false;
+      if (THEMES[q]) return q === id;
+    }
+    if (overrides && typeof overrides === 'object') {
+      var mode = overrides[id];
+      if (mode === 'on' || mode === true) return true;
+      if (mode === 'off' || mode === false) return false;
+    }
+    return !!def.check(date);
+  }
+
+  function activeThemes(date, overrides, search) {
+    var out = [];
+    for (var i = 0; i < THEME_KEYS.length; i++) {
+      var k = THEME_KEYS[i];
+      if (isThemeActive(k, date, overrides, search)) out.push(k);
+    }
+    return out;
+  }
+
+  function pfpSrc(date, defaultSrc, overrides, search) {
+    for (var i = 0; i < THEME_KEYS.length; i++) {
+      var k = THEME_KEYS[i];
+      if (THEMES[k].pfp && isThemeActive(k, date, overrides, search)) return THEMES[k].pfp;
+    }
+    return defaultSrc || PFP_DEFAULT;
+  }
+
+  // Returns today's UK ISO date ('YYYY-MM-DD') when the Christmas theme is
+  // active (November or December on the UK clock by default, or forced on) and
+  // `lastDay` does not already match today; otherwise null. Caps the brief
+  // winter snow effect at once per UK calendar day across reloads.
+  function winterSnowDay(date, lastDay, overrides, search) {
     var w = ukWallParts(date);
-    if (!w || !isFinite(w.year) || (w.month !== 10 && w.month !== 11)) return null;
+    if (!w || !isFinite(w.year) || !isThemeActive('christmas', date, overrides, search)) return null;
     var today = w.year + '-' + pad(w.month + 1) + '-' + pad(w.day);
     return today === lastDay ? null : today;
   }
@@ -462,22 +513,6 @@
   function cardCacheFresh(at, ms, now) {
     var age = now - at;
     return at > 0 && ms > 0 && age >= 0 && age < ms;
-  }
-
-  // Human-readable relative timestamp for the "Updated ..." line on
-  // the weather and Right-now cards. Returns '' when `at` is missing, in
-  // the future, or less than 5 minutes old (freshly updated cards hide the label).
-  function formatUpdatedLabel(at, now) {
-    if (typeof at !== 'number' || !isFinite(at) || at <= 0) return '';
-    var cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
-    var diff = Math.max(0, cur - at);
-    var mins = Math.floor(diff / 60000);
-    if (mins < 5) return '';
-    if (mins < 60) return 'Updated ' + mins + ' minutes ago';
-    var hrs = Math.floor(mins / 60);
-    if (hrs < 24) return 'Updated ' + hrs + (hrs === 1 ? ' hour' : ' hours') + ' ago';
-    var days = Math.floor(hrs / 24);
-    return 'Updated ' + days + (days === 1 ? ' day' : ' days') + ' ago';
   }
 
   // How long a poller waits before its next run when polling (re)starts: on
@@ -1176,6 +1211,11 @@
     TIMEZONE: TIMEZONE,
     PFP_DEFAULT: PFP_DEFAULT,
     PFP_CHRISTMAS: PFP_CHRISTMAS,
+    THEME_KEYS: THEME_KEYS,
+    THEMES: THEMES,
+    isChristmasSeason: isChristmasSeason,
+    isThemeActive: isThemeActive,
+    activeThemes: activeThemes,
     pfpSrc: pfpSrc,
     winterSnowDay: winterSnowDay,
     escapeHtml: escapeHtml,
@@ -1195,7 +1235,6 @@
     steamHoursText: steamHoursText,
     cardCacheMeta: cardCacheMeta,
     cardCacheFresh: cardCacheFresh,
-    formatUpdatedLabel: formatUpdatedLabel,
     pollDelay: pollDelay,
     PRESENCE_KEEP_MS: PRESENCE_KEEP_MS,
     discordCacheParse: discordCacheParse,

@@ -12,10 +12,11 @@
 
   var SECTION_KEYS = ['quote', 'rightNow', 'socials', 'pc', 'playlist', 'stories'];
   var TITLE_KEYS = ['rightNow', 'socials', 'pc', 'playlist', 'stories'];
+  var THEME_KEYS = ['christmas'];
   var SEASON_KEYS = ['birthday', 'christmas', 'pride', 'sakura', 'halloween'];
   var BUILTIN_SOCIALS = ['x', 'instagram', 'youtube', 'reddit', 'tiktok', 'mal', 'letterboxd'];
   var TONES = ['info', 'good', 'warn'];
-  var MANAGED_KEYS = ['notice', 'sections', 'titles', 'seasons', 'effects', 'footer', 'integrations', 'socials', 'playlist', 'stories', 'pc'];
+  var MANAGED_KEYS = ['notice', 'sections', 'titles', 'themes', 'seasons', 'effects', 'footer', 'integrations', 'socials', 'playlist', 'stories', 'pc'];
   var KNOWN_KEYS = ['schema', 'updatedAt'].concat(MANAGED_KEYS);
 
   var LIMITS = {
@@ -235,6 +236,17 @@
     return out;
   }
 
+  function normThemes(ctx, raw) {
+    var o = section(ctx, 'themes', raw); if (!o) return undefined;
+    checkKeys(ctx, 'themes', o, THEME_KEYS);
+    var out = {};
+    THEME_KEYS.forEach(function (k) {
+      if (!has(o, k)) return;
+      out[k] = pick(ctx, join('themes', k), o[k], ['auto', 'on', 'off'], 'auto');
+    });
+    return out;
+  }
+
   function normSeasons(ctx, raw) {
     var o = section(ctx, 'seasons', raw); if (!o) return undefined;
     checkKeys(ctx, 'seasons', o, SEASON_KEYS);
@@ -412,6 +424,7 @@
     if (has(raw, 'notice') && (v = normNotice(ctx, raw.notice))) config.notice = v;
     if (has(raw, 'sections') && (v = normFlags(ctx, 'sections', raw.sections, SECTION_KEYS))) config.sections = v;
     if (has(raw, 'titles') && (v = normTitles(ctx, raw.titles))) config.titles = v;
+    if (has(raw, 'themes') && (v = normThemes(ctx, raw.themes))) config.themes = v;
     if (has(raw, 'seasons') && (v = normSeasons(ctx, raw.seasons))) config.seasons = v;
     if (has(raw, 'effects') && (v = normFlags(ctx, 'effects', raw.effects, ['weather', 'particles']))) config.effects = v;
     if (has(raw, 'footer') && (v = normFooter(ctx, raw.footer))) config.footer = v;
@@ -508,6 +521,7 @@
     ID_PATTERNS: ID_PATTERNS,
     SECTION_KEYS: SECTION_KEYS,
     TITLE_KEYS: TITLE_KEYS,
+    THEME_KEYS: THEME_KEYS,
     SEASON_KEYS: SEASON_KEYS,
     BUILTIN_SOCIALS: BUILTIN_SOCIALS,
     TONES: TONES,

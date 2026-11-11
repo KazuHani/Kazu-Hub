@@ -56,9 +56,6 @@
     'Back to top': 'ページの先頭へ',
     'New quote': '新しい名言',
     'Show another quote': '別の名言を表示',
-    'Updating…': '更新中…',
-    'Updated just now': 'たった今更新',
-    'Last updated just now': 'たった今更新',
 
     // Stat cards
     'UK time': 'イギリス時間',
@@ -209,18 +206,10 @@
     // Birthday card + countdowns
     function (s) { var m = /^([\d,]+) days?$/.exec(s); return m ? m[1] + '日' : null; },
     function (s) { var m = /^until turning (\d+)$/i.exec(s); return m ? m[1] + '歳まで' : null; },
-    function (s) { var m = /^Happy birthday — turning (\d+)$/i.exec(s); return m ? 'お誕生日おめでとう! ' + m[1] + '歳に' : null; },
+    function (s) { var m = /^Happy birthday(?: — turning \d+)?$/i.exec(s); return m ? 'お誕生日おめでとう!' : null; },
     function (s) { var m = /^on (.+)$/.exec(s); var d = m && dateJa(m[1]); return d ? 'の誕生日 — ' + d : null; },
     // Weather
     function (s) { var m = /^wind (\d+) mph$/i.exec(s); return m ? '風速 ' + m[1] + ' mph' : null; },
-    // Updated relative timestamp
-    function (s) {
-      var m = /^(?:Last updated|Updated) (\d+)\s*(m|h|d|minute|hour|day)s? ago$/i.exec(s);
-      if (!m) return null;
-      var unit = m[2].toLowerCase();
-      var u = (unit === 'm' || unit === 'minute') ? '分前' : ((unit === 'h' || unit === 'hour') ? '時間前' : '日前');
-      return m[1] + u + 'に更新';
-    },
     // Discord game timer
     function (s) {
       var m = /^for (?:(\d+)h (\d+)m|(\d+) min|(\d+)s)$/.exec(s);
@@ -520,6 +509,11 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 
   // ---- DOM shell ----------------------------------------------------------
+  // Always lift any i18n-pending hold before checking whether the language
+  // switch is present in the DOM.
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.classList.remove('i18n-pending');
+  }
   // Only on a page that carries the switch (index.html loads this file after
   // the markup); the core alone runs without it.
   if (typeof document === 'undefined' || !document.querySelector || !document.querySelector('[data-lang-set]')) return;

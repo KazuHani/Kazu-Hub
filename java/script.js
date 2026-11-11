@@ -135,19 +135,48 @@
     return { year: o.year, month: o.month - 1, day: o.day, hours: o.hour % 24, minutes: o.minute, seconds: o.second || 0 };
   }
 
-  // ---------- Seasonal profile picture + favicon sync ----------
-  // November and December (months 10 and 11, 0-indexed on the UK clock) show
-  // Kazu Christmas Circle.png; every other month uses the homepage's default
-  // profile image (New Kazu.png unless .pfp in index.html names another).
-  // Checked on boot and each clock tick so a tab open across midnight flips on
-  // time. The favicon (<link rel="icon"> and <link rel="apple-touch-icon">)
-  // always mirrors .pfp's current src, including when .pfp changes in markup
-  // or at runtime.
+  // ---------- Themes + seasonal profile picture & favicon sync ----------
+  // Themes follow their UK calendar window by default and can be forced on or
+  // off via the control panel (`themes` or legacy `seasons` section) or a URL
+  // preview parameter (`?theme=<id>`, `?theme=off`).
+  // Currently defined themes:
+  //   - 'christmas': active in November and December (months 10 and 11,
+  //     0-indexed on the Europe/London clock). Applies `.theme-christmas` on
+  //     <html> and <body>, swaps .pfp and favicons to Kazu Christmas Circle.png,
+  //     and enables the once-per-day winter snow shower.
+  const THEME_KEYS = (KazuLib && Array.isArray(KazuLib.THEME_KEYS)) ? KazuLib.THEME_KEYS : ['christmas'];
   const PFP_DEFAULT = (KazuLib && KazuLib.PFP_DEFAULT) || 'assets/New Kazu.png';
   const PFP_CHRISTMAS = (KazuLib && KazuLib.PFP_CHRISTMAS) || 'assets/Kazu Christmas Circle.png';
-  const pfpSrc = (KazuLib && KazuLib.pfpSrc) || function (now, defaultSrc) {
+  const isChristmasSeason = (KazuLib && KazuLib.isChristmasSeason) || function (now) {
     const w = seasonUKParts(now || new Date());
-    return (w.month === 10 || w.month === 11) ? PFP_CHRISTMAS : (defaultSrc || PFP_DEFAULT);
+    return !!(w && (w.month === 10 || w.month === 11));
+  };
+  function themeOverrides() {
+    return siteSection('themes') || siteSection('seasons') || null;
+  }
+  function isThemeActive(id, now) {
+    const ov = themeOverrides();
+    const search = typeof location !== 'undefined' ? (location.search || '') : '';
+    if (KazuLib && typeof KazuLib.isThemeActive === 'function') {
+      return KazuLib.isThemeActive(id, now || new Date(), ov, search);
+    }
+    const qm = /[?&](?:theme|season)=([a-z0-9_-]+)/i.exec(search);
+    const q = qm ? qm[1].toLowerCase() : '';
+    if (q === 'none' || q === 'off' || q === 'default') return false;
+    if (q === id) return true;
+    const mode = ov && typeof ov === 'object' ? ov[id] : null;
+    if (mode === 'on') return true;
+    if (mode === 'off') return false;
+    if (id === 'christmas') return isChristmasSeason(now || new Date());
+    return false;
+  }
+  const pfpSrc = function (now, defaultSrc) {
+    const ov = themeOverrides();
+    const search = typeof location !== 'undefined' ? (location.search || '') : '';
+    if (KazuLib && typeof KazuLib.pfpSrc === 'function' && KazuLib.pfpSrc.length >= 3) {
+      return KazuLib.pfpSrc(now || new Date(), defaultSrc || PFP_DEFAULT, ov, search);
+    }
+    return isThemeActive('christmas', now || new Date()) ? PFP_CHRISTMAS : (defaultSrc || PFP_DEFAULT);
   };
   const pfpEl = document.querySelector('.pfp');
   const initialPfpSrc = pfpEl && pfpEl.getAttribute('src');
@@ -161,7 +190,28 @@
       if (link.getAttribute('href') !== src) link.setAttribute('href', src);
     });
   }
+  // ---------- Browser-chrome colour ----------
+  // There is no theme toggle: the redesign paints the page one flat canvas
+  // (style.css REDESIGN; light, or dark from the system setting, or the active
+  // seasonal theme), so the browser chrome follows that canvas.
+  const THEME_CANVAS = {
+    default: { light: '#F7F6F3', dark: '#111316' },
+    christmas: { light: '#F6F2EB', dark: '#0C1611' },
+  };
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  const themeDarkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function setThemeColor() {
+    const xmas = isThemeActive('christmas', new Date());
+    const pal = xmas ? THEME_CANVAS.christmas : THEME_CANVAS.default;
+    const c = themeDarkMQ && themeDarkMQ.matches ? pal.dark : pal.light;
+    if (themeColorMeta && themeColorMeta.getAttribute('content') !== c) {
+      themeColorMeta.setAttribute('content', c);
+    }
+  }
+  if (themeDarkMQ && themeDarkMQ.addEventListener) themeDarkMQ.addEventListener('change', () => setThemeColor());
+
   let lastSeasonPfp = '';
+  let lastThemeSig = '';
   function syncPfp(now) {
     if (!pfpEl) return;
     const want = pfpSrc(now, pfpBaseSrc);
@@ -171,10 +221,30 @@
     }
     syncFavicon();
   }
+  function syncThemes(now) {
+    const d = now || new Date();
+    const root = document.documentElement;
+    const body = document.body;
+    const activeList = [];
+    THEME_KEYS.forEach((id) => {
+      const on = isThemeActive(id, d);
+      const cls = 'theme-' + id;
+      if (root) root.classList.toggle(cls, on);
+      if (body) body.classList.toggle(cls, on);
+      if (on) activeList.push(id);
+    });
+    syncPfp(d);
+    const sig = activeList.join(',');
+    if (sig !== lastThemeSig) {
+      lastThemeSig = sig;
+      setThemeColor();
+    }
+  }
   if (pfpEl && 'MutationObserver' in window) {
     new MutationObserver(syncFavicon).observe(pfpEl, { attributes: true, attributeFilter: ['src'] });
   }
-  syncPfp(new Date());
+  setThemeColor();
+  syncThemes(new Date());
 
   // ---------- Clock / age / birthday ----------
   // Intl.DateTimeFormat construction is one of the priciest built-ins there
@@ -195,7 +265,7 @@
       ageStr = String(p.ageNow);
       if (p.isToday) {
         bdayText = 'Today!';
-        bdaySub = 'Happy birthday — turning ' + p.ageNow;
+        bdaySub = '';
       } else {
         bdayText = p.calDays + (p.calDays === 1 ? ' day' : ' days');
         bdaySub = 'Until Turning ' + p.turning;
@@ -216,7 +286,7 @@
       ageStr = String(age);
       if (isToday) {
         bdayText = 'Today!';
-        bdaySub = 'Happy birthday — turning ' + age;
+        bdaySub = '';
       } else {
         bdayText = days + (days === 1 ? ' day' : ' days');
         bdaySub = 'Until Turning ' + (age + 1);
@@ -233,8 +303,7 @@
     set('liveAge', c.ageStr);
     set('liveBday', c.bdayText);
     set('liveBdaySub', c.bdaySub);
-    syncPfp(new Date());
-    refreshUpdatedLabels(Date.now());
+    syncThemes(new Date());
     updatePresenceProgress(); // advance the Discord Spotify bar / game timer smoothly between polls
     checkWinterSnow(); // once-per-day brief snow shower in November and December (UK clock)
     checkNewYear(); // uses the real UK clock, independently of seasonal/sky previews
@@ -399,87 +468,6 @@
     if (loadingEl) loadingEl.classList.add('hidden');
   }
 
-  // ---------- Live update status & "Updated" stamps ----------
-  const formatUpdatedLabel = (KazuLib && KazuLib.formatUpdatedLabel) || function (at, now) {
-    if (typeof at !== 'number' || !isFinite(at) || at <= 0) return '';
-    const cur = (typeof now === 'number' && isFinite(now)) ? now : Date.now();
-    const diff = Math.max(0, cur - at);
-    const mins = Math.floor(diff / 60000);
-    if (mins < 5) return '';
-    if (mins < 60) return 'Updated ' + mins + ' minutes ago';
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return 'Updated ' + hrs + (hrs === 1 ? ' hour' : ' hours') + ' ago';
-    const days = Math.floor(hrs / 24);
-    return 'Updated ' + days + (days === 1 ? ' day' : ' days') + ' ago';
-  };
-  const UPDATED_IDS = {
-    weather: 'weatherUpdated',
-    discord: 'discordUpdated',
-    steam: 'steamUpdated',
-    mal: 'malUpdated',
-    lb: 'lbUpdated',
-  };
-  const updatedAt = {};
-  const activeUpdates = new Set();
-
-  function syncSiteStatusBanner() {
-    const banner = $('siteSyncStatus');
-    if (!banner) return;
-    banner.classList.toggle('hidden', activeUpdates.size === 0);
-  }
-
-  function renderUpdatedStatus(key, now) {
-    const id = UPDATED_IDS[key];
-    const el = id ? $(id) : null;
-    if (!el) return;
-    if (activeUpdates.has(key)) {
-      if (!el.querySelector('.sync-spinner')) {
-        el.innerHTML = '<span class="sync-spinner" aria-hidden="true"></span><span>Updating…</span>';
-      }
-      el.classList.remove('hidden');
-      return;
-    }
-    const at = updatedAt[key];
-    const txt = (typeof at === 'number' && at > 0)
-      ? formatUpdatedLabel(at, now == null ? Date.now() : now)
-      : '';
-    if (txt) {
-      if (el.querySelector('.sync-spinner') || el.textContent !== txt) {
-        el.textContent = txt;
-      }
-      el.classList.remove('hidden');
-    } else {
-      if (el.querySelector('.sync-spinner') || el.textContent !== '') {
-        el.textContent = '';
-      }
-      el.classList.add('hidden');
-    }
-  }
-
-  function setUpdatedStatus(key, at) {
-    if (typeof at === 'number' && isFinite(at) && at > 0) updatedAt[key] = at;
-    renderUpdatedStatus(key, Date.now());
-  }
-
-  function beginUpdate(key) {
-    activeUpdates.add(key);
-    syncSiteStatusBanner();
-    renderUpdatedStatus(key, Date.now());
-  }
-
-  function endUpdate(key, at) {
-    if (typeof at === 'number' && isFinite(at) && at > 0) updatedAt[key] = at;
-    activeUpdates.delete(key);
-    syncSiteStatusBanner();
-    renderUpdatedStatus(key, Date.now());
-  }
-
-  function refreshUpdatedLabels(now) {
-    Object.keys(UPDATED_IDS).forEach((k) => {
-      if (!activeUpdates.has(k) && updatedAt[k] > 0) renderUpdatedStatus(k, now);
-    });
-  }
-
   // ---------- Weather ----------
   function weatherInfo(code, isDay) {
     if (code === 0) return { d: 'Clear sky' };
@@ -527,13 +515,11 @@
     const copy = KazuLib.weatherCacheParse(raw, KazuLib.ukDateIso(new Date(now)));
     if (!copy) return 0;
     renderWeather(copy.current, copy.daily);
-    if (meta.at > 0) setUpdatedStatus('weather', meta.at);
     return meta.at;
   }
 
   async function loadWeather() {
     weatherDone = false;
-    beginUpdate('weather');
     try {
       const url = (KazuLib && KazuLib.openMeteoUrl)
         ? KazuLib.openMeteoUrl(52.414, -4.081)
@@ -542,11 +528,8 @@
       if (!r.ok) throw new Error('status ' + r.status);
       const j = await r.json();
       renderWeather(j.current, j.daily);
-      const at = Date.now();
       cardCacheWrite(WEATHER_CACHE_KEY, null, { data: { current: j.current, daily: j.daily || null } });
-      endUpdate('weather', at);
     } catch (e) {
-      endUpdate('weather');
       weatherDone = true;
       if (weatherCurrent) return;
       $('weatherLoading').classList.add('hidden');
@@ -963,7 +946,6 @@
   async function loadDiscord(force) {
     if ((!force && lanyardWsLive) || !siteIntegrationOn('discord')) return;
     const url = 'https://api.lanyard.rest/v1/users/' + DISCORD_ID;
-    beginUpdate('discord');
     try {
       let j;
       try {
@@ -976,14 +958,11 @@
         j = await r2.json();
       }
       if (!j || !j.success || !j.data || !j.data.discord_user) throw new Error('bad payload');
-      if (!force && lanyardWsLive) { endUpdate('discord'); return; } // a socket update beat this response
+      if (!force && lanyardWsLive) return; // a socket update beat this response
       renderDiscord(j.data);
       noteDiscordDesktop(j.data);
-      const at = Date.now();
       cardCacheWrite(DISCORD_CACHE_KEY, DISCORD_ID, { data: j.data });
-      endUpdate('discord', at);
     } catch (e) {
-      endUpdate('discord');
       if (lanyardWsLive) return;
       // With data already on screen, stale beats an error card, but only for
       // as long as a stored presence may be shown: the copy is redrawn under
@@ -1007,7 +986,6 @@
     const dc = meta.paint ? KazuLib.discordCacheParse(raw, now) : null;
     if (!dc) return 0;
     renderDiscord(dc);
-    if (meta.at > 0) setUpdatedStatus('discord', meta.at);
     return meta.at;
   }
 
@@ -1201,7 +1179,6 @@
           renderDiscord(msg.d);
           noteDiscordDesktop(msg.d);
           cardCacheWrite(DISCORD_CACHE_KEY, DISCORD_ID, { data: msg.d });
-          setUpdatedStatus('discord', Date.now());
         } else if (!discordHasData) {
           const cached = discordCacheRead();
           renderDiscord(cached || DISCORD_STATIC_FALLBACK);
@@ -1342,7 +1319,6 @@
     // than "Status unavailable" (nothing has failed yet).
     if (profile.state === 'unknown') profile.state = 'checking';
     renderSteam(profile);
-    if (meta.at > 0) setUpdatedStatus('steam', meta.at);
     return meta.at;
   }
 
@@ -1351,7 +1327,6 @@
     const vanity = STEAM_VANITY;
     if (steamInFlight === vanity) return;
     steamInFlight = vanity;
-    beginUpdate('steam');
     // `t` changes once a minute: enough that a proxy or edge cache can never
     // hand back the profile from when the PC was off (each 5-minute poll and
     // each Discord nudge gets a new URL), while every visitor inside the same
@@ -1445,9 +1420,7 @@
       // the old one, and the new account's load draws the card.
       if (vanity !== STEAM_VANITY) return;
       renderSteam(profile);
-      const at = Date.now();
       cardCacheWrite(STEAM_CACHE_KEY, vanity, { data: profile });
-      setUpdatedStatus('steam', at);
     } catch (e) {
       if (vanity !== STEAM_VANITY) return;
       console.warn('Steam load failed:', e);
@@ -1462,7 +1435,6 @@
       $('steamErr').classList.remove('hidden');
     } finally {
       if (steamInFlight === vanity) steamInFlight = '';
-      endUpdate('steam');
     }
   }
 
@@ -1732,9 +1704,7 @@
       const rows = await fetchMalRows(force);
 
       renderMalRows(rows);
-      const at = Date.now();
       cardCacheWrite(MAL_CACHE_KEY, MAL_USER, { rows });
-      setUpdatedStatus('mal', at);
     } catch (e) {
       const cached = malCacheRead();
       if (cached) {
@@ -1882,7 +1852,6 @@
   async function loadMalAll(force) {
     if (!siteIntegrationOn('mal') || malSyncInFlight) return;
     malSyncInFlight = true;
-    beginUpdate('mal');
     try {
       const now = Date.now();
       const isPartFresh = (key) => {
@@ -1895,7 +1864,6 @@
       if (!isPartFresh(MAL_REVIEW_CACHE_KEY)) await loadMalReview(force);
     } finally {
       malSyncInFlight = false;
-      endUpdate('mal');
     }
   }
 
@@ -1916,7 +1884,6 @@
     if (mangaRows) renderMalMangaRows(mangaRows);
     const reviewParsed = (review.paint && KazuLib.malReviewCacheParse) ? KazuLib.malReviewCacheParse(reviewRaw) : null;
     if (reviewParsed && reviewParsed.hasReview) renderMalReview(reviewParsed.row);
-    if (anime.at > 0) setUpdatedStatus('mal', anime.at);
     scheduleIdle(loadMalJa, 3000); // Japanese titles (a no-op in English mode)
     return anime.at;
   }
@@ -1967,7 +1934,6 @@
     const entry = meta.paint ? KazuLib.letterboxdCacheParse(raw) : null;
     if (!entry) return 0;
     renderLetterboxd(entry);
-    if (meta.at > 0) setUpdatedStatus('lb', meta.at);
     return meta.at;
   }
 
@@ -1979,18 +1945,14 @@
 
   async function loadLetterboxd(force) {
     if (!KazuLib || !KazuLib.parseLetterboxdRss || !siteIntegrationOn('letterboxd')) return;
-    beginUpdate('lb');
     try {
       const rss = 'https://letterboxd.com/' + LB_USER + '/rss/' + (force ? '?t=' + Date.now() : '');
       const r = await proxyFetch(rss);
       if (!r.ok) throw new Error('proxy status ' + r.status);
       const entry = KazuLib.parseLetterboxdRss(await r.text());
       renderLetterboxd(entry);
-      const at = Date.now();
       cardCacheWrite(LB_CACHE_KEY, LB_USER, { entry });
-      endUpdate('lb', at);
     } catch (e) {
-      endUpdate('lb');
       const cached = lbCacheRead();
       if (cached) { renderLetterboxd(cached); return; }
       $('lbLoading').classList.add('hidden');
@@ -2091,7 +2053,6 @@
 
   async function loadPlaylistTracks() {
     if (!KazuLib || !KazuLib.parseYouTubePlaylistRss) return;
-    beginUpdate('ytm');
     try {
       const feed = 'https://www.youtube.com/feeds/videos.xml?playlist_id=' + YTM_PLAYLIST_ID;
       const r = await proxyFetch(feed);
@@ -2104,8 +2065,6 @@
       // No cache yet → the static snapshot in index.html stays as the fallback.
       const cached = ytmCacheRead();
       if (cached && cached.length) renderPlaylistTracks(cached);
-    } finally {
-      endUpdate('ytm');
     }
   }
 
@@ -2191,26 +2150,9 @@
     showFallbackQuote();
   }
 
-  // ---------- Browser-chrome colour ----------
-  // There is no theme toggle: the redesign paints the page one flat canvas
-  // (style.css REDESIGN; light, or dark from the system setting), so the
-  // browser chrome follows that canvas and not the sky tint or the seasonal
-  // colour its callers still pass in. The head's first-paint script writes the
-  // tint until this runs; this corrects it and follows a change of system theme.
-  const THEME_CANVAS = { light: '#F7F6F3', dark: '#111316' };
-  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-  const themeDarkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-  function setThemeColor() {
-    const c = themeDarkMQ && themeDarkMQ.matches ? THEME_CANVAS.dark : THEME_CANVAS.light;
-    if (themeColorMeta && themeColorMeta.getAttribute('content') !== c) {
-      themeColorMeta.setAttribute('content', c);
-    }
-  }
-  if (themeDarkMQ && themeDarkMQ.addEventListener) themeDarkMQ.addEventListener('change', () => setThemeColor());
-  setThemeColor();
-
   // ---------- Seasonal winter snow (November & December, max once per day) ---
-  // In November and December (months 10 and 11 on the UK clock), a gentle snow
+  // When the Christmas theme is active (November and December on the UK clock,
+  // or forced on via the control panel / ?theme=christmas), a gentle snow
   // shower falls for a few seconds (~4.5s) on the first visit of each UK
   // calendar day. Saved in localStorage ('kazu-winter-snow' = 'YYYY-MM-DD') so
   // reloads on the same day never replay it, with an in-memory fallback when
@@ -2228,21 +2170,25 @@
     const savedDay = localStorage.getItem(WINTER_SNOW_KEY);
     if (/^\d{4}-\d{2}-\d{2}$/.test(savedDay || '')) winterSnowLastDay = savedDay;
   } catch (e) {}
-  const winterSnowDay = (KazuLib && KazuLib.winterSnowDay) || function (date, lastDay) {
+  const winterSnowDay = (KazuLib && KazuLib.winterSnowDay) || function (date, lastDay, overrides, search) {
     const w = seasonUKParts(date || new Date());
-    if (!w || !isFinite(w.year) || (w.month !== 10 && w.month !== 11)) return null;
+    if (!w || !isFinite(w.year) || !isThemeActive('christmas', date || new Date())) return null;
     const pad2 = (n) => (n < 10 ? '0' + n : '' + n);
     const today = w.year + '-' + pad2(w.month + 1) + '-' + pad2(w.day);
     return today === lastDay ? null : today;
   };
 
-  function checkWinterSnow() {
+  function checkWinterSnow(now) {
     if (document.hidden) return;
+    const d = now || new Date();
     if (SNOW_PREVIEW) {
       if (winterSnowPreviewPlayed) return;
       winterSnowPreviewPlayed = true;
     } else {
-      const day = winterSnowDay(new Date(), winterSnowLastDay);
+      if (!isThemeActive('christmas', d)) return;
+      const ov = themeOverrides();
+      const search = typeof location !== 'undefined' ? (location.search || '') : '';
+      const day = winterSnowDay(d, winterSnowLastDay, ov, search);
       if (day === null) return;
       winterSnowLastDay = day;
       try { localStorage.setItem(WINTER_SNOW_KEY, day); } catch (e) {}
@@ -2665,6 +2611,7 @@
     applySitePlaylist();
     applySiteIntegrations();
     applySiteNotice();
+    syncThemes(new Date());
   }
 
   const siteIdList = () => ({ discord: DISCORD_ID, steam: STEAM_VANITY, mal: MAL_USER, lb: LB_USER, ytm: YTM_PLAYLIST_ID });
@@ -3014,8 +2961,10 @@
    via `backdrop-filter: … url(#id)` so the real page content behind the card bends
    at the rim. Chromium-only: backdrop-filter + SVG filters don't compose in
    WebKit/Gecko, so elsewhere this bails and the cards keep the stylesheet's blur +
-   glint. Maps are cached by size and only rebuilt when a card changes size. */
+   glint. Maps are cached by size and only rebuilt when a card changes size.
+   Skipped in the flat editorial redesign (where style.css forces backdrop-filter: none). */
 (() => {
+  if ('CSS' in window && CSS.supports && CSS.supports('selector(&)')) return;
   const ua = navigator.userAgent;
   const CAN_REFRACT =
     'CSS' in window && CSS.supports && CSS.supports('backdrop-filter', 'url("#a")') &&

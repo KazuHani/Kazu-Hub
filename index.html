@@ -13,7 +13,7 @@
      onerror= attributes are not allowed; #boot-handlers holds those. Keep this
      above every <script>: a meta policy only covers what comes after it. -->
   <meta http-equiv="Content-Security-Policy"
-    content="script-src 'self' 'sha256-OME5ujRqi3Ty3yeZ56IkDPjWXQD/o/6xb7E34IQ2nik=' 'sha256-pAQTFazGS9WN3LByS4BC8r/Tjl6YWw/QIcNnZ5TUntA=' 'sha256-1ALHh1QYrraetCQ11DVdnUtJtL4ydmG6UFmy0FpMlUI=' 'sha256-Eh+xAfNnLZ7PxzmPxMuIdjILU9vczY5U9i5qForHtuo=' 'sha256-pDxHDRJ0sz0IgWuYM1HDPJHzwu6cVljTT5WZ5HWBQ4s=' 'sha256-ptCMkn6CQKg7QV/wenb8UprURBKit8t9TOjbvpWMtZ4='; object-src 'none'; base-uri 'self'">
+    content="script-src 'self' 'sha256-y6gYcjS5L+YdF1hoR2s9MRdm2Z6N2GO2mwyZV2uszE8=' 'sha256-52522rWN4AP/B7ub1DFvj/o+0dhCXSkkL+x+sRyHWig=' 'sha256-1ALHh1QYrraetCQ11DVdnUtJtL4ydmG6UFmy0FpMlUI=' 'sha256-QcQwGuw5beWtveglY8ckDUIt++uFzQIlkwZRDNk62M4=' 'sha256-pDxHDRJ0sz0IgWuYM1HDPJHzwu6cVljTT5WZ5HWBQ4s=' 'sha256-zw09myho808mroOKfFl7wLyO6QBVGgTStECYqpozpnc=' 'sha256-ptCMkn6CQKg7QV/wenb8UprURBKit8t9TOjbvpWMtZ4='; object-src 'none'; base-uri 'self'">
   <title>Kazu Hani</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="kazu-control" content="">
@@ -27,8 +27,39 @@
       try {
         var m = document.querySelector('meta[name="kazu-control"]');
         var u = m && m.getAttribute('content');
-        if (!u || !(u.indexOf('https://') === 0 || /^\/[^\/]/.test(u))) return;
-        window.__kazuControl = fetch(u, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : null; }, function () { return null; });
+        var cfg = null;
+        if (u && (u.indexOf('https://') === 0 || /^\/[^\/]/.test(u))) {
+          window.__kazuControl = fetch(u, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : null; }, function () { return null; });
+          try {
+            var c = JSON.parse(localStorage.getItem('kazu-site-config'));
+            if (c && c.u === u && typeof c.t === 'string') cfg = JSON.parse(c.t);
+          } catch (e) { }
+        }
+        var s = location.search || '';
+        var qm = /[?&](?:theme|season)=([a-z0-9_-]+)/i.exec(s);
+        var q = qm ? qm[1].toLowerCase() : '';
+        var xmas = false;
+        if (q === 'none' || q === 'off' || q === 'default') {
+          xmas = false;
+        } else if (q === 'christmas') {
+          xmas = true;
+        } else {
+          var ov = cfg && ((cfg.themes && cfg.themes.christmas) || (cfg.seasons && cfg.seasons.christmas));
+          if (ov === 'on') xmas = true;
+          else if (ov === 'off') xmas = false;
+          else {
+            var nowMs = Date.now(), yr = new Date(nowMs).getUTCFullYear();
+            var lastSun = function (mo) {
+              var d = new Date(Date.UTC(yr, mo + 1, 0));
+              return Date.UTC(yr, mo, d.getUTCDate() - d.getUTCDay(), 1, 0, 0);
+            };
+            var wall = new Date(nowMs + (nowMs >= lastSun(2) && nowMs < lastSun(9) ? 3600000 : 0));
+            var mo = wall.getUTCMonth();
+            if (mo === 10 || mo === 11) xmas = true;
+          }
+        }
+        window.__kazuXmas = xmas;
+        if (xmas) document.documentElement.classList.add('theme-christmas');
       } catch (e) { }
     })();
   </script>
@@ -95,7 +126,7 @@
           if (!localStorage.getItem(keys[i])) continue;
           var hold = document.createElement('style');
           hold.id = 'boot-cards-hold';
-          hold.textContent = '.container, .footer { visibility: hidden; }';
+          hold.textContent = '.right-now-grid > .card { visibility: hidden; }';
           document.head.appendChild(hold);
           setTimeout(function () { if (hold.parentNode) hold.parentNode.removeChild(hold); }, 8000);
           return;
@@ -147,7 +178,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@24,400;24,500&display=swap"
       rel="stylesheet">
   </noscript>
-  <link rel="stylesheet" href="style.css?v=148">
+  <link rel="stylesheet" href="style.css?v=153">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -170,31 +201,11 @@
   ]
 }
 </script>
-  <!-- Language: a visitor who picked Japanese (the switch at the top of the page,
-     saved as kazu-lang), opened ?lang=ja, or picked neither on a device whose
-     preferred languages put Japanese before English, gets <html lang="ja">
-     and the page text hidden until i18n.js (end of <body>) has translated it, so an
-     English first paint never flashes. The 3 s timeout is the failsafe if i18n.js
-     never runs. Keep this choice in step with KazuI18n.pickLang. -->
+  <!-- Language: the switch was removed (see AGENTS.md and java/i18n.js), so the
+     page is English only. Keep #boot-lang as a no-op stub so restoring the
+     switch only requires re-enabling pickLang here and in java/i18n.js. -->
   <script id="boot-lang">
-    (function () {
-      try {
-        var m = /[?&]lang=([a-z]+)/i.exec(location.search);
-        var q = m ? m[1].toLowerCase() : '';
-        var lang = (q === 'en' || q === 'ja') ? q : null;
-        if (!lang) { try { lang = localStorage.getItem('kazu-lang'); } catch (e) { } }
-        if (lang !== 'en' && lang !== 'ja') {
-          var d = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
-          for (var i = 0; i < d.length && !(lang === 'en' || lang === 'ja'); i++) lang = String(d[i] || '').split(/[-_]/)[0].toLowerCase();
-        }
-        if (lang === 'ja') {
-          var r = document.documentElement;
-          r.setAttribute('lang', 'ja');
-          r.classList.add('i18n-pending');
-          setTimeout(function () { r.classList.remove('i18n-pending'); }, 3000);
-        }
-      } catch (e) { }
-    })();
+    (function () { })();
   </script>
 </head>
 
@@ -231,10 +242,6 @@
            English is the page's own language; Japanese is a layer on top. -->
       <div class="site-header">
         <a class="site-mark" href="#top" translate="no">Kazu Hub</a>
-        <div id="siteSyncStatus" class="site-sync-status hidden" role="status" aria-live="polite">
-          <span class="sync-spinner" aria-hidden="true"></span>
-          <span>Updating…</span>
-        </div>
         <nav class="site-nav" aria-label="Sections">
           <a href="#now">Now</a>
           <a href="#socials">Socials</a>
@@ -255,6 +262,27 @@
       <header class="hero">
         <div class="pfp-ring">
           <img class="pfp" src="assets/New Kazu.png" alt="Kazu Hani" width="240" height="240" fetchpriority="high">
+          <!-- Theme picture before first paint: #boot-control decided the theme in
+               <head>, but script.js (end of <body>) used to be the first to swap the
+               picture, favicons and browser-bar colour, so the default ones showed
+               for a moment. This runs the moment the <img> is parsed. script.js
+               still re-syncs them later (syncThemes / setThemeColor). -->
+          <script id="boot-theme">
+            (function () {
+              try {
+                var x = !!window.__kazuXmas;
+                var tc = document.querySelector('meta[name="theme-color"]');
+                var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (tc) tc.setAttribute('content', x ? (dark ? '#0C1611' : '#F6F2EB') : (dark ? '#111316' : '#F7F6F3'));
+                if (!x) return;
+                var src = 'assets/Kazu Christmas Circle.png';
+                var p = document.querySelector('.pfp');
+                if (p) p.setAttribute('src', src);
+                var ic = document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]');
+                for (var i = 0; i < ic.length; i++) ic[i].setAttribute('href', src);
+              } catch (e) { }
+            })();
+          </script>
         </div>
         <h1 class="title">Kazu&nbsp;Hani</h1>
 
@@ -280,13 +308,12 @@
             <div class="stat-faint" id="liveWind">—</div>
           </div>
           <div id="weatherLoading">
-            <div class="stat-loading-text"><span class="sync-spinner" aria-hidden="true"></span><span>Reading the sky…</span></div>
+            <div class="stat-loading-text">Reading the sky…</div>
           </div>
           <div id="weatherError" class="hidden">
             <div class="stat-loading-text">Couldn't read the sky </div>
             <button type="button" class="retry-btn" id="weatherRetry">Retry</button>
           </div>
-          <div class="stat-updated hidden" id="weatherUpdated"></div>
         </div>
 
         <div class="card stat-card">
@@ -311,7 +338,6 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               Discord
-              <div class="card-updated hidden" id="discordUpdated"></div>
             </div>
             <a id="discordAddMe" class="pill-link" href="https://discord.com/users/346360416827473921" target="_blank"
               rel="noopener" title="Open my Discord profile &amp; copy my username">Add me</a>
@@ -367,8 +393,7 @@
           </div>
 
           <div id="discordLoading" class="loading-row">
-            <span class="sync-spinner" aria-hidden="true"></span>
-            <span>Connecting to Discord…</span>
+            <span class="pulse-dot" style="background:#5865F2;"></span> Connecting to Discord…
           </div>
           <div id="discordError" class="loading-row hidden">
             Can't reach Discord right now.
@@ -381,7 +406,6 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               Steam
-              <div class="card-updated hidden" id="steamUpdated"></div>
             </div>
             <a class="pill-link" href="https://steamcommunity.com/id/Kazu-Hani/" target="_blank" rel="noopener"
               style="color:#66c0f4;background:rgba(102,192,244,.18);">View profile →</a>
@@ -412,8 +436,7 @@
           </div>
 
           <div id="steamLoading" class="loading-row" style="color:#9fc0d8;position:relative;">
-            <span class="sync-spinner" aria-hidden="true"></span>
-            <span>Connecting to Steam…</span>
+            <span class="pulse-dot" style="background:#66c0f4;"></span> Connecting to Steam…
           </div>
 
           <div id="steamErr" class="hidden steam-fallback">
@@ -427,7 +450,6 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               MyAnimeList
-              <div class="card-updated hidden" id="malUpdated"></div>
             </div>
             <a class="pill-link" href="https://myanimelist.net/animelist/Kazu_Hani" target="_blank" rel="noopener">View
               list →</a>
@@ -447,8 +469,7 @@
           </div>
 
           <div id="malLoading" class="loading-row" style="position:relative;">
-            <span class="sync-spinner" aria-hidden="true"></span>
-            <span>Connecting to MyAnimeList…</span>
+            <span class="pulse-dot" style="background:#2e51a2;"></span> Connecting to MyAnimeList…
           </div>
 
           <div id="malError" class="loading-row hidden" style="position:relative;">
@@ -462,7 +483,6 @@
           <div class="card-head" style="position:relative;">
               <div class="card-head-title">
               Letterboxd
-              <div class="card-updated hidden" id="lbUpdated"></div>
             </div>
             <a class="pill-link" href="https://letterboxd.com/KazuHani/" target="_blank" rel="noopener">View profile
               →</a>
@@ -474,8 +494,7 @@
           </div>
 
           <div id="lbLoading" class="loading-row" style="position:relative;">
-            <span class="sync-spinner" aria-hidden="true"></span>
-            <span>Connecting to Letterboxd…</span>
+            <span class="pulse-dot" style="background:#00e054;"></span> Connecting to Letterboxd…
           </div>
 
           <div id="lbError" class="loading-row hidden" style="position:relative;">
@@ -732,10 +751,10 @@
   <svg id="glass-filters" width="0" height="0" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink"
     style="position:absolute"></svg>
 
-  <script src="java/lib.js?v=61"></script>
-  <script src="java/site-config.js?v=2"></script>
-  <script src="java/i18n.js?v=12"></script>
-  <script src="java/script.js?v=125"></script>
+  <script src="java/lib.js?v=62"></script>
+  <script src="java/site-config.js?v=3"></script>
+  <script src="java/i18n.js?v=15"></script>
+  <script src="java/script.js?v=128"></script>
   <script id="sw-register">
     // PWA-lite offline shell (see sw.js). Network-first for pages, so nothing
     // ever serves stale while online; the cache is only the offline fallback.

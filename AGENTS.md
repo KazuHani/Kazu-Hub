@@ -28,8 +28,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=148`,
-  `java/lib.js?v=61`, `java/site-config.js?v=2`, `java/i18n.js?v=12`, `java/script.js?v=125` (version
+- `index.html` — the whole page. Loads `style.css?v=153`,
+  `java/lib.js?v=62`, `java/site-config.js?v=3`, `java/i18n.js?v=15`, `java/script.js?v=128` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-cards` hold (see "Live-card cache" below), the
@@ -471,7 +471,7 @@ a future bug lets one into the page.
 
 - **Editing an inline script changes its hash**, and the browser then refuses to run
   it. Run `node tools/csp-hashes.js --fix` after any edit to `#boot-control`,
-  `#boot-cards`, `#boot-handlers`, `#boot-lang`, `#boot-power` or `#sw-register`; without
+  `#boot-cards`, `#boot-handlers`, `#boot-lang`, `#boot-power`, `#boot-theme` or `#sw-register`; without
   `--fix` the tool only checks and names the scripts whose hash is missing. A new inline
   script needs an `id` and the same `--fix`. JSON-LD is a data block and needs no hash.
 - **No inline event handlers.** `onload=`/`onerror=` attributes are blocked (allowing
@@ -525,7 +525,7 @@ settings document to a Firebase Realtime Database; the page reads it on every lo
   this origin are ever fetched.
 - **Precedence: a managed section overrides the HTML.** A section the panel manages
   is present in the settings (socials, stories, pc, playlist, integrations, titles,
-  sections, seasons, effects, footer, notice; `seasons` and `effects` no longer change anything on the page). For those, the live page shows the
+  sections, themes, seasons, effects, footer, notice; `themes` controls seasonal page themes such as `christmas` in November & December, with `seasons` supported as a legacy fallback). For those, the live page shows the
   settings and ignores what `index.html` says, **so editing the HTML for a managed
   section will not change the live site.** Sections the panel does not manage are
   untouched and `index.html` stays their source. Ask the owner before assuming the
