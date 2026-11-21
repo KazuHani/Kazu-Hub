@@ -1,14 +1,14 @@
 {
   "name": "Kazu Hani",
   "short_name": "Kazu Hani",
-  "description": "Arctic Dragon  — socials, live Discord & Steam status, weather, and stories.",
+  "description": "Arctic Dragon — socials, live Discord & Steam status, weather, and stories.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0d1b31",
-  "theme_color": "#0d1b31",
+  "background_color": "#111316",
+  "theme_color": "#111316",
   "icons": [
-    { "src": "assets/favicon.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
-    { "src": "assets/New Kazu.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "assets/favicon.png", "sizes": "338x338", "type": "image/png", "purpose": "any" },
+    { "src": "assets/New Kazu.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
   ]
 }

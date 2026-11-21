@@ -115,7 +115,7 @@
     if (!def) return false;
     var q = parseThemeQuery(search);
     if (q) {
-      if (q === 'none' || q === 'off') return false;
+      if (q === 'none' || q === 'off' || q === 'default') return false;
       if (THEMES[q]) return q === id;
     }
     if (overrides && typeof overrides === 'object') {
@@ -891,14 +891,36 @@
   // The review text, when the entry has one: the description's <p> blocks after
   // the poster, minus the "Watched on ..." line Letterboxd writes for a plain
   // log and the spoiler notice. Tags stripped, entities decoded, capped.
+  // Decode common HTML/XML named and numeric entities, decoding &amp; last so
+  // double-encoded sequences like "&amp;lt;" stay literal "&lt;".
+  var HTML_ENTITIES = {
+    lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+    lsquo: '\u2018', rsquo: '\u2019', ldquo: '\u201C', rdquo: '\u201D',
+    ndash: '\u2013', mdash: '\u2014', hellip: '\u2026',
+  };
+  function decodeEntities(s) {
+    return String(s || '')
+      .replace(/&#x([0-9a-f]+);/gi, function (m, h) {
+        var cp = parseInt(h, 16);
+        return (cp > 0 && cp <= 0x10FFFF && String.fromCodePoint) ? String.fromCodePoint(cp) : m;
+      })
+      .replace(/&#(\d+);/g, function (m, d) {
+        var cp = parseInt(d, 10);
+        return (cp > 0 && cp <= 0x10FFFF && String.fromCodePoint) ? String.fromCodePoint(cp) : m;
+      })
+      .replace(/&(lt|gt|quot|apos|nbsp|lsquo|rsquo|ldquo|rdquo|ndash|mdash|hellip);/g, function (_, k) {
+        return HTML_ENTITIES[k];
+      })
+      .replace(/&amp;/g, '&');
+  }
+
   function letterboxdReview(desc) {
     var paras = String(desc || '').match(/<p>[\s\S]*?<\/p>/g) || [];
     var out = [];
     for (var i = 0; i < paras.length; i++) {
       var p = paras[i];
       if (/<img\b/.test(p)) continue;
-      var txt = p.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '')
-        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;|&rsquo;/g, "'")
+      var txt = decodeEntities(p.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, ''))
         .replace(/\s+/g, ' ').trim();
       if (!txt || /^Watched on /i.test(txt) || /^This review may contain spoilers/i.test(txt)) continue;
       out.push(txt);
@@ -910,13 +932,13 @@
   function parseLetterboxdRss(xml) {
     if (typeof xml !== 'string' || xml.indexOf('<item>') === -1) return null;
     var item = /<item>([\s\S]*?)<\/item>/.exec(xml)[1];
-    var title = rssPick(item, 'letterboxd:filmTitle');
+    var title = decodeEntities(rssPick(item, 'letterboxd:filmTitle'));
     var year = rssPick(item, 'letterboxd:filmYear');
     var rating = parseFloat(rssPick(item, 'letterboxd:memberRating'));
     // Older entries predate the extension tags: fall back to the item <title>,
     // shaped like "Some Film, 2024 - ★★★½" (rating suffix optional).
     if (!title) {
-      var raw = rssPick(item, 'title');
+      var raw = decodeEntities(rssPick(item, 'title'));
       var tm = /^(.*), (\d{4})(?: - [★½]+)?$/.exec(raw);
       if (!tm) return null;
       title = tm[1];

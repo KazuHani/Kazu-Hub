@@ -999,8 +999,17 @@
     const avatarEl = $('discordAvatar');
     if (avatarEl) {
       const fallbackPfp = pfpSrc();
-      avatarEl.src = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : fallbackPfp);
-      avatarEl.onerror = () => { avatarEl.src = pfpSrc(); };
+      const targetSrc = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : fallbackPfp);
+      avatarEl.onerror = () => {
+        if (lastDiscordFallbackAvatar && avatarEl.src !== lastDiscordFallbackAvatar) {
+          avatarEl.src = lastDiscordFallbackAvatar;
+          return;
+        }
+        const fb = pfpSrc();
+        avatarEl.onerror = null;
+        if (avatarEl.getAttribute('src') !== fb) avatarEl.src = fb;
+      };
+      avatarEl.src = targetSrc;
     }
     $('discordName').textContent = displayName;
 
@@ -1011,10 +1020,15 @@
       else handleEl.classList.add('hidden');
     }
 
-    const s = STATUS_MAP[dc.discord_status] || STATUS_MAP.offline;
-    $('discordStatusText').textContent = '● ' + s[0];
-    $('discordStatusText').style.color = s[1];
-    $('discordStatusDot').style.background = s[1];
+    const statusKey = STATUS_MAP[dc.discord_status] ? dc.discord_status : 'offline';
+    const s = STATUS_MAP[statusKey];
+    const statusTextEl = $('discordStatusText');
+    const statusDotEl = $('discordStatusDot');
+    statusTextEl.textContent = '● ' + s[0];
+    statusTextEl.style.color = s[1];
+    statusTextEl.setAttribute('data-status', statusKey);
+    statusDotEl.style.background = s[1];
+    statusDotEl.setAttribute('data-status', statusKey);
 
     // Platform (mobile / desktop / web) — only meaningful while connected
     const plat = (dc.discord_status !== 'offline')
@@ -1065,6 +1079,11 @@
       const iconEl = $('discordGameIcon');
       const emojiEl = $('discordGameEmoji');
       if (iconUrl) {
+        iconEl.onerror = () => {
+          iconEl.onerror = null;
+          iconEl.classList.add('hidden');
+          emojiEl.classList.remove('hidden');
+        };
         iconEl.src = iconUrl;
         iconEl.classList.remove('hidden');
         emojiEl.classList.add('hidden');
@@ -1081,7 +1100,16 @@
     if (isSpotify) {
       $('spotifySong').textContent = dc.spotify.song || '';
       $('spotifyArtist').textContent = dc.spotify.artist || '';
-      if (dc.spotify.album_art_url) $('spotifyArt').src = dc.spotify.album_art_url;
+      const artEl = $('spotifyArt');
+      if (artEl) {
+        if (dc.spotify.album_art_url) {
+          artEl.onerror = () => { artEl.onerror = null; artEl.classList.add('hidden'); };
+          artEl.classList.remove('hidden');
+          artEl.src = dc.spotify.album_art_url;
+        } else {
+          artEl.classList.add('hidden');
+        }
+      }
       const ts = dc.spotify.timestamps;
       spotifyTimes = (ts && ts.start && ts.end) ? { start: ts.start, end: ts.end } : null;
       $('spotifyProgress').classList.toggle('hidden', !spotifyTimes);
@@ -1096,13 +1124,9 @@
       $('discordSpotify').classList.add('hidden');
     }
 
-    const idle = !game && !isSpotify && !hasCustom && dc.discord_status === 'offline';
-    if (idle) {
-      $('discordIdle').textContent = 'Currently offline';
-      $('discordIdle').classList.remove('hidden');
-    } else {
-      $('discordIdle').classList.add('hidden');
-    }
+    // Status text already reports Offline / Online directly in .presence-row;
+    // keep the redundant idle banner hidden so it doesn't repeat or crowd the avatar.
+    $('discordIdle').classList.add('hidden');
 
     updatePresenceProgress();
     syncSpotifyBar(); // the 4 Hz bar timer exists only while a song is playing
@@ -1235,13 +1259,24 @@
 
   function renderSteam(p) {
     sharedAvatarUrl = p.avatar;
-    $('steamAvatar').src = p.avatar;
+    const steamAvatarEl = $('steamAvatar');
+    if (steamAvatarEl) {
+      steamAvatarEl.onerror = () => {
+        steamAvatarEl.onerror = null;
+        steamAvatarEl.src = pfpSrc();
+      };
+      steamAvatarEl.src = p.avatar;
+    }
     const discordImg = $('discordAvatar');
     if (discordImg) discordImg.src = p.avatar;
 
-    const [statusText, statusColor] = steamStatusInfo(p.state);
-    $('steamStatusText').textContent = '● ' + statusText;
-    $('steamStatusText').style.color = statusColor;
+    const steamKey = (p.state === 'in-game' || p.state === 'online' || p.state === 'away' || p.state === 'checking' || p.state === 'unknown')
+      ? p.state : 'offline';
+    const [statusText, statusColor] = steamStatusInfo(steamKey);
+    const steamStatusEl = $('steamStatusText');
+    steamStatusEl.textContent = '● ' + statusText;
+    steamStatusEl.style.color = statusColor;
+    steamStatusEl.setAttribute('data-status', steamKey);
 
     if (p.game) {
       steamCurrentGameName = p.game.name || '';
@@ -1284,7 +1319,7 @@
         lastSteamRecentSig = recentSig;
         listEl.innerHTML = recent.map((g) => (
           '<a class="recent-game-row"' + (g.url ? ' href="' + escapeHtml(g.url) + '" target="_blank" rel="noopener"' : '') + '>' +
-            '<img class="recent-game-logo" src="' + g.logo + '" alt="' + g.name + '" loading="lazy" decoding="async">' +
+            '<img class="recent-game-logo" src="' + g.logo + '" alt="" loading="lazy" decoding="async">' +
             '<div style="min-width:0;flex:1;">' +
               '<div class="recent-game-name">' + g.name + '</div>' +
               '<div class="recent-game-hours">' + g.hoursStr + '</div>' +
@@ -1542,7 +1577,7 @@
     const idle = $('malIdle');
     if (!idle) return;
     const empty = malAnimeRows.length === 0 && malMangaRows.length === 0;
-    if (empty) idle.textContent = 'Not watching or reading anything right now ';
+    if (empty) idle.textContent = 'Not watching or reading anything right now';
     idle.classList.toggle('hidden', !empty);
   }
 
@@ -2746,7 +2781,7 @@
     if (konamiBusy) return;
     konamiBusy = true;
     if (LOW_POWER) {
-      showToast('You found the dragon! ');
+      showToast('You found the dragon!');
       konamiBusy = false;
       return;
     }

@@ -1423,6 +1423,8 @@ html:not(#rd) { background: #F7F6F3; color-scheme: light; }
 body:not(#rd) {
   --bg: #F7F6F3; --ink: #17191C; --muted: #585D65; --line: #DEDBD4; --line-strong: #84888F;
   --accent: #0E6579; --track: #DEDBD4; --ok: #1B7F45; --off: #7A7F87; --warn: #9A5B00;
+  --status-online: #157A3D; --status-steam-ingame: #3B7400; --status-steam-online: #0E6579;
+  --status-idle: #9A5B00; --status-dnd: #C4252D; --status-offline: var(--muted);
   --page-bg: var(--bg); --ink-soft: #585D65; --ink-faint: #585D65;
   --card-bg: transparent; --card-blur: none; --card-bd: 0 none; --card-shadow: none; --glint: none;
   --chip-bg: rgba(247, 246, 243, .97); --chip-bd: 1px solid var(--line-strong); --on-accent: #F7F6F3;
@@ -1437,6 +1439,8 @@ body:not(#rd) {
   body:not(#rd) {
     --bg: #111316; --ink: #ECEDEF; --muted: #A3A8B0; --line: #2C3036; --line-strong: #6A6F77;
     --accent: #6BC4D9; --track: #2C3036; --ok: #4CC27E; --off: #868B93; --warn: #E0A64A;
+    --status-online: #4CC27E; --status-steam-ingame: #9CD64F; --status-steam-online: #6BC4D9;
+    --status-idle: #E0A64A; --status-dnd: #F26B6B; --status-offline: var(--muted);
     --ink-soft: #A3A8B0; --ink-faint: #A3A8B0; --chip-bg: rgba(17, 19, 22, .97); --chip-bd: 1px solid var(--line-strong); --on-accent: #111316;
     color-scheme: dark;
   }
@@ -1447,14 +1451,16 @@ body:not(#rd) {
 
   /* Text scale: the same six roles as TEXT SCALE above, fixed at the sizes the
      redesign uses. Re-stated on the cards because the rules above re-derive
-     them there from the card width. */
+     them there from the card width. Drop size containment on cards so the
+     once-a-second clock tick never triggers container-query style passes. */
   &, .card, .pc-spec-card {
     --font-unit: 16px;
     --font-size-small: 14px; --font-size-body: 16px; --font-size-lead: 16px;
     --font-size-title: 24px; --font-size-display: 30px;
     --font-size-feature: 16px;
   }
-  .stat-card { --font-size-display: min(30px, 15.5cqi); }
+  .card, .pc-spec-card { container-type: normal; }
+  .stat-card { --font-size-display: clamp(16px, 6.4vw, 30px); }
 
   &, & * { font-family: var(--font-text); }
   &, & p, & li, & dd, & dt, & figure { line-height: 1.5; }
@@ -1528,8 +1534,9 @@ body:not(#rd) {
   }
   .quote-box, .quote-box.visible {
     grid-column: 2; align-self: start; width: auto; max-width: 38ch; margin: 0; padding: 0;
-    text-align: left; color: var(--ink);
+    text-align: left; color: var(--ink); cursor: default;
   }
+  .quote-box:active { transform: none; }
   .quote-box.visible { margin-top: 32px; max-height: 800px; }
   .quote-text {
     font-family: var(--font-serif); font-style: normal; font-weight: 400; line-height: 1.45; text-wrap: pretty;
@@ -1598,11 +1605,6 @@ body:not(#rd) {
     text-transform: none; letter-spacing: 0; font-weight: 600; line-height: 1.4;
     color: var(--ink) !important;
   }
-  .discord-card .card-head-title::after, .steam-card .card-head-title::after {
-    display: block; font-size: 14px; font-weight: 400; color: var(--muted);
-  }
-  .discord-card .card-head-title::after { content: '@kazu_hani'; }
-  .steam-card .card-head-title::after { content: 'Kazu Hani'; }
   .right-now-grid .pill-link { grid-column: 3; grid-row: 1; }
   .right-now-grid .card > :not(.card-head) { grid-column: 2; grid-row: 1; min-width: 0; position: static !important; }
   .loading-row {
@@ -1613,6 +1615,7 @@ body:not(#rd) {
     margin: 0; padding: 0; background: none !important; border-radius: 0; text-align: left;
     font-weight: 400; color: var(--muted) !important;
   }
+  .discord-card .idle-banner { margin-top: 12px; }
 
   .presence-row { gap: 16px; }
   .avatar-img, .steam-avatar { width: 64px; height: 64px; border-radius: 50%; box-shadow: none; background: var(--track); }
@@ -1621,6 +1624,18 @@ body:not(#rd) {
   .presence-status, .steam-card .presence-status, .discord-card .presence-status {
     margin-top: 2px; font-weight: 400; color: var(--muted);
   }
+  #discordStatusText[data-status="online"] { color: var(--status-online) !important; }
+  #discordStatusText[data-status="idle"] { color: var(--status-idle) !important; }
+  #discordStatusText[data-status="dnd"] { color: var(--status-dnd) !important; }
+  #discordStatusText[data-status="offline"] { color: var(--status-offline) !important; }
+  #discordStatusDot[data-status="online"] { background: var(--status-online) !important; }
+  #discordStatusDot[data-status="idle"] { background: var(--status-idle) !important; }
+  #discordStatusDot[data-status="dnd"] { background: var(--status-dnd) !important; }
+  #discordStatusDot[data-status="offline"] { background: var(--off) !important; }
+  #steamStatusText[data-status="in-game"] { color: var(--status-steam-ingame) !important; }
+  #steamStatusText[data-status="online"] { color: var(--status-steam-online) !important; }
+  #steamStatusText[data-status="away"] { color: var(--status-idle) !important; }
+  #steamStatusText[data-status="checking"], #steamStatusText[data-status="unknown"], #steamStatusText[data-status="offline"] { color: var(--status-offline) !important; }
   .discord-username, .discord-username:hover { color: var(--muted); font-weight: 400; letter-spacing: 0; }
   .discord-username:hover { color: var(--ink); }
   .discord-platform { color: var(--muted); }
@@ -1640,6 +1655,7 @@ body:not(#rd) {
   }
   .info-pill-value, .spotify-song, .steam-game-name, .recent-game-name {
     color: var(--ink) !important; font-weight: 600; line-height: 1.3;
+    white-space: normal; overflow: visible; text-overflow: clip; text-wrap: pretty;
   }
   .info-pill-sub, .info-pill-elapsed, .recent-game-hours, .spotify-times { color: var(--muted) !important; font-weight: 400; }
   .spotify-art, .info-pill-icon { border-radius: 6px; background: var(--track); }
@@ -1676,23 +1692,28 @@ body:not(#rd) {
     margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);
     color: var(--muted); font-weight: 500; letter-spacing: 0; text-transform: none;
   }
+  #malReviewSection .mal-section-label { margin-top: 0; padding-top: 0; border-top: 0; }
+  #malReviewList > .mal-row:first-child, #malMangaList > .mal-row:first-child { margin-top: 10px; }
+  #malReviewSection:not(.hidden) + #malList:not(:empty) {
+    margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line);
+  }
 
   .lb-entry, a.lb-entry { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 0; background: none; border: 0; border-radius: 0; transform: none; }
   .lb-entry:hover { background: none; transform: none; }
   .lb-entry:hover .lb-title { color: var(--accent); }
   .lb-poster { display: block; flex: none; width: 68px; height: 96px; aspect-ratio: auto; border-radius: 6px; object-fit: cover; box-shadow: none; background: var(--track); }
-  .lb-info { min-width: 0; }
+  .lb-info { flex: 1 1 170px; min-width: 0; }
   .lb-label { margin-bottom: 2px; color: var(--muted) !important; font-weight: 400; letter-spacing: 0; text-transform: none; }
   .lb-title { margin: 0; color: var(--ink) !important; font-weight: 600; font-size: 18px !important; line-height: 1.3; }
-  .lb-year { color: var(--muted); font-weight: 400; font-size: 18px !important; }
+  .lb-year { color: var(--muted); font-weight: 400; font-size: 18px !important; white-space: nowrap; }
   .lb-stars { margin-top: 8px; color: var(--ink) !important; letter-spacing: .12em; }
   .lb-watched { margin-top: 4px; color: var(--muted) !important; font-weight: 400; }
-  .lb-review { padding-left: 16px; }
+  .lb-review { flex: 1 1 170px; padding-left: 20px; border-left: 1px solid var(--line); }
   .lb-review-label { margin-bottom: 2px; color: var(--muted) !important; font-weight: 400; letter-spacing: 0; text-transform: none; }
   .lb-review-text { margin-top: 0; color: var(--ink) !important; }
   .mal-review-meta { margin-top: 2px; color: var(--muted) !important; font-weight: 400; }
   .mal-review-text { margin-top: 6px; color: var(--ink) !important; }
-  #malReviewSection { margin-bottom: 4px; }
+  #malReviewSection { margin-bottom: 0; }
 
   /* ---- Socials: a hairline list, name over handle ---- */
   .socials-grid {
@@ -1763,7 +1784,10 @@ body:not(#rd) {
   a.music-track-row:hover { background: none; }
   a.music-track-row:hover .music-track-name { color: var(--accent); }
   .music-track-num { flex: 0 0 20px; width: 20px; text-align: left; color: var(--muted) !important; font-weight: 400; font-variant-numeric: tabular-nums; }
-  .music-track-name, .music-card .music-track-name { color: var(--ink); font-weight: 600; }
+  .music-track-name, .music-card .music-track-name {
+    color: var(--ink); font-weight: 600;
+    white-space: normal; overflow: visible; text-overflow: clip; text-wrap: pretty;
+  }
   .music-track-artist { margin-top: 0; color: var(--muted); font-weight: 400; }
 
   /* ---- PC: label and value rows in two columns ---- */
@@ -1798,12 +1822,13 @@ body:not(#rd) {
   }
   .pc-spec-entry dt { margin: 0; padding-top: 1px; color: var(--muted); font-weight: 400; }
   .pc-spec-entry dd, .pc-spec-list--build dd { margin: 0; color: var(--ink); font-weight: 500; line-height: 1.5; }
-  .pc-storage-list { display: flex; flex-direction: column-reverse; gap: 4px; }
+  .pc-storage-list { display: flex; flex-direction: column-reverse; gap: 8px; }
   .pc-storage-entry { display: block; }
   .pc-storage-entry dt, .pc-storage-entry dd {
     display: inline; margin: 0; color: var(--ink); font-weight: 500; line-height: 1.5; white-space: normal;
     font-size: 16px !important;
   }
+  .pc-storage-entry dt { font-variant-numeric: tabular-nums; margin-right: 6px; }
 
   /* ---- Footer ---- */
   .footer {
@@ -1865,9 +1890,14 @@ body:not(#rd) {
   }
 }
 
-/* Letterboxd: on phones the review drops to its own full-width row under the poster and title. */
-@media (max-width: 640px) {
-  body:not(#rd) .lb-entry .lb-review { flex: 1 1 100%; padding-left: 0; margin-top: 4px; }
+/* Letterboxd: whenever the middle column is too narrow for poster + info + review
+   side by side (<= 520px single-col, or 721-939px 3-col), the review drops to its
+   own full-width row under the poster and title with a top hairline. */
+@media (max-width: 520px), (min-width: 721px) and (max-width: 939px) {
+  body:not(#rd) .lb-entry .lb-review {
+    flex: 1 1 100%; padding-left: 0; padding-top: 12px;
+    border-left: 0; border-top: 1px solid var(--line); margin-top: 4px;
+  }
 }
 
 /* The quote box used to open from 0 to full height when the quote arrived and
@@ -1923,9 +1953,6 @@ body.theme-christmas:not(#rd), html.theme-christmas body:not(#rd) {
     background-color: var(--accent);
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07'/%3E%3C/svg%3E") center / contain no-repeat;
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07'/%3E%3C/svg%3E") center / contain no-repeat;
-  }
-  .pfp {
-    border: 3px solid var(--accent);
   }
   .section-title {
     border-bottom-color: var(--theme-pine);

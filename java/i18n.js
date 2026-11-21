@@ -92,6 +92,7 @@
     'Open my Discord profile & copy my username': 'Discordのプロフィールを開いてユーザー名をコピー',
     'Click to copy my username': 'クリックでユーザー名をコピー',
     'avatar': 'アバター',
+    'Discord avatar': 'Discordのアバター',
     'Online': 'オンライン',
     'Idle': '退席中',
     'Do Not Disturb': '取り込み中',
