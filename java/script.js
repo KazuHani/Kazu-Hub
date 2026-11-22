@@ -3877,7 +3877,7 @@
     const isEmpty = passedCount === items.length;
     header.classList.toggle('is-empty', isEmpty);
     if (topLink) {
-      const hideTop = isEmpty || atBottom;
+      const hideTop = isEmpty || atBottom || y <= 24;
       topLink.classList.toggle('is-hidden', hideTop);
       if (hideTop) {
         topLink.setAttribute('aria-hidden', 'true');
