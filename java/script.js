@@ -3098,7 +3098,7 @@
   // - Vibrancy saturation boost: 1.8x
   const BEVEL_RADIUS = 24; // Bevel zone width in px
   const DEPTH = 24;        // Snell's Law refraction scale in px
-  const BLUR = 0;          // Crisp refraction over background scenery
+  const BLUR = 16;         // Frosted refraction over background scenery
   const SAT = 1.8;         // Vibrancy saturation boost
 
   const mapCache = new Map();

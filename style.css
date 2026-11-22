@@ -1333,9 +1333,11 @@ html.cscroll-dragging, html.cscroll-dragging * {
    list in script.js: every refracting .card (the birthday tile stays solid),
    plus the toast. */
 html.glass-scrolling .card:not(.stat-card--bday),
+html.glass-scrolling .social-card,
+html.glass-scrolling .site-header,
 html.glass-scrolling .toast {
-  -webkit-backdrop-filter: blur(6px) saturate(1.7) !important;
-          backdrop-filter: blur(6px) saturate(1.7) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.7) !important;
+          backdrop-filter: blur(16px) saturate(1.7) !important;
 }
 
 /* ============ LOW-POWER MODE (body.low-power) ============ */
@@ -1453,24 +1455,24 @@ body:not(#rd) {
   --page-bg: var(--surface);
   --ink-soft: var(--muted);
   --ink-faint: var(--muted);
-  --card-bg: rgba(255, 255, 255, 0.05);
-  --card-blur: blur(8px) saturate(1.7);
+  --card-bg: rgba(0, 0, 0, 0.34);
+  --card-blur: blur(16px) saturate(1.7);
   --card-bd: 0;
-  --card-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  --card-shadow: 0 14px 34px rgba(0, 0, 0, 0.36);
   --glint:
     inset 0 1.5px 0.5px rgba(255, 255, 255, 0.55),
     inset 2px 3px 4px rgba(255, 255, 255, 0.18),
-    inset -2px -3px 8px rgba(0, 0, 0, 0.28);
-  --chip-bg: rgba(255, 255, 255, 0.06);
+    inset -2px -3px 8px rgba(0, 0, 0, 0.34);
+  --chip-bg: rgba(0, 0, 0, 0.45);
   --chip-bd: 0;
   --on-accent: #000000;
 
   /* Apple Liquid Glass tokens */
-  --glass-blur: blur(8px) saturate(1.7);
-  --header-bg: rgba(255, 255, 255, 0.05);
-  --slab-bg: rgba(255, 255, 255, 0.05);
-  --slab-bg-hover: rgba(255, 255, 255, 0.09);
-  --well-bg: rgba(255, 255, 255, 0.04);
+  --glass-blur: blur(16px) saturate(1.7);
+  --header-bg: rgba(0, 0, 0, 0.42);
+  --slab-bg: rgba(0, 0, 0, 0.34);
+  --slab-bg-hover: rgba(0, 0, 0, 0.44);
+  --well-bg: rgba(0, 0, 0, 0.28);
 
   /* Shape & spacing tokens */
   --radius-sm: 0.25rem;
