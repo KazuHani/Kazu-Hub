@@ -3223,7 +3223,7 @@
   // joins too. Keying the selector off .card means any future card gets the
   // rim automatically.
   const cards = Array.from(
-    document.querySelectorAll('.card:not(.stat-card--bday), .toast'),
+    document.querySelectorAll('.card, .social-card, .site-header, .toast'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
 
   function refreshAll() { cards.forEach(refresh); renderHousing(); }

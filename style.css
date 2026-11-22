@@ -1453,21 +1453,24 @@ body:not(#rd) {
   --page-bg: var(--surface);
   --ink-soft: var(--muted);
   --ink-faint: var(--muted);
-  --card-bg: transparent;
-  --card-blur: none;
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-blur: blur(8px) saturate(1.7);
   --card-bd: 0;
-  --card-shadow: none;
-  --glint: none;
-  --chip-bg: transparent;
-  --chip-bd: 1px solid var(--line-strong);
+  --card-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  --glint:
+    inset 0 1.5px 0.5px rgba(255, 255, 255, 0.55),
+    inset 2px 3px 4px rgba(255, 255, 255, 0.18),
+    inset -2px -3px 8px rgba(0, 0, 0, 0.28);
+  --chip-bg: rgba(255, 255, 255, 0.06);
+  --chip-bd: 0;
   --on-accent: #000000;
 
-  /* Surface & glass tokens (no boxes) */
-  --glass-blur: none;
-  --header-bg: transparent;
-  --slab-bg: transparent;
-  --slab-bg-hover: transparent;
-  --well-bg: transparent;
+  /* Apple Liquid Glass tokens */
+  --glass-blur: blur(8px) saturate(1.7);
+  --header-bg: rgba(255, 255, 255, 0.05);
+  --slab-bg: rgba(255, 255, 255, 0.05);
+  --slab-bg-hover: rgba(255, 255, 255, 0.09);
+  --well-bg: rgba(255, 255, 255, 0.04);
 
   /* Shape & spacing tokens */
   --radius-sm: 0.25rem;
@@ -1606,29 +1609,30 @@ body:not(#rd) {
     padding-bottom: max(56px, env(safe-area-inset-bottom));
   }
 
-  /* ---- Cards: open layout without boxes ---- */
+  /* ---- Cards: Apple Liquid Glass (specular glint + SVG refraction rim) ---- */
   .card {
     position: relative;
-    background: transparent !important;
-    -webkit-backdrop-filter: none !important;
-            backdrop-filter: none !important;
+    background: var(--slab-bg) !important;
+    -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
     border: 0 !important;
-    border-radius: 0;
-    box-shadow: none !important;
-    overflow: visible;
+    border-radius: 22px;
+    box-shadow: var(--card-shadow), var(--glint) !important;
+    overflow: hidden;
   }
   .card::before, .card::after { content: none; }
 
-  /* ---- Site header: sticky bar with scroll-aware nav links ---- */
+  /* ---- Site header: sticky Apple Liquid Glass bar ---- */
   .site-header {
-    position: sticky; top: 0; z-index: 60;
+    position: sticky; top: 12px; z-index: 60;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-    gap: 8px 24px; padding: 12px 0;
-    background: transparent;
-    -webkit-backdrop-filter: blur(14px);
-            backdrop-filter: blur(14px);
+    gap: 8px 24px; padding: 10px 20px;
+    background: var(--header-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
     border: 0;
-    border-radius: 0;
+    border-radius: 22px;
+    box-shadow: var(--card-shadow), var(--glint);
   }
   .site-header.is-empty { position: static; }
   .site-mark {
@@ -1763,9 +1767,9 @@ body:not(#rd) {
     border-radius: var(--radius-lg);
   }
   .stat-card--bday {
-    background: transparent !important;
+    background: var(--slab-bg) !important;
     border: 0 !important;
-    box-shadow: none !important;
+    box-shadow: var(--card-shadow), var(--glint) !important;
   }
   .stat-label, .stat-label--onbrand {
     font-family: var(--font-label); font-size: 12px !important; font-weight: 600;
@@ -1851,10 +1855,12 @@ body:not(#rd) {
   }
   .pulse-dot { display: none !important; }
   .idle-banner {
-    margin: 12px 0 0; padding: 12px 0;
-    background: transparent !important;
+    margin: 12px 0 0; padding: 12px 14px;
+    background: var(--well-bg) !important;
     border: 0;
-    border-radius: 0; text-align: left;
+    border-radius: 14px;
+    box-shadow: var(--glint);
+    text-align: left;
     font-weight: 400; font-size: 14px !important; color: var(--muted) !important;
   }
 
@@ -1887,9 +1893,10 @@ body:not(#rd) {
   .discord-username:hover { color: #ffffff; }
   .discord-platform { color: var(--muted); }
   .discord-custom {
-    margin-top: 12px; padding: 8px 0;
-    background: transparent; border: 0;
-    border-radius: 0; color: #ffffff; font-weight: 400;
+    margin-top: 12px; padding: 8px 12px;
+    background: var(--well-bg); border: 0;
+    border-radius: 14px; box-shadow: var(--glint);
+    color: #ffffff; font-weight: 400;
     font-size: 14px !important;
   }
   .discord-custom-text { font-style: normal; }
@@ -1902,10 +1909,11 @@ body:not(#rd) {
   .info-pill--steam-game,
   .discord-card .info-pill--game,
   .discord-card .info-pill--spotify {
-    margin: 14px 0 0; padding: 12px 0; gap: 12px; align-items: center;
-    background: transparent !important;
+    margin: 14px 0 0; padding: 12px 14px; gap: 12px; align-items: center;
+    background: var(--well-bg) !important;
     border: 0;
-    border-radius: 0;
+    border-radius: 16px;
+    box-shadow: var(--glint);
   }
   .info-pill--steam-game { margin-bottom: 14px; }
   .info-pill--spotify { align-items: flex-start; }
@@ -2065,20 +2073,20 @@ body:not(#rd) {
     display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
     padding: 16px 20px; text-align: left; text-decoration: none;
     color: #ffffff;
-    background: transparent;
-    -webkit-backdrop-filter: none;
-            backdrop-filter: none;
+    background: var(--slab-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+            backdrop-filter: var(--glass-blur);
     border: 0;
-    border-radius: 0;
-    box-shadow: none; overflow: visible; transform: none;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow), var(--glint);
+    overflow: hidden; transform: none;
   }
   .social-card::before, .social-card::after { content: none; }
   .social-card:hover {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none; transform: none;
+    background: var(--slab-bg-hover);
+    box-shadow: var(--card-shadow), var(--glint);
+    transform: none;
   }
-  .social-card:hover .social-name { text-decoration: underline; }
   .social-card:active { transform: none; }
   .social-name {
     font-family: var(--font-display); font-size: 18px !important; font-weight: 600;
