@@ -2285,6 +2285,7 @@ body:not(#rd) {
     .site-header { justify-content: center; padding: 4px 0; gap: 0 16px; }
     .site-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; margin-left: 0; min-width: 0; justify-content: center; }
     .site-top { border-left: 0; padding-left: 0; margin-left: 0; }
+    .site-top.is-hidden, .site-header.is-empty .site-top { display: none; }
     .section-title { scroll-margin-top: var(--header-offset, 114px); }
     .socials-grid { --cols: 2; }
     .social-card:last-child:nth-child(odd) { flex-basis: 100%; }
