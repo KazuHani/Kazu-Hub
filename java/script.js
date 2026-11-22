@@ -691,7 +691,11 @@
     if (!('ResizeObserver' in window)) return;
     const container = document.querySelector('.container');
     if (!container) return;
-    const kids = Array.from(container.children);
+    const kids = Array.from(container.children).reduce((acc, el) => {
+      if (el.tagName === 'MAIN') acc.push.apply(acc, Array.from(el.children));
+      else acc.push(el);
+      return acc;
+    }, []);
     const heights = new WeakMap();
     const ro = new ResizeObserver((entries) => {
       const changed = [];
@@ -1263,12 +1267,13 @@
     if (steamAvatarEl) {
       steamAvatarEl.onerror = () => {
         steamAvatarEl.onerror = null;
+        if (sharedAvatarUrl === p.avatar) sharedAvatarUrl = '';
         steamAvatarEl.src = pfpSrc();
       };
       steamAvatarEl.src = p.avatar;
     }
     const discordImg = $('discordAvatar');
-    if (discordImg) discordImg.src = p.avatar;
+    if (discordImg && discordHasData && discordImg.getAttribute('src') !== p.avatar) discordImg.src = p.avatar;
 
     const steamKey = (p.state === 'in-game' || p.state === 'online' || p.state === 'away' || p.state === 'checking' || p.state === 'unknown')
       ? p.state : 'offline';
@@ -1688,7 +1693,9 @@
 
   function malCacheRead() {
     const parse = (KazuLib && KazuLib.malCacheParse) || function () { return null; };
-    try { return parse(localStorage.getItem(MAL_CACHE_KEY)); } catch (e) { return null; }
+    const raw = cardCacheRaw(MAL_CACHE_KEY);
+    if (KazuLib && KazuLib.cardCacheMeta && !KazuLib.cardCacheMeta(raw, MAL_USER).paint) return null;
+    return parse(raw);
   }
 
   // Live rows come from the first source that answers. Jikan stays first
@@ -1701,8 +1708,10 @@
   // then sorted newest-update-first via malSortRecent.
   async function fetchMalRows(force) {
     const malBucket = force ? Date.now() : Math.floor(Date.now() / 60000);
+    let jikanTried = false;
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
+      jikanTried = true;
       const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
@@ -1716,7 +1725,7 @@
         .filter(Boolean)
         .slice(0, 3);
     } catch (e) {
-      hostRest.fail('jikan', Date.now());
+      if (jikanTried) hostRest.fail('jikan', Date.now());
       console.warn('Jikan failed, trying MAL load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
       const r2 = await proxyFetch(listUrl);
@@ -1759,8 +1768,10 @@
     const mRow = KazuLib.malMangaRow;
     const mListRow = KazuLib.malMangaListRow;
     const malBucket = force ? Date.now() : Math.floor(Date.now() / 60000);
+    let jikanTried = false;
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
+      jikanTried = true;
       const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
@@ -1771,7 +1782,7 @@
         .filter(Boolean)
         .slice(0, 2);
     } catch (e) {
-      hostRest.fail('jikan', Date.now());
+      if (jikanTried) hostRest.fail('jikan', Date.now());
       console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
       const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
       const r2 = await proxyFetch(listUrl);
@@ -1789,7 +1800,9 @@
   function malMangaCacheRead() {
     const parse = KazuLib && KazuLib.malMangaCacheParse;
     if (!parse) return null;
-    try { return parse(localStorage.getItem(MAL_MANGA_CACHE_KEY)); } catch (e) { return null; }
+    const raw = cardCacheRaw(MAL_MANGA_CACHE_KEY);
+    if (KazuLib.cardCacheMeta && !KazuLib.cardCacheMeta(raw, MAL_USER).paint) return null;
+    return parse(raw);
   }
 
   // Manga failures never flip the whole card to its error state: the anime
@@ -1849,13 +1862,17 @@
   function malReviewCacheRead() {
     const parse = KazuLib && KazuLib.malReviewCacheParse;
     if (!parse) return null;
-    try { return parse(localStorage.getItem(MAL_REVIEW_CACHE_KEY)); } catch (e) { return null; }
+    const raw = cardCacheRaw(MAL_REVIEW_CACHE_KEY);
+    if (KazuLib.cardCacheMeta && !KazuLib.cardCacheMeta(raw, MAL_USER).paint) return null;
+    return parse(raw);
   }
 
   async function loadMalReview(force) {
     if (!siteIntegrationOn('mal') || !KazuLib || !KazuLib.malReviewRow) return;
+    let jikanTried = false;
     try {
       if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
+      jikanTried = true;
       const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/reviews', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
       if (!r.ok) throw new Error('bad status ' + r.status);
       const j = await r.json();
@@ -1873,7 +1890,7 @@
       renderMalReview(row);
       cardCacheWrite(MAL_REVIEW_CACHE_KEY, MAL_USER, { row });
     } catch (e) {
-      hostRest.fail('jikan', Date.now());
+      if (jikanTried) hostRest.fail('jikan', Date.now());
       const cached = malReviewCacheRead();
       if (cached && cached.hasReview) renderMalReview(cached.row);
     }
@@ -1975,7 +1992,9 @@
   function lbCacheRead() {
     const parse = KazuLib && KazuLib.letterboxdCacheParse;
     if (!parse) return null;
-    try { return parse(localStorage.getItem(LB_CACHE_KEY)); } catch (e) { return null; }
+    const raw = cardCacheRaw(LB_CACHE_KEY);
+    if (KazuLib.cardCacheMeta && !KazuLib.cardCacheMeta(raw, LB_USER).paint) return null;
+    return parse(raw);
   }
 
   async function loadLetterboxd(force) {
@@ -2083,7 +2102,9 @@
   function ytmCacheRead() {
     const parse = KazuLib && KazuLib.ytPlaylistCacheParse;
     if (!parse) return null;
-    try { return parse(localStorage.getItem(YTM_CACHE_KEY)); } catch (e) { return null; }
+    const raw = cardCacheRaw(YTM_CACHE_KEY);
+    if (KazuLib.cardCacheMeta && !KazuLib.cardCacheMeta(raw, YTM_PLAYLIST_ID).paint) return null;
+    return parse(raw);
   }
 
   async function loadPlaylistTracks() {
@@ -2651,7 +2672,7 @@
 
   const siteIdList = () => ({ discord: DISCORD_ID, steam: STEAM_VANITY, mal: MAL_USER, lb: LB_USER, ytm: YTM_PLAYLIST_ID });
   const SITE_INTEGRATION_FOR = { discord: 'discord', steam: 'steam', mal: 'mal', lb: 'letterboxd' };
-  const SITE_CACHES = { discord: ['kazu-discord-cache'], steam: ['kazu-steam-cache'], mal: ['kazu-mal-cache', 'kazu-mal-manga-cache'], lb: ['kazu-lb-cache'], ytm: ['kazu-ytm-cache'] };
+  const SITE_CACHES = { discord: ['kazu-discord-cache'], steam: ['kazu-steam-cache'], mal: ['kazu-mal-cache', 'kazu-mal-manga-cache', 'kazu-mal-review-cache'], lb: ['kazu-lb-cache'], ytm: ['kazu-ytm-cache'] };
 
   // A new account id or a card switched on or off: drop that card's cached rows
   // and fetch it again now instead of waiting for its next poll.
@@ -2735,7 +2756,7 @@
     }
     el.classList.add('is-visible');
   };
-  if (!LOW_POWER && 'IntersectionObserver' in window) {
+  if (!LOW_POWER && !REDUCED_MOTION && 'IntersectionObserver' in window) {
     const revealObserver = new IntersectionObserver((entries) => {
       let batch = 0;
       entries.forEach((entry) => {
@@ -2755,6 +2776,7 @@
         revealObserver.unobserve(el);
         revealEl(el, 0);
       });
+      window.removeEventListener('scroll', revealStragglers);
     };
     window.addEventListener('scroll', revealStragglers, { passive: true });
     window.addEventListener('load', revealStragglers, { once: true });
@@ -2821,6 +2843,21 @@
   if (addMeLink) addMeLink.addEventListener('click', copyDiscordUsername);
   const usernameBtn = $('discordUsername');
   if (usernameBtn) usernameBtn.addEventListener('click', copyDiscordUsername);
+
+  // Fallback for dynamically rendered Right-now thumbnails if a CDN fails or is blocked
+  const rightNowGrid = document.querySelector('.right-now-grid');
+  if (rightNowGrid) rightNowGrid.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG') return;
+    if (img.classList.contains('lb-poster')) {
+      const empty = document.createElement('div');
+      empty.className = 'lb-poster lb-poster--empty';
+      empty.setAttribute('aria-hidden', 'true');
+      img.replaceWith(empty);
+    } else if (img.classList.contains('mal-cover') || img.classList.contains('recent-game-logo')) {
+      img.classList.add('hidden');
+    }
+  }, true);
 
   // Retry buttons on the weather / Discord / MAL / Letterboxd error states
   const weatherRetry = $('weatherRetry');
@@ -3254,7 +3291,7 @@
    local fallbacks keep it alive if lib.js fails.
    ========================================================================== */
 (() => {
-  if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches || window.innerWidth <= 768) return;
+  if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return;
 
   const KazuLib = window.KazuLib;
   // Owned by lib.js (single source of truth); local copies below.
@@ -3344,6 +3381,10 @@
     function render() {
       rafId = 0;
       if (destroyed) return;
+      if (opts.enabled && !opts.enabled()) {
+        bar.classList.add('cscroll--hidden');
+        return;
+      }
       if (host && !host.isConnected) { destroy(); return; }
       if (needMeasure) {
         needMeasure = false;
@@ -3485,13 +3526,18 @@
   // otherwise make drag and stepper scrolls trail behind the pointer.
   const winScroller = createScroller({
     host: null,
+    enabled: () => window.innerWidth > 768,
     viewportH: () => window.innerHeight,
     contentH: () => Math.max(rootEl.scrollHeight, document.body ? document.body.scrollHeight : 0),
     scroll: () => window.scrollY,
     scrollTo: (y) => window.scrollTo({ top: y, behavior: 'instant' }),
   });
-  rootEl.classList.add('has-cscroll'); // style.css hides the native window bar
-  window.addEventListener('resize', () => winScroller.schedule(true), { passive: true });
+  function syncWinScrollMode() {
+    rootEl.classList.toggle('has-cscroll', window.innerWidth > 768);
+    winScroller.schedule(true);
+  }
+  syncWinScrollMode();
+  window.addEventListener('resize', syncWinScrollMode, { passive: true });
   window.addEventListener('load', () => winScroller.schedule(true));
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => winScroller.schedule(true));
   // body.modal-open hides the window bar (style.css) while the modal locks
@@ -3659,30 +3705,46 @@
     // a stop. (Rounding writes to whole pixels made the tail stall below a
     // 1px step and then jump the remaining gap in one frame — an abrupt
     // stop.)
-    const next = Math.min(Math.max(smoothScrollStep(window.scrollY, targetY, SMOOTH_EASE, dt, 0.5), 0), maxScroll());
-    lastWritten = next;
+    const before = window.scrollY;
+    const next = Math.min(Math.max(smoothScrollStep(before, targetY, SMOOTH_EASE, dt, 0.5), 0), maxScroll());
     window.scrollTo({ top: next, behavior: 'instant' });
-    if (next !== targetY) rafId = requestAnimationFrame(tick);
-    else lastTickAt = 0;
+    const after = window.scrollY;
+    lastWritten = after;
+    const stalled = Math.abs(after - before) < 0.01 && Math.abs(next - before) >= 0.05;
+    if (next !== targetY && !stalled) rafId = requestAnimationFrame(tick);
+    else {
+      targetY = after;
+      lastTickAt = 0;
+    }
   };
 
   // Programmatic glides (the back-to-top button) ride the same loop — a
   // native smooth scrollTo would be stomped by the loop's per-frame writes.
   window.kazuSmoothScrollTo = (y) => {
     targetY = Math.min(Math.max(+y || 0, 0), maxScroll());
+    lastWritten = window.scrollY;
     if (rafId === null) { lastTickAt = 0; rafId = requestAnimationFrame(tick); }
   };
 
-  // The header links and "Back to top" are plain #anchors; the wheel loop owns the
-  // scroll position, so a native jump is overwritten. Glide through the loop instead.
+  // The header links, skip link and "Back to top" are plain #anchors; the wheel
+  // loop owns the scroll position, so a native jump is overwritten. Glide
+  // through the loop instead while keeping focus and URL hash in sync.
   document.addEventListener('click', (e) => {
-    const a = e.target && e.target.closest && e.target.closest('.site-header a[href^="#"], .footer-top');
+    const a = e.target && e.target.closest && e.target.closest('.site-header a[href^="#"], .footer-top, .skip-link');
     if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey) return;
     const id = a.getAttribute('href').slice(1);
-    const el = id && id !== 'top' ? document.getElementById(id) : null;
-    if (id && id !== 'top' && !el) return;
+    const targetEl = id ? document.getElementById(id) : null;
+    if (!targetEl) return;
     e.preventDefault();
-    const y = el ? el.getBoundingClientRect().top + window.scrollY - 16 : 0;
+    const y = id === 'top' ? 0 : targetEl.getBoundingClientRect().top + window.scrollY - 16;
+    if (!targetEl.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(targetEl.tagName)) {
+      targetEl.setAttribute('tabindex', '-1');
+    }
+    targetEl.focus({ preventScroll: true });
+    try {
+      const nextUrl = id === 'top' ? (location.pathname + location.search) : ('#' + id);
+      if (location.hash !== (id === 'top' ? '' : '#' + id)) history.replaceState(null, '', nextUrl);
+    } catch (err) {}
     if (window.kazuSmoothScrollTo) window.kazuSmoothScrollTo(y);
     else window.scrollTo({ top: y, behavior: 'smooth' });
   });

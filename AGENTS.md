@@ -28,8 +28,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=154`,
-  `java/lib.js?v=63`, `java/site-config.js?v=3`, `java/i18n.js?v=16`, `java/script.js?v=129` (version
+- `index.html` — the whole page. Loads `style.css?v=155`,
+  `java/lib.js?v=64`, `java/site-config.js?v=3`, `java/i18n.js?v=17`, `java/script.js?v=130` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-cards` hold (see "Live-card cache" below), the

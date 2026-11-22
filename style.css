@@ -1470,6 +1470,20 @@ body:not(#rd) {
   a:focus-visible, button:focus-visible, [role="button"]:focus-visible {
     outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px;
   }
+  [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
+  .skip-link {
+    position: fixed; top: 12px; left: 12px; z-index: 200;
+    width: 1px; height: 1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
+    display: inline-flex; align-items: center;
+    border: 1px solid var(--line-strong); border-radius: 8px;
+    background: var(--bg); color: var(--ink); font-size: 14px !important; font-weight: 600;
+    text-decoration: none;
+  }
+  .skip-link:focus-visible {
+    width: auto; height: auto; min-height: 44px; padding: 0 16px;
+    overflow: visible; clip-path: none;
+  }
 
   /* ---- Page frame ---- */
   .container {
@@ -1791,7 +1805,7 @@ body:not(#rd) {
   .music-track-artist { margin-top: 0; color: var(--muted); font-weight: 400; }
 
   /* ---- PC: label and value rows in two columns ---- */
-  .pc-specs-grid { display: block; column-count: 2; column-gap: 48px; }
+  .pc-specs-grid { display: block; column-count: 2; column-gap: 48px; --pc-label: 128px; --pc-gap: 16px; }
   .pc-spec-card {
     display: block; grid-column: auto; min-height: 0; padding: 0; break-inside: avoid;
     background: none !important; border-radius: 0; overflow: visible;
@@ -1802,23 +1816,23 @@ body:not(#rd) {
   }
   .pc-spec-card--platform .pc-spec-card-title, .pc-spec-card--build .pc-spec-card-title { display: none; }
   .pc-spec-card--storage {
-    display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 16px; align-items: start;
+    display: grid; grid-template-columns: var(--pc-label) minmax(0, 1fr); gap: var(--pc-gap); align-items: start;
     padding: 14px 0; border-bottom: 1px solid var(--line) !important;
   }
   .pc-spec-card--storage .pc-spec-card-title { padding-top: 1px; }
   .pc-spec-card--graphics {
-    position: relative; padding: 14px 0 14px 144px; border-bottom: 1px solid var(--line) !important;
+    position: relative; padding: 14px 0 14px calc(var(--pc-label) + var(--pc-gap)); border-bottom: 1px solid var(--line) !important;
   }
   .pc-spec-feature-copy { display: block; }
   .pc-spec-card--graphics .pc-spec-feature-copy .pc-spec-card-title {
-    position: absolute; left: 0; top: 15px; width: 128px; margin: 0; padding: 0;
+    position: absolute; left: 0; top: 15px; width: var(--pc-label); margin: 0; padding: 0;
   }
   .pc-spec-maker, .pc-spec-feature-name { display: inline; margin: 0; color: var(--ink); font-weight: 500; font-size: 16px !important; }
   .pc-spec-feature-name strong { display: inline; color: inherit; font-weight: 500; }
   .pc-spec-list, .pc-storage-list { margin: 0; flex: none; }
   .pc-spec-list, .pc-spec-list--build { display: block; gap: 0; }
   .pc-spec-entry {
-    display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line);
+    display: grid; grid-template-columns: var(--pc-label) minmax(0, 1fr); gap: var(--pc-gap); padding: 14px 0; border-bottom: 1px solid var(--line);
   }
   .pc-spec-entry dt { margin: 0; padding-top: 1px; color: var(--muted); font-weight: 400; }
   .pc-spec-entry dd, .pc-spec-list--build dd { margin: 0; color: var(--ink); font-weight: 500; line-height: 1.5; }
@@ -1865,12 +1879,13 @@ body:not(#rd) {
     .right-now-grid .card > :not(.card-head) { grid-column: 1; grid-row: 2; }
     .right-now-grid .pill-link { grid-column: 1; grid-row: 3; justify-self: start; }
     .socials-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+    .social-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
     .stories-grid { grid-template-columns: minmax(0, 1fr); }
     .music-card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "side" "open" "featured"; row-gap: 20px; }
     .pc-specs-grid { column-count: 1; }
     /* bigger pictures on a phone */
     .mal-cover, .lb-poster { width: 84px; height: 120px; }
-    .recent-game-logo { width: 164px; height: 76px; }
+    .recent-game-logo { width: clamp(112px, 37vw, 164px); height: auto; aspect-ratio: 140 / 65; }
     .avatar-img, .steam-avatar { width: 72px; height: 72px; }
     .mal-row, a.mal-row, .lb-entry, a.lb-entry { gap: 18px; }
   }
@@ -1887,6 +1902,13 @@ body:not(#rd) {
     .quote-box, .quote-box.visible { max-width: none; }
     .quote-text, .quote-text * { font-size: clamp(18px, 5vw, 26px) !important; }
     .quote-author { font-size: clamp(14px, 3.6vw, 16px) !important; }
+  }
+  @media (max-width: 420px) {
+    .pc-specs-grid { --pc-label: 96px; --pc-gap: 12px; }
+  }
+  @media (max-width: 400px) {
+    .site-nav { gap: 2px; }
+    .site-nav a { padding: 0 7px; font-size: 14px !important; }
   }
 }
 

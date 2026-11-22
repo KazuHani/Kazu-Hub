@@ -54,6 +54,7 @@
     'Dismiss': '非表示',
     'Close': '閉じる',
     'Back to top': 'ページの先頭へ',
+    'Skip to content': '本文へスキップ',
     'New quote': '新しい名言',
     'Show another quote': '別の名言を表示',
 

@@ -353,7 +353,7 @@
     if (!a || !(a.title_english || a.title)) return null;
     var watched = (typeof entry.episodes_watched === 'number' && entry.episodes_watched >= 0) ? entry.episodes_watched : 0;
     var total = (typeof a.episodes === 'number' && a.episodes > 0) ? a.episodes : null;
-    var img = (a.images && a.images.jpg && (a.images.jpg.small_image_url || a.images.jpg.image_url)) || '';
+    var img = cacheImage((a.images && a.images.jpg && (a.images.jpg.small_image_url || a.images.jpg.image_url)) || '');
     return {
       url: safeLink(a.url, MAL_HOSTS) || (a.mal_id ? 'https://myanimelist.net/anime/' + a.mal_id : 'https://myanimelist.net'),
       title: a.title_english || a.title,
@@ -414,7 +414,7 @@
       watched: watched,
       total: total, // null = episode count unknown (usually still airing)
       pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
-      img: typeof entry.anime_image_path === 'string' ? entry.anime_image_path : '',
+      img: cacheImage(entry.anime_image_path),
     };
   }
 
@@ -775,7 +775,7 @@
         watched: watched,
         total: total,
         pct: total ? Math.min(100, Math.round((watched / total) * 100)) : 0,
-        img: typeof r.img === 'string' ? r.img : '',
+        img: cacheImage(r.img),
       });
     }
     return rows;
@@ -790,7 +790,7 @@
     if (!m || !(m.title_english || m.title)) return null;
     var read = (typeof entry.chapters_read === 'number' && entry.chapters_read >= 0) ? entry.chapters_read : 0;
     var total = (typeof m.chapters === 'number' && m.chapters > 0) ? m.chapters : null;
-    var img = (m.images && m.images.jpg && (m.images.jpg.small_image_url || m.images.jpg.image_url)) || '';
+    var img = cacheImage((m.images && m.images.jpg && (m.images.jpg.small_image_url || m.images.jpg.image_url)) || '');
     return {
       url: safeLink(m.url, MAL_HOSTS) || (m.mal_id ? 'https://myanimelist.net/manga/' + m.mal_id : 'https://myanimelist.net'),
       title: m.title_english || m.title,
@@ -817,7 +817,7 @@
       read: read,
       total: total,
       pct: total ? Math.min(100, Math.round((read / total) * 100)) : 0,
-      img: typeof entry.manga_image_path === 'string' ? entry.manga_image_path : '',
+      img: cacheImage(entry.manga_image_path),
     };
   }
 
@@ -844,7 +844,7 @@
         read: read,
         total: total,
         pct: total ? Math.min(100, Math.round((read / total) * 100)) : 0,
-        img: typeof r.img === 'string' ? r.img : '',
+        img: cacheImage(r.img),
       });
     }
     return rows;
@@ -891,27 +891,25 @@
   // The review text, when the entry has one: the description's <p> blocks after
   // the poster, minus the "Watched on ..." line Letterboxd writes for a plain
   // log and the spoiler notice. Tags stripped, entities decoded, capped.
-  // Decode common HTML/XML named and numeric entities, decoding &amp; last so
-  // double-encoded sequences like "&amp;lt;" stay literal "&lt;".
+  // Decode common HTML/XML named and numeric entities in a single pass so
+  // double-encoded sequences like "&amp;lt;" or "&#38;lt;" stay literal "&lt;".
   var HTML_ENTITIES = {
-    lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
     lsquo: '\u2018', rsquo: '\u2019', ldquo: '\u201C', rdquo: '\u201D',
     ndash: '\u2013', mdash: '\u2014', hellip: '\u2026',
   };
   function decodeEntities(s) {
-    return String(s || '')
-      .replace(/&#x([0-9a-f]+);/gi, function (m, h) {
-        var cp = parseInt(h, 16);
+    return String(s || '').replace(/&(?:#x([0-9a-f]+)|#(\d+)|(amp|lt|gt|quot|apos|nbsp|lsquo|rsquo|ldquo|rdquo|ndash|mdash|hellip));/gi, function (m, hx, dec, name) {
+      if (hx) {
+        var cp = parseInt(hx, 16);
         return (cp > 0 && cp <= 0x10FFFF && String.fromCodePoint) ? String.fromCodePoint(cp) : m;
-      })
-      .replace(/&#(\d+);/g, function (m, d) {
-        var cp = parseInt(d, 10);
-        return (cp > 0 && cp <= 0x10FFFF && String.fromCodePoint) ? String.fromCodePoint(cp) : m;
-      })
-      .replace(/&(lt|gt|quot|apos|nbsp|lsquo|rsquo|ldquo|rdquo|ndash|mdash|hellip);/g, function (_, k) {
-        return HTML_ENTITIES[k];
-      })
-      .replace(/&amp;/g, '&');
+      }
+      if (dec) {
+        var cp2 = parseInt(dec, 10);
+        return (cp2 > 0 && cp2 <= 0x10FFFF && String.fromCodePoint) ? String.fromCodePoint(cp2) : m;
+      }
+      return HTML_ENTITIES[name.toLowerCase()];
+    });
   }
 
   function letterboxdReview(desc) {
@@ -956,7 +954,7 @@
       rating: (rating > 0 && rating <= 5) ? rating : null,
       stars: ratingStars(rating),
       link: link,
-      poster: imgM ? imgM[1] : '',
+      poster: imgM ? cacheImage(decodeEntities(imgM[1])) : '',
       watched: watchedRaw ? letterboxdWatchedLabel(watchedRaw) : '',
       rewatch: /^yes$/i.test(rssPick(item, 'letterboxd:rewatch')),
       review: letterboxdReview(desc),
@@ -980,7 +978,7 @@
       rating: rating,
       stars: ratingStars(rating),
       link: link,
-      poster: typeof e2.poster === 'string' ? e2.poster : '',
+      poster: cacheImage(e2.poster),
       watched: typeof e2.watched === 'string' ? e2.watched : '',
       rewatch: e2.rewatch === true,
       review: typeof e2.review === 'string' ? e2.review.slice(0, 330) : '',
@@ -1088,12 +1086,7 @@
   // Atom text is XML-escaped; decode it back to plain text (escapeHtml
   // re-escapes at render time, so without this '&' would show as '&amp;').
   function xmlText(s) {
-    return String(s || '')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#0?39;|&apos;/g, "'")
-      .replace(/&amp;/g, '&');
+    return decodeEntities(s);
   }
 
   // Music uploads come from auto-generated/VEVO channels whose names carry
