@@ -1633,8 +1633,13 @@ body:not(#rd) {
     border: 0;
     border-radius: 22px;
     box-shadow: var(--card-shadow), var(--glint);
+    transform: translateY(0); opacity: 1;
   }
-  .site-header.is-empty { position: static; }
+  .site-header.is-empty {
+    transform: translateY(calc(-100% - 24px));
+    opacity: 0;
+    pointer-events: none;
+  }
   .site-mark {
     display: inline-flex; align-items: center; min-height: 44px;
     text-decoration: none; color: #ffffff;
@@ -2447,6 +2452,10 @@ body:not(#rd) .site-nav a {
               opacity 0.2s ease !important;
 }
 body:not(#rd) .site-nav.is-measuring a { transition: none !important; }
+body:not(#rd) .site-header {
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.24s ease !important;
+}
 body:not(#rd) .site-top {
   transition: max-width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
               padding-left 0.24s cubic-bezier(0.22, 1, 0.36, 1),
@@ -2455,5 +2464,5 @@ body:not(#rd) .site-top {
               transform 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  body:not(#rd) .site-nav a, body:not(#rd) .site-top { transition: none !important; }
+  body:not(#rd) .site-header, body:not(#rd) .site-nav a, body:not(#rd) .site-top { transition: none !important; }
 }
