@@ -3753,7 +3753,9 @@
     const targetEl = id ? document.getElementById(id) : null;
     if (!targetEl) return;
     e.preventDefault();
-    const y = id === 'top' ? 0 : targetEl.getBoundingClientRect().top + window.scrollY - 16;
+    const hdrEl = document.querySelector('.site-header');
+    const hdrOffset = (hdrEl ? hdrEl.offsetHeight : 0) + 16;
+    const y = id === 'top' ? 0 : Math.max(0, targetEl.getBoundingClientRect().top + window.scrollY - hdrOffset);
     if (!targetEl.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(targetEl.tagName)) {
       targetEl.setAttribute('tabindex', '-1');
     }
@@ -3798,4 +3800,78 @@
       lastWritten = window.scrollY;
     }
   }, { passive: true });
+})();
+
+/* ============================================================================
+   STICKY NAVBAR — hide passed sections and slide remaining links left
+   ============================================================================
+   Each `.site-nav a[href^="#"]` watches its corresponding section element
+   (the sibling section right after the anchor heading). Once the user scrolls
+   past that section's bottom edge, the link gets `.is-passed` and collapses
+   smoothly so remaining links slide left; scrolling back up restores it.
+   ========================================================================== */
+(() => {
+  const header = document.querySelector('.site-header');
+  const nav = header && header.querySelector('.site-nav');
+  if (!header || !nav) return;
+
+  const items = Array.from(nav.querySelectorAll('a[href^="#"]')).map((link) => {
+    const id = link.getAttribute('href').slice(1);
+    const heading = id ? document.getElementById(id) : null;
+    const section = (heading && heading.nextElementSibling) || heading;
+    return section ? { link, section, passed: false } : null;
+  }).filter(Boolean);
+  if (!items.length) return;
+
+  function measure() {
+    nav.style.removeProperty('--nav-full-w');
+    items.forEach(({ link }) => {
+      link.classList.remove('is-passed');
+      link.style.removeProperty('--nav-w');
+    });
+    let total = 0;
+    items.forEach(({ link }, idx) => {
+      const w = Math.ceil(link.getBoundingClientRect().width);
+      link.style.setProperty('--nav-w', (w + 2) + 'px');
+      total += w + (idx < items.length - 1 ? 6 : 0);
+    });
+    if (window.innerWidth > 759 && total > 0) {
+      nav.style.setProperty('--nav-full-w', total + 'px');
+    }
+    update();
+  }
+
+  function update() {
+    const cutoff = header.getBoundingClientRect().bottom + 8;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const passed = item.section.getBoundingClientRect().bottom <= cutoff;
+      if (passed !== item.passed) {
+        item.passed = passed;
+        item.link.classList.toggle('is-passed', passed);
+        if (passed) {
+          item.link.setAttribute('aria-hidden', 'true');
+          item.link.setAttribute('tabindex', '-1');
+        } else {
+          item.link.removeAttribute('aria-hidden');
+          item.link.removeAttribute('tabindex');
+        }
+      }
+    }
+  }
+
+  let scheduled = false;
+  function onScroll() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      update();
+    });
+  }
+
+  measure();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', measure, { passive: true });
 })();
