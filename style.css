@@ -1564,43 +1564,43 @@ body:not(#rd) {
   .lava-blob {
     position: absolute; display: block;
     border-radius: 44% 56% 52% 48% / 48% 42% 58% 52%;
-    filter: blur(110px);
+    filter: blur(96px);
     opacity: 0.26;
     will-change: transform;
   }
   .lava-blob--1 {
-    width: clamp(500px, 65vw, 920px); height: clamp(500px, 65vw, 920px);
-    top: -16%; left: -14%;
+    width: clamp(440px, 57vw, 800px); height: clamp(440px, 57vw, 800px);
+    top: -14%; left: -12%;
     background: #29B6F6;
-    animation: lavaFloat1 22s ease-in-out infinite alternate;
+    animation: lavaFloat1 14s ease-in-out infinite alternate;
   }
   .lava-blob--2 {
-    width: clamp(560px, 72vw, 1020px); height: clamp(560px, 72vw, 1020px);
-    top: 4%; right: -18%;
+    width: clamp(490px, 64vw, 900px); height: clamp(490px, 64vw, 900px);
+    top: 6%; right: -16%;
     background: #6D28D9;
     opacity: 0.34;
-    animation: lavaFloat2 28s ease-in-out infinite alternate;
+    animation: lavaFloat2 18s ease-in-out infinite alternate;
   }
   .lava-blob--3 {
-    width: clamp(460px, 58vw, 820px); height: clamp(460px, 58vw, 820px);
-    bottom: -20%; left: 10%;
+    width: clamp(400px, 51vw, 720px); height: clamp(400px, 51vw, 720px);
+    bottom: -18%; left: 12%;
     background: #64FFDA;
     opacity: 0.22;
-    animation: lavaFloat3 25s ease-in-out infinite alternate;
+    animation: lavaFloat3 16s ease-in-out infinite alternate;
   }
   .lava-blob--4 {
-    width: clamp(480px, 62vw, 880px); height: clamp(480px, 62vw, 880px);
-    bottom: 2%; right: 2%;
+    width: clamp(420px, 54vw, 760px); height: clamp(420px, 54vw, 760px);
+    bottom: 4%; right: 4%;
     background: #29B6F6;
     opacity: 0.24;
-    animation: lavaFloat4 31s ease-in-out infinite alternate;
+    animation: lavaFloat4 20s ease-in-out infinite alternate;
   }
   .lava-blob--5 {
-    width: clamp(440px, 56vw, 800px); height: clamp(440px, 56vw, 800px);
-    top: 32%; left: 24%;
+    width: clamp(390px, 49vw, 700px); height: clamp(390px, 49vw, 700px);
+    top: 34%; left: 28%;
     background: #6D28D9;
     opacity: 0.3;
-    animation: lavaFloat5 26s ease-in-out infinite alternate;
+    animation: lavaFloat5 17s ease-in-out infinite alternate;
   }
 
   .container {
