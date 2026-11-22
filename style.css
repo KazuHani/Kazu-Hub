@@ -1550,6 +1550,54 @@ body:not(#rd) {
   }
 
   /* ---- Page frame ---- */
+  .page { position: relative; z-index: 1; }
+  .lava-bg {
+    position: fixed; inset: 0; z-index: 0;
+    overflow: hidden; pointer-events: none;
+    background: var(--midnight-ice);
+  }
+  .lava-blob {
+    position: absolute; display: block;
+    border-radius: 44% 56% 52% 48% / 48% 42% 58% 52%;
+    filter: blur(84px);
+    opacity: 0.42;
+    will-change: transform;
+  }
+  .lava-blob--1 {
+    width: clamp(320px, 42vw, 560px); height: clamp(320px, 42vw, 560px);
+    top: -10%; left: -8%;
+    background: #29B6F6;
+    animation: lavaFloat1 22s ease-in-out infinite alternate;
+  }
+  .lava-blob--2 {
+    width: clamp(360px, 48vw, 640px); height: clamp(360px, 48vw, 640px);
+    top: 12%; right: -12%;
+    background: #6D28D9;
+    opacity: 0.5;
+    animation: lavaFloat2 28s ease-in-out infinite alternate;
+  }
+  .lava-blob--3 {
+    width: clamp(280px, 36vw, 480px); height: clamp(280px, 36vw, 480px);
+    bottom: -14%; left: 18%;
+    background: #64FFDA;
+    opacity: 0.34;
+    animation: lavaFloat3 25s ease-in-out infinite alternate;
+  }
+  .lava-blob--4 {
+    width: clamp(300px, 40vw, 520px); height: clamp(300px, 40vw, 520px);
+    bottom: 8%; right: 10%;
+    background: #29B6F6;
+    opacity: 0.36;
+    animation: lavaFloat4 31s ease-in-out infinite alternate;
+  }
+  .lava-blob--5 {
+    width: clamp(260px, 34vw, 460px); height: clamp(260px, 34vw, 460px);
+    top: 42%; left: 36%;
+    background: #6D28D9;
+    opacity: 0.44;
+    animation: lavaFloat5 26s ease-in-out infinite alternate;
+  }
+
   .container {
     max-width: 1160px;
     padding-top: 16px;
@@ -2341,9 +2389,40 @@ body.theme-christmas:not(#rd), html.theme-christmas body:not(#rd) {
 html:not(#rd) { scroll-behavior: auto !important; }
 body:not(#rd) {
   &, *, *::before, *::after { transition: none !important; transition-delay: 0s !important; }
-  &, *:not(.konami-dragon):not(.konami-flake):not(.winter-flake), *:not(.konami-dragon):not(.konami-flake):not(.winter-flake)::before, *:not(.konami-dragon):not(.konami-flake):not(.winter-flake)::after { animation: none !important; }
+  &, *:not(.konami-dragon):not(.konami-flake):not(.winter-flake):not(.lava-blob), *:not(.konami-dragon):not(.konami-flake):not(.winter-flake):not(.lava-blob)::before, *:not(.konami-dragon):not(.konami-flake):not(.winter-flake):not(.lava-blob)::after { animation: none !important; }
   .scroll-reveal { opacity: 1 !important; transform: none !important; }
   .discord-card, .steam-card, .mal-card, .lb-card, .pc-spec-card, .music-card { content-visibility: visible; contain-intrinsic-size: none; }
+}
+
+@keyframes lavaFloat1 {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate3d(26vw, 34vh, 0) scale(1.18, 0.9) rotate(45deg); }
+  100% { transform: translate3d(12vw, 62vh, 0) scale(0.92, 1.15) rotate(90deg); }
+}
+@keyframes lavaFloat2 {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate3d(-28vw, 24vh, 0) scale(0.9, 1.16) rotate(-40deg); }
+  100% { transform: translate3d(-14vw, -18vh, 0) scale(1.14, 0.94) rotate(-85deg); }
+}
+@keyframes lavaFloat3 {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate3d(24vw, -36vh, 0) scale(1.15, 0.88) rotate(55deg); }
+  100% { transform: translate3d(-12vw, -54vh, 0) scale(0.94, 1.12) rotate(110deg); }
+}
+@keyframes lavaFloat4 {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate3d(-26vw, -28vh, 0) scale(1.12, 0.92) rotate(-50deg); }
+  100% { transform: translate3d(-38vw, 10vh, 0) scale(0.88, 1.14) rotate(-100deg); }
+}
+@keyframes lavaFloat5 {
+  0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50%  { transform: translate3d(-20vw, -22vh, 0) scale(1.2, 0.86) rotate(60deg); }
+  100% { transform: translate3d(22vw, 24vh, 0) scale(0.9, 1.18) rotate(120deg); }
+}
+
+body.low-power:not(#rd) .lava-blob { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  body:not(#rd) .lava-blob { animation: none !important; }
 }
 
 body:not(#rd) .hero:has(.quote-box:not(.visible)) .title { translate: none; }
