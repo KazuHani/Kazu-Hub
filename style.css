@@ -1520,7 +1520,7 @@ body:not(#rd) {
     --font-size-feature: clamp(24px, 3.4vw, 34px);
   }
   .card, .pc-spec-card { container-type: normal; }
-  .stat-card { --font-size-display: clamp(16px, 5.2vw, 28px); }
+  .stat-card { --font-size-display: clamp(20px, 6.2vw, 36px); }
 
   &, & * { font-family: var(--font-body); }
   &, & p, & li, & dd, & dt, & figure { line-height: 1.5; }
@@ -1709,7 +1709,7 @@ body:not(#rd) {
   @media (min-width: 1040px) { .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
   .stat-card {
     display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
-    padding: 20px 22px; text-align: left; min-width: 0;
+    padding: 14px 16px; text-align: left; min-width: 0;
     border-radius: var(--radius-lg);
   }
   .stat-card--bday {
@@ -1729,12 +1729,12 @@ body:not(#rd) {
   }
   .stat-sub, .stat-sub--onbrand {
     margin-top: 6px; font-weight: 500;
-    font-size: 14px !important; color: #ffffff;
+    font-size: 15px !important; color: #ffffff;
   }
   .stat-faint {
     margin-top: 4px;
     font-family: var(--font-label); font-weight: 500; letter-spacing: 0.03em;
-    font-size: 12px !important; color: var(--muted);
+    font-size: 13px !important; color: var(--muted);
   }
   .stat-loading-text {
     margin-top: 10px; font-weight: 500;
@@ -2306,7 +2306,7 @@ body:not(#rd) {
       margin-left: auto; margin-right: auto; text-align: center; max-width: none;
     }
     .quote-box.visible { margin-top: 0; }
-    .stat-card { padding: 16px; }
+    .stat-card { padding: 12px 14px; }
     .right-now-grid .card, .story-card, .music-card, .pc-spec-card { padding: 20px; }
   }
   @media (max-width: 400px) {
