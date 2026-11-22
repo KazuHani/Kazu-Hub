@@ -191,12 +191,11 @@
     });
   }
   // ---------- Browser-chrome colour ----------
-  // There is no theme toggle: the redesign paints the page one flat canvas
-  // (style.css REDESIGN; light, or dark from the system setting, or the active
-  // seasonal theme), so the browser chrome follows that canvas.
+  // Glacial Naga Ethereal uses a dark Midnight Ice / Deep Trench canvas
+  // (#060A17 at the viewport top), so browser chrome matches it consistently.
   const THEME_CANVAS = {
-    default: { light: '#F7F6F3', dark: '#111316' },
-    christmas: { light: '#F6F2EB', dark: '#0C1611' },
+    default: { light: '#060A17', dark: '#060A17' },
+    christmas: { light: '#060A17', dark: '#060A17' },
   };
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
   const themeDarkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;

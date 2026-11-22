@@ -28,8 +28,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=155`,
-  `java/lib.js?v=64`, `java/site-config.js?v=3`, `java/i18n.js?v=17`, `java/script.js?v=130` (version
+- `index.html` — the whole page. Loads `style.css?v=156`,
+  `java/lib.js?v=64`, `java/site-config.js?v=3`, `java/i18n.js?v=17`, `java/script.js?v=131` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-cards` hold (see "Live-card cache" below), the
@@ -248,16 +248,20 @@ The real-Chrome sweep counted 1158 problems on that build, 0 now.)
 
 ## Redesign (the look that ships)
 
-The page looks like the editorial, flat redesign: a warm paper canvas
-(`#F7F6F3`) or near-black (`#111316`, from `prefers-color-scheme`; there is no
-toggle), Figtree for text, Fraunces (italic for the name and the wordmark,
-upright for the quote and the story titles), Noto Sans JP for Japanese,
-hairline rules instead of glass cards, one accent. It is the LAST block of
-`style.css` ("REDESIGN"), written with CSS nesting inside `body:not(#rd)` /
-`html:not(#rd)`. The `:not(#rd)` adds an id's worth of specificity, which is
-how the layer beats the legacy rules above it (the base palette, per-card
-glass) without `!important`; `!important` appears only where the markup has
-inline colours (card titles, pills, story cards) use it. A browser without CSS nesting keeps the legacy look.
+The page ships the **Glacial Naga Ethereal** design system: a dark Midnight Ice /
+Deep Trench canvas (`#060A17` / `#0e1324`) veiled with Twilight Aurora (`#3B1B54`),
+translucent frosted glass slabs (`backdrop-filter: blur(16px..24px)` with
+prismatic directional borders, disabled on `body.low-power` and
+`prefers-reduced-transparency`), `Outfit` for headlines and display figures,
+`Plus Jakarta Sans` for body text, `Space Grotesk` for uppercase runic labels
+and buttons, `Noto Sans JP` for Japanese fallback, serpentine SVG wave section
+dividers, and cerulean/glacial-cyan luminescence (`#81cfff`, `#29B6F6`,
+`#64FFDA`, `#70E4EF`). It is the LAST block of `style.css` ("REDESIGN"), written
+with CSS nesting inside `body:not(#rd)` / `html:not(#rd)`. The `:not(#rd)` adds
+an id's worth of specificity, which is how the layer beats the legacy rules
+above it without `!important`; `!important` appears only where the markup has
+inline colours (card titles, pills, story cards) or where `TEXT SCALE` uses it.
+A browser without CSS nesting keeps the legacy look.
 
 - **Do not delete the legacy rules above the block.** The page still
   relies on them. To change how the
