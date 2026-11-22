@@ -1621,13 +1621,14 @@ body:not(#rd) {
 
   /* ---- Site header: sticky bar with scroll-aware nav links ---- */
   .site-header {
-    position: sticky; top: 0; z-index: 60;
+    position: sticky; top: 12px; z-index: 60;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-    gap: 8px 24px; padding: 12px 0;
-    background: var(--header-bg);
+    gap: 8px 24px; padding: 10px 20px;
+    background: var(--slab-bg);
     -webkit-backdrop-filter: var(--glass-blur);
             backdrop-filter: var(--glass-blur);
-    border-bottom: 1px solid var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
   }
   .site-header.is-empty { position: static; }
   .site-mark {
