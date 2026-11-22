@@ -1592,7 +1592,7 @@ body:not(#rd) {
   .site-mark::before, .site-mark::after { content: none; }
   .site-mark:hover { color: #ffffff; }
   .site-nav {
-    display: flex; flex-wrap: nowrap; justify-content: flex-start;
+    display: flex; flex-wrap: nowrap; justify-content: flex-end;
     gap: 0; margin-left: auto; min-width: var(--nav-full-w, auto);
   }
   .site-nav a {
