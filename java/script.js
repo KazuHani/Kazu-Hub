@@ -3854,11 +3854,13 @@
     const y = window.scrollY;
     if (y < lastY - 4) clickedIdx = -1;
     lastY = y;
-    const cutoff = header.getBoundingClientRect().bottom + 24;
+    const cutoff = header.offsetHeight + 24;
     const atBottom = y + window.innerHeight >= document.documentElement.scrollHeight - 4;
+    let passedCount = 0;
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const passed = item.section.getBoundingClientRect().top <= cutoff || i <= clickedIdx || (atBottom && i === items.length - 1);
+      if (passed) passedCount++;
       if (passed !== item.passed) {
         item.passed = passed;
         item.link.classList.toggle('is-passed', passed);
@@ -3871,6 +3873,7 @@
         }
       }
     }
+    header.classList.toggle('is-empty', passedCount === items.length);
   }
 
   let scheduled = false;

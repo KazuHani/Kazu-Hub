@@ -1578,6 +1578,7 @@ body:not(#rd) {
             backdrop-filter: var(--glass-blur);
     border-bottom: 1px solid var(--line);
   }
+  .site-header.is-empty { position: static; }
   .site-mark {
     display: inline-flex; align-items: center; min-height: 44px;
     text-decoration: none; color: #ffffff;
