@@ -1295,6 +1295,16 @@
       steamGameStartMs = verifiedStart;
       steamGameSession = verifiedStart ? { name: p.game.name, startedAt: verifiedStart } : null;
       $('steamGameName').textContent = p.game.name;
+      const steamGameLogoEl = $('steamGameLogo');
+      if (steamGameLogoEl) {
+        if (p.game.logo) {
+          if (steamGameLogoEl.getAttribute('src') !== p.game.logo) steamGameLogoEl.setAttribute('src', p.game.logo);
+          steamGameLogoEl.classList.remove('hidden');
+        } else {
+          steamGameLogoEl.removeAttribute('src');
+          steamGameLogoEl.classList.add('hidden');
+        }
+      }
       const steamGameEl = $('steamGame');
       const gameUrl = p.game.url;
       if (gameUrl) steamGameEl.setAttribute('href', gameUrl);
@@ -1305,6 +1315,11 @@
       steamCurrentGameName = '';
       steamCurrentGameHours = '';
       steamGameStartMs = null;
+      const steamGameLogoEl = $('steamGameLogo');
+      if (steamGameLogoEl) {
+        steamGameLogoEl.removeAttribute('src');
+        steamGameLogoEl.classList.add('hidden');
+      }
       $('steamGame').removeAttribute('href');
       $('steamGame').classList.add('hidden');
     }
@@ -1439,6 +1454,9 @@
         // mostPlayedGame entry.
         game: currentGame ? {
           name: currentGame,
+          logo: (inGameEl && (txt('gameLogo', inGameEl) || txt('gameLogoSmall', inGameEl) || txt('gameIcon', inGameEl)))
+            || (matchedGame && matchedGame.logo)
+            || '',
           url: (inGameEl && (steamStoreUrl(txt('gameLink', inGameEl)) || steamStoreUrl(txt('gameLogo', inGameEl) || txt('gameIcon', inGameEl))))
             || (matchedGame && (steamStoreUrl(matchedGame.link) || steamStoreUrl(matchedGame.logo)))
             || '',

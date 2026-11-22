@@ -667,6 +667,7 @@
       state: !live ? 'unknown' : (STEAM_STATES[d.state] ? d.state : 'offline'),
       game: gameName ? {
         name: gameName,
+        logo: cacheImage(d.game.logo),
         url: steamStoreUrl(d.game.url) || '',
         startedAt: (startedAt && (typeof now !== 'number' || startedAt <= now)) ? startedAt : null,
         verifiedStart: !!(startedAt && (typeof now !== 'number' || startedAt <= now)),
