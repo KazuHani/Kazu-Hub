@@ -1453,21 +1453,21 @@ body:not(#rd) {
   --page-bg: var(--surface);
   --ink-soft: var(--muted);
   --ink-faint: var(--muted);
-  --card-bg: rgba(0, 0, 0, 0.56);
-  --card-blur: blur(18px);
+  --card-bg: rgba(0, 0, 0, 0.32);
+  --card-blur: blur(22px) saturate(1.25);
   --card-bd: 1px solid var(--line);
   --card-shadow: none;
   --glint: none;
-  --chip-bg: rgba(0, 0, 0, 0.78);
+  --chip-bg: rgba(0, 0, 0, 0.68);
   --chip-bd: 1px solid var(--line-strong);
   --on-accent: #000000;
 
   /* Surface & glass tokens */
-  --glass-blur: blur(18px);
-  --header-bg: rgba(0, 0, 0, 0.62);
-  --slab-bg: rgba(0, 0, 0, 0.56);
-  --slab-bg-hover: rgba(12, 12, 12, 0.72);
-  --well-bg: rgba(0, 0, 0, 0.42);
+  --glass-blur: blur(22px) saturate(1.25);
+  --header-bg: rgba(0, 0, 0, 0.45);
+  --slab-bg: rgba(0, 0, 0, 0.32);
+  --slab-bg-hover: rgba(0, 0, 0, 0.44);
+  --well-bg: rgba(0, 0, 0, 0.26);
 
   /* Shape & spacing tokens */
   --radius-sm: 0.25rem;
@@ -1624,7 +1624,7 @@ body:not(#rd) {
     position: sticky; top: 12px; z-index: 60;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: 8px 24px; padding: 10px 20px;
-    background: var(--slab-bg);
+    background: var(--header-bg);
     -webkit-backdrop-filter: var(--glass-blur);
             backdrop-filter: var(--glass-blur);
     border: 1px solid var(--line);
@@ -1678,7 +1678,7 @@ body:not(#rd) {
   .hub-bulletin {
     margin: 20px 0 0; padding: 14px 18px;
     border-radius: var(--radius-lg);
-    background: var(--slab-bg);
+    background: var(--header-bg);
     border: 1px solid var(--line-strong);
     color: #ffffff;
     text-align: left; justify-content: flex-start;
@@ -2064,7 +2064,7 @@ body:not(#rd) {
     display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
     padding: 16px 20px; text-align: left; text-decoration: none;
     color: #ffffff;
-    background: var(--slab-bg);
+    background: var(--header-bg);
     -webkit-backdrop-filter: var(--glass-blur);
             backdrop-filter: var(--glass-blur);
     border: 1px solid var(--line);
