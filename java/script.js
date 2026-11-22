@@ -3813,6 +3813,7 @@
 (() => {
   const header = document.querySelector('.site-header');
   const nav = header && header.querySelector('.site-nav');
+  const topLink = header && header.querySelector('.site-top');
   if (!header || !nav) return;
 
   const items = Array.from(nav.querySelectorAll('a[href^="#"]')).map((link) => {
@@ -3873,7 +3874,19 @@
         }
       }
     }
-    header.classList.toggle('is-empty', passedCount === items.length);
+    const isEmpty = passedCount === items.length;
+    header.classList.toggle('is-empty', isEmpty);
+    if (topLink) {
+      const hideTop = isEmpty || atBottom;
+      topLink.classList.toggle('is-hidden', hideTop);
+      if (hideTop) {
+        topLink.setAttribute('aria-hidden', 'true');
+        topLink.setAttribute('tabindex', '-1');
+      } else {
+        topLink.removeAttribute('aria-hidden');
+        topLink.removeAttribute('tabindex');
+      }
+    }
   }
 
   let scheduled = false;

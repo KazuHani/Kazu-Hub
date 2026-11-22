@@ -1607,6 +1607,19 @@ body:not(#rd) {
     opacity: 0; pointer-events: none;
   }
   .site-nav a:hover { color: #ffffff; text-decoration: underline; }
+  .site-top {
+    display: inline-flex; align-items: center; min-height: 44px;
+    padding: 0 0 0 16px; margin-left: 8px;
+    border-left: 1px solid var(--line);
+    white-space: nowrap;
+    font-family: var(--font-label); font-size: 13px !important; font-weight: 600;
+    letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none;
+    color: #ffffff;
+  }
+  .site-top:hover { color: #ffffff; text-decoration: underline; }
+  .site-top.is-hidden, .site-header.is-empty .site-top {
+    opacity: 0; pointer-events: none;
+  }
 
   /* ---- Announcement strip ---- */
   .hub-bulletin {
@@ -2264,6 +2277,7 @@ body:not(#rd) {
   @media (max-width: 759px) {
     .site-header { justify-content: center; }
     .site-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; margin-left: 0; min-width: 0; justify-content: center; }
+    .site-top { border-left: 0; padding-left: 0; margin-left: 0; }
     .socials-grid { --cols: 2; }
     .social-card:last-child:nth-child(odd) { flex-basis: 100%; }
     .stories-grid { grid-template-columns: minmax(0, 1fr); }
