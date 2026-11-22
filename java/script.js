@@ -3223,7 +3223,7 @@
   // joins too. Keying the selector off .card means any future card gets the
   // rim automatically.
   const cards = Array.from(
-    document.querySelectorAll('.card, .social-card, .site-header, .toast'),
+    document.querySelectorAll('.card, .social-card, .toast'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
 
   function refreshAll() { cards.forEach(refresh); renderHousing(); }
@@ -3898,6 +3898,7 @@
     }
     const isEmpty = passedCount === items.length;
     header.classList.toggle('is-empty', isEmpty);
+    header.classList.toggle('is-scrolled', y > 12 && !isEmpty);
     if (topLink) {
       const hideTop = isEmpty || atBottom || y <= 24;
       topLink.classList.toggle('is-hidden', hideTop);

@@ -1630,12 +1630,17 @@ body:not(#rd) {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
     gap: 8px 24px; padding: 10px 20px;
     background: var(--header-bg);
-    -webkit-backdrop-filter: var(--glass-blur);
-            backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: blur(20px) saturate(1.7) !important;
+            backdrop-filter: blur(20px) saturate(1.7) !important;
     border: 0;
     border-radius: 22px;
     box-shadow: var(--card-shadow), var(--glint);
     transform: translateY(0); opacity: 1;
+  }
+  .site-header.is-scrolled {
+    background: rgba(0, 0, 0, 0.88);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8) !important;
+            backdrop-filter: blur(28px) saturate(1.8) !important;
   }
   .site-header.is-empty {
     transform: translateY(calc(-100% - 24px));
@@ -2456,7 +2461,8 @@ body:not(#rd) .site-nav a {
 body:not(#rd) .site-nav.is-measuring a { transition: none !important; }
 body:not(#rd) .site-header {
   transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.24s ease !important;
+              opacity 0.24s ease,
+              background-color 0.22s ease !important;
 }
 body:not(#rd) .site-top {
   transition: max-width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
