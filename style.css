@@ -1463,11 +1463,11 @@ body:not(#rd) {
   --on-accent: #000000;
 
   /* Surface & glass tokens */
-  --glass-blur: blur(22px) saturate(1.25);
-  --header-bg: rgba(0, 0, 0, 0.45);
-  --slab-bg: rgba(0, 0, 0, 0.32);
-  --slab-bg-hover: rgba(0, 0, 0, 0.44);
-  --well-bg: rgba(0, 0, 0, 0.26);
+  --glass-blur: blur(22px) saturate(1.4);
+  --header-bg: rgba(0, 0, 0, 0.42);
+  --slab-bg: rgba(255, 255, 255, 0.045);
+  --slab-bg-hover: rgba(255, 255, 255, 0.08);
+  --well-bg: rgba(0, 0, 0, 0.28);
 
   /* Shape & spacing tokens */
   --radius-sm: 0.25rem;
@@ -1559,8 +1559,8 @@ body:not(#rd) {
   .lava-blob {
     position: absolute; display: block;
     border-radius: 44% 56% 52% 48% / 48% 42% 58% 52%;
-    filter: blur(84px);
-    opacity: 0.42;
+    filter: blur(68px);
+    opacity: 0.56;
     will-change: transform;
   }
   .lava-blob--1 {
@@ -1573,28 +1573,28 @@ body:not(#rd) {
     width: clamp(360px, 48vw, 640px); height: clamp(360px, 48vw, 640px);
     top: 12%; right: -12%;
     background: #6D28D9;
-    opacity: 0.5;
+    opacity: 0.65;
     animation: lavaFloat2 28s ease-in-out infinite alternate;
   }
   .lava-blob--3 {
     width: clamp(280px, 36vw, 480px); height: clamp(280px, 36vw, 480px);
     bottom: -14%; left: 18%;
     background: #64FFDA;
-    opacity: 0.34;
+    opacity: 0.46;
     animation: lavaFloat3 25s ease-in-out infinite alternate;
   }
   .lava-blob--4 {
     width: clamp(300px, 40vw, 520px); height: clamp(300px, 40vw, 520px);
     bottom: 8%; right: 10%;
     background: #29B6F6;
-    opacity: 0.36;
+    opacity: 0.5;
     animation: lavaFloat4 31s ease-in-out infinite alternate;
   }
   .lava-blob--5 {
     width: clamp(260px, 34vw, 460px); height: clamp(260px, 34vw, 460px);
     top: 42%; left: 36%;
     background: #6D28D9;
-    opacity: 0.44;
+    opacity: 0.58;
     animation: lavaFloat5 26s ease-in-out infinite alternate;
   }
 
@@ -1661,9 +1661,9 @@ body:not(#rd) {
   .site-nav a:hover { color: #ffffff; text-decoration: underline; }
   .site-top {
     display: inline-flex; align-items: center; min-height: 44px;
-    padding: 0 0 0 16px; margin-left: 8px;
+    max-width: 140px; padding: 0 0 0 16px; margin-left: 8px;
     border-left: 1px solid var(--line);
-    white-space: nowrap;
+    white-space: nowrap; overflow: hidden;
     opacity: 1; transform: translateY(0);
     font-family: var(--font-label); font-size: 13px !important; font-weight: 600;
     letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none;
@@ -1671,6 +1671,7 @@ body:not(#rd) {
   }
   .site-top:hover { color: #ffffff; text-decoration: underline; }
   .site-top.is-hidden, .site-header.is-empty .site-top {
+    max-width: 0; padding-left: 0; margin-left: 0; border-left-width: 0;
     opacity: 0; transform: translateY(-4px); pointer-events: none;
   }
 
@@ -2438,7 +2439,11 @@ body:not(#rd) .site-nav a {
 }
 body:not(#rd) .site-nav.is-measuring a { transition: none !important; }
 body:not(#rd) .site-top {
-  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transition: max-width 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+              padding-left 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+              margin-left 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.2s ease,
+              transform 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 @media (prefers-reduced-motion: reduce) {
   body:not(#rd) .site-nav a, body:not(#rd) .site-top { transition: none !important; }
