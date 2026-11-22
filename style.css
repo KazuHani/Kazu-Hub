@@ -1671,7 +1671,7 @@ body:not(#rd) {
   }
   .site-top:hover { color: #ffffff; text-decoration: underline; }
   .site-top.is-hidden, .site-header.is-empty .site-top {
-    max-width: 0; padding-left: 0; margin-left: 0; border-left-width: 0;
+    max-width: 0; padding-left: 0; margin-left: -24px; border-left-width: 0;
     opacity: 0; transform: translateY(-4px); pointer-events: none;
   }
 

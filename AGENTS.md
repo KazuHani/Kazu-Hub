@@ -28,7 +28,7 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=170`,
+- `index.html` — the whole page. Loads `style.css?v=171`,
   `java/lib.js?v=65`, `java/site-config.js?v=3`, `java/i18n.js?v=17`, `java/script.js?v=142` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
