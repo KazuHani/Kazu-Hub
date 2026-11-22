@@ -1295,10 +1295,14 @@
       steamGameStartMs = verifiedStart;
       steamGameSession = verifiedStart ? { name: p.game.name, startedAt: verifiedStart } : null;
       $('steamGameName').textContent = p.game.name;
+      const matchedRecent = (!p.game.logo && Array.isArray(p.recent))
+        ? p.recent.find((g) => g && g.logo && g.name && g.name.toLowerCase() === p.game.name.toLowerCase())
+        : null;
+      const gameLogo = p.game.logo || (matchedRecent && matchedRecent.logo) || '';
       const steamGameLogoEl = $('steamGameLogo');
       if (steamGameLogoEl) {
-        if (p.game.logo) {
-          if (steamGameLogoEl.getAttribute('src') !== p.game.logo) steamGameLogoEl.setAttribute('src', p.game.logo);
+        if (gameLogo) {
+          if (steamGameLogoEl.getAttribute('src') !== gameLogo) steamGameLogoEl.setAttribute('src', gameLogo);
           steamGameLogoEl.classList.remove('hidden');
         } else {
           steamGameLogoEl.removeAttribute('src');
