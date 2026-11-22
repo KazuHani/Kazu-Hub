@@ -735,12 +735,17 @@
     offline: ['Offline', '#747f8d'],
   };
 
-  let sharedAvatarUrl = ''; // Steam avatar wins once loaded, shared with Discord card
-
   function discordAvatarUrl(u) {
-    return u.avatar
-      ? 'https://cdn.discordapp.com/avatars/' + u.id + '/' + u.avatar + (u.avatar.startsWith('a_') ? '.gif' : '.png') + '?size=128'
-      : 'https://cdn.discordapp.com/embed/avatars/0.png';
+    const id = u && typeof u.id === 'string' ? u.id.trim() : String((u && u.id) || '');
+    const av = u && typeof u.avatar === 'string' ? u.avatar.trim() : '';
+    if (/^\d{15,22}$/.test(id) && /^[A-Za-z0-9_]{1,128}$/.test(av)) {
+      return 'https://cdn.discordapp.com/avatars/' + id + '/' + av + (av.startsWith('a_') ? '.gif' : '.png') + '?size=256';
+    }
+    let idx = 0;
+    if (/^\d{15,22}$/.test(id)) {
+      try { idx = Number((BigInt(id) >> 22n) % 6n); } catch (e) { idx = 0; }
+    }
+    return 'https://cdn.discordapp.com/embed/avatars/' + idx + '.png';
   }
 
   function gameIconUrl(game) {
@@ -757,8 +762,6 @@
     }
     return '';
   }
-
-  let lastDiscordFallbackAvatar = '';
 
   // ---- Extra Lanyard presence state (set by renderDiscord, animated by tick) ----
   const DISCORD_CACHE_KEY = 'kazu-discord-cache';
@@ -998,21 +1001,15 @@
     const u = dc.discord_user;
 
     const displayName = u.global_name || u.display_name || u.username;
-    lastDiscordFallbackAvatar = discordAvatarUrl(u);
     const avatarEl = $('discordAvatar');
     if (avatarEl) {
-      const fallbackPfp = pfpSrc();
-      const targetSrc = sharedAvatarUrl || (u.avatar ? lastDiscordFallbackAvatar : fallbackPfp);
+      const targetSrc = dc === DISCORD_STATIC_FALLBACK ? pfpSrc() : discordAvatarUrl(u);
       avatarEl.onerror = () => {
-        if (lastDiscordFallbackAvatar && avatarEl.src !== lastDiscordFallbackAvatar) {
-          avatarEl.src = lastDiscordFallbackAvatar;
-          return;
-        }
         const fb = pfpSrc();
         avatarEl.onerror = null;
         if (avatarEl.getAttribute('src') !== fb) avatarEl.src = fb;
       };
-      avatarEl.src = targetSrc;
+      if (avatarEl.getAttribute('src') !== targetSrc) avatarEl.src = targetSrc;
     }
     $('discordName').textContent = displayName;
 
@@ -1261,18 +1258,16 @@
   let steamInFlight = '';
 
   function renderSteam(p) {
-    sharedAvatarUrl = p.avatar;
     const steamAvatarEl = $('steamAvatar');
     if (steamAvatarEl) {
+      const targetSrc = p.avatar || pfpSrc();
       steamAvatarEl.onerror = () => {
         steamAvatarEl.onerror = null;
-        if (sharedAvatarUrl === p.avatar) sharedAvatarUrl = '';
-        steamAvatarEl.src = pfpSrc();
+        const fb = pfpSrc();
+        if (steamAvatarEl.getAttribute('src') !== fb) steamAvatarEl.src = fb;
       };
-      steamAvatarEl.src = p.avatar;
+      if (steamAvatarEl.getAttribute('src') !== targetSrc) steamAvatarEl.src = targetSrc;
     }
-    const discordImg = $('discordAvatar');
-    if (discordImg && discordHasData && discordImg.getAttribute('src') !== p.avatar) discordImg.src = p.avatar;
 
     const steamKey = (p.state === 'in-game' || p.state === 'online' || p.state === 'away' || p.state === 'checking' || p.state === 'unknown')
       ? p.state : 'offline';
@@ -1410,7 +1405,8 @@
       if (doc.querySelector('parsererror')) throw new Error('XML parse error');
       const txt = (tag, ctx) => { const el = (ctx || doc).querySelector(tag); return el ? el.textContent.trim() : ''; };
 
-      const avatar = txt('avatarFull') || txt('avatarMedium') || txt('avatarIcon');
+      const rawAvatar = txt('avatarFull') || txt('avatarMedium') || txt('avatarIcon');
+      const avatar = rawAvatar ? rawAvatar.replace(/^http:\/\//i, 'https://') : '';
       if (!avatar) throw new Error('no avatar found');
 
       const onlineState = txt('onlineState') || 'offline';
