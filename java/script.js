@@ -3841,11 +3841,24 @@
     update();
   }
 
+  let clickedIdx = -1;
+  let lastY = window.scrollY;
+  items.forEach((item, idx) => {
+    item.link.addEventListener('click', () => {
+      clickedIdx = idx;
+      update();
+    });
+  });
+
   function update() {
-    const cutoff = header.getBoundingClientRect().bottom + 8;
+    const y = window.scrollY;
+    if (y < lastY - 4) clickedIdx = -1;
+    lastY = y;
+    const cutoff = header.getBoundingClientRect().bottom + 24;
+    const atBottom = y + window.innerHeight >= document.documentElement.scrollHeight - 4;
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const passed = item.section.getBoundingClientRect().bottom <= cutoff;
+      const passed = item.section.getBoundingClientRect().top <= cutoff || i <= clickedIdx || (atBottom && i === items.length - 1);
       if (passed !== item.passed) {
         item.passed = passed;
         item.link.classList.toggle('is-passed', passed);
