@@ -1564,42 +1564,42 @@ body:not(#rd) {
   .lava-blob {
     position: absolute; display: block;
     border-radius: 44% 56% 52% 48% / 48% 42% 58% 52%;
-    filter: blur(68px);
-    opacity: 0.56;
+    filter: blur(110px);
+    opacity: 0.26;
     will-change: transform;
   }
   .lava-blob--1 {
-    width: clamp(320px, 42vw, 560px); height: clamp(320px, 42vw, 560px);
-    top: -10%; left: -8%;
+    width: clamp(500px, 65vw, 920px); height: clamp(500px, 65vw, 920px);
+    top: -16%; left: -14%;
     background: #29B6F6;
     animation: lavaFloat1 22s ease-in-out infinite alternate;
   }
   .lava-blob--2 {
-    width: clamp(360px, 48vw, 640px); height: clamp(360px, 48vw, 640px);
-    top: 12%; right: -12%;
+    width: clamp(560px, 72vw, 1020px); height: clamp(560px, 72vw, 1020px);
+    top: 4%; right: -18%;
     background: #6D28D9;
-    opacity: 0.65;
+    opacity: 0.34;
     animation: lavaFloat2 28s ease-in-out infinite alternate;
   }
   .lava-blob--3 {
-    width: clamp(280px, 36vw, 480px); height: clamp(280px, 36vw, 480px);
-    bottom: -14%; left: 18%;
+    width: clamp(460px, 58vw, 820px); height: clamp(460px, 58vw, 820px);
+    bottom: -20%; left: 10%;
     background: #64FFDA;
-    opacity: 0.46;
+    opacity: 0.22;
     animation: lavaFloat3 25s ease-in-out infinite alternate;
   }
   .lava-blob--4 {
-    width: clamp(300px, 40vw, 520px); height: clamp(300px, 40vw, 520px);
-    bottom: 8%; right: 10%;
+    width: clamp(480px, 62vw, 880px); height: clamp(480px, 62vw, 880px);
+    bottom: 2%; right: 2%;
     background: #29B6F6;
-    opacity: 0.5;
+    opacity: 0.24;
     animation: lavaFloat4 31s ease-in-out infinite alternate;
   }
   .lava-blob--5 {
-    width: clamp(260px, 34vw, 460px); height: clamp(260px, 34vw, 460px);
-    top: 42%; left: 36%;
+    width: clamp(440px, 56vw, 800px); height: clamp(440px, 56vw, 800px);
+    top: 32%; left: 24%;
     background: #6D28D9;
-    opacity: 0.58;
+    opacity: 0.3;
     animation: lavaFloat5 26s ease-in-out infinite alternate;
   }
 
