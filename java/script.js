@@ -191,11 +191,11 @@
     });
   }
   // ---------- Browser-chrome colour ----------
-  // Glacial Naga Ethereal uses a dark Midnight Ice / Deep Trench canvas
-  // (#060A17 at the viewport top), so browser chrome matches it consistently.
+  // Glacial Naga Ethereal uses a dark Midnight Ice canvas (#0B1021),
+  // so browser chrome matches it consistently.
   const THEME_CANVAS = {
-    default: { light: '#060A17', dark: '#060A17' },
-    christmas: { light: '#060A17', dark: '#060A17' },
+    default: { light: '#0B1021', dark: '#0B1021' },
+    christmas: { light: '#0B1021', dark: '#0B1021' },
   };
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
   const themeDarkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -1024,7 +1024,7 @@
     const s = STATUS_MAP[statusKey];
     const statusTextEl = $('discordStatusText');
     const statusDotEl = $('discordStatusDot');
-    statusTextEl.textContent = '● ' + s[0];
+    statusTextEl.textContent = s[0];
     statusTextEl.style.color = s[1];
     statusTextEl.setAttribute('data-status', statusKey);
     statusDotEl.style.background = s[1];
@@ -1273,7 +1273,7 @@
       ? p.state : 'offline';
     const [statusText, statusColor] = steamStatusInfo(steamKey);
     const steamStatusEl = $('steamStatusText');
-    steamStatusEl.textContent = '● ' + statusText;
+    steamStatusEl.textContent = statusText;
     steamStatusEl.style.color = statusColor;
     steamStatusEl.setAttribute('data-status', steamKey);
 
@@ -1404,9 +1404,10 @@
       const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
       if (doc.querySelector('parsererror')) throw new Error('XML parse error');
       const txt = (tag, ctx) => { const el = (ctx || doc).querySelector(tag); return el ? el.textContent.trim() : ''; };
+      const httpsUrl = (u) => (u ? u.replace(/^http:\/\//i, 'https://') : '');
 
       const rawAvatar = txt('avatarFull') || txt('avatarMedium') || txt('avatarIcon');
-      const avatar = rawAvatar ? rawAvatar.replace(/^http:\/\//i, 'https://') : '';
+      const avatar = httpsUrl(rawAvatar);
       if (!avatar) throw new Error('no avatar found');
 
       const onlineState = txt('onlineState') || 'offline';
@@ -1417,7 +1418,7 @@
       const games = [];
       doc.querySelectorAll('mostPlayedGame').forEach((g) => {
         const name = txt('gameName', g);
-        const logo = txt('gameLogo', g) || txt('gameLogoSmall', g) || txt('gameIcon', g);
+        const logo = httpsUrl(txt('gameLogo', g) || txt('gameLogoSmall', g) || txt('gameIcon', g));
         const link = txt('gameLink', g);
         const hoursPlayed = parseFloat((txt('hoursPlayed', g) || '0').replace(/,/g, '')) || 0;
         const hoursOnRecord = parseFloat((txt('hoursOnRecord', g) || '0').replace(/,/g, '')) || 0;
@@ -1454,7 +1455,7 @@
         // mostPlayedGame entry.
         game: currentGame ? {
           name: currentGame,
-          logo: (inGameEl && (txt('gameLogo', inGameEl) || txt('gameLogoSmall', inGameEl) || txt('gameIcon', inGameEl)))
+          logo: httpsUrl(inGameEl && (txt('gameLogo', inGameEl) || txt('gameLogoSmall', inGameEl) || txt('gameIcon', inGameEl)))
             || (matchedGame && matchedGame.logo)
             || '',
           url: (inGameEl && (steamStoreUrl(txt('gameLink', inGameEl)) || steamStoreUrl(txt('gameLogo', inGameEl) || txt('gameIcon', inGameEl))))
@@ -2937,8 +2938,6 @@
     { fn: tick, ms: 1000, last: 0 },
     { key: 'weather', fn: loadWeather, ms: 10 * 60 * 1000, last: 0, paint: paintWeatherCache },
     { fn: loadSiteControl, ms: 60 * 1000, last: 0 },
-    // Steam before Discord: its avatar is the one both cards show, so the
-    // boot paint must not start Discord's own avatar loading first.
     { key: 'steam', fn: loadSteam, ms: 5 * 60 * 1000, last: 0, firstDelay: bootGap(2000), paint: paintSteamCache },
     { key: 'discord', fn: loadDiscord, ms: 2 * 60 * 1000, last: 0, firstDelay: bootGap(700), paint: paintDiscordCache },
     { key: 'mal', fn: loadMalAll, ms: 10 * 60 * 1000, last: 0, firstDelay: bootGap(3300), paint: paintMalCache },
@@ -3743,31 +3742,6 @@
     if (rafId === null) { lastTickAt = 0; rafId = requestAnimationFrame(tick); }
   };
 
-  // The header links, skip link and "Back to top" are plain #anchors; the wheel
-  // loop owns the scroll position, so a native jump is overwritten. Glide
-  // through the loop instead while keeping focus and URL hash in sync.
-  document.addEventListener('click', (e) => {
-    const a = e.target && e.target.closest && e.target.closest('.site-header a[href^="#"], .footer-top, .skip-link');
-    if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey) return;
-    const id = a.getAttribute('href').slice(1);
-    const targetEl = id ? document.getElementById(id) : null;
-    if (!targetEl) return;
-    e.preventDefault();
-    const hdrEl = document.querySelector('.site-header');
-    const hdrOffset = (hdrEl ? hdrEl.offsetHeight : 0) + 16;
-    const y = id === 'top' ? 0 : Math.max(0, targetEl.getBoundingClientRect().top + window.scrollY - hdrOffset);
-    if (!targetEl.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(targetEl.tagName)) {
-      targetEl.setAttribute('tabindex', '-1');
-    }
-    targetEl.focus({ preventScroll: true });
-    try {
-      const nextUrl = id === 'top' ? (location.pathname + location.search) : ('#' + id);
-      if (location.hash !== (id === 'top' ? '' : '#' + id)) history.replaceState(null, '', nextUrl);
-    } catch (err) {}
-    if (window.kazuSmoothScrollTo) window.kazuSmoothScrollTo(y);
-    else window.scrollTo({ top: y, behavior: 'smooth' });
-  });
-
   // Scroll-anchor adjustments (layout shifts above the fold) move the resting
   // point too: pre-seed lastWritten with the value the write will produce, so
   // the scroll listener reads it as one of the loop's own writes and an
@@ -3803,6 +3777,38 @@
 })();
 
 /* ============================================================================
+   ANCHOR NAVIGATION — offset for sticky header across all devices
+   ============================================================================
+   The header links, skip link and "Back to top" are plain #anchors. On
+   desktop with smooth scroll active they glide through kazuSmoothScrollTo; on
+   low-power (all phones) and reduced-motion devices they jump directly with
+   the same live sticky-header offset so targets never land under the navbar.
+   ========================================================================== */
+(() => {
+  document.addEventListener('click', (e) => {
+    const a = e.target && e.target.closest && e.target.closest('.site-header a[href^="#"], .footer-top, .skip-link');
+    if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    const id = a.getAttribute('href').slice(1);
+    const targetEl = id ? document.getElementById(id) : null;
+    if (!targetEl) return;
+    e.preventDefault();
+    const hdrEl = document.querySelector('.site-header');
+    const hdrOffset = (hdrEl && !hdrEl.classList.contains('is-empty') ? hdrEl.offsetHeight : 0) + 16;
+    const y = id === 'top' ? 0 : Math.max(0, targetEl.getBoundingClientRect().top + window.scrollY - hdrOffset);
+    if (!targetEl.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(targetEl.tagName)) {
+      targetEl.setAttribute('tabindex', '-1');
+    }
+    targetEl.focus({ preventScroll: true });
+    try {
+      const nextUrl = id === 'top' ? (location.pathname + location.search) : ('#' + id);
+      if (location.hash !== (id === 'top' ? '' : '#' + id)) history.replaceState(null, '', nextUrl);
+    } catch (err) {}
+    if (window.kazuSmoothScrollTo) window.kazuSmoothScrollTo(y);
+    else window.scrollTo({ top: y, behavior: 'auto' });
+  });
+})();
+
+/* ============================================================================
    STICKY NAVBAR — hide passed sections and slide remaining links left
    ============================================================================
    Each `.site-nav a[href^="#"]` watches its corresponding section element
@@ -3824,29 +3830,43 @@
   }).filter(Boolean);
   if (!items.length) return;
 
+  let clickedIdx = -1;
+  let lastY = window.scrollY;
+
   function measure() {
+    nav.classList.add('is-measuring');
     nav.style.removeProperty('--nav-full-w');
-    items.forEach(({ link }) => {
-      link.classList.remove('is-passed');
-      link.style.removeProperty('--nav-w');
+    items.forEach((item) => {
+      item.passed = false;
+      item.link.classList.remove('is-passed');
+      item.link.style.removeProperty('--nav-w');
     });
     let total = 0;
     items.forEach(({ link }, idx) => {
       const w = Math.ceil(link.getBoundingClientRect().width);
       link.style.setProperty('--nav-w', (w + 2) + 'px');
-      total += w + (idx < items.length - 1 ? 6 : 0);
+      const mr = parseFloat(getComputedStyle(link).marginRight) || 0;
+      total += w + (idx < items.length - 1 ? mr : 0);
     });
     if (window.innerWidth > 759 && total > 0) {
       nav.style.setProperty('--nav-full-w', total + 'px');
     }
+    const hdrH = Math.ceil(header.getBoundingClientRect().height);
+    if (hdrH > 0) document.documentElement.style.setProperty('--header-offset', (hdrH + 16) + 'px');
     update();
+    void nav.offsetWidth;
+    nav.classList.remove('is-measuring');
   }
 
-  let clickedIdx = -1;
-  let lastY = window.scrollY;
   items.forEach((item, idx) => {
     item.link.addEventListener('click', () => {
       clickedIdx = idx;
+      update();
+    });
+  });
+  document.querySelectorAll('.site-mark, .site-top, .footer-top').forEach((el) => {
+    el.addEventListener('click', () => {
+      clickedIdx = -1;
       update();
     });
   });
@@ -3860,12 +3880,14 @@
     let passedCount = 0;
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const passed = item.section.getBoundingClientRect().top <= cutoff || i <= clickedIdx || (atBottom && i === items.length - 1);
+      const hiddenSection = item.section.classList.contains('hidden');
+      const passed = hiddenSection || item.section.getBoundingClientRect().top <= cutoff || i <= clickedIdx || (atBottom && i === items.length - 1);
       if (passed) passedCount++;
       if (passed !== item.passed) {
         item.passed = passed;
         item.link.classList.toggle('is-passed', passed);
         if (passed) {
+          if (document.activeElement === item.link) item.link.blur();
           item.link.setAttribute('aria-hidden', 'true');
           item.link.setAttribute('tabindex', '-1');
         } else {
@@ -3880,6 +3902,7 @@
       const hideTop = isEmpty || atBottom || y <= 24;
       topLink.classList.toggle('is-hidden', hideTop);
       if (hideTop) {
+        if (document.activeElement === topLink) topLink.blur();
         topLink.setAttribute('aria-hidden', 'true');
         topLink.setAttribute('tabindex', '-1');
       } else {
@@ -3899,8 +3922,18 @@
     });
   }
 
+  let resizeRaf = 0;
+  function onResize() {
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = 0;
+      measure();
+    });
+  }
+
   measure();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  window.addEventListener('load', update);
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', measure, { passive: true });
+  window.addEventListener('resize', onResize, { passive: true });
 })();
