@@ -1453,21 +1453,21 @@ body:not(#rd) {
   --page-bg: var(--surface);
   --ink-soft: var(--muted);
   --ink-faint: var(--muted);
-  --card-bg: rgba(0, 0, 0, 0.32);
-  --card-blur: blur(22px) saturate(1.25);
-  --card-bd: 1px solid var(--line);
+  --card-bg: transparent;
+  --card-blur: none;
+  --card-bd: 0;
   --card-shadow: none;
   --glint: none;
-  --chip-bg: rgba(0, 0, 0, 0.68);
+  --chip-bg: transparent;
   --chip-bd: 1px solid var(--line-strong);
   --on-accent: #000000;
 
-  /* Surface & glass tokens */
-  --glass-blur: blur(22px) saturate(1.4);
-  --header-bg: rgba(0, 0, 0, 0.42);
-  --slab-bg: rgba(255, 255, 255, 0.045);
-  --slab-bg-hover: rgba(255, 255, 255, 0.08);
-  --well-bg: rgba(0, 0, 0, 0.28);
+  /* Surface & glass tokens (no boxes) */
+  --glass-blur: none;
+  --header-bg: transparent;
+  --slab-bg: transparent;
+  --slab-bg-hover: transparent;
+  --well-bg: transparent;
 
   /* Shape & spacing tokens */
   --radius-sm: 0.25rem;
@@ -1491,19 +1491,19 @@ body:not(#rd) {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Low-power devices & reduced-transparency: disable live backdrop-filter blur */
+/* Low-power devices & reduced-transparency */
 body.low-power:not(#rd) {
   --glass-blur: none;
-  --header-bg: #000000;
-  --slab-bg: rgba(0, 0, 0, 0.88);
-  --slab-bg-hover: rgba(14, 14, 14, 0.92);
+  --header-bg: transparent;
+  --slab-bg: transparent;
+  --slab-bg-hover: transparent;
 }
 @media (prefers-reduced-transparency: reduce) {
   body:not(#rd) {
     --glass-blur: none;
-    --header-bg: #000000;
-    --slab-bg: rgba(0, 0, 0, 0.88);
-    --slab-bg-hover: rgba(14, 14, 14, 0.92);
+    --header-bg: transparent;
+    --slab-bg: transparent;
+    --slab-bg-hover: transparent;
   }
 }
 
@@ -1606,29 +1606,29 @@ body:not(#rd) {
     padding-bottom: max(56px, env(safe-area-inset-bottom));
   }
 
-  /* ---- Cards: clean frosted dark slabs, no decorative highlights or glows ---- */
+  /* ---- Cards: open layout without boxes ---- */
   .card {
     position: relative;
-    background: var(--slab-bg) !important;
-    -webkit-backdrop-filter: var(--glass-blur) !important;
-            backdrop-filter: var(--glass-blur) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: var(--radius-xl);
+    background: transparent !important;
+    -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+    border: 0 !important;
+    border-radius: 0;
     box-shadow: none !important;
-    overflow: hidden;
+    overflow: visible;
   }
   .card::before, .card::after { content: none; }
 
   /* ---- Site header: sticky bar with scroll-aware nav links ---- */
   .site-header {
-    position: sticky; top: 12px; z-index: 60;
+    position: sticky; top: 0; z-index: 60;
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-    gap: 8px 24px; padding: 10px 20px;
-    background: var(--header-bg);
-    -webkit-backdrop-filter: var(--glass-blur);
-            backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
+    gap: 8px 24px; padding: 12px 0;
+    background: transparent;
+    -webkit-backdrop-filter: blur(14px);
+            backdrop-filter: blur(14px);
+    border: 0;
+    border-radius: 0;
   }
   .site-header.is-empty { position: static; }
   .site-mark {
@@ -1763,8 +1763,8 @@ body:not(#rd) {
     border-radius: var(--radius-lg);
   }
   .stat-card--bday {
-    background: var(--slab-bg) !important;
-    border: 1px solid var(--line) !important;
+    background: transparent !important;
+    border: 0 !important;
     box-shadow: none !important;
   }
   .stat-label, .stat-label--onbrand {
@@ -1851,10 +1851,10 @@ body:not(#rd) {
   }
   .pulse-dot { display: none !important; }
   .idle-banner {
-    margin: 12px 0 0; padding: 12px 14px;
-    background: var(--well-bg) !important;
-    border: 1px solid var(--line-faint);
-    border-radius: var(--radius-md); text-align: left;
+    margin: 12px 0 0; padding: 12px 0;
+    background: transparent !important;
+    border: 0;
+    border-radius: 0; text-align: left;
     font-weight: 400; font-size: 14px !important; color: var(--muted) !important;
   }
 
@@ -1887,14 +1887,14 @@ body:not(#rd) {
   .discord-username:hover { color: #ffffff; }
   .discord-platform { color: var(--muted); }
   .discord-custom {
-    margin-top: 12px; padding: 8px 12px;
-    background: var(--well-bg); border: 1px solid var(--line-faint);
-    border-radius: var(--radius-md); color: #ffffff; font-weight: 400;
+    margin-top: 12px; padding: 8px 0;
+    background: transparent; border: 0;
+    border-radius: 0; color: #ffffff; font-weight: 400;
     font-size: 14px !important;
   }
   .discord-custom-text { font-style: normal; }
 
-  /* Inner activity wells */
+  /* Inner activity rows */
   .info-pill,
   .discord-card .info-pill,
   .info-pill--game,
@@ -1902,10 +1902,10 @@ body:not(#rd) {
   .info-pill--steam-game,
   .discord-card .info-pill--game,
   .discord-card .info-pill--spotify {
-    margin: 14px 0 0; padding: 12px 14px; gap: 12px; align-items: center;
-    background: var(--well-bg) !important;
-    border: 1px solid var(--line-faint);
-    border-radius: var(--radius-md);
+    margin: 14px 0 0; padding: 12px 0; gap: 12px; align-items: center;
+    background: transparent !important;
+    border: 0;
+    border-radius: 0;
   }
   .info-pill--steam-game { margin-bottom: 14px; }
   .info-pill--spotify { align-items: flex-start; }
@@ -2065,19 +2065,20 @@ body:not(#rd) {
     display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
     padding: 16px 20px; text-align: left; text-decoration: none;
     color: #ffffff;
-    background: var(--header-bg);
-    -webkit-backdrop-filter: var(--glass-blur);
-            backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    box-shadow: none; overflow: hidden; transform: none;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none; overflow: visible; transform: none;
   }
   .social-card::before, .social-card::after { content: none; }
   .social-card:hover {
-    background: var(--slab-bg-hover);
-    border-color: var(--line-strong);
+    background: transparent;
+    border-color: transparent;
     box-shadow: none; transform: none;
   }
+  .social-card:hover .social-name { text-decoration: underline; }
   .social-card:active { transform: none; }
   .social-name {
     font-family: var(--font-display); font-size: 18px !important; font-weight: 600;
