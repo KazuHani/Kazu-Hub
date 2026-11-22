@@ -1411,17 +1411,17 @@ body.low-power .scroll-reveal {
    top-level rule carries `:not(#rd)` so it beats the legacy rules above. */
 
 html:not(#rd) {
-  background: #0B1021;
+  background: #000000;
   color-scheme: dark;
 }
 
 body:not(#rd) {
   /* Core palette tokens */
-  --surface: #0e1324;
-  --surface-low: #161b2c;
-  --surface-high: #1f2538;
-  --deep-trench: #060A17;
-  --midnight-ice: #0B1021;
+  --surface: #000000;
+  --surface-low: rgba(0, 0, 0, 0.56);
+  --surface-high: rgba(12, 12, 12, 0.72);
+  --deep-trench: #000000;
+  --midnight-ice: #000000;
   --primary: #81cfff;
   --cerulean-frost: #29B6F6;
   --glacial-cyan: #64FFDA;
@@ -1453,21 +1453,21 @@ body:not(#rd) {
   --page-bg: var(--surface);
   --ink-soft: var(--muted);
   --ink-faint: var(--muted);
-  --card-bg: rgba(22, 27, 44, 0.72);
-  --card-blur: blur(12px);
+  --card-bg: rgba(0, 0, 0, 0.56);
+  --card-blur: blur(18px);
   --card-bd: 1px solid var(--line);
   --card-shadow: none;
   --glint: none;
-  --chip-bg: rgba(22, 27, 44, 0.92);
+  --chip-bg: rgba(0, 0, 0, 0.78);
   --chip-bd: 1px solid var(--line-strong);
   --on-accent: #000000;
 
   /* Surface & glass tokens */
-  --glass-blur: blur(12px);
-  --header-bg: rgba(11, 16, 33, 0.96);
-  --slab-bg: rgba(22, 27, 44, 0.72);
-  --slab-bg-hover: rgba(31, 37, 56, 0.84);
-  --well-bg: rgba(6, 10, 23, 0.5);
+  --glass-blur: blur(18px);
+  --header-bg: rgba(0, 0, 0, 0.62);
+  --slab-bg: rgba(0, 0, 0, 0.56);
+  --slab-bg-hover: rgba(12, 12, 12, 0.72);
+  --well-bg: rgba(0, 0, 0, 0.42);
 
   /* Shape & spacing tokens */
   --radius-sm: 0.25rem;
@@ -1494,16 +1494,16 @@ body:not(#rd) {
 /* Low-power devices & reduced-transparency: disable live backdrop-filter blur */
 body.low-power:not(#rd) {
   --glass-blur: none;
-  --header-bg: var(--midnight-ice);
-  --slab-bg: #161b2c;
-  --slab-bg-hover: #1f2538;
+  --header-bg: #000000;
+  --slab-bg: rgba(0, 0, 0, 0.88);
+  --slab-bg-hover: rgba(14, 14, 14, 0.92);
 }
 @media (prefers-reduced-transparency: reduce) {
   body:not(#rd) {
     --glass-blur: none;
-    --header-bg: var(--midnight-ice);
-    --slab-bg: #161b2c;
-    --slab-bg-hover: #1f2538;
+    --header-bg: #000000;
+    --slab-bg: rgba(0, 0, 0, 0.88);
+    --slab-bg-hover: rgba(14, 14, 14, 0.92);
   }
 }
 
