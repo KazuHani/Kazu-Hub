@@ -1969,7 +1969,7 @@ body:not(#rd) {
   .socials-grid {
     --cols: 4;
     --gap: var(--grid-gap);
-    display: flex; flex-wrap: wrap; justify-content: center; gap: var(--gap);
+    display: flex; flex-wrap: wrap; justify-content: flex-start; gap: var(--gap);
   }
   .social-card {
     position: relative;
