@@ -1,7 +1,7 @@
 /* ============================================================================
    lib.js — pure, DOM-free helpers for Kazu Hub.
    ----------------------------------------------------------------------------
-   Single source of truth for the birth config plus the deterministic
+   Single source of truth for the birthday config plus the deterministic
    calculations behind the cards (UK time and DST, birthday
    countdown, card caches, API shaping). No `document`,
    no `fetch` — so it is reusable by script.js and runs under plain Node.
@@ -10,8 +10,11 @@
 (function (global) {
   'use strict';
 
-  // 0-indexed month: 10 = November. Kazu was born 9 November 2001.
-  var BIRTH = { year: 2001, month: 10, day: 9 };
+  // 0-indexed month: 10 = November. Birthday is 9 November. The birth year is
+  // intentionally not stored here, so the exact date of birth is not public.
+  // Age is anchored instead: Kazu turned 25 on 9 November 2026.
+  var BIRTHDAY = { month: 10, day: 9 };
+  var AGE_ANCHOR = { year: 2026, age: 25 };
   var TIMEZONE = 'Europe/London';
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -203,13 +206,13 @@
   function birthdayCountdownParts(now) {
     now = now || new Date();
     var w = ukWallParts(now);
-    var age = w.year - BIRTH.year;
-    var hadBday = (w.month > BIRTH.month) || (w.month === BIRTH.month && w.day >= BIRTH.day);
+    var age = AGE_ANCHOR.age + (w.year - AGE_ANCHOR.year);
+    var hadBday = (w.month > BIRTHDAY.month) || (w.month === BIRTHDAY.month && w.day >= BIRTHDAY.day);
     if (!hadBday) age--;
 
-    var target = Date.UTC(w.year, BIRTH.month, BIRTH.day, 0, 0, 0);
+    var target = Date.UTC(w.year, BIRTHDAY.month, BIRTHDAY.day, 0, 0, 0);
     var todayMid = Date.UTC(w.year, w.month, w.day);
-    if (todayMid > target) target = Date.UTC(w.year + 1, BIRTH.month, BIRTH.day, 0, 0, 0);
+    if (todayMid > target) target = Date.UTC(w.year + 1, BIRTHDAY.month, BIRTHDAY.day, 0, 0, 0);
 
     var totalSec = Math.max(0, Math.floor((target - ukWallMs(now)) / 1000));
     return {
@@ -221,7 +224,7 @@
       targetDate: new Date(target), // wall frame: read with UTC getters / timeZone:'UTC'
       ageNow: age,     // current age (on the birthday itself, the age just turned)
       turning: age + 1, // age at the upcoming birthday (next year's, on the day itself)
-      isToday: (w.month === BIRTH.month && w.day === BIRTH.day),
+      isToday: (w.month === BIRTHDAY.month && w.day === BIRTHDAY.day),
     };
   }
 
@@ -1223,7 +1226,8 @@
   }
 
   global.KazuLib = {
-    BIRTH: BIRTH,
+    BIRTHDAY: BIRTHDAY,
+    AGE_ANCHOR: AGE_ANCHOR,
     TIMEZONE: TIMEZONE,
     PFP_DEFAULT: PFP_DEFAULT,
     PFP_CHRISTMAS: PFP_CHRISTMAS,

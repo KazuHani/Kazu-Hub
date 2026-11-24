@@ -1,13 +1,14 @@
 (() => {
   const $ = (id) => document.getElementById(id);
 
-  // Birth config is owned by lib.js (single source of truth). Fall back to the
+  // Birthday config is owned by lib.js (single source of truth). Fall back to the
   // literals if lib.js failed to load so the rest of the page still works.
+  // The birth year is intentionally not stored anywhere on the site.
   const KazuLib = window.KazuLib;
-  const _BIRTH = (KazuLib && KazuLib.BIRTH) || { year: 2001, month: 10, day: 9 };
-  const BIRTH_YEAR = _BIRTH.year;
-  const BIRTH_MONTH = _BIRTH.month; // 0-indexed: 10 = November
-  const BIRTH_DAY = _BIRTH.day;
+  const _BIRTHDAY = (KazuLib && KazuLib.BIRTHDAY) || { month: 10, day: 9 };
+  const AGE_ANCHOR = (KazuLib && KazuLib.AGE_ANCHOR) || { year: 2026, age: 25 };
+  const BIRTH_MONTH = _BIRTHDAY.month; // 0-indexed: 10 = November
+  const BIRTH_DAY = _BIRTHDAY.day;
   const TIMEZONE = 'Europe/London';
 
   // ---------- Site control: settings saved by the control panel ----------
@@ -271,7 +272,7 @@
       }
     } else {
       // Fallback if lib.js failed to load: visitor-local math (approximate).
-      let age = now.getFullYear() - BIRTH_YEAR;
+      let age = AGE_ANCHOR.age + (now.getFullYear() - AGE_ANCHOR.year);
       const m = now.getMonth(), d = now.getDate();
       const hadBday = (m > BIRTH_MONTH) || (m === BIRTH_MONTH && d >= BIRTH_DAY);
       if (!hadBday) age--;

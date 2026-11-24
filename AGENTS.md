@@ -37,7 +37,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
   below) in the `<head>`.
 - `java/lib.js` (~1700 lines) — **pure, DOM-free helpers**, exposed as the global
   `KazuLib` (works in browser and Node). Single source of truth for the birth
-  config (`BIRTH = { year: 2001, month: 10, day: 9 }`, month 0-indexed), the
+  config (`BIRTHDAY = { month: 10, day: 9 }` with an age anchor of 25 on 9 November
+  2026, month 0-indexed; the birth year is intentionally not stored), the
   Europe/London wall-clock frame, UK DST maths, the birthday countdown, HTML
   escaping, Steam/MAL data shaping, scrollbar thumb
   geometry and the low-power verdict.
