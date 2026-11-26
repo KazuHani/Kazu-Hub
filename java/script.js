@@ -192,11 +192,11 @@
     });
   }
   // ---------- Browser-chrome colour ----------
-  // Glacial Naga Ethereal uses a dark Midnight Ice canvas (#0B1021),
+  // Glacial Naga Ethereal uses an OLED black canvas (#000000),
   // so browser chrome matches it consistently.
   const THEME_CANVAS = {
-    default: { light: '#0B1021', dark: '#0B1021' },
-    christmas: { light: '#0B1021', dark: '#0B1021' },
+    default: { light: '#000000', dark: '#000000' },
+    christmas: { light: '#000000', dark: '#000000' },
   };
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
   const themeDarkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -369,11 +369,16 @@
   function saveHostRest() {
     try { localStorage.setItem(HOST_REST_KEY, JSON.stringify(hostRestUntil)); } catch (e) {}
   }
+  let pageUnloading = false;
+  window.addEventListener('beforeunload', () => { pageUnloading = true; });
+  window.addEventListener('pagehide', () => { pageUnloading = true; });
+  window.addEventListener('pageshow', () => { pageUnloading = false; });
   const hostRest = {
     down: function (key, now) {
       return baseHostRest.down(key, now) || (hostRestUntil[key] || 0) > now;
     },
     fail: function (key, now) {
+      if (pageUnloading) return;
       baseHostRest.fail(key, now);
       hostRestUntil[key] = now + PROXY_REST_MS;
       saveHostRest();
@@ -3794,7 +3799,7 @@
     if (!targetEl) return;
     e.preventDefault();
     const hdrEl = document.querySelector('.site-header');
-    const hdrOffset = (hdrEl && !hdrEl.classList.contains('is-empty') ? hdrEl.offsetHeight : 0) + 16;
+    const hdrOffset = (hdrEl && !hdrEl.classList.contains('is-empty') ? hdrEl.offsetHeight : 0) + 28;
     const y = id === 'top' ? 0 : Math.max(0, targetEl.getBoundingClientRect().top + window.scrollY - hdrOffset);
     if (!targetEl.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(targetEl.tagName)) {
       targetEl.setAttribute('tabindex', '-1');
@@ -3819,6 +3824,7 @@
    ========================================================================== */
 (() => {
   const header = document.querySelector('.site-header');
+  const markLink = header && header.querySelector('.site-mark');
   const nav = header && header.querySelector('.site-nav');
   const topLink = header && header.querySelector('.site-top');
   if (!header || !nav) return;
@@ -3853,7 +3859,7 @@
       nav.style.setProperty('--nav-full-w', total + 'px');
     }
     const hdrH = Math.ceil(header.getBoundingClientRect().height);
-    if (hdrH > 0) document.documentElement.style.setProperty('--header-offset', (hdrH + 16) + 'px');
+    if (hdrH > 0) document.documentElement.style.setProperty('--header-offset', (hdrH + 28) + 'px');
     update();
     void nav.offsetWidth;
     nav.classList.remove('is-measuring');
@@ -3900,6 +3906,16 @@
     const isEmpty = passedCount === items.length;
     header.classList.toggle('is-empty', isEmpty);
     header.classList.toggle('is-scrolled', y > 12 && !isEmpty);
+    if (markLink) {
+      if (isEmpty) {
+        if (document.activeElement === markLink) markLink.blur();
+        markLink.setAttribute('aria-hidden', 'true');
+        markLink.setAttribute('tabindex', '-1');
+      } else {
+        markLink.removeAttribute('aria-hidden');
+        markLink.removeAttribute('tabindex');
+      }
+    }
     if (topLink) {
       const hideTop = isEmpty || atBottom || y <= 24;
       topLink.classList.toggle('is-hidden', hideTop);
