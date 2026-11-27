@@ -1476,6 +1476,7 @@ body:not(#rd) {
   --slab-bg: rgba(0, 0, 0, 0.34);
   --slab-bg-hover: rgba(0, 0, 0, 0.44);
   --well-bg: rgba(0, 0, 0, 0.28);
+  --well-bg-hover: rgba(255, 255, 255, 0.08);
 
   /* Shape & spacing tokens */
   --radius-sm: 0.25rem;
@@ -1505,10 +1506,11 @@ body.low-power:not(#rd) {
   --header-blur: none;
   --header-blur-scrolled: none;
   --header-bg: rgba(8, 10, 16, 0.88);
-  --header-bg-scrolled: rgba(0, 0, 0, 0.94);
+  --header-bg-scrolled: #05060a;
   --slab-bg: rgba(8, 10, 16, 0.74);
   --slab-bg-hover: rgba(14, 18, 28, 0.84);
   --well-bg: rgba(255, 255, 255, 0.06);
+  --well-bg-hover: rgba(255, 255, 255, 0.11);
 }
 @media (prefers-reduced-transparency: reduce) {
   body:not(#rd) {
@@ -1520,6 +1522,7 @@ body.low-power:not(#rd) {
     --slab-bg: #0c0e14;
     --slab-bg-hover: #141822;
     --well-bg: #161a24;
+    --well-bg-hover: #1f2533;
   }
 }
 
@@ -1546,7 +1549,6 @@ body:not(#rd) {
   a:focus-visible, button:focus-visible, [role="button"]:focus-visible {
     outline: 2px solid #ffffff;
     outline-offset: 3px;
-    border-radius: var(--radius-default);
   }
   [tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
 
@@ -1660,6 +1662,7 @@ body:not(#rd) {
   }
   .site-mark {
     display: inline-flex; align-items: center; min-height: 44px;
+    border-radius: var(--radius-default);
     text-decoration: none; color: #ffffff;
     font-family: var(--font-display); font-style: normal; font-weight: 700;
     line-height: 1; letter-spacing: -0.01em;
@@ -1673,7 +1676,7 @@ body:not(#rd) {
   }
   .site-nav a {
     display: inline-flex; align-items: center; min-height: 44px;
-    padding: 0 10px; margin-right: 6px;
+    padding: 0 10px; margin-right: 6px; border-radius: var(--radius-default);
     max-width: var(--nav-w, 140px); opacity: 1;
     white-space: nowrap; overflow: hidden;
     font-family: var(--font-label); font-size: 13px !important; font-weight: 600;
@@ -1689,7 +1692,7 @@ body:not(#rd) {
   .site-top {
     display: inline-flex; align-items: center; min-height: 44px;
     max-width: 140px; padding: 0 0 0 16px; margin-left: 8px;
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--line); border-radius: var(--radius-default);
     white-space: nowrap; overflow: hidden;
     opacity: 1; transform: translateY(0);
     font-family: var(--font-label); font-size: 13px !important; font-weight: 600;
@@ -1910,6 +1913,7 @@ body:not(#rd) {
   #steamStatusText[data-status="offline"] { color: var(--muted) !important; }
 
   .discord-username {
+    border-radius: var(--radius-default);
     color: var(--muted); font-family: var(--font-label);
     font-size: 13px !important; font-weight: 500; letter-spacing: 0.02em;
   }
@@ -1942,7 +1946,7 @@ body:not(#rd) {
   .info-pill--spotify { align-items: flex-start; }
   a.info-pill[href]:hover {
     transform: none; filter: none;
-    border-color: var(--line-strong);
+    background: var(--well-bg-hover) !important;
   }
   a.info-pill[href]:hover .steam-game-name,
   a.info-pill[href]:hover .spotify-song { color: #ffffff !important; text-decoration: underline; }
@@ -2319,6 +2323,7 @@ body:not(#rd) {
   }
   .footer-top {
     display: inline-flex; align-items: center; min-height: 44px;
+    border-radius: var(--radius-default);
     font-family: var(--font-label); font-size: 13px !important; font-weight: 600;
     letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none;
     color: #ffffff;
@@ -2333,7 +2338,7 @@ body:not(#rd) {
     color: #000000;
     border: 0 !important;
     border-radius: var(--radius-full);
-    box-shadow: none !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55) !important;
     font-family: var(--font-label); font-size: 13px !important; font-weight: 600;
     letter-spacing: 0.04em;
   }
@@ -2460,6 +2465,12 @@ body:not(#rd) {
 body.low-power:not(#rd) .lava-blob { animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
   body:not(#rd) .lava-blob { animation: none !important; }
+}
+
+html.glass-scrolling body:not(#rd):not(.low-power) .card,
+html.glass-scrolling body:not(#rd):not(.low-power) .social-card {
+  -webkit-backdrop-filter: blur(16px) saturate(1.7) !important;
+          backdrop-filter: blur(16px) saturate(1.7) !important;
 }
 
 body:not(#rd) .hero:has(.quote-box:not(.visible)) .title { translate: none; }

@@ -1006,7 +1006,7 @@
   function renderDiscord(dc) {
     const u = dc.discord_user;
 
-    const displayName = u.global_name || u.display_name || u.username;
+    const displayName = stripEmoji(u.global_name || u.display_name || u.username).trim() || (u.username || 'Kazu Hani');
     const avatarEl = $('discordAvatar');
     if (avatarEl) {
       const targetSrc = dc === DISCORD_STATIC_FALLBACK ? pfpSrc() : discordAvatarUrl(u);
@@ -1054,7 +1054,7 @@
     const customEl = $('discordCustom');
     if (customEl) {
       if (hasCustom) {
-        $('discordCustomText').textContent = stripEmoji(custom.state);
+        $('discordCustomText').textContent = stripEmoji(custom.state).trim();
         customEl.classList.remove('hidden');
       } else {
         customEl.classList.add('hidden');
@@ -1722,47 +1722,48 @@
     return parse(raw);
   }
 
-  // Live rows come from the first source that answers. Jikan stays first
-  // because it is CORS-clean, but MAL has been refusing its scrape of the
-  // user endpoints for long stretches (they 504 or time out while the rest of
-  // Jikan is fine), so it gets a short 4 s cap. The fallback is MAL's own
-  // load.json — the endpoint myanimelist.net itself uses — reached through the
-  // shared CORS proxy (proxyFetch) with `order=5` (last updated) and a
-  // per-minute cache-buster `t` so proxy edge caches never serve a stale list,
-  // then sorted newest-update-first via malSortRecent.
+  // Live rows come from MAL's own load.json — the endpoint myanimelist.net
+  // itself uses — reached through the shared CORS proxy (proxyFetch) with
+  // `order=5` (last updated) and a per-minute cache-buster `t` so proxy edge
+  // caches never serve a stale list, then sorted newest-update-first via
+  // malSortRecent. The public api.jikan.moe host was discontinued on Oct 1,
+  // 2026, so Jikan is kept only as a fallback when every proxy fails.
   async function fetchMalRows(force) {
     const malBucket = force ? Date.now() : Math.floor(Date.now() / 60000);
-    let jikanTried = false;
+    const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
     try {
-      if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
-      jikanTried = true;
-      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
-      if (!r.ok) throw new Error('bad status ' + r.status);
-      const j = await r.json();
-      hostRest.ok('jikan');
-      // ?status=watching does the filtering server-side; the extra client-side
-      // check guards against the param being ignored, tolerating entries that
-      // don't carry the field at all.
-      return malSortRecent(((j && j.data) || [])
-        .filter((e) => !e || !e.watching_status || e.watching_status === 'watching'))
-        .map(malRow)
-        .filter(Boolean)
-        .slice(0, 3);
-    } catch (e) {
-      if (jikanTried) hostRest.fail('jikan', Date.now());
-      console.warn('Jikan failed, trying MAL load.json via proxy:', e);
-      const listUrl = 'https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
       const r2 = await proxyFetch(listUrl);
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
       if (!Array.isArray(list)) throw new Error('unexpected load.json payload');
       // status 1 = watching; ?status=1 already filters server-side, same
-      // belt-and-braces guard as the Jikan path above.
+      // belt-and-braces guard as the Jikan path below.
       return malSortRecent(list
         .filter((e) => !e || e.status == null || e.status === 1))
         .map(malListRow)
         .filter(Boolean)
         .slice(0, 3);
+    } catch (proxyErr) {
+      if (hostRest.down('jikan', Date.now())) throw proxyErr;
+      let jikanTried = false;
+      try {
+        jikanTried = true;
+        const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/animelist?status=watching', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
+        if (!r.ok) throw new Error('bad status ' + r.status);
+        const j = await r.json();
+        hostRest.ok('jikan');
+        // ?status=watching does the filtering server-side; the extra client-side
+        // check guards against the param being ignored, tolerating entries that
+        // don't carry the field at all.
+        return malSortRecent(((j && j.data) || [])
+          .filter((e) => !e || !e.watching_status || e.watching_status === 'watching'))
+          .map(malRow)
+          .filter(Boolean)
+          .slice(0, 3);
+      } catch (e) {
+        if (jikanTried) hostRest.fail('jikan', Date.now());
+        throw e;
+      }
     }
   }
 
@@ -1784,7 +1785,7 @@
     }
   }
 
-  // ---- Manga (currently reading, same Jikan → MAL load.json → cache ladder) ----
+  // ---- Manga (currently reading, same MAL load.json → Jikan → cache ladder) ----
   // Unlike the anime path these helpers aren't duplicated locally: if lib.js
   // failed to load the section just stays hidden (the modals already degrade
   // the same way).
@@ -1792,23 +1793,8 @@
     const mRow = KazuLib.malMangaRow;
     const mListRow = KazuLib.malMangaListRow;
     const malBucket = force ? Date.now() : Math.floor(Date.now() / 60000);
-    let jikanTried = false;
+    const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
     try {
-      if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
-      jikanTried = true;
-      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
-      if (!r.ok) throw new Error('bad status ' + r.status);
-      const j = await r.json();
-      hostRest.ok('jikan');
-      return malSortRecent(((j && j.data) || [])
-        .filter((e) => !e || !e.reading_status || e.reading_status === 'reading'))
-        .map(mRow)
-        .filter(Boolean)
-        .slice(0, 2);
-    } catch (e) {
-      if (jikanTried) hostRest.fail('jikan', Date.now());
-      console.warn('Jikan manga failed, trying MAL mangalist load.json via proxy:', e);
-      const listUrl = 'https://myanimelist.net/mangalist/' + MAL_USER + '/load.json?status=1&order=5&t=' + malBucket;
       const r2 = await proxyFetch(listUrl);
       if (!r2.ok) throw new Error('proxy status ' + r2.status);
       const list = await r2.json();
@@ -1818,6 +1804,24 @@
         .map(mListRow)
         .filter(Boolean)
         .slice(0, 2);
+    } catch (proxyErr) {
+      if (hostRest.down('jikan', Date.now())) throw proxyErr;
+      let jikanTried = false;
+      try {
+        jikanTried = true;
+        const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/mangalist?status=reading', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
+        if (!r.ok) throw new Error('bad status ' + r.status);
+        const j = await r.json();
+        hostRest.ok('jikan');
+        return malSortRecent(((j && j.data) || [])
+          .filter((e) => !e || !e.reading_status || e.reading_status === 'reading'))
+          .map(mRow)
+          .filter(Boolean)
+          .slice(0, 2);
+      } catch (e) {
+        if (jikanTried) hostRest.fail('jikan', Date.now());
+        throw e;
+      }
     }
   }
 
@@ -2523,6 +2527,7 @@
       if (titles && titles[key]) ovText(siteHeading(key), titles[key]);
     });
     if (sections && sections.quote === false) ovClass($('quoteBox'), 'hidden', true);
+    if (window.kazuNavUpdate) window.kazuNavUpdate();
   }
 
   function makeSocialTile(s) {
@@ -3056,9 +3061,9 @@
    at the rim. Chromium-only: backdrop-filter + SVG filters don't compose in
    WebKit/Gecko, so elsewhere this bails and the cards keep the stylesheet's blur +
    glint. Maps are cached by size and only rebuilt when a card changes size.
-   Skipped in the flat editorial redesign (where style.css forces backdrop-filter: none). */
+   Runs on capable Chromium desktops; skips low-power, low-end, reduced-motion,
+   and reduced-transparency environments. */
 (() => {
-  if ('CSS' in window && CSS.supports && CSS.supports('selector(&)')) return;
   const ua = navigator.userAgent;
   const CAN_REFRACT =
     'CSS' in window && CSS.supports && CSS.supports('backdrop-filter', 'url("#a")') &&
@@ -3105,7 +3110,7 @@
   const BEVEL_RADIUS = 24; // Bevel zone width in px
   const DEPTH = 24;        // Snell's Law refraction scale in px
   const BLUR = 16;         // Frosted refraction over background scenery
-  const SAT = 1.8;         // Vibrancy saturation boost
+  const SAT = 1.7;         // Matches CSS --glass-blur saturation during scroll
 
   const mapCache = new Map();
 
@@ -3223,13 +3228,11 @@
     card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
   }
 
-  // Every .card refracts by default — the opt-outs are the birthday tile and
-  // the social tiles (solid brand gradients, nothing to refract through; the
-  // socials dropped the .card class when they became brand tiles). The toast
-  // joins too. Keying the selector off .card means any future card gets the
-  // rim automatically.
+  // Every .card and .social-card refracts by default; the solid white toast
+  // stays unblurred. Keying the selector off .card means any future card gets
+  // the rim automatically.
   const cards = Array.from(
-    document.querySelectorAll('.card, .social-card, .toast'),
+    document.querySelectorAll('.card, .social-card'),
   ).map((el, i) => ({ el, id: 'glass-' + i, w: 0, h: 0 }));
 
   function refreshAll() { cards.forEach(refresh); renderHousing(); }
@@ -3846,6 +3849,8 @@
     items.forEach((item) => {
       item.passed = false;
       item.link.classList.remove('is-passed');
+      item.link.removeAttribute('aria-hidden');
+      item.link.removeAttribute('tabindex');
       item.link.style.removeProperty('--nav-w');
     });
     let total = 0;
@@ -3949,6 +3954,7 @@
     });
   }
 
+  window.kazuNavUpdate = update;
   measure();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
   window.addEventListener('load', update);

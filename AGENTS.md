@@ -18,8 +18,8 @@ sakura, weather canvas, seasonal themes, meadow footer and dev panel were
 deleted on 2026-10-27. The page shows: live stat cards (UK time, Aberystwyth weather, age, birthday
 countdown); a "right now" section with live Discord
 presence (Lanyard, WebSocket + REST fallback), Steam status, MyAnimeList
-watching/reading (Jikan, falling back to MAL list endpoints through
-the shared CORS proxy list in `proxyFetch`: `allorigins.hexlet.app`, `api.cors.lol`, then `api.allorigins.win`, each rested for 4 minutes after an error/429/5xx via `KazuLib.backoffCreate` (the rest must stay shorter than Steam's 5-minute poll, or the next poll finds every proxy resting and fails unsent); Jikan is rested the same way), and the latest Letterboxd diary entry (RSS via the same
+watching/reading (MAL list `load.json` endpoints through
+the shared CORS proxy list in `proxyFetch`, falling back to Jikan: `allorigins.hexlet.app`, `api.cors.lol`, then `api.allorigins.win`, each rested for 4 minutes after an error/429/5xx via `KazuLib.backoffCreate` (the rest must stay shorter than Steam's 5-minute poll, or the next poll finds every proxy resting and fails unsent); Jikan is rested the same way), and the latest Letterboxd diary entry (RSS via the same
 proxy); a YouTube Music playlist card whose "From the playlist" rows update
 themselves from the playlist's Atom feed (`feeds/videos.xml`, via the same
 proxy, newest additions first), plus an optional ListenBrainz "recently played" strip (its markup is currently absent, and the page does not even fetch while it is);
@@ -28,8 +28,8 @@ socials; and in-progress stories. It is installable as a PWA-lite (manifest +
 
 ## Code layout
 
-- `index.html` — the whole page. Loads `style.css?v=179`,
-  `java/lib.js?v=66`, `java/site-config.js?v=3`, `java/i18n.js?v=17`, `java/script.js?v=146` (version
+- `index.html` — the whole page. Loads `style.css?v=180`,
+  `java/lib.js?v=66`, `java/site-config.js?v=3`, `java/i18n.js?v=17`, `java/script.js?v=147` (version
   query strings; see cache-busting below). A Content-Security-Policy meta at the
   top of `<head>` (see "Content-Security-Policy" below), inline JSON-LD schema,
   the `#boot-cards` hold (see "Live-card cache" below), the
