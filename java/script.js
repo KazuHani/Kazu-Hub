@@ -1034,8 +1034,14 @@
     discordUsername = u.username || 'kazu_hani';
     const handleEl = $('discordUsername');
     if (handleEl) {
-      if (discordUsername) { handleEl.textContent = '@' + discordUsername; handleEl.classList.remove('hidden'); }
-      else handleEl.classList.add('hidden');
+      if (discordUsername) {
+        handleEl.textContent = '@' + discordUsername;
+        handleEl.setAttribute('aria-label', 'Copy Discord username @' + discordUsername);
+        handleEl.classList.remove('hidden');
+      } else {
+        handleEl.removeAttribute('aria-label');
+        handleEl.classList.add('hidden');
+      }
     }
 
     const statusKey = STATUS_MAP[dc.discord_status] ? dc.discord_status : 'offline';
@@ -1860,7 +1866,8 @@
   }
 
   // ---- Latest finished anime with your review (top of the MAL card) ----
-  // Jikan's reviews endpoint is CORS-clean and carries the review text. The
+  // Live reviews come from MAL's profile reviews page through the shared CORS
+  // proxy (proxyFetch), falling back to Jikan only if every proxy fails. The
   // finish date comes from MAL's completed list (load.json, through the proxy)
   // and is optional: without it the review date is shown as "Reviewed".
   // Shown only while the review is recent (MAL_REVIEW_DAYS), and cached in
@@ -1908,32 +1915,44 @@
   }
 
   async function loadMalReview(force) {
-    if (!siteIntegrationOn('mal') || !KazuLib || !KazuLib.malReviewRow) return;
-    let jikanTried = false;
+    if (!siteIntegrationOn('mal') || !KazuLib || (!KazuLib.parseMalProfileReviews && !KazuLib.malReviewRow)) return;
+    let row = null;
     try {
-      if (hostRest.down('jikan', Date.now())) throw new Error('jikan resting');
-      jikanTried = true;
-      const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/reviews', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
-      if (!r.ok) throw new Error('bad status ' + r.status);
-      const j = await r.json();
-      hostRest.ok('jikan');
-      const row = ((j && j.data) || []).map(KazuLib.malReviewRow).filter(Boolean)[0] || null;
-      if (row) {
-        try {
-          const r2 = await proxyFetch('https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=2&t=' + (force ? Date.now() : Math.floor(Date.now() / 60000)));
-          if (r2.ok) {
-            const fd = KazuLib.malFinishDate(await r2.json(), row.id);
-            if (fd) { row.date = fd; row.finished = true; }
-          }
-        } catch (e) { /* the review date stands in */ }
+      if (!KazuLib.parseMalProfileReviews) throw new Error('missing profile reviews parser');
+      const revUrl = 'https://myanimelist.net/profile/' + MAL_USER + '/reviews';
+      const r = await proxyFetch(revUrl);
+      if (!r.ok) throw new Error('proxy status ' + r.status);
+      const parsed = KazuLib.parseMalProfileReviews(await r.text());
+      if (!parsed || !parsed.ok) throw new Error('unexpected reviews payload');
+      row = parsed.row;
+    } catch (proxyErr) {
+      let jikanTried = false;
+      try {
+        if (!KazuLib.malReviewRow || hostRest.down('jikan', Date.now())) throw proxyErr;
+        jikanTried = true;
+        const r = await fetchT('https://api.jikan.moe/v4/users/' + MAL_USER + '/reviews', { cache: 'no-store' }, JIKAN_TIMEOUT_MS);
+        if (!r.ok) throw new Error('bad status ' + r.status);
+        const j = await r.json();
+        hostRest.ok('jikan');
+        row = ((j && j.data) || []).map(KazuLib.malReviewRow).filter(Boolean)[0] || null;
+      } catch (e) {
+        if (jikanTried) hostRest.fail('jikan', Date.now());
+        const cached = malReviewCacheRead();
+        if (cached && cached.hasReview) renderMalReview(cached.row);
+        return;
       }
-      renderMalReview(row);
-      cardCacheWrite(MAL_REVIEW_CACHE_KEY, MAL_USER, { row });
-    } catch (e) {
-      if (jikanTried) hostRest.fail('jikan', Date.now());
-      const cached = malReviewCacheRead();
-      if (cached && cached.hasReview) renderMalReview(cached.row);
     }
+    if (row) {
+      try {
+        const r2 = await proxyFetch('https://myanimelist.net/animelist/' + MAL_USER + '/load.json?status=2&t=' + (force ? Date.now() : Math.floor(Date.now() / 60000)));
+        if (r2.ok) {
+          const fd = KazuLib.malFinishDate(await r2.json(), row.id);
+          if (fd) { row.date = fd; row.finished = true; }
+        }
+      } catch (e) { /* the review date stands in */ }
+    }
+    renderMalReview(row);
+    cardCacheWrite(MAL_REVIEW_CACHE_KEY, MAL_USER, { row });
   }
 
   // Sequential, cache-aware MAL sync: Jikan rate-limits bursts (~3 req/s), so
@@ -3215,15 +3234,58 @@
     return url;
   }
 
-  const filters = new Map(); // id -> <filter> markup, all re-rendered into the housing
-  let housingDirty = false;
-  // The whole <defs> is a single innerHTML rewrite, so batch it: refresh()
-  // just marks it dirty and refreshAll() writes once at the end, instead of
-  // re-rendering the full defs once per card during a resize storm.
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const XLINK_NS = 'http://www.w3.org/1999/xlink';
+  const defs = document.createElementNS(SVG_NS, 'defs');
+  housing.textContent = '';
+  housing.appendChild(defs);
+  const filterNodes = new Map(); // id -> SVGFilterElement
+  const dirtyFilters = new Map(); // id -> { w, h, url }
+
+  function buildFilterNode(id, w, h, url) {
+    const f = document.createElementNS(SVG_NS, 'filter');
+    f.setAttribute('id', id);
+    f.setAttribute('x', '0');
+    f.setAttribute('y', '0');
+    f.setAttribute('width', '100%');
+    f.setAttribute('height', '100%');
+    f.setAttribute('filterUnits', 'objectBoundingBox');
+    f.setAttribute('color-interpolation-filters', 'sRGB');
+
+    const img = document.createElementNS(SVG_NS, 'feImage');
+    img.setAttribute('href', url);
+    img.setAttributeNS(XLINK_NS, 'xlink:href', url);
+    img.setAttribute('x', '0');
+    img.setAttribute('y', '0');
+    img.setAttribute('width', String(w));
+    img.setAttribute('height', String(h));
+    img.setAttribute('preserveAspectRatio', 'none');
+    img.setAttribute('result', 'map');
+
+    const disp = document.createElementNS(SVG_NS, 'feDisplacementMap');
+    disp.setAttribute('in', 'SourceGraphic');
+    disp.setAttribute('in2', 'map');
+    disp.setAttribute('scale', String(DEPTH));
+    disp.setAttribute('xChannelSelector', 'R');
+    disp.setAttribute('yChannelSelector', 'G');
+
+    f.appendChild(img);
+    f.appendChild(disp);
+    return f;
+  }
+
+  // Batch dirty filter nodes and swap only the changed <filter> nodes in <defs>
+  // instead of re-parsing ~600 KB of base64 SVG markup on every card resize.
   function renderHousing() {
-    if (!housingDirty) return;
-    housingDirty = false;
-    housing.innerHTML = '<defs>' + Array.from(filters.values()).join('') + '</defs>';
+    if (!dirtyFilters.size) return;
+    dirtyFilters.forEach((spec, id) => {
+      const next = buildFilterNode(id, spec.w, spec.h, spec.url);
+      const prev = filterNodes.get(id);
+      if (prev && prev.parentNode === defs) defs.replaceChild(next, prev);
+      else defs.appendChild(next);
+      filterNodes.set(id, next);
+    });
+    dirtyFilters.clear();
   }
 
   // Rebuild a card's filter only when its size actually changes (responsive reflow,
@@ -3235,16 +3297,11 @@
     card.w = w; card.h = h;
     const radius = parseFloat(getComputedStyle(card.el).borderTopLeftRadius) || 20;
     const url = buildMap(w, h, radius);
-    filters.set(card.id,
-      '<filter id="' + card.id + '" x="0" y="0" width="100%" height="100%" ' +
-      'filterUnits="objectBoundingBox" color-interpolation-filters="sRGB">' +
-      '<feImage href="' + url + '" xlink:href="' + url + '" x="0" y="0" width="' + w +
-      '" height="' + h + '" preserveAspectRatio="none" result="map"/>' +
-      '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + DEPTH +
-      '" xChannelSelector="R" yChannelSelector="G"/></filter>');
-    housingDirty = true;
+    dirtyFilters.set(card.id, { w, h, url });
     const f = 'blur(' + BLUR + 'px) saturate(' + SAT + ') url(#' + card.id + ')';
-    card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
+    if (card.el.style.backdropFilter !== f) {
+      card.el.style.backdropFilter = card.el.style.webkitBackdropFilter = f;
+    }
   }
 
   // Every .card and .social-card refracts by default; the solid white toast

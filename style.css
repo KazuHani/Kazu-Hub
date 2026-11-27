@@ -1478,7 +1478,7 @@ body:not(#rd) {
   --header-bg: rgba(0, 0, 0, 0.42);
   --header-bg-scrolled: rgba(0, 0, 0, 0.88);
   --slab-bg: rgba(0, 0, 0, 0.34);
-  --slab-bg-hover: rgba(255, 255, 255, 0.065);
+  --slab-bg-hover: rgba(38, 44, 56, 0.42);
   --well-bg: rgba(0, 0, 0, 0.28);
   --well-bg-hover: rgba(255, 255, 255, 0.08);
 
@@ -1704,18 +1704,25 @@ body:not(#rd) {
     text-decoration: none;
   }
   .site-top {
+    position: relative;
     display: inline-flex; align-items: center; min-height: 44px;
     max-width: 140px; padding: 0 0 0 16px; margin-left: 8px;
-    border-left: 1px solid var(--line); border-radius: var(--radius-default);
+    border-radius: var(--radius-default);
     white-space: nowrap; overflow: hidden;
     opacity: 1; transform: translateY(0);
     font-family: var(--font-label); font-size: 13px !important; font-weight: 600;
     letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none;
     color: #ffffff;
   }
+  .site-top::before {
+    content: "";
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 1px; height: 18px; background: var(--line);
+    pointer-events: none;
+  }
   .site-top:hover { color: var(--primary); text-decoration: none; }
   .site-top.is-hidden, .site-header.is-empty .site-top {
-    max-width: 0; padding-left: 0; margin-left: -24px; border-left-width: 0;
+    max-width: 0; padding-left: 0; margin-left: -24px;
     opacity: 0; transform: translateY(-4px); pointer-events: none;
   }
 
@@ -2433,7 +2440,7 @@ body:not(#rd) {
     .site-mark, .site-top { min-height: 36px; }
     .site-nav { order: 3; flex-basis: 100%; flex-wrap: wrap; margin-left: 0; min-width: 0; justify-content: center; }
     .site-nav a { min-height: 40px; padding: 0 10px; }
-    .site-top { border-left: 1px solid var(--line); padding-left: 16px; margin-left: 0; }
+    .site-top { padding-left: 16px; margin-left: 0; }
     .site-top.is-hidden, .site-header.is-empty .site-top { display: none; }
     .section-title { scroll-margin-top: var(--header-offset, 108px); }
     .socials-grid { --cols: 2; }

@@ -1013,6 +1013,84 @@
     };
   }
 
+  // Parses MAL's /profile/{user}/reviews HTML page (reached through the shared
+  // CORS proxy since Jikan was discontinued) for the latest non-spoiler anime
+  // review. Returns { ok: true, row: obj|null } for valid MAL profile HTML, or
+  // { ok: false, row: null } for anything unrecognizable (e.g. a proxy error).
+  function parseMalProfileReviews(html) {
+    if (typeof html !== 'string' || html.indexOf('myanimelist.net') === -1) {
+      return { ok: false, row: null };
+    }
+    var hasMarker = html.indexOf('review-element') !== -1 ||
+      html.indexOf('No reviews were found') !== -1 ||
+      html.indexOf('Profile - Reviews') !== -1;
+    if (!hasMarker) return { ok: false, row: null };
+
+    var blocks = html.split(/<div class="review-element js-review-element"/).slice(1);
+    for (var i = 0; i < blocks.length; i++) {
+      var block = blocks[i];
+      var tbM = /<div class="titleblock[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(block);
+      if (!tbM) continue;
+      var linkM = /<a[^>]+href="(https:\/\/myanimelist\.net\/anime\/(\d+)[^"]*)"[^>]*>([\s\S]*?)<\/a>/i.exec(tbM[1]);
+      if (!linkM) continue;
+
+      var url = safeLink(linkM[1], MAL_HOSTS);
+      var id = malIdFromUrl(url);
+      var title = decodeEntities(linkM[3].replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+      if (!url || !id || !title) continue;
+
+      var tagsM = /<div class="tags"[^>]*>([\s\S]*?)<div class="text">/i.exec(block);
+      if (tagsM && /class="[^"]*\bspoiler\b/i.test(tagsM[1])) continue;
+
+      var textM = /<div class="text">([\s\S]*?)(?:<div class="rating|<div class="bottom-navi|<div class="notice)/i.exec(block) ||
+        /<div class="text">([\s\S]*?)<\/div>/i.exec(block);
+      if (!textM) continue;
+      var rawText = textM[1]
+        .replace(/<span[^>]*class="[^"]*\bjs-visible\b[^"]*"[^>]*>\s*\.\.\.\s*<\/span>/gi, '')
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]*>/g, '');
+      var text = decodeEntities(decodeEntities(rawText).replace(/\\(['"])/g, '$1'))
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!text) continue;
+      if (text.length > 320) text = text.slice(0, 317).replace(/\s+\S*$/, '') + '...';
+
+      var date = '';
+      var dm = /<div[^>]*class="[^"]*\bupdate_at\b[^"]*"[^>]*>\s*([A-Za-z]{3})\s+(\d{1,2}),\s+(\d{4})\s*<\/div>/i.exec(block);
+      if (dm) {
+        var monKey = dm[1].charAt(0).toUpperCase() + dm[1].slice(1).toLowerCase();
+        var mon = MONTH_SHORT.indexOf(monKey);
+        var day = parseInt(dm[2], 10);
+        var yr = parseInt(dm[3], 10);
+        if (mon >= 0 && day >= 1 && day <= 31 && yr >= 1990) {
+          date = yr + '-' + pad(mon + 1) + '-' + pad(day);
+        }
+      }
+
+      var img = '';
+      var thumbM = /<div class="thumb"[^>]*>([\s\S]*?)<\/div>/i.exec(block);
+      var imgScope = thumbM ? thumbM[1] : block;
+      var ssM = /data-srcset="[^"]*?(https:\/\/cdn\.myanimelist\.net\/[^\s",]+)\s+2x/i.exec(imgScope);
+      var dsM = /data-src="(https:\/\/cdn\.myanimelist\.net\/[^"]+)"/i.exec(imgScope);
+      var sM = /\bsrc="(https:\/\/cdn\.myanimelist\.net\/[^"]+)"/i.exec(imgScope);
+      var rawImg = (ssM && ssM[1]) || (dsM && dsM[1]) || (sM && sM[1]) || '';
+      if (rawImg && /^https:\/\/cdn\.myanimelist\.net\//.test(rawImg)) img = cacheImage(rawImg);
+
+      var scoreM = /class="rating[^"]*"[^>]*>[\s\S]*?<span class="num">(\d{1,2})<\/span>/i.exec(block);
+      var scoreNum = scoreM ? parseInt(scoreM[1], 10) : 0;
+      var score = (scoreNum >= 1 && scoreNum <= 10) ? scoreNum : null;
+
+      return {
+        ok: true,
+        row: {
+          id: id, url: url, title: title, img: img, score: score,
+          text: text, date: date,
+        },
+      };
+    }
+    return { ok: true, row: null };
+  }
+
   // The finish date of one anime from MAL's completed list (load.json, status 2):
   // finish_date_string is "mm-dd-yy". Returns 'YYYY-MM-DD' or '' (not found, no
   // date, or unreadable).
@@ -1272,6 +1350,7 @@
     malMangaCacheParse: malMangaCacheParse,
     malIdFromUrl: malIdFromUrl,
     malReviewRow: malReviewRow,
+    parseMalProfileReviews: parseMalProfileReviews,
     malFinishDate: malFinishDate,
     malReviewCacheParse: malReviewCacheParse,
     anilistTitlesQuery: anilistTitlesQuery,
