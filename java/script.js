@@ -934,11 +934,23 @@
       return done;
     } catch (e) { return false; }
   }
+  let copyChipTimer = null;
+  function flashDiscordCopied() {
+    const btn = $('discordUsername');
+    if (!btn) return;
+    btn.setAttribute('data-copied', 'true');
+    if (copyChipTimer) clearTimeout(copyChipTimer);
+    copyChipTimer = setTimeout(() => btn.removeAttribute('data-copied'), 1800);
+  }
   function copyDiscordUsername() {
     if (!discordUsername) return;
     const handle = '@' + discordUsername;
-    const ok = () => showToast('Copied ' + handle + ' — add me on Discord!');
-    const fallback = () => showToast((legacyCopy(discordUsername) ? 'Copied ' : 'My Discord: ') + handle);
+    const ok = () => { flashDiscordCopied(); showToast('Copied ' + handle + ' — add me on Discord!'); };
+    const fallback = () => {
+      const copied = legacyCopy(discordUsername);
+      if (copied) flashDiscordCopied();
+      showToast((copied ? 'Copied ' : 'My Discord: ') + handle);
+    };
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(discordUsername).then(ok).catch(fallback);
     } else {
@@ -1669,7 +1681,7 @@
     if (sig !== lastMalAnimeSig) {
       lastMalAnimeSig = sig;
       $('malList').innerHTML = rows.map((x) => (
-        '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+        '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener" title="' + escapeHtml(x.title) + '">' +
           (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
           '<div class="mal-info">' +
             malTitleHtml('anime', x) +
@@ -1697,7 +1709,7 @@
       if (sig !== lastMalMangaSig) {
         lastMalMangaSig = sig;
         list.innerHTML = rows.map((x) => (
-          '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener">' +
+          '<a class="mal-row" href="' + escapeHtml(x.url) + '" target="_blank" rel="noopener" title="' + escapeHtml(x.title) + '">' +
             (x.img ? '<img class="mal-cover" src="' + escapeHtml(x.img) + '" alt="" loading="lazy" decoding="async">' : '') +
             '<div class="mal-info">' +
               malTitleHtml('manga', x) +
@@ -2903,6 +2915,13 @@
     loadDiscord();
     restartLanyard(); // re-arm the socket, reset backoff, and reconnect
   });
+  const steamRetryBtn = $('steamRetry');
+  if (steamRetryBtn) steamRetryBtn.addEventListener('click', () => {
+    $('steamErr').classList.add('hidden');
+    $('steamLoading').classList.remove('hidden');
+    hostRest.clear();
+    loadSteam(true);
+  });
   const malRetryBtn = $('malRetry');
   if (malRetryBtn) malRetryBtn.addEventListener('click', () => {
     $('malError').classList.add('hidden');
@@ -3909,8 +3928,10 @@
       }
     }
     const isEmpty = passedCount === items.length;
+    const scrolled = y > 12 && !isEmpty;
     header.classList.toggle('is-empty', isEmpty);
-    header.classList.toggle('is-scrolled', y > 12 && !isEmpty);
+    header.classList.toggle('is-scrolled', scrolled);
+    if (document.body) document.body.classList.toggle('nav-scrolled', scrolled);
     if (markLink) {
       if (isEmpty) {
         if (document.activeElement === markLink) markLink.blur();
